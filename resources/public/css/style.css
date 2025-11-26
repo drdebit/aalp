@@ -1,0 +1,504 @@
+/* Assertive Accounting Platform Styles */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f5f5;
+}
+
+.app-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 30px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+}
+
+header h1 {
+    margin-bottom: 10px;
+}
+
+header .subtitle {
+    color: #bdc3c7;
+    font-size: 1.1em;
+}
+
+/* Three-column layout */
+.three-column-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    min-height: 600px;
+}
+
+/* Two-column layout (for construct mode) */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    min-height: 600px;
+}
+
+.column {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.column h2 {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+    color: #2c3e50;
+}
+
+/* Narrative panel */
+.narrative-panel .narrative {
+    font-size: 1.1em;
+    line-height: 1.8;
+    padding: 20px;
+    background-color: #ecf0f1;
+    border-radius: 6px;
+}
+
+/* Assertion panel */
+.assertion-groups {
+    margin-bottom: 20px;
+}
+
+.assertion-group {
+    margin-bottom: 20px;
+}
+
+.assertion-group h4 {
+    text-transform: capitalize;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+    font-size: 0.85em;
+    font-weight: 600;
+}
+
+.assertion-button {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: white;
+    border: 2px solid #bdc3c7;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.assertion-button:hover {
+    border-color: #3498db;
+    background-color: #f8f9fa;
+}
+
+.assertion-button.selected {
+    background-color: #3498db;
+    border-color: #2980b9;
+    color: white;
+}
+
+.assertion-label {
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+button.primary, button.secondary {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+button.primary {
+    background-color: #27ae60;
+    color: white;
+    flex: 1;
+}
+
+button.primary:hover:not(:disabled) {
+    background-color: #229954;
+}
+
+button.primary:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+button.secondary {
+    background-color: #ecf0f1;
+    color: #2c3e50;
+}
+
+button.secondary:hover {
+    background-color: #bdc3c7;
+}
+
+/* Feedback panel */
+.feedback-panel .status {
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.feedback-panel .status.correct {
+    background-color: #d5f4e6;
+    border: 2px solid #27ae60;
+}
+
+.feedback-panel .status.incorrect {
+    background-color: #fadbd8;
+    border: 2px solid #e74c3c;
+}
+
+.feedback-panel .status.indeterminate {
+    background-color: #fef5e7;
+    border: 2px solid #f39c12;
+}
+
+.feedback-panel .status h3 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.hints {
+    background-color: #e8f4f8;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.hints h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.hints ul {
+    padding-left: 20px;
+}
+
+.hints li {
+    margin-bottom: 8px;
+}
+
+.journal-entry {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.journal-entry h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.journal-entry .entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.journal-entry .debit {
+    font-weight: 600;
+}
+
+.journal-entry .credit {
+    font-weight: 600;
+}
+
+.instructions {
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.instructions p {
+    margin-bottom: 10px;
+}
+
+/* Loading state */
+.loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    font-size: 1.2em;
+    color: #7f8c8d;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .three-column-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Parameterized assertion styles */
+.assertion-item {
+    margin-bottom: 8px;
+}
+
+.parameters {
+    margin-top: 6px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #3498db;
+    border-radius: 4px;
+}
+
+.parameter {
+    margin-bottom: 6px;
+}
+
+.parameter:last-child {
+    margin-bottom: 0;
+}
+
+.parameter label {
+    display: block;
+    font-size: 0.8em;
+    color: #7f8c8d;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+
+.parameter-input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.parameter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+select.parameter-input {
+    cursor: pointer;
+}
+
+/* Level selector styles */
+.level-selector {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #ecf0f1;
+    border-radius: 4px;
+}
+
+.level-selector label {
+    font-weight: 600;
+    margin-right: 10px;
+    color: #2c3e50;
+}
+
+.level-selector select {
+    padding: 6px 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 0.95em;
+    cursor: pointer;
+    background-color: white;
+}
+
+.level-selector select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Reverse problem styles */
+.reverse-problem {
+    font-size: 1.05em;
+}
+
+.reverse-problem .context {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #3498db;
+}
+
+.reverse-problem .context p {
+    margin: 5px 0;
+    font-size: 0.95em;
+}
+
+.reverse-problem .journal-entry {
+    padding: 20px;
+    background-color: #ecf0f1;
+    border-radius: 6px;
+}
+
+.reverse-problem .journal-entry h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.reverse-problem .journal-entry .entry {
+    margin-bottom: 12px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid #bdc3c7;
+}
+
+.reverse-problem .journal-entry .debit,
+.reverse-problem .journal-entry .credit {
+    padding: 4px 0;
+    font-size: 1em;
+}
+
+.reverse-problem .journal-entry .debit {
+    color: #c0392b;
+}
+
+.reverse-problem .journal-entry .credit {
+    color: #27ae60;
+}
+
+/* Narrative reveal (shown after submission for reverse problems) */
+.narrative-reveal {
+    background-color: #e8f4f8;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #3498db;
+}
+
+.narrative-reveal h4 {
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+.narrative-reveal p {
+    font-size: 1.05em;
+    line-height: 1.6;
+}
+
+/* Construct problem styles */
+.construct-problem {
+    font-size: 1.05em;
+}
+
+.construct-problem .narrative {
+    font-size: 1.1em;
+    line-height: 1.8;
+    padding: 20px;
+    background-color: #ecf0f1;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+/* JE Constructor */
+.je-constructor {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border-left: 4px solid #27ae60;
+}
+
+.je-constructor h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.je-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 120px;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.je-row:last-child {
+    margin-bottom: 0;
+}
+
+.je-row label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95em;
+}
+
+.account-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #bdc3c7;
+    border-radius: 6px;
+    font-size: 0.95em;
+    cursor: pointer;
+    background-color: white;
+    transition: all 0.2s;
+}
+
+.account-select:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.account-select:hover {
+    border-color: #95a5a6;
+}
+
+.amount-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #bdc3c7;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: all 0.2s;
+}
+
+.amount-input:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.amount-input:hover {
+    border-color: #95a5a6;
+}
+
+.amount-input::placeholder {
+    color: #95a5a6;
+}

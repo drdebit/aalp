@@ -1,0 +1,50 @@
+# Clojure/ClojureScript
+.cpcache/
+.shadow-cljs/
+.nrepl-port
+.rebel_readline_history
+target/
+.lein-*
+
+# Node/NPM
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Build outputs
+resources/public/js/
+.cljs_node_repl/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.calva/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LaTeX (existing)
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.run.xml
+*-blx.bib
+*.bcf
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+missfont.log
+
+# Emacs backup files
+*~
+\#*\#
+.#*
+
+# Database
+*.db
+*.sqlite

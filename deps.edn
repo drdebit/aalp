@@ -1,0 +1,35 @@
+{:paths ["src/clj" "src/cljs" "resources"]
+
+ :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+
+        ;; Backend dependencies
+        ring/ring-core {:mvn/version "1.10.0"}
+        ring/ring-jetty-adapter {:mvn/version "1.10.0"}
+        ring/ring-json {:mvn/version "0.5.1"}
+        compojure/compojure {:mvn/version "1.7.0"}
+
+        ;; Database
+        com.github.seancorfield/next.jdbc {:mvn/version "1.3.894"}
+        org.postgresql/postgresql {:mvn/version "42.6.0"}
+        com.github.seancorfield/honeysql {:mvn/version "2.4.1066"}
+
+        ;; ClojureScript (for REPL, actual compilation via shadow-cljs)
+        org.clojure/clojurescript {:mvn/version "1.11.60"}
+        thheller/shadow-cljs {:mvn/version "2.26.2"}
+        reagent/reagent {:mvn/version "1.2.0"}
+
+        ;; Utilities
+        metosin/reitit {:mvn/version "0.6.0"}
+        metosin/reitit-ring {:mvn/version "0.6.0"}
+        metosin/jsonista {:mvn/version "0.3.7"}}
+
+ :aliases
+ {:dev {:extra-paths ["dev"]
+        :extra-deps {nrepl/nrepl {:mvn/version "1.0.0"}
+                     cider/cider-nrepl {:mvn/version "0.30.0"}}}
+
+  :test {:extra-paths ["test"]
+         :extra-deps {lambdaisland/kaocha {:mvn/version "1.87.1366"}}}
+
+  :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.6"}}
+          :ns-default build}}}

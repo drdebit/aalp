@@ -1,0 +1,1521 @@
+#+OPTIONS: toc:nil ':t author:nil 
+#+Title: Assertive Accounting
+#+Author: Matthew DeAngelis @@latex:\\@@ Georgia State University
+#+Latex_header: \usepackage{setspace}
+#+latex_header: \usepackage[citestyle=authoryear,bibstyle=authortitle,hyperref=true,backref=true,maxcitenames=3,uniquename=false,maxbibnames=99,url=true,backend=biber,natbib=true] {biblatex}
+#+LATEX_HEADER: \usepackage{pdflscape}
+#+LATEX_HEADER: \usepackage{listings}
+
+#+LATEX_COMPILER: xelatex
+#+LATEX_HEADER: \usepackage{fontspec}
+#+LATEX_HEADER: \setmonofont{Ubuntu Mono}
+
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \newcommand{\inlinecode}[1]{\textcolor{gray}{\texttt{#1}}}
+
+#+latex_header: \addbibresource{/home/matt/Dropbox/BibLaTeX/library.bib}
+
+#+BEGIN_abstract
+This paper proposes a method of /assertive accounting/ that uses logical assertions to provide a rich semantic description of events. Assertions are simple but powerful, allowing high-level abstractions, ontologies, and reports to be built from basic components in a flexible, extensible, and expressive way. A basic structure for an assertive accounting system is outlined along with examples and professional applications, including demonstrations of how assertions can be used to link traditional economic exchanges and transformations with their legal precursors and environmental outcomes.
+#+END_abstract
+
+#+latex: \vspace*{\fill}
+#+latex: \noindent
+I would like to thank workshop participants at the Stevens Institute of Technology and Georgia State University for their helpful comments.
+#+latex: \newpage
+
+\doublespacing
+* Introduction
+
+The primary purpose of accounting is to record and communicate to users the history of the economic enterprise. This history can be used by various stakeholders for multiple purposes, including contracting [[citep:&ballEconomicsAccountingContracting2025;&armstrongRoleInformationFinancial2010;&baimanEconomicallyOptimalPerformance1980]] and decision-making [[citep:&levAccountingInformationTheory1968;&abdel-khalikEntropyLawAccounting1974;&barthMarketEffectsRecognition2003]]. There is no single purpose for accounting, nor a primary one. The utility of accounting information depends on the context of the decision-maker and the incentives of the parties involved [[citep:&wattsAccountingObjectives1974;&mccarthyREAAccountingModel1982]]. 
+
+This paper argues that extant accounting methods, most notably the double-entry classification of transactions into accounts citep:&ijiriFoundationsAccountingMeasurement1967;&ijiriTheoryAccountingMeasurement1975 and the process-modeling approach used in Resources-Events-Agents (REA) accounting citep:&mccarthyREAAccountingModel1982, while powerful and useful, are insufficient to meet the information needs of all users. In particular, these methods record only *economic* events, exchanges of one resource for another, even though other contexts -- legal and regulatory, informational, physical, social, environmental -- are equally relevant to firm governance and valuation. These methods preference the past over the future by relegating commitments and expectations to second-class status, if they record them at all. And they privilege some narratives of the firm over others: the implications-for-equity model taken by double-entry [[citep:&patonTheoryDoubleEntrySystem;&morganAccountingRealityConstruction1988]] or the relational, value-chain approach of REA [[citep:&mccarthyREAAccountingModel2022]]. Furthermore, these models describe transactions by *categorizing* them, which obscures their underlying attributes and the similarities and differences between them. While categorization, aggregation, and narrative construction are ultimately necessary for accounting information to be useful, these processes should occur when *reporting*, not recording [[citep:&mccarthyREAAccountingModel1982]].
+
+I propose to record all material events, not only economic transactions, by *articulating* their attributes instead of *classifying* them into pre-determined categories. To this purpose, I provide a basic set of logical assertions to serve as event attributes. Each assertion records an elementary "fact" about the event which can then be combined and structured with other attributes to represent more complex concepts. Unlike accounting treatments, assertions are are simple, explicit, precise, composable, verifiable, granular, and transparent, and accounting with attributes makes the accountant's knowledge and intent directly legible to users. Managers record what actually happened during an event instead of the category they've assigned it to. Standard setters can define the specific meaning of individual assertions and auditors can verify their appropriate use. Accounting reports can be linked directly to the assertions from which they are composed; multiple versions of earnings can be generated and the differences between them assertively defined. Accounting policies can themselves be defined using assertions, reducing the need for supplementary textual disclosures.
+My method of /assertive accounting/ serves as a formal, but natural, language for representing the state of the firm [[citep:&bloomfieldAccountingLanguageBusiness2008]].
+
+Assertive accounting describes events according to their basic elements. It preserves the duality of economic exchange by recording that a firm ~provides~ items of value in order to ~receive~ something else. For example, it can ~provide~ cash to ~receive~ goods, or vice versa. But it can also ~provide~ cash to ~receive~ a right or privilege. Or it can ~provide~ information to outside parties to comply with a law that ~requires~ it. Each of these ~providing~ events is materially significant to the firm and each is recorded using the same assertion in the language of assertive accounting. Likewise, the purchase of a machine can ~allow~ the firm to ~create~ a product by ~consuming~ raw materials, while the purchase of a patent can ~allow~ the firm to ~provide~ a particular product. Assertions also provide a language for expected future events: a forecast or a budget can ~expect~ a financial outcome, while a weather report can cause a manager to ~expect~ storm damage. Expectations can later be tied to and compared with events that ~fulfill~ them. In addition to making accounting more understandable, assertive accounting enables advanced analytics by exposing each and every attribute of each and every event as a concrete, precise, true-or-false statement and placing events into a web of such statements. 
+
+Assertive accounting recognizes that there is no single valid narrative for a business and allows events to participate in multiple causal chains. Assertion chains peacefully coexist: an event can both ~create~ a useful product and a negative externality such as carbon. There is no need to "balance" these outputs, unless the firm wishes to do so at the molecular level. Changes in recording or reporting requirements can be satisfied by adding new assertions and applying them to the relevant events. Managerial and tax perspectives of the firm do not rival financial perspectives, or operational perspectives, or environmental or social. Each of these perspectives is expressed side-by-side in the same assertive language.
+
+The paper proceeds as follows. First, extant methods of accounting are discussed. Then...
+
+* Extant Methods
+
+# Think about simple, explicit, precise, composable, verifiable, granular, and transparent.
+
+# Simple: vs "complex." Tie to Blankespoor inf proc?
+# Explicit: vs "implicit." Does it say what it means?
+# Precise: vs "vague" or "ambiguous." K-means?
+# Composable: vs. ...
+# Verifiable: does it manifest reality? Related to ambiguity?
+# Granular: related to Precise.
+# Transparent: related to Explicit.
+
+** Double-Entry Accounting
+
+The shortcomings of double-entry accounting in terms of dimensionality, aggregation, classification, and integration are well documented in [[citet:&mccarthyREAAccountingModel1982]]. In brief, double-entry is a *reporting* method more than it is a *recording* method. It is not designed to trace the causes and effects of individual transactions nor to classify events along the multitude of dimensions that might be of interest to the decision maker. Double-entry accounting is instead focused on /reporting/ the effect of events on a relatively narrow range of aggregates -- assets, liabilities, and equity -- and uses accounts as a way of tracking changes to those aggregates. The very purpose of an accounting /treatment/ is to simplify transactions into the system of accounts; the transaction itself is considered to be unimportant except to the extent that it affects the aggregates the firm is required to report.
+
+Even as a reporting technology, double-entry accounting leaves much to be desired. 
+
+# Classification and description? Account names? Imprecise descriptions here, more precise descriptions down below for REA.
+
+# Restore the "what is it" discussion. Account names, linguistic descriptions, dense standards, copious notes. Serves the technology of paper to use so much human language. This is true for REA too: dense technical descriptions, copious types, schema definitions. Also serves the technology of the relational database. Develop this idea.
+
+As a result, double-entry sets a high bar for recognition of an event into accounting aggregates and pushes most other information to subledgers and supporting documentation. As an accounting *method*, then, double-entry accounting is a mechanism for tracking changes in the value of the enterprise to equity holders, to the exclusion of most other considerations [[citep:&sangsterGenesisDoubleEntry2016;&morganAccountingRealityConstruction1988;&patonTheoryDoubleEntrySystem]]. But financial performance outcomes are the result of a complex web of interrelated systems, institutions, and frameworks that form the context of the modern firm [[citep:&leuzEconomicsPoliticsAccounting2004a]], making the distinction between "financial" and "nonfinancial" information largely arbitrary. The narrow view of double-entry accounting removes firm and manager performance from its key causes and effects. As a result, the current, double-entry-based accounting regime greatly underestimates what could be "useful" in accounting information, to the detriment of financial reporting and the accounting profession [[citep:&williamsRethinkingDecisionUsefulness2015;&ballEconomicsAccountingContracting2025]]. 
+
+Double-entry also excludes information on the basis that it is forward-looking or uncertain even though this information is as relevant, or more relevant, to users than historical-cost financial statements [[citep:&millerDividendPolicyGrowth1961;&pownallVoluntaryDisclosureChoice1989;&ohlsonEarningsBookValues1995;&beyerFinancialReportingEnvironment2010;&iqbalBetterEstimateInternally2025]]. The accounting academic literature has long been engaged in a debate over whether to allow more "value relevant" information into accounting aggregates [[citep:&holthausenRelevanceValuerelevanceLiterature2001;&barthRelevanceValueRelevance2001]] in large part because double-entry accounting encourages only one set of these aggregates: a transaction is either placed into a revenue account, or it is not. Adjustments are, of course, possible, but because double-entry lacks a formalized language to express the concepts of persistence and uncertainty, these adjustments are often opaque [[citep:&bentleyDisentanglingManagersAnalysts2015]] and prone to manipulation [[citep:&mcvayEarningsManagementUsing2006]]. Management forecasts and budgets, too, are historical events: as of this date, management had this expectation. But double-entry has no means to communicate expectations, only realizations. The limitations of double-entry cause a large quantity of highly useful and value-relevant information to be relegated to second-class status, disclosed but not methodically regulated or recognized, with predictable confusion for the user [[citep:&barthMarketEffectsRecognition2003;&michelsDisclosureRecognitionInferences2013]].
+
+** REA
+
+# Start over.
+
+
+
+# Get away from the "database" model and just describe the system. Classification into types, "activities and entities" is the way Adina put it.
+
+# Mapping of transactions to categories, similar to DE. 
+
+# Cannot express something unless it is already pre-defined. This is similar to double-entry. Cannot add something to something that is already pre-defined. Not a language, but a schema.
+
+# Make sure to make the technological point: RDBMS are limited too.
+
+# More a protocol than a language. AA more of a language.
+
+McCarthy's Resources-Events-Agents (REA) model remedies many of the shortcomings of double-entry accounting, including:
+
+1. limited dimension, especially in the sense that most information must be recorded in monetary terms;
+2. coarseness of classification;
+3. excessive aggregation; and
+4. a lack of integration with other areas of the business.
+
+Based on the same computational model as a relational database, REA replaces accounts with /entities/ and creates /relationships/ between those entities to represent economic substance and organizational processes. REA is specifically designed to support multiple views and nonfinancial perspectives of the firm and to enable interoperability between information systems both inside and outside the firm. Expanded over the course more than 40 years of research, REA seeks to provide a complete semantic ontology for economic exchange and transformation and has been incorporated into real-world information systems and standards [[citep:&mccarthyREAAccountingModel2022]].
+
+In terms of information systems, REA is a true evolution in accounting theory and practice [[citep:&basuRecordkeepingHumanEvolution2006]]. Instead of assets, liabilities, and equity, the REA accountant uses resources (such as cash and goods), events (such as purchases and sales), and agents (such as customers and suppliers) to represent the actual activities of the firm. Aggregates are formed from event-level detail, allowing for much finer granularity and flexibility citep:&sorterEventsApproachBasic1969 and REA models extend beyond typical financial primitives to incorporate nonmonetary and nonfinancial dimensions, including physical units, manufacturing and construction processes, and management structures. In recent years REA has been extended to incorporate temporal phenomena such as commitments, schedules, and policies [[citep:&mccarthyREAAccountingModel2022]].
+
+Like double-entry, REA is a classification scheme. It organizes entities and relationships into types -- Resources, Events, Agents -- and subtypes. Each type
+
+** Synthesis
+
+From Claude for consideration: "The constraint to a limited set of predetermined categories has a deeper consequence: it shapes not just what can be recorded but what accountants think to record [[citep:&hinesFinancialAccountingKnowledge1988]]. When standards-setters debate whether cryptocurrency should be classified as inventory, intangible assets, or financial instruments [[citep:&procterCryptocurrencyAccountingPolicy2021]], they are not debating economic reality—they are debating how to force a novel phenomenon into existing categorical boxes. Similarly, when ASC 842 forced lessees to classify virtually all leases as liabilities, it resolved a classification debate but not the underlying economic question of how different lease structures create different risks and opportunities [[citep:&beattyLeasingDebtContracting2016]]. A more nuanced accounting that articulates the individual features of a lease—duration, termination options, residual value guarantees, embedded services—would provide more dimensions for informative analysis without forcing binary classification decisions. Double-entry's categorical structure makes such articulation impossible, leading to what [[citet:&williamsRethinkingDecisionUsefulness2015]] describe as an increasingly stilted conversation about how economic reality must conform to accounting systems rather than the reverse."
+
+Option 2: Move to Synthesis Section (After REA)
+The point about "abstractions shaping thinking" would work well as a transition from critique to solution:
+
+"Both double-entry and REA demonstrate how architectural choices shape not just what systems can record but what accountants think to record. [your revised paragraph]. This is not a problem with particular standards or treatments—it is inherent to classification-based architectures. The question is whether a fundamentally different approach can overcome these constraints."
+
+Restricting our accounting system to a very limited set of aggregates has the additional consequence that it limits our thinking about information that can be recorded and therefore how it can be reported. A discipline is only as good as its abstractions, and these abstractions become the lens through which all things are viewed. Arguments over accounting treatments substitute for arguments over economic reality and how best to reflect that reality. We know that the line between an "operating" lease and a "capital" lease is blurry but we must choose a classification: is it a liability or not? Our pension accounting is such a mess in part because the pension liability is of a much longer term than other liabilities, and more uncertain, and we had difficulty agreeing on how changes in estimated liabilities and their associated assets should be reported. A more nuanced accounting for the individual features that make up a lease or a pension would provide many more dimensions for informative classification and reporting, but double-entry provides us with no language to do this. The result is a stilted, and I fear increasingly irrelevant, conversation about how economic reality can be bent to suit our systems instead of the other way around.
+
+
+* Classification vs. Articulation
+
+# [[cite:&colantoniUnifiedApproachTheory1971]] specify a system for encoding K+1 tuples of information but don't specify the attributes themselves.
+
+# [[cite:&sorterEventsApproachBasic1969]] provides the "events approach" that [[cite:&mccarthyREAAccountingModel1982]] later extends.
+
+# Emphasize precision: an assertion says exactly what it is.
+
+# Emphasize standardization: a "sale" now has a much more precise, logically assertive definition and each assertion is part of the standard as well. Compare this to linguistic definitions of account names or the attributes in REA where everyone's "sales" have different attributes.
+
+Articulation precedes classification, because an event must be understood before it can be classified. Classifications are simplifications; they summarize events using the attributes that are considered most relevant for the purposes of classification. The fact that information is lost in the process is a feature, not a bug; the purpose of classification is to substitute a category label for the diverse underlying events that constitute it and their various attributes. "Revenue" is a classification created by summing the dollar values across a selected set of events that are deemed to increase equity in a particular way. "Revenue" is also a label, a form of shorthand that saves the speaker from having to provide a complete description of the underlying event each time it is referenced.
+
+To model this more formally, take a transaction $t$. Upon observing $t$, the accountant generates $\vec{t}$, a sparse vector of economic attributes $\lvert a_1...a_n \rvert$ in which $a_i$ represents an economic attribute of that transaction. $\vec{t}$ is analogous to the transaction-level ledger: a listing of the transaction and the attributes about that transaction that the accountant chooses to record. For the purpose of the enterprise, $\vec{t}$ encapsulates all of the relevant attributes related to that transaction.
+
+Under double-entry, the accountant then maps $\vec{t}$ to one among $k$ account pairings. The task of assigning transactions to accounts can be considered analogous to a /k/-means clustering operation, in which the relative distance between transactions in /n/-dimensional space is calculated and each transaction is assigned to the treatment in $k$ whose economic attributes are closest (the centroid of the cluster). Often the $k$ treatments have already been chosen, so for new transactions the closest existing centroid is identified, the monetary value of the transaction is incorporated into the accounts, and the individual $a_1...a_n$ economic attributes of the transaction are discarded.
+
+The simplifying nature of this process is self-evident, in that the stocks and flows through the accounts are made to stand in for the individual transactions. Take, for example, a transaction with the $\vec{t}$ of $\lvert a_1,a_2,a_3,a_5 \rvert$. The pre-existing system of accounts contains a list of $k$ centroids, the closest of which is represented by $\lvert a_1,a_2,a_5 \rvert$. In this case, the attribute $a_3$ is discarded from the classification, and likely would not be included in the account's definition. Separate records must be maintained regarding attributes that are thus deemed irrelevant, and the greater the number of missing attributes the more detailed these separate records must be.
+
+Information loss leads to imprecision. Above, events that are classified together are assumed to be similar, and their differences downplayed or discarded. The same process applies in reverse: events placed into two different categories are deemed to be different, and their similarities downplayed or discarded. Double-entry accounts can contain only dollar values and are assigned to a narrow range of assets, liabilities, and equity accounts. Account names are imprecise and must be explained. Resources-Events-Agents (REA) maps events to a more expansive but still relatively narrow set of categories that remain mostly limited to economic exchanges and transformations [[citep:&mccarthyREAAccountingModel2022]]. Subcategories and linguistic descriptions can be used to relate how "close" the events classified into two different accounts are to one another, but these are also imprecise. How "close" is an account receivable to inventory? How about to an account payable? Or cash? To use REA terms, how close is a "purchase" to a "sale"? What about a "purchase" of equipment that is to be held for use instead of made available for sale? The commonalities and distinctions among these events are obscured by the classification process, their individual characteristics subsumed inside the categories they inhabit. The expert accountant can give you a rough sense as to the distance of one category from another, and along what dimensions, but must examine the events directly to determine how close an individual event, such as a sales transaction, is to being recognized as revenue, or the purpose of a particular purchase. Even under the best possible system of classification it remains valuable to preserve as much detail as possible about the events themselves.
+
+Articulation, and assertive accounting, seek to preserve this detail. Proper articulation allows the accountant to determine, at a glance, how an individual event affects the business and how it relates to the events that surround it. It makes explicit what is shared, and what is distinct, between events, and expresses similarity not as a binary, a one or zero depending on whether category is shared, but instead as a multidimensional construct. Instead of proposing an alternative classification system for measuring performance, assertive accounting seeks to provide a feature set for future classification. It seeks to expand accounting's range of communication.
+
+It also seeks to make plain what is currently obscure. The SEC's Plain English handbook [[citep:&securitiesandexchangecommissionPlainEnglishHandbook2001]] advises financial communicators to use, among other things "everyday words, short sentences, active voice, [and] regular print..." But classification systems are rife with jargon, forcing the reader to refer to copious notes and definitions each of which, more often than not, are loaded with yet more jargon. Better articulation, using a controlled vocabulary in the sense used by the library sciences [[citep:&procterManualArchivalDescription2000]], can expose the characteristics behind the jargon and make accounting more transparent and accessible. Nouns can be linked with declarative verbs in direct, one-to-one relationships. Causation can be explicitly conveyed instead of inferred from observed co-occurrence. Parties and counterparties can be directly identified. Physical substance can be described separately from temporal scope and financial impact. Complex ideas can be constructed from simpler ones, aiding comprehension.  
+
+For reporting purposes, classification and aggregation are necessary processes. Only some details are relevant to any given decision-maker and those details are aggregated differently for different measurement purposes. The accounting /records/, however, serve many stakeholders with many different needs at different points in time. Articulated records serve these needs better by providing the basis for many different systems of classification.
+
+
+
+* Double Entry Accounting                                          :noexport:
+# Maybe shorten up this section a little bit and make the "classification vs. causation" arguments either less of a focus or clearer in how they relate to AA. AA doesn't do classification and explicitly models causation.
+
+** Double-entry accounting and its limitations
+<<sec:del>>
+
+# Double-entry accounting has been in use in some form since the 13^th century and is commonly recognized to have been formally codified by Luca Pacioli in the 15^th century [[citep:&sangsterGenesisDoubleEntry2016]]. It replaced single-entry accounting, which recorded the existence of economic entailments such as debts owed without the corresponding contra entry. Double-entry came into wide usage when accounting for economic performance (i.e., profit) became more of a focus, as opposed to simple accounting for rights and obligations.
+
+# [[citet:&ijiriFoundationsAccountingMeasurement1967;&ijiriTheoryAccountingMeasurement1975]] express the power of double-entry accounting to communicate information about the firm in two fundamental ways. The first is /classification/: the ability to view the same resources from two or more perspectives. The classification of resources and events into assets, liabilities and equity allows the double-entry accountant to record claims upon firm resources and to calculate profit. The entire system of accounts is an elaborate classification system: accounts receivable exists to record the legal right to cash that has not yet been received; inventory and fixed assets are distinguished by their purpose and the longevity of their value to the firm; bonds are distinguished from stock as methods of capital raising. On the income side, revenue derived from sales is distinguished from gains derived from valuation changes; costs directly associated with sales are distinguished from administrative costs.
+
+# The second, and the more important according to Ijiri, is to represent /causation/: to match causes to their effects and to use the accounting system as a means of understanding the complex causal networks that make up the firm. Double-entry accounting seeks to match /increments/ in firm resources (such as the manufacture of goods for sale) to /decrements/ (the expenditure of time, effort, and other resources necessary for manufacture) as a way of understanding why the firm does what it does and whether the firm's actions produce the desired results. "[T]he power of double-entry bookkeeping [is] to make us look into the cause-and-effect relationships among the changes in the resources controlled by the entity." [[citep:&ijiriTheoryAccountingMeasurement1975,page 84]]
+
+Let's use a simple example to see how double-entry does this. The following entry recognizes a credit sale:
+
+|---------------------+----+----|
+| Revenue             |    | XX |
+| Accounts receivable | XX |    |
+|---------------------+----+----|
+
+It is easy to see that the names and classifications of the accounts provide most of the heavy lifting here. "Revenue" is an equity account. By the rules we know that a credit to an equity account constitutes an increase in equity. Therefore, we know that a credit to revenue constitutes an increase in equity. Likewise we know that "Accounts receivable" is an asset, so a debit to accounts receivable constitutes an increase in assets. The term "revenue" indicates that this particular increase in equity results from a transfer of goods or services to customers and, assuming that the firm follows US GAAP, that this transfer satisfies all of the requirements for revenue recognition specified by ASC 606. The term "accounts receivable" indicates that the firm has not yet received cash in exchange from this transfer of goods but expects to do so in the near future. 
+
+This is a classic example of Ijiri's dual classification: an increment to firm resources is recorded as an increase to both assets and equity. We do not yet have the full /causal/ picture, however: the corresponding /decrement/ has not yet been recorded. We need an additional double entry for the decrease in inventory:
+
+|---------------------+----+----|
+| Inventory           |    | YY |
+| Cost of goods sold  | YY |    |
+|---------------------+----+----|
+
+These entries together tell both a classificational and a causal story: goods that were purchased for YY were transferred to a customer in exchange for (future) cash in the amount of XX and this net change in assets is /classified/ as an increase in equity of XX - YY. This entry also provides a causal story in time. We know that the delivery (or at least the shipment) of inventory preceded the payment of cash because otherwise we would have seen a debit to deferred revenue instead of accounts receivable when the goods were shipped.
+
+We also see some limitations. The above entry does /not/ convey who the customer is, which goods in inventory were transferred, or how likely it is that the firm will collect on this receivable. To do that, the accountant would need to establish separate inventory accounts for each good, separate revenue and receivable accounts for each customer or order, and separate bad debt allowances for each customer or order. The above entry also does not convey the number of physical units transferred and there is no way to adjust it to convey this information (see [[citet:&ijiriFoundationsAccountingMeasurement1967,pg. 110]] for a discussion of multidimensional accounting that does allow for accounts in units other than dollars). Under current practice, unit quantities are kept separate from the double-entry accounting system and therefore may be disclosed but not recognized.
+
+Next, consider this entry to record income tax expense:
+
+|--------------------+----+----|
+| Income tax expense | XX |    |
+| Deferred tax asset | YY |    |
+| Income tax payable |    | ZZ |
+|--------------------+----+----|
+
+Again the language used to describe the accounts is critical. An "expense" is an equity account and as a result we know that this debit constitutes a reduction in equity. The word "payable" indicates a liability and so we know that this credit increases liabilities. The word "asset" speaks for itself so we know that a debit to a "Deferred tax asset" is an increase in assets. But what kind of assets?
+
+According to PwC, in an article titled "Demystifying deferred tax accounting:"
+
+#+BEGIN_QUOTE
+"A deferred tax [asset or liability] often represents the mathematical difference between the book carrying value (i.e., an amount recorded in the accounting balance sheet for an asset or liability) and a corresponding tax basis (determined under the tax laws of that jurisdiction) in the asset or liability, multiplied by the applicable jurisdiction’s statutory income tax rate."
+#+END_QUOTE
+
+They go on to explain that "a deferred tax asset can result from an income tax credit, loss carryover or other tax attribute that is available to reduce future income tax obligations."
+
+In other words, there can be many differences between taxes paid and taxes expensed. By increasing a deferred tax asset, this entry conveys that whatever difference this is will reduce future taxes. This entry does /not/ convey (1) how taxable income or taxes paid were calculated; (2) how income tax expense was calculated; (3) which future deductions, credits, carryovers or "other tax attributes" the asset represents; or (4) which tax jurisdictions are represented and in what amounts. The accountant could augment their accounts to record some of these dimensions. For instance, they could establish a separate account for each deduction, credit, carryover, jurisdiction, and "other tax attribute" that they want to record. But each of these accounts would simply be classified as an asset, just like all other assets, and only the account names would give a clue that they were tied to different elements of income tax: imagine being the unlucky staff accountant who must now hunt through the accounts for the asset pertaining to a particular deduction. This is not much better than maintaining a separate set of records to communicate this information, outside of the accounting system, and in fact that's exactly what most firms do.
+
+What about causation? The deferred tax asset is "caused" by the difference between the payable and the expense, but this is merely a remark on the timing of cash flows and, as explained above, not a very good one. The words "income tax" are the only significant representation of /why/ the firm has this expense and is making this payment: the government requires the payment of income tax. As noted above, we are not able to observe which jurisdictions or laws produce these requirements, nor how the firm makes its estimates or calculations: we have to go outside the accounting system for that. And what is the increment associated with this decrement? The entry does not say, but presumably the firm pays its taxes to avoid the consequences of /not/ doing so. Does the short-term payable represent this cause adequately? That is, are the consequences of defaulting on this liability the same as defaulting on any other liability? No, they are not: an angry supplier can only do so much; a jilted IRS agent can put you in prison. Why is this benefit not recorded? Under double-entry accounting, could it be? [fn:utb]
+
+For a final example, this entry records pension expense for a defined benefit plan:
+
+|------------------------------+----+----|
+| Pension expense              | XX |    |
+| Plan assets                  | YY |    |
+| Loss on plan assets - OCI    | ZZ |    |
+| Projected benefit obligation |    | AA |
+| Loss amortization - OCI      |    | BB |
+|------------------------------+----+----|
+
+Disentangling the classifications and causes represented by this entry is left as an exercise to the reader. Suffice it to say that virtually all of the supporting documentation for the firm's pension plan is maintained outside of the double-entry accounting system; the pension expense entry itself is an afterthought and designed only to communicate (part of) the performance impact of maintaining a defined benefit pension plan for employees.
+
+* REA as an alternative to double-entry                            :noexport:
+<<sec:rea>>
+Bill McCarthy's Resources-Events-Agents (REA) model is the most spirited extant critique of double-entry accounting and the most robust current alternative. 
+But is it sufficient? In Section [[sec:rnr]] we articulated the classification problem as a question of distance in an n-dimensional space and a category as being only as good as its ability to represent the full range of attributes that the items associated with it possess. But no category can fully represent all of the items within it because (1) no two items have exactly the same set of attributes and (2) different properties become relevant in different contexts [[citep:&parsonsEmancipatingInstancesTyranny2000]]. As an example, one of the Entity types that REA articulates is Customer, someone who buys our goods. As noted above, the category of Entity is distinct from the category of Resources. But can a Customer be a Resource? Recent research suggests yes, that customer relationships can be considered as part of firm value [[citep:&mccarthyValuingSubscriptionBasedBusinesses2017]]. Sales and purchases can likewise be subcategorized and recategorized according to any combination of their features and each of these alternative categorizations is useful under some decision context. REA supports many more perspectives of the firm's activities than double-entry accounting but it does not support all possible perspectives, because it continues to force the accountant to categorize and can only speak in the language enabled by pre-existing categories. In other words, categories are themselves aggregates, and we prefer to avoid methods of recording transactions based on how they will eventually be aggregated and reported.
+
+There is another problem with using categories to represent attributes: a category obscures the attributes of the items it is made to represent, and therefore we must look inside the category to understand its contents. In the example in Section [[sec:del]] above, we noted that the word "revenue" implied many things about the values assigned to it: the dollar value associated with the exchange of purchased or firm-produced goods or services to customers for cash, future cash, or other resources that meet all of the requirements of ASC 606. This is, to put it mildly, a mouthful. The difference between an event that we recognize as revenue and one that we do not may differ by only one of these many features, but the binary nature of classifying it as either revenue or not-revenue becomes its most salient feature. At the same time, seemingly disparate categories may have many features in common. A purchase and a sale are very similar events: they both involve exchanges of resources with a counterparty for the purpose of moving inventory along a value chain. Manufacturing and research both transform labor and materials into resources of value to the firm. One or even many categorizations cannot accommodate all of these perspectives.
+
+What is needed is a method to account for events without categorizing them, while still allowing the accountant to reason about and build higher-order abstractions from the collection of features that an event possesses. Such a system could be used as a base layer for any other informational representation, including REA, double-entry, or representations not yet dreamt of.
+
+* Assertive Accounting
+
+Note: Assertive accounting *allows* for the kinds of categorizations and restrictions of the other two methods but does not *require* them. It *allows* for purely backward-looking, economic recording but does not *restrict* the accounting system to that.
+
+Assertive accounting defines a controlled vocabulary of assertions to describe and connect economic and other events along with a "grammar" defining how to combine assertions to construct more complex ideas. It is designed to be arbitrarily granular, down to whatever level of detail is desired, while also composable to create higher-order abstractions.
+
+[[citet:&parsonsEmancipatingInstancesTyranny2000]] proposes a two-tiered approach to information systems design. The bottom tier stores items and their features at a high degree of detail, while upper tiers builds classes (categories) from those items and features. The two-tiered approach separates the /recording/ items from how they are /reported/, and thereby enables a wider range of reporting by delaying categorization until it is actually needed. Assertive accounting proposes to serve as the bottom tier in an accounting system beneath reporting tiers or tiers containing higher-level primitives such as those provided by REA.
+
+Assertive accounting builds its semantic framework around assertions. Each assertion has a specific meaning and is composable in the manner above such that each combination of assertions has its own precise and distinct meaning. Assertions are hierarchical, proceeding from the most general ("quantity") to the less general ("quantity of a physical unit") to the most specific ("quantity of blue widgets embossed with the CEO's name in gold") so that they can be understood at any level. They can be logically related so that the presence of one assertion implies the presence of another -- all cotton t-shirts are by definition made of cotton -- or the absence of another -- the same t-shirt cannot be both red and blue. Assertions mean one thing and one thing only: if the accountant wishes to say more, they add assertions and the necessary relations to convey the desired meaning. 
+
+Under assertive accounting, any event that is deemed economically significant to the firm is assigned a unique identifier, followed by a list of assertions that describe the event. Events are not "named" in the traditional sense, as a sale or a purchase or a payment, but are instead viewed as a collection of properties about the parties, goods, currencies, and units involved. What constitutes a "sale" may differ across users and across time, and how a specific user defines a sale at a particular point in time is fully transparent by observing the assertions they select. All aggregates are defined according to the assertions that were selected to construct that aggregate. As a result, assertive accounting is able to provide a complete semantic description of every aggregate or category constructed from it, and therefore any assumptions made in its formulation.
+
+As articulated in this paper, an assertive accounting entry takes the form of an assertion chain, a nested structure of assertions that specifies their assertions to one another. The overall chain resembles a knowledge graph [[citep:&hoganKnowledgeGraphs2021]] in that it connects related concepts. Individual connections resemble RDF triples, where parent nodes represent subjects, assertions predicates, and values objects. Assertions can also be objects, extending the chain.
+
+Assertions are dimensional. They describe singular, basic, universal concepts and connect with one another to create meaning. Assertions are singular in the sense that there is one and only one assertion to convey a given concept. The ~has quantity~ assertion carries a numeric value and is used every time a quantity is specified. The ~date~ assertion specifies a date and time. The ~is denominated in unit~ assertion is used wherever a unit is needed, be it monetary, physical, or time-based. The concept of economic exchange is expressed through a combination of the ~provides~ and ~receives~ assertions: ~provides~ indicates the transfer of ownership from the recording entity to an outside party, ~receives~ the opposite. ~has counterparty~ specifies an interaction with an outside party, whether an economic exchange or legal agreement. Each assertion has the same basic meaning in every context it is used, with a different interpretation depending on the assertions that connect to it.
+
+Assertions are composable. Nested assertions describe the parent assertion. The ~event~ assertion serves as the root and parent node in most assertive accounting entries and is described by its nested attributes. The ~has identifier~ assertion can be added as a child to an ~event~ to identify it for later reference and to allow connections to it in other events and assertions. ~has identifier~ can also be nested under an ~expects~ assertion to allow linking of a future realization to that expectation.
+
+Pairing creates compound concepts. The ~has quantity~ assertion is often paired with the ~is denominated in unit~ assertion to specify of a certain quantity of units. Attaching this pair of assertions to a ~receives~ assertion indicates a quantity of units that the recording entity receives from an outside party. ~has counterparty~ is paired with these assertions to indicate the specific counterparty the units are received from. The ~expects~ assertion creates an expectation for the future: a sample usage pairs ~has confidence level~ with ~event~ to assign a probability to an anticipated future event.
+
+Assertions are hierarchical and logically organized. [[citet:&parsonsEmancipatingInstancesTyranny2000]] use the concept of logical /precedence/ to allow properties to proceed from the more general to the more specific: "the item is visible" to "the item has a color" to "the item has a red color" to "the item has a scarlet color." The ~USD~ assertion, which indicates a unit of US dollars, is logically preceded by the ~is denominated in monetary unit~ and the ~is denominated in unit~ assertions. As a result, pairing ~USD~ with the ~has quantity~ assertion includes these other two assertions as well, preserving the general concept of unit as well as the specific unit of US dollars. Other possible logical organizations of properties include negations, conjunctions and disjunctions, conditionals, and implications [[citep:&kuperLogicalDataModel1985]]. Logical relations and constraints between assertions can be used to implement process controls and to aid users in isolating the concepts that are most relevant to their decision context. 
+
+Assertion chains provide consistent, reusable representation patterns for describing events, which allows for pattern-based matching and rule specification. For instance, the ~requires~ assertion creates a future requirement for the recording entity. If this requirement is a future event, the assertion chain for that event can be nested directly under the ~requires~ assertion, thereby communicating exactly what event is required. A future occurring event can reference this requirement and, because assertions are composable, note any additions or deviations. Financial reports can use the ~collects~ assertion to select events that match a particular pattern as part of a calculation, and define aggregates over particular assertions by selecting them within the chain. This allows financial reports to be recorded directly within the same system as the events from which they are created. It also allows for future events to modify past events, and the possibility of a fully immutable accounting system in which all edits to the system are visible at all times because changes are recorded just like any other event.
+
+Assertions form a basis for a standardized accounting vocabulary. Each assertion has a precise meaning, and combinations of assertions can be logically constrained to form patterns that reflect standards, rules, or policies. Standards can themselves be recorded as events, referenced by other events and used to validate and explain compliance. Deviations from prescribed patterns can be immediately detected and resolved. Perhaps most importantly, the same set of events can be recorded according to multiple standards, enabling a firm to place its own preferred policies directly alongside those mandated for reporting, opening up space for new standards to emerge and fostering more diverse accounting practices.
+
+# For instance, the assertion of "quantity" is applicable to some events and not others. Events that the accountant might classify as a "purchase" or a "sale" will certainly contain this assertion, while events such as contractual agreements or regulatory events may not. Beneath the "quantity" assertions there are assertions related to /what/ is being counted: monetary or physical units, dollars or widgets. Quantity may also interact with other assertions such as color, size, and shape. If the accountant wanted to identify the quantity of medium blue t-shirts that were bought and sold and for what quantities of US dollars, they would look for events that contain these assertions. Unlike double-entry accounting, not all events must be assigned a monetary value and units other than dollars are made readily available. Unlike REA, the accountant would not have to identify the tables that contain Sales and Purchases and the names of the attributes that contain the relevant quantity, unit, and value information in each of these tables. The combination of assertions to specify units of medium blue t-shirts are universal and apply to every event that involves these units; the accountant could use the same assertions to identify t-shirts of this type that were given away as part of a promotional campaign.
+
+
+# Assertive accounting makes the presence a counterparty explicit: the accountant asserts, upon recording the transaction, that "this transaction involves a counterparty". Both of these transactions have a counterparty, and so both receive this identical assertion. The accountant may, at a future time, query the system for all transactions that involve a counterparty and receive both transactions in the result.
+
+
+# Consider two events, one that we would currently characterize as a trade receivable and the other a payable. We know, as double-entry accountants, that these transactions are economic converses of each other: one represents an amount owed to us by a counterparty and the other an amount we owe to a counterparty. A receivable due to us is a payable for someone else. Under double-entry accounting, these attributes are encoded by the accounts in which we place the transactions: we *know* that both a receivable and a payable imply a counterparty. But this fact is not made immediately and inherently evident by the double-entry system: while a liability implies a counterparty, an asset does not. The symmetry of these transactions is embedded in the names we assign to the accounts, and are thus opaque, embedded within the definition of a receivable or payable.
+
+# The logical linking of assertions creates powerful opportunities for error control and handling. The assertion "this transaction represents an amount that is owed to us" and its complement "owed to someone else" are logically inconsistent, and thus cannot coexist. A properly designed logical accounting system will not allow the two assertions to attach to the same transaction. The double-entry system, however, does not forbid this: a receivable can be debited and a payable credited, and the accounting equation is still satisfied. We can build in controls to prevent this, of course, but those controls exist outside of the double-entry system itself. Moreover, the logical inconsistency of the two assertions would likewise prevent the equivalent of crediting a long-term liability against a receivable, whereas in a double-entry system we must specify all of the accounts or classes of accounts that are disallowed in combination with a debit to a receivable.
+
+# To continue the box analogy above, logical accounting replaces the matching of transactions to two boxes apiece with, in essence, one big box containing all transactions. Each transaction, however, is tagged with the assertions that apply to it, possibly from a very large set. The logical accounting system combs through and organizes these transactions according to whatever criteria the logical accountant specifies, on the fly, without ever once modifying the transactions in a way that prevents them from being reorganized at a future date.
+
+# ** Old example                                                    :noexport:
+
+# *** Business formation
+# SP draws up Articles of Incorporation and files as an LLC within their state of residence. Since this is an economically significant event for SP LLC, SP enters it into their assertive accounting system. For simplicity, each assertion that SP creates is assumed to begin with "this event..." First, SP creates a top-level assertion for "meets a legal requirement." Beneath this assertion they create the more specific assertions of "meets a statutory requirement" and "meets a state requirement." SP notes that the application of either of these assertions to an event causes the system to automatically apply their first, parent assertion to that event as well. This allows SP to view all events related to legal requirements if they wish, or all state requirements, or all statutory requirements, or all state statutory requirements.
+
+# SP associates each of these more specific assertions to a value: in the first case, the statute being referenced; in the second, the governing state. SP notes the statutory reference of the statute governing LLC registration and their state of residence. If SP wishes, they could also record a separate event related to the passage of the statute, noting the effective date of the statute and making further assertions about the specific requirements that govern SP's incorporation. But they choose not to do this, at least at this time. They do note, however, that they can do so for any future legal changes that affect business operations so that it's clear which legal regime the firm is operating under at any given time.
+
+# SP creates a separate set of assertions beginning with "confers a legal right." Among them, SP asserts the legal right to sell t-shirts within the state and the right to sell membership rights to third parties. Each of these rights is granted by the state only so long as registration is maintained, so SP further asserts an expiration date of one year from the initial registration. SP now also asserts their first future event: the registration renewal in one year's time. SP creates assertions for the legal requirement that a form be filed with the Secretary of State, associated with a value for the form number, and the fee that must be paid along with the amount of the fee. These assertions are placed beneath "meets a legal requirement" in the assertion chain: since forms may need to be filed at any level of government and may be required by non-statutory authorities, SP wants these assertions to entail a legal requirement but not a state or statutory requirement. Applying these assertions together with the state-level assertion and the statutory requirement assertion to an event is how SP will communicate that these forms are associated with these requirements.
+
+# SP now has two events: the formation of SP LLC and the future event of registration renewal. SP creates an assertion for "occurred on date" and applies this assertion to each with the appropriate value: today's date for the first and the same date a year from now for the second. It is now clear to SP that the second event is a future event, a year from now, and this may be sufficient for their purposes. However, SP chooses to also create a new assertion chain for "imposes an unmet obligation" and attaches this assertion to the future event to make it clear that the obligation has not been met.
+
+# At this point, SP realizes that the Articles of Incorporation creates legal obligations to shareholders. This is a legal requirement, and should be placed under the "meets a legal requirement" assertion, but it is contractual in nature instead of stemming from a statute. SP creates an assertion for "meets a contractual requirement" and associates it with a value that references the specific reporting requirement from the Articles. SP further asserts the future date of the report and the "unmet obligation" assertion from above so this event can be easily identified later as something SP must do.
+
+# *** Membership issuance
+# SP's parents purchase 20% of the business in exchange for cash in accordance with the Articles of Incorporation (which SP asserts), which triggers the creation of assertions related to economic exchanges and quantities. SP creates a top-level assertion to indicate that the event "constitutes an economic exchange" and "has a counterparty" (SP's parents). This exchange is denominated both in percentage shares of the business, tied to the legal obligations specified above, and in the monetary unit of US dollars. SP asserts "is denominated in a monetary unit" and "is denominated in US dollars" as well as "constitutes an inflow of economic resources," namely cash. SP notes that firm ownership is scarce, and therefore the issuance of shares could be considered a corresponding outflow of economic resources. This outflow, however, is already represented in terms of the legal obligations that SP owes to all LLC members. SP believes that these assertions adequately convey the substance of the event -- the exchange of shares for cash -- and elects not to make any additional assertions related to economic outflow.
+
+# *** Purchases of equipment and inventory
+# SP now puts their new operating capital to use. They purchase a t-shirt printing machine for cash. Like the exchange of shares for cash, this event "constitutes an economic exchange," "has a counterparty" (the vendor), and is denominated in US dollars (although this event constitutes an outflow of dollars instead of an inflow). The corresponding inflow is denominated in the acquisition of a physical unit, namely the machine itself, but more importantly in the acquired capacity to print t-shirts, which is SP's main business. SP asserts the number of t-shirts that the machine is expected to be able to produce, along with other technical specifications such as energy requirements (which can be tied to SP's energy consumption in the future), materials requirements (which can be tied to the consumption of ink and unprinted t-shirts), and maintenance (a necessary future event to maintain the capacity to print finished t-shirts).
+
+# SP also acquires unprinted t-shirts and ink and asserts these both in terms of dollar costs and physical units acquired. SP also asserts a legal right, per the purchase contract, to return unused ink cartridges before a certain date.
+
+
+# *** Creation of intellectual property, production, and sale
+# SP has the capacity to print t-shirts but the real value in the business lies in SP's unique designs. SP draws up several such designs and several variations of each and records each design as its own event. SP asserts legal copyright for each design along with the number of hours expended for their design. They do not assert a monetary value because they intend to value each design according to the market premium it commands in future sales. They expect these values to change over time and to differ across sales locations and demographics.
+
+# SP prints a small lot of t-shirts and records each of these as a separate event with a unique RFID tag for separate tracking and identification. The lot numbers of the blank t-shirts and ink cartridges is asserted for later calculation of cost information. The identity of the printed design is asserted. An expected selling price is asserted based on SP's best guess of what the market will bear. And the t-shirts are asserted to be "available for sale" to indicate that they are finished goods that may be sold to customers. When the shirts are eventually sold, SP will assert the sale of each shirt along with their actual selling price and any other aspects of the sale that SP has available and is worth keeping track of. These details enable SP to compare outcomes with expectations and to build a very fine-grained understanding of their business: assertive accounting allows SP to characterize events according to any dimensions and characteristics that they choose and to determine later which of these assertions is most relevant for reporting and decision-making.
+
+# SP has a good first year and develops a devoted following. They sign several agreements for the regular purchase of raw materials and the regular sale of finished goods and record these agreements as events for future fulfillment. They acquire an additional printing machine and begin to apply assertions to each finished t-shirt to record the machine they were printed on; any t-shirt printed before the acquisition of the second machine was, of course, printed on the original machine and SP adds these assertions retroactively to ensure consistency over time. 
+
+# *** Performance reporting and analysis
+# At year-end SP must issue performance reports, both to members under the terms set forth in the Articles of Incorporation and to the taxing authorities. SP's reporting requirements to members were recorded a year ago as part of the event related to the Articles but they have yet to create assertions for taxes. To this end, they add an assertion chain related to taxes and attach them to the "state" and "statutory" requirements they recorded at the beginning of the year.
+
+# SP generates the reporting aggregates they need by selecting and aggregating over the events with the appropriate assertions. For instance, revenues can be calculated by examining t-shirt outflows for the quantity sold and the actual sale prices of each. SP could also calculate and report a variance between expected and actual sales by comparing the actual sale prices to their expectations. Cost of goods sold can be calculated using the production events for each t-shirt sold; unsold shirts constitute their finished goods inventory. Raw materials are readily available through purchase events. SP also has sufficient detail to calculate machine depreciation: they have recorded the expected number of t-shirts that each machine should be able to produce and could calculate it directly based on units, or use another method based on the passage of time. They can calculate and report depreciation for taxes just as easily. Because SP's assertive accounting system records facts about events -- the what, when, where, who, how and sometimes why -- instead of accounting treatments, SP has much more flexibility in producing aggregates than they would under double-entry. If they find that they need an aggregate that they cannot yet calculate, they can at least prepare to calculate that aggregate in the future by expanding their assertion chains to accommodate them.
+
+# SP prepares their financial reports and tax returns and records events for each along with assertions that these reports meet the relevant legal and regulatory requirements that SP has already asserted. SP further asserts the details of these reports: the specific aggregates, how they were calculated from the events within SP's assertive accounting system, and how they were presented to members and to the taxing authorities. The details of how SP calculated taxable income are not buried in an Excel spreadsheet somewhere on their hard drive with the filename "Tax Rec v7 Final 20XX FINAL." The tax return and its preparation are recorded directly into SP's assertive accounting system alongside the financial reports and their preparation, and both are recorded in the same system as the events from which they are derived.
+
+# *** Environmental reporting
+# SP receives a request from a customer to report the carbon emissions associated with their products. So far, SP has not collected this information directly. They have, however, asserted the electricity requirements of each of their t-shirt printing machines and, with the help of their electric company, are able to formulate a per-t-shirt estimate of emissions due to electricity consumption. During this process, they discover that the second printing machine is significantly more energy efficient and, as a result, that they can set aside a portion of their existing and future finished goods as a more electricity-friendly option. SP immediately begins working with their raw materials suppliers to determine the emissions associated with those products and what eco-friendly options are available. As they collect this data, they create and apply new assertions to their activities related to carbon emissions and other environmental externalities; by the end of the year they hope to be able to generate a complete environmental performance report for customers based solely on the information recorded in their assertive accounting system. 
+
+
+# * Objectives of Assertive Accounting                               :noexport:
+
+# ** Classification vs. Articulation
+# A key objective of assertive accounting is to /articulate/ events instead of /classifying/ them. 
+
+# # Should we call it classification everywhere now? Need to think about the literatures I'm drawing from. Comp Sci uses "classes" but "category" is friendlier to accountants.
+
+# # See Elicit for research on "faceted categorization". In AA all facets are exposed, so all categories are emergent. Emerged categories are more likely to be faceted.
+
+# # Philosophical discussion. From ChatGPT: "I recommend anchoring the section around a single, high-level theme—how we record meaning—and then treating each system as a distinct epistemic stance on that question. This lets you compare the frameworks not as technical alternatives (which risks digression), but as answers to the same philosophical question: What should accounting preserve?"
+
+# # Could dig into Ijiri a little bit more for what accounting is for and recording meaning.
+
+# # Talk about measurement as not having to be numeric: this is something McCarthy does not address. Per ChatGPT: "REA moves beyond traditional accounting by focusing on what happened structurally rather than how much, but it still treats measurement as a numeric act. Assertive Accounting pushes further by making description itself the unit of accounting—and thereby recognizes non-numeric articulation as a kind of measurement."
+
+# ** Generalization and Extension
+# Assertive accounting is not limited to financial recording and reporting. Concepts such as time, quantity, physicality, and location, are extensible beyond financial or numeric contexts. A legal obligation and a financial obligation have different sources and different consequences, but the same basic structure. Assertive accounting avoids artificial boundaries as to what kinds of event should be "recognized" or what kinds of measures are appropriate. If a fact or event is useful to a decision maker, it should be recorded. Assertive accounting provides the structure to record a wider range of events at a much higher level of detail and to construct a more general range of business narratives. Assertive accounting enables the recording of what is useful and relevant while allowing the decision maker to separate what is wanted from what is not.
+
+# Financial reporting objectives include such concepts as "relevance" and "faithful representation" [[citep:&financialaccountingstandardsboardStatementFinancialAccounting2018]] but existing accounting structures omit highly relevant events such as the passage of laws, the signing of contracts, the engagement of talent, and the building of capacity. Assertive accounting makes accounting systems more relevant by recording these events and tying them more directly to financial outcomes. In doing so, it also creates more faithful representations of events and their relationships to support a deeper understanding of business processes, contexts, and outcomes. 
+
+* An example of assertive accounting
+
+SP is starting up a business which will purchase blank t-shirts, print them with custom designs, and sell them both wholesale and retail. SP will need to raise capital, purchase equipment and raw materials, manufacture product, and sell to customers. SP has adopted an assertive accounting system and will demonstrate its use.
+
+SP declares a few basic assertions to start. First, they declare ~event~, which indicates that an event has occurred that SP wishes to record. The assertions ~date~ and ~has-identifier~ will date and identify the event respectively, and ~is-asserted-by~ indicates the entity asserting the event (usually SP themself). SP will grow their system from this base.
+
+** Business Formation
+
+An important capacity of the assertive accountant is the ability to record legal context and provenance. Since SP is starting a business that relies on commercial exchange, SP first records the law that implements their state's version of the UCC. As indicated above, the law is asserted as an ~event~ with a unique identifier and a ~date~ that matches the version of the law that SP is relying upon. SP records that the law ~is-asserted-by~ their State's legislature and defines the ~reference~ assertion to record the specific code section. In addition, SP asserts the effect of the law on SP's business, which helps to tie it to future events and indicates why SP is recording it. In this case, the State's implementation of the UCC creates the legal framework for the exchange of goods between the business and outside entities. SP records this fact by asserting that the law ~allows~ the business to ~provide~ units of something to an outside entity (such that the exchange ~has-counterparty~) in exchange for units of something else. The assertive entry for the law, then, takes the following form:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = State-UCC
+├── date = 2024-01-01
+├── is-asserted-by = State Legislature
+├── reference = State Code Title 11
+└── allows
+    └── event
+        └── includes
+            ├── has-counterparty
+            ├── provides = is-denominated-in-unit
+            └── receives = is-denominated-in-unit
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+By including this assertion chain in their accounting system, SP is asserting that future events following this pattern are enabled by the UCC, and therefore follow its provisions. This event provisions a basic structure for recording more detailed exchanges.
+
+SP also asserts the state law that allows for the incorporation of their LLC. As above, SP asserts the event, the date, the identifier, the legislature, and the code reference. SP intends to use this law only to incorporate and then to renew incorporation of their LLC, so they do not create a general ~allows~ assertion chain. Instead, they will reference this event as needed for the incorporation events that are enabled by it.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = State-Code-14-11-204
+├── date = 2021-05-01
+├── is-asserted-by = State Legislature
+└── reference = State Code Title 14, Chapter 11, Section 204
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+
+SP draws up Articles of Incorporation, files as an LLC, and records this event in their system. This is the first assertion that ~is-asserted-by~ by SP themself. They assert that this event ~is-allowed-by~ the State-Code-14-11-204 event recorded above by referencing its identifier and note that the business formation event ~has-counterparty~, in this case the Secretary of State. Placing the ~has-counterparty~ and ~provides~ assertions as siblings at the same nesting level indicates that the business is providing something to this specific counterparty.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = BusinessFormation-001
+├── date = 2025-01-10
+├── is-asserted-by = SP
+├── is-allowed-by = State-Code-14-11-204
+├── has-counterparty = Secretary of State
+├── provides
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-monetary-unit = USD
+│   └── has-quantity = 100
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP now elaborates on the ~provides~ assertion. Following the pattern specified in the State-UCC event, they nest ~is-denominated-in-unit~ under ~provides~, followed by the assertion ~is-denominated-in-monetary unit~ and then ~USD~. This hierarchical structure is a key feature of assertive accounting because it creates queryable dimensions from the general level of "unit" down through monetary units to US dollars. SP also introduces the ~has-quantity~ assertion and attaches it as a sibling to ~is-denominated-in-unit~ to indicate that this is the assertion to which the concept of quantity is applied. The value of 100 in this specific place in the assertion chain indicates that SP paid 100 USD to the Secretary of State.
+
+Next, as part of the same event, SP asserts the purpose of incorporation: the ability to sell t-shirts. As in the UCC event above, they use the ~allows~ assertion and specify that incorporating as an LLC enables future events in which they ~provide~ printed t-shirts and ~receive~ US dollars. This is a more specific assertion chain than the UCC to record the purpose of this business as opposed to businesses in general.
+
+Note the net result of this assertion chain: SP has exchanged money for a legal right.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = BusinessFormation-001
+...
+├── allows
+│   └── event
+│       └── includes
+│           ├── has-counterparty 
+│           ├── provides
+│           │   └── is-denominated-in-unit
+│           │       └── is-denominated-in-physical-unit
+│           │              = printed-t-shirt
+│           └── receives
+│               └── is-denominated-in-unit
+│                   └── is-denominated-in-monetary-unit
+│                          = USD
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+Finally, again as part of the same event, SP records an expectation that they will renew their registration in one year. They use the "expects" assertion to record their anticipation of this future event. Since expectations are uncertain, they record a confidence level (in this case they are very confident) and the partial assertion chain of the expected event (nesting ~includes~ under ~event~ indicates that what is expected is an event and that this event is expected to have these assertions among others). They assert that renewal is expected on a given date and give the expected event an identifier for later reference. They further assert that this event will involve a payment of 100 USD to the Secretary of State, similar to the original event. SP can later assert fulfillment, amendment, or cancellation of the renewal by tying it to this expectation. 
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = BusinessFormation-001
+...
+└── expects
+    ├── has-confidence-level = 1.0
+    └── event
+        ├── date = 2026-01-10
+        ├── has-identifier = Obl-Renewal-2026
+        ├── is-required-by = State-Code-14-11-204
+        └── includes
+            ├── has-counterparty = Secretary of State
+            └── provides
+                ├── has-quantity = 100
+                └── is-denominated-in-unit
+                    └── is-denominated-in-monetary-unit = USD
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+As a last formation step, SP hires themself as the first employee of the business and creates an expectation of their own first salary payment. They note that hiring ~is-allowed-by~ the formation of the LLC above and asserts SP themself as a counterparty to the employment contract. This event ~allows~ future events to ~consume~ the new employee's time, asserted here as a combination of time units and the specific commitment of SP's effort. This stands in contrast to ~provides~, which indicates external exchange rather than internal transformation.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = SPHire
+├── date = 2025-01-10
+├── is-asserted-by = SP
+├── is-allowed-by = BusinessFormation-001
+├── has-counterparty = SP
+├── allows
+│   └── event
+│       └── includes
+│           ├── consumes
+│           │   └── is-denominated-in-unit
+│           │       └── is-denominated-in-time-unit = hour
+│           └── consumes
+│               └── is-denominated-in-unit
+│                   └── is-denominated-in-effort-unit
+│                       └── is-denominated-in-employee-commitment = SPHire
+└── expects
+    ├── has-confidence-level = 1.0
+    └── event
+        ├── date = 2025-01-24
+        ├── has-identifier = SPSalary-001
+        └── includes
+            └── provides
+                ├── has-quantity = 1500
+                └── is-denominated-in-unit
+                    └── is-denominated-in-monetary-unit = USD
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+A critical element of the assertive method of recording SP's employment is that it views SP both as an entity (through ~has-counterparty~) and as a resource denominated in terms of time and effort. This hiring event can be referenced as the source for all future events during which SP contributes their time and attention.
+
+** Membership Issuance
+<<sec:membership-issuance>>
+
+SP's parents purchase 20% of the business in exchange for $20,000 in accordance with the Articles of Incorporation. SP asserts this purchase as a receipt of cash in exchange for providing an ownership percentage, following the logic of prior exchanges in terms of ~provides~ and ~receives~. In this case, SP denominates what they ~provide~ in terms of shares by defining a new ~ownership-unit~.
+
+SP's also asserts a present obligation for performance reporting as part of this event, to take place in one year. SP introduces the ~requires~ assertion for this purpose. As of now, SP hasn't decided exactly what the report will include, so they assert only that this future event ~reports~ a blank set of items (["..."]).
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = MembershipIssuance-001
+├── date = 2025-01-15
+├── is-asserted-by = SP
+├── has-counterparty = ParentMember
+├── is-allowed-by = BusinessFormation-001
+├── receives
+│   ├── has-quantity = 20000
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-monetary-unit = USD
+├── provides
+│   ├── has-quantity = 20
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-ownership-unit
+│           └── is-denominated-in = ownership-percentage
+└── requires
+    ├── is-required-by = BusinessFormation-001
+    ├── has-identifier = ReportRequirement-001
+    └── event
+        ├── date = 2026-01-15
+        ├── has-identifier = AnnualReport-001
+        └── includes
+            ├── has-counterparty = ParentMember
+            └── reports = ["..."]
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Equipment Acquisition
+SP now puts their new operating capital to use. They purchase a t-shirt printing machine for cash. As with the sale of shares, this event constitutes an economic exchange, has a counterparty (in this case the vendor), and is denominated in US dollars (although this event constitutes an outflow of dollars instead of an inflow). The corresponding inflow is denominated in the acquisition of a physical unit, namely the machine itself.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EquipmentPurchase-001
+├── date = 2025-02-01
+├── is-asserted-by = SP
+├── has-counterparty = Vendor-A
+├── is-allowed-by = State UCC
+├── receives
+│   ├── has-quantity = 1
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-physical-unit = t-shirt-printer
+├── provides
+│   ├── has-quantity = 12000
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-monetary-unit = USD
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+But this is only the tip of the iceberg in assertive accounting. SP also records the *purpose* of the machine. They use ~allows~ to record the fact that this machine enables future events to ~create~ printed t-shirts and ~consume~ blank t-shirts, ink, time, and effort. SP records these hypothetical future events in the quantity of one printed tee and the resources consumed to produce it. 
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EquipmentPurchase-001
+...
+├── allows
+│   ├── event
+│   │   └── includes
+│   │       ├── creates
+│   │       │   ├── has-quantity = 1
+│   │       │   └── is-denominated-in-unit
+│   │       │       └── is-denominated-in-physical-unit = printed-t-shirt
+│   │       ├── consumes
+│   │       │   ├── has-quantity = 1
+│   │       │   └── is-denominated-in-unit
+│   │       │       └── is-denominated-in-physical-unit = unprinted-t-shirt
+│   │       ├── consumes
+│   │       │   ├── has-quantity = 1/100
+│   │       │   └── is-denominated-in-unit
+│   │       │       └── is-denominated-in-physical-unit = printing-ink-cartridge
+│   │       ├── consumes
+│   │       │   ├── has-quantity = 1/60
+│   │       │   └── is-denominated-in-unit
+│   │       │       └── is-denominated-in-time-unit = hour
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EquipmentPurchase-001
+...
+│   │       └── consumes
+│   │           ├── has-quantity = 1
+│   │           └── is-denominated-in-unit
+│   │               └── is-denominated-in-effort-unit
+│   │                   └── is-denominated-in-employee-commitment
+│   └── is-restricted-by
+│       └── has-quantity = 10000
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+They also assert a limit: the machine's ability to print t-shirts ~is-restricted-by~ a maximum of 10,000 shirts, per the user manual.
+
+Finally, SP asserts a maintenance requirement, due in one month, that takes four hours of SP's time. This is an ongoing commitment that occurs every month for the life of the machine. SP *could* record the entire stream of maintenance requirements, one for each month, but they aren't sure how many months the machine will last. So instead, they opt to record this maintenance requirement now, and record the next one at the time that this maintenance is performed; in essence, each successful maintenance ~requires~ the next.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EquipmentPurchase-001
+...
+└── requires
+└── event
+    ├── date = 2025-03-01
+    ├── has-identifier = MachineMaintenance-001
+    └── includes
+        ├── provides
+        │   ├── has-quantity = 4
+        │   └── is-denominated-in-unit
+        │       └── is-denominated-in-time-unit = hour
+        └── provides
+            ├── has-quantity = 1
+            └── is-denominated-in-unit
+                └── is-denominated-in-effort-unit
+                    └── is-denominated-in-employee-commitment = SPHire
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Inventory Acquisition
+
+SP purchases 200 unprinted t-shirts from a vendor for $600. SP expects this to be an ongoing relationship, so they assert the vendor itself first as part of an ~allows~ chain to indicate that their relationship with this vendor allows them to purchase blank t-shirts in exchange for US dollars.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = TShirtVendor
+├── date = 2025-02-05
+├── is-asserted-by = SP
+└── allows
+    └── event
+        └── includes
+            ├── has-counterparty = TShirtVendor
+            ├── provides
+            │   └── is-denominated-in-unit
+            │       └── is-denominated-in-monetary-unit = USD
+            └── receives
+                └── is-denominated-in-unit
+                    └── is-denominated-in-physical-unit = unprinted-t-shirt
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+They then assert the event itself as a simple exchange of dollars for unprinted t-shirts, with the vendor as a counterparty. Since the vendor is asserted using ~has-counterparty~, SP does not explicitly include the ~is-allowed-by~ assertion, although of course they easily could do so.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = TShirtPurchase-001
+├── date = 2025-02-05
+├── is-asserted-by = SP
+├── has-counterparty = TShirtVendor
+├── provides
+│   ├── has-quantity = 600
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-monetary-unit = USD
+└── receives
+    ├── has-quantity = 200
+    └── is-denominated-in-unit
+        └── is-denominated-in-physical-unit = unprinted-t-shirt
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP also signs a contract with a vendor to supply ink cartridges. As before, they record the vendor with an ~allows~ chain to record the type of exchange: dollars for ink cartridges.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = InkVendor
+├── date = 2025-02-05
+├── is-asserted-by = SP
+└── allows
+    └── event
+        └── includes
+            ├── has-counterparty = InkVendor
+            ├── provides
+            │   └── is-denominated-in-unit
+            │       └── is-denominated-in-monetary-unit = USD
+            └── receives
+                └── is-denominated-in-unit
+                    └── is-denominated-in-physical-unit
+                        = printing-ink-cartridge
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+They then record the purchase agreement, which states that for the next year, they are allowed to purchase ink cartridges for two US dollars each. This ~allows~ chain adds specificity to the more general allowances above along with an ~is-restricted-by~ date.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = InkContract-001
+├── date = 2025-02-05
+├── is-asserted-by = SP
+├── has-counterparty = InkVendor
+└── allows
+    ├── event
+    │   └── includes
+    │       ├── provides
+    │       │   ├── has-quantity = 2
+    │       │   └── is-denominated-in-unit
+    │       │       └── is-denominated-in-monetary-unit = USD
+    │       └── receives
+    │           ├── has-quantity = 1
+    │           └── is-denominated-in-unit
+    │               └── is-denominated-in-physical-unit
+    │                   = printing-ink-cartridge
+    └── is-restricted-by
+        └── date
+            └── less-than = 2026-02-06
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+Finally, they record their first purchase of 100 ink cartridges for $200, which ~is-allowed-by~ the purchase agreement. They also record here that purchase agreement ~allows~ them to return cartridges from this purchase for a full refund within a month from the original purchase date.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = InkPurchase-001
+├── date = 2025-02-06
+├── is-asserted-by = SP
+├── has-counterparty = InkVendor
+├── is-allowed-by = InkContract-001
+├── provides
+│   ├── has-quantity = 200
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-monetary-unit = USD
+├── receives
+│   ├── has-quantity = 100
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-physical-unit = printing-ink-cartridge
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = InkPurchase-001
+...
+└── allows
+    ├── event
+    │   └── includes
+    │       ├── provides
+    │       │   ├── has-quantity = 1
+    │       │   └── is-denominated-in-unit
+    │       │       └── is-denominated-in-physical-unit
+    │       │           └── printing-ink-cartridge = InkPurchase-001
+    │       └── receives
+    │           ├── has-quantity = 2
+    │           └── is-denominated-in-unit
+    │               └── is-denominated-in-monetary-unit = USD
+    └── is-restricted-by
+        └── date = 2025-03-07
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Intellectual Property, Production, and Sale
+<<sec:production-sale>>
+
+SP has the capacity to print t-shirts, but the real value in the business lies in SP's unique designs. These designs are protected under US copyright law:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = Title-17-USC
+├── date = 2020-01-01
+├── is-asserted-by = US Congress
+├── reference = Title 17, United States Code
+└── allows
+    └── event
+        └── includes
+            └── is-protected-by = Title-17-USC
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP draws up several t-shirt designs and records each design as its own event: the first of these events is presented below. SP asserts legal copyright for each design using the new ~is-protected-by~ assertion above. They also assert the number of effort hours expended for each design, which each allow for a new variety of printed t-shirt.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = DesignCreation-001
+├── date = 2025-02-08
+├── is-asserted-by = SP
+├── is-protected-by = Title-17-USC
+├── consumes
+│   ├── has-quantity = 8
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-time-unit = hour
+│   └── is-denominated-in-unit
+│       └── is-denominated-in-effort-unit
+│           └── is-denominated-in-employee-commitment = SPHire
+└── allows
+    └── event
+        └── includes
+            └── creates
+                └── is-denominated-in-unit
+                    └── is-denominated-in-physical-unit
+                        └── printed-t-shirt = Design-001
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP prints a small lot of t-shirts and records each of these as a separate event with a unique RFID tag for tracking and identification: the first of these is shown below. This event ~creates~ a printed t-shirt with Design-001, which ~is-allowed-by~ EquipmentPurchase-001 and consumes a blank t-shirt from TShirtPurchase-001, a portion of an ink cartridge from InkPurchase-001, and a minute of SP's time. 
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = Printed-001
+├── date = 2025-02-10
+├── is-asserted-by = SP
+├── is-allowed-by = EquipmentPurchase-001
+├── creates
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-physical-unit
+│   │       └── printed-t-shirt = Design-001
+│   └── has-quantity = 1
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = Printed-001
+...
+├── consumes
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-physical-unit
+│   │       └── unprinted-t-shirt = TShirtPurchase-001
+│   └── has-quantity = 1
+├── consumes
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-physical-unit
+│   │       └── printing-ink-cartridge = InkPurchase-001
+│   └── has-quantity = 1/100
+├── consumes
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-time-unit = hour
+│   └── has-quantity = 1/60
+├── consumes
+│   └── is-denominated-in-effort-unit
+│       └── is-denominated-in-employee-commitment = SPHire
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP also asserts an expected sale. This is not strictly necessary, but in this case SP wants to record their expected selling price so they can compare it to the actual price when sold. These details enable SP to track outcomes against expectations over time and to build a very fine-grained understanding of their business.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = Printed-001
+...
+└── expects
+    ├── has-confidence-level = 0.5
+    ├── has-identifier = ExpectedSale-001
+    └── event
+        └── includes
+            ├── provides
+            │   ├── is-denominated-in-unit
+            │   │   └── is-denominated-in-physical-unit
+            │   │       └── printed-t-shirt = Design-001
+            │   └── has-quantity = 1
+            └── receives
+                ├── is-denominated-in-unit
+                │   └── is-denominated-in-monetary-unit = USD
+                └── has-quantity = 25
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+As expected, SP receives $25 for this shirt. They assert that this event ~modifies~ and ~fulfills~ ExpectedSale-001. They also assert both ~provides~ and ~receives~ chains, which is technically unnecessary in this case because SP's expectation matched the actual sale price. However, if the actual sale price had differed from expectations, these assertions would allow explicit comparison between expected and actual.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = Sale-001
+├── date = 2025-02-20
+├── is-asserted-by = SP
+├── has-counterparty = Customer-A
+├── modifies
+│   └── fulfills = ExpectedSale-001
+├── provides
+│   ├── is-denominated-in-unit
+│   │   └── is-denominated-in-physical-unit
+│   │       └── printed-t-shirt = Design-001
+│   └── has-quantity = 1
+└── receives
+    ├── is-denominated-in-unit
+    │   └── is-denominated-in-monetary-unit = USD
+    └── has-quantity = 25
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Recurring Purchase Agreement — Explicit Monthly Expectations
+
+SP signs a sale agreement to provide a set number of printed t-shirts on a monthly basis for a year. They assert the agreement as an event that ~requires~ a sequence of 12 future events, each of which provides a set quantity of t-shirts with various printed designs and creates an expectation of future payment. The ... refers to an ongoing sequence of exchanges following the first:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = SalesAgreement-001
+├── date = 2025-03-01
+├── is-asserted-by = SP
+├── has-counterparty = RegularCustomer-001
+├── requires
+│   └── event
+│       ├── has-identifier = AgreedSale-001
+│       ├── date = 2025-04-01
+│       ├── has-counterparty = RegularCustomer-001
+│       └── includes
+│           ├── provides
+│           │   ├── is-denominated-in-unit
+│           │   │   └── is-denominated-in-physical-unit
+│           │   │       └── printed-t-shirt = Design-001
+│           │   └── has-quantity = 50
+│           ├── provides
+│           │   ├── is-denominated-in-unit
+│           │   │   └── is-denominated-in-physical-unit
+│           │   │       └── printed-t-shirt = Design-002
+│           │   └── has-quantity = 50
+│           ├── provides
+│           │   ├── is-denominated-in-unit
+│           │   │   └── is-denominated-in-physical-unit
+│           │   │       └── printed-t-shirt = Design-003
+│           │   └── has-quantity = 50
+│           ├── provides ...   
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = SalesAgreement-001
+...
+│           └── expects
+│               ├── has-confidence-level = 0.7
+│               ├── has-identifier = ExpectedCashReceipt-001
+│               └── event
+│                   ├── has-identifier = CashReceipt-001
+│                   └── receives
+│                       ├── is-denominated-in-unit
+│                       │   └── is-denominated-in-monetary-unit = USD
+│                       └── has-quantity = 3750
+│          └── expects ...
+└── requires
+    └── event
+        ├── has-identifier = AgreedSale-002
+        ├── date = 2025-05-01
+        └── has-counterparty = ...
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Performance Reporting and Analysis
+
+At year-end, SP prepares its performance report for members. This fulfills the prior expectation created above in Section [[sec:membership-issuance]]. SP can now specify what exactly it is that they are reporting, and asserts each item individually under the ~reports~ assertion. Each of these items is actually an identifier, which will be defined below. In addition to the ~reports~ assertion chain, SP follows their custom of asserting ongoing requirements by creating the next requirement when the preceding one is fulfilled. As a result, this event asserts a new requirement for the next year's report.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = AnnualReport-001
+├── date = 2026-01-15
+├── has-counterparty = ParentMember
+├── is-asserted-by = SP
+├── modifies
+│   └── fulfills = ReportRequirement-001
+├── reports
+│   ├── AccrualRevenue
+│   └── ...
+└── requires
+    ├── is-required-by = BusinessFormation-001
+    ├── has-identifier = ReportRequirement-002
+    └── event
+        ├── date = 2027-01-15
+        ├── has-identifier = AnnualReport-002
+        └── includes
+            ├── has-counterparty = ParentMember
+            └── reports
+                ├── AccrualRevenue
+                └── ...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+The calculation of AccrualRevenue is asserted as its own event using the ~collects~ and ~reports~ assertions. The ~collects~ assertion is a convenient shorthand for an event that ~includes~ other events; when paired with the ~reports~ assertion, it works much like a SQL SELECT statement. This event-based query first ~collects~ events in which SP provides printed t-shirts (of any type) for US dollars. It also defines a variable assertion, ~quantity~, of US dollars, for each of these events. Next, it ~excludes~ events in which t-shirts are ~provided~ with the future-oriented ~requires~, ~expects~, or ~allows~: this leaves only events for which t-shirts were actually delivered. 
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = AccrualRevenue
+├── date = 2025-12-31
+├── is-asserted-by = SP
+├── is-allowed-by = ASC-606
+├── collects
+│   ├── includes
+│   │   └── event
+│   │       └── includes
+│   │           ├── provides
+│   │           │   └── is-denominated-in-unit
+│   │           │       └── is-denominated-in-physical-unit
+│   │           │           = printed-t-shirt
+│   │           └── receives
+│   │               ├── is-denominated-in-unit
+│   │               │   └── is-denominated-in-monetary-unit
+│   │               │       = USD
+│   │               └── has-quantity = quantity
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = AccrualRevenue
+...
+│   └── excludes
+│       └── event
+│           └── includes
+│               ├── requires
+│               │   └── includes
+│               │       └── provides
+│               │           └── is-denominated-in-unit
+│               │               └── is-denominated-in-physical-unit
+│               │                   = printed-t-shirt
+│               ├── expects
+│               │   └── includes
+│               │       └── provides
+│               │           └── is-denominated-in-unit
+│               │               └── is-denominated-in-physical-unit
+│               │                   = printed-t-shirt
+│               └── allows
+│                   └── includes
+│                       └── provides
+│                           └── is-denominated-in-unit
+│                               └── is-denominated-in-physical-unit
+│                                   = printed-t-shirt
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+The ~reports~ assertion aggregates what has been ~collected~. In this case, it sums the ~quantity~ of US dollars across the events collected above and reports them in units of US dollars. 
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = AccrualRevenue
+...
+└── reports
+    ├── is-denominated-in-unit
+    │   └── is-denominated-in-monetary-unit = USD
+    └── has-quantity
+        └── sums = quantity
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+The calculation above ~is-allowed-by~ ASC-606, which is also asserted as an event. This accounting standard defines and allows revenue reporting under US GAAP. What follows is far from a perfect representation of ASC 606, but it serves well enough to get the point across. The key features for the example is that it allows reporting dollar values earned from any event in which physical units have been delivered, i.e., for which the firm's performance obligation have been met. This is a more general version of the revenue calculation that SP adopts above, and serves as its basis.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = ASC-606
+├── date = 2014-05-28
+├── is-asserted-by = Financial Accounting Standards Board
+├── reference = ASC 606
+└── allows
+    └── event
+        └── collects
+            ├── includes
+            │   └── event
+            │       └── includes
+            │           ├── provides
+            │           │   └── is-denominated-in-unit
+            │                   └── is-denominated-in-physical-unit
+            │           └── receives
+            │               ├── is-denominated-in-unit
+            │               │   └── is-denominated-in-monetary-unit
+            │                       = monetary-unit
+            │               └── has-quantity = quantity
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = ASC-606
+...
+            ├── excludes
+            │   └── event
+            │       └── includes
+            │           ├── requires
+            │           │   └── includes
+            │           │       └── provides
+            │           │           └── is-denominated-in-unit
+            │                           └── is-denominated-in-physical-unit
+            │           ├── expects
+            │           │   └── includes
+            │           │       └── provides
+            │           │           └── is-denominated-in-unit
+            │                           └── is-denominated-in-physical-unit
+            │           └── allows
+            │               └── includes
+            │                   └── provides
+            │                       └── is-denominated-in-unit
+            │                           └── is-denominated-in-physical-unit
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = ASC-606
+...
+            └── reports
+                ├── is-denominated-in-unit
+                │   └── is-denominated-in-monetary-unit
+                │       = monetary-unit
+                └── has-quantity
+                    └── sums = quantity
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+** Environmental Reporting
+
+A customer requests a report on the carbon footprint of SP's products. SP is not sure what kind of reporting they are capable of, but they know they should be able to report the carbon emissions for each shirt that they sell. SP asserts the request as an event, adding the assertion ~is-requested-by~ to distinguish requests from requirements or allowances. They note that they need some information from their electrical utility, namely the carbon emissions per kWh that the utility provides to them. They assert a ~requires~ chain to reflect this need. They also assert an ~expects~ chain for the report itself, which they expect to consume some hours of SP's time.
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = CustomerRequestForEnvReport
+├── date = 2026-03-11
+├── is-asserted-by = SP
+├── is-requested-by = ConsciousCustomer
+├── requires
+│   ├── has-identifier = ElectricEmissionsInformationRequest
+│   └── event
+│       ├── is-asserted-by = LocalElectric
+│       └── includes
+│           └── reports
+│               └── equals
+│                   ├── is-denominated-in-unit
+│                   │   └── is-denominated-in-energy-unit = kWh
+│                   └── is-denominated-in-unit
+│                       └── is-denominated-in-physical-unit
+│                           └── carbon-emissions = pound
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = CustomerRequestForEnvReport
+...
+└── expects
+    ├── has-confidence-level = 1.0
+    ├── has-identifier = RequestedEnvReport-001
+    └── event
+        └── includes
+            ├── consumes
+            │   └── is-denominated-in-unit
+            │       └── is-denominated-in-effort-unit
+            │           └── is-denominated-in-employee-commitment = SPHire
+            ├── consumes
+            │   └── is-denominated-in-unit
+            │       └── is-denominated-in-time-unit = hour
+            └── reports
+                └── EmissionsPerShirt
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+SP follows up with their electrical utility and receives the following assertions:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── date = 2026-03-16
+├── has-identifier = EmissionsFromElectric
+├── is-asserted-by = LocalElectric
+├── modifies
+│   └── fulfills = ElectricEmissionsInformationRequest
+└── reports
+    └── equals
+        ├── is-denominated-in-unit
+        │   └── is-denominated-in-energy-unit = kWh
+        ├── has-quantity = 1
+        ├── is-denominated-in-unit
+        │   └── is-denominated-in-physical-unit
+        │       └── carbon-emissions = pound
+        └── has-quantity = 0.855
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+This indicates that each kWh provided by the utility emits 0.855 pounds of carbon. SP can now convert electricity consumption into carbon emissions for the purposes of reporting.
+
+SP cannot calculate current electrical usage per t-shirt directly, but they can do so indirectly. To do this, they will need: the kWhs of electricity they've purchased from the utility; the number of t-shirts they've printed; and the emissions per kWh that they've just obtained from the utility. SP records the following event to represent their calculation:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EmissionsPerShirt
+├── date = 2026-04-01
+├── is-asserted-by = SP
+└── collects
+    ├── includes
+    │   └── event
+    │       └── includes
+    │           ├── receives
+    │           │   ├── is-denominated-in-unit
+    │           │   │   └── is-denominated-in-energy-unit = kWh
+    │           │   └── has-quantity = kWhs
+    │           ├── creates
+    │           │   ├── is-denominated-in-unit
+    │           │   │   └── is-denominated-in-physical-unit = printed-t-shirt
+    │           │   └── has-quantity = printed-t-shirts
+    │           └── reports
+    │               └── equals
+    │                   ├── is-denominated-in-unit
+    │                   │   └── is-denominated-in-energy-unit = kWh
+    │                   │   has-quantity = unit-kWh
+    │                   └── is-denominated-in-unit
+    │                       └── is-denominated-in-physical-unit
+    │                           └── carbon-emissions = pound
+    │                       has-quantity = unit-emissions
+...
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── has-identifier = EmissionsPerShirt
+...    
+    ├── excludes
+    │   └── event
+    │       └── includes
+    │           ├── requires
+    │           │   └── includes = "..."
+    │           ├── expects
+    │           │   └── includes = "..."
+    │           └── allows
+    │               └── includes = "..."
+    └── reports
+        └── multiplies
+            ├── unit-emissions
+            └── divides
+                ├── sums = kWhs
+                └── sums = printed-t-shirts
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+As with the previous calculation of AccrualRevenue, this event collects events that ~receive~ electricity with a quantity represented as ~kWhs~, that ~create~ printed t-shirts with quantity represented ~printed-t-shirts~, and the EmissionsFromElectric event to get the ~unit-emissions~ amount of 0.855 ~reported~ by the utility. It then sums the quantities of ~kWhs~ and ~printed-t-shirts~, divides the first by the second, and multiplies the result by ~unit-emissions~. The result is emissions per t-shirt, which SP can now report:
+
+#+begin_export latex
+\vspace{1em}
+\begin{center}
+\begin{minipage}{\linewidth}
+\begin{verbatim}
+event
+├── date = 2026-04-01
+├── has-identifier = EnvReport-001
+├── is-asserted-by = SP
+├── has-counterparty = ConsciousCustomer
+├── modifies
+│   └── fulfills = RequestedEnvReport-001
+├── reports
+│   └── EmissionsPerShirt
+└── consumes
+    ├── is-denominated-in-unit
+    │   └── is-denominated-in-effort-unit
+    │       └── is-denominated-in-employee-commitment = SPHire
+    └── is-denominated-in-unit
+        └── is-denominated-in-time-unit = hour
+        has-quantity = 2
+\end{verbatim}
+\end{minipage}
+\end{center}
+\vspace{2em}
+#+end_export
+
+* What assertive accounting looks like in practice
+
+** Financial
+In objectives and judgment, an assertive accountant's job is very much the same as a double-entry accountant's: to record events accurately under the framework mandated by standard and suggested by the organization's economic and other realities. The process, however, is quite different. First of all, accounting standards no longer map economic realities to accounting methods or treatments, but to a set of standardized assertions that reflect those realities. As in law, these assertions are likely at first to be described in natural language, although more formal, mathematical, and algorithmic approaches may become possible  [[citep:&scholzAlgorithmicContracts2017]]. In either case, these assertions prioritize granularity and precision, with the objective to assert something concrete and verifiable about which truth or falsity can be determined. Unlike accounting treatments, there is no need to handle exceptions when determining assertions: if an exception appears, a different assertion is applied.
+
+As an in-practice example, a firm must make a large number of assertions to classify a debt security as held-to-maturity under GAAP. Most of these guidelines are intended to prevent a firm from cherry-picking the securities that they wish to report at historical cost, as evidenced by PwC's dire warnings surrounding the sale of securities previously classified as held-to-maturity citep:&pricewaterhousecoopersClassificationDebtSecurities2022. Among other assertions, a firm must indicate that they do not anticipate selling the security for any of several specific reasons, including liquidity needs and changes in market interest rates; that the security cannot be prepaid or otherwise settled without significant loss of investment; that the security is not convertible; and that the firm has no standing policy to reclassify held-to-maturity securities. Failing any of these assertions, the firm should classify a security as available-for-sale and use fair value reporting instead of historical cost.
+
+Given how specific and extensive these requirements are, it's not difficult to imagine that a firm's internal designation of a security as held-to-maturity might differ from the SEC's; that is, that the firm might have no intention to sell a security before maturity but is unwilling to make each and every assertion that GAAP requires and is reluctant to risk having its entire classification scheme called into question by its auditors and regulators. Double-entry accounting would require a single classification only: either the security is valued at historical cost in the account for held-to-maturity securities or it is not. A double-entry accountant may (and almost certainly does) maintain separate records for each security in such cases, along with extensive written documentation regarding how both the official and unofficial determinations were made. But it would be better if the accounting system allowed for a range of possible classifications, documented the many assertions that lead a security to be classified into one category or another, and enabled managers to systematically review their portfolio of securities across all of these dimensions.
+
+An assertive accounting system provides these capabilities. The assertive accountant acquires a security and, in addition to asserting economic control of that security, makes separate assertions for each of the requirements in the standard along with any others that the firm has deemed important for their informational purposes. Each of these assertions are documented directly within the accounting system, drawing from a set of standardized and unique assertions, and can be directly queried upon and modified within the accounting system itself. Standard reporting requirements can still be met: the assertive accountant finds all securities that meet /all/ of the SEC requirements, retrieves the assertions related to the original purchase price of the securities, and reports the held-to-maturity total. They may also, however, record the fair value of each of these securities as separate, noncompeting assertions and dynamically assess the impact of reclassifying this set of securities. They can also directly examine which assertions prevent a security from being classified as held-to-maturity according to the standard, reclassify all securities at will according to their own taxonomy, and modify individual assertions without having to shift values from one account to another.
+
+# Make sure to keep this.
+Reporting need not necessarily change: assertive accounting is more flexible and can perfectly reproduce the results of double-entry if needed. It is likely, however, that reporting will change, because users are likely more interested in and more able to understand assertions than treatments. Consider non-GAAP reporting: under the current regime, managers can pick and choose, sometimes on a yearly basis, which items they consider "transitory" and remove them from GAAP earnings [[citep:&blackNonGAAPEarningsConsistency2021]]. How much more useful to investors would it be if managers were required to identify the specific assertions they use to identify each exclusion, and to exclude /any/ items that meet those same assertions? How much more useful might it be, in general, to view aggregate performance and resource amounts in terms of the assertions made rather than an account title given? And how much easier for auditors, to provide assurance directly on assertions and the use of those assertions to map accounting records to accounting reports?
+
+** Audit
+The auditor's responsibility is to provide assurance on the firm's financial reporting, and the assertive auditor will continue to do so. The key difference is that a double-entry auditor verifies account balances and entries, whereas an assertive auditor verifies the assertions and associations related to events. Since an assertion is a statement of truth, the auditor's job is to verify, with reasonable statistical certainty, that all assertions made by management are true and that all necessary assertions have been made. This is not dissimilar from a double-entry auditor's job, in that a double-entry auditor also verifies transactions and the assertions surrounding those transactions as a means to verify account balances. An assertive auditor simply does this more directly, using an accounting system that makes assertions explicit instead of being assumed to apply by the placement of a transaction within an account and backed up by external records. This is an easier task, since the evidence required to verify an assertion is more readily apparent than to verify a treatment and an auditor is more often arguing with managers over statements of fact than over matters of judgment. Because of the pattern-based nature of assertion chains, events that deviate from standard patterns are immediately detectible and the specific differences immediately apparent. An immutable accounting system also tracks all changes, giving the auditor a complete recording history to work with.
+
+The assertive auditor is, if anything, more involved with reporting than the double-entry auditor. Unlike in a system of accounts, events and their associated assertions must be aggregated in a precise and appropriate way to generate financial statements and other financial reports that conform to the reporting standards mandated by the SEC. Arguably, however, the assertive auditor is better equipped for this task than the double-entry auditor: since assertions are more precise and granular than accounts, the process of auditing assertions gives the auditor more insight into the firm's economic situation. If an auditor's objective is to ensure that the firm's reporting matches economic reality, an assertive accounting system provides a better sense of that reality. Assertive accounting also makes reporting events endogenous to the accounting system, allowing for a direct tracing of each calculation to the events on which it is based and the transformations performed to arrive at reported numbers. 
+
+** Managerial and Tax
+If assertive accounting provides a more flexible, more granular information system than double-entry accounting, then accountants who wish to record and report about information other than what is required for financial reporting benefit the most. The assertive accountant has the ability to make overlapping assertions for different needs. For example, under double-entry accounting there is only one "depreciation expense" because all entries reduce assets and profits simultaneously; measuring depreciation on a different basis requires an entirely different system of accounts. In contrast, in an assertive accounting system a purchased asset may have multiple cost calculations made against it: straight-line depreciation for financial reporting, for instance; MACRS for tax; something else for managerial decision-making. These assertions and calculation events are easily separable and immediately aggregatable across whatever time period is desired, producing a tax basis that differs from net asset value for the same point in time, within the same system.
+
+The real power from this flexibility and precision comes when making estimates and projections. When recording a cost, or any time after, the assertive accountant can also assert expected future costs; these assertions can be compared to later actuals, in order to compute variances. Future sales along any basis -- by customer, product, or region -- may also be projected and compared to actuals. All of this takes place within the same system, without interfering with the historical amounts used for financial reporting purposes and without the need for redundant records or separate management accounting systems.
+
+** CSR
+Not all views of the firm are economic in nature, and there is increasing demand to account for the environmental and societal externalities of a firm's activities.  [[citet:&ijiriSymmetricAccountingIntegrate2006]] suggest an extension of double-entry accounting that allows for symmetric recording of both "goods" and "bads" (items that are detrimental to the firm). But a firm can create "bads" that are hard to quantify monetarily and don't directly impact the firm itself; carbon emissions, for example, don't create a direct liability despite their environmental costs. Managers need a way to link the firm's activities to their consequences, outside of their monetary, contractual, or legal ramifications, along a range of dimensions that continue to grow as we develop our understanding of how human activities affect the world we live in.
+
+An assertive accounting system enables this process seamlessly, by allowing managers to directly assert emissions and other consequences as part of the recording process. Assertions need not be stated in monetary units, so tons of carbon or barrels of oil or any other measure of externalities can be directly applied, retrieved, aggregated and transformed at will from the raw data. The assertive accountant can track and view any set of the firm's activities alongside their associated consequences and incorporate that information into the firm's decisions, all within the same system and without interfering with financial information sets.
+
+** Analytics
+In double-entry systems, analytical work begins by extracting and cleaning data from a variety of sources with differing attributes and relational structures: heterogeneous ledgers, subledgers, databases, Excel spreadsheets, and written documents such as data dictionaries, shared Word documents, and emails. Each of these data sources requires interpretation. For accounting information, account titles and GAAP definitions might be used to better understand how a balance affects firm economics; for other information, the analyst uses attribute names and narrative explanations about how data has been generated and altered. Documentation across various systems is often inconsistent, and changes in how data is collected and recorded over time are rarely explained. The analyst must therefore become an expert in disparate systems and their idiosyncracies before analysis can even begin.
+
+Furthermore, the process by which analytical work itself is conducted is often not transparent [[citep:&pandeyDesigningAnalyticsSystems2025]]. An analyst relying on the work of another may or may not have access to detailed documentation on what sources and attributes the previous analyst used; users are likely to have access to less detail than this. Design choices are opaque, hampering replicability; assumptions are obscured, hampering the decision-maker's ability to rely on the results [[citep:&liuPathsExploredPaths2020]]. The analyst works across an ecosystem of disconnected data sources, tools, and systems [[citep:&kandoganDataInsightWork2014]], making their work opaque and difficult to audit, and analytical processes themselves are rarely captured or stored in ways that enable validation or control [[citep:&thiagoCATSCognitiveAnalytic2016]].
+
+Assertive accounting addresses many of these problems. First, it allows much more of the information currently recorded in external databases and documents to be pulled into the accounting system and linked to more traditional accounting values. Furthermore, as logical assertions, the semantic definitions of attributes are made explicit by the attributes themselves. This characteristic greatly limits the need for interpretation and outside knowledge to make intelligent use of available data. Analytical systems built on assertive accounting systems can reason directly from meaning rather than metadata.
+
+Second, data generating processes are captured directly within the system. In traditional systems, a data analyst might simply notice that a particular attribute is no longer populated for recent observations. Under assertive accounting, however, the reason for recording this attribute is retained: for example, this data might be ~required-by~ a regulation that has subsequently been revised. The revision is recorded as an event along with all of its requirements, and thus can be linked directly with the absence of the data after a particular time. 
+
+Third, the analytical process is brought into the accounting system itself. Derived attributes, calculations, and reports are linked directly to their underlying observations, attributes, and assumptions. Changes in how a report has been prepared are readily observable, revealing inconsistencies or selective presentation of results. Traceability supports replicability, which further encourages honesty and integrity.
+
+Assertive accounting enables entirely new categories of analysis beyond traditional financial analytics. Because events are connected through explicit relationships rather than implicit account structures, analysts can traverse causal chains to answer questions like: "Which legal requirements generate the most compliance costs?" or "What percentage of our environmental impact comes from activities enabled by which contracts?" Machine learning models can learn directly from assertion patterns, training on historical expectations and realizations to improve forecasting, or identifying anomalous assertion patterns that may indicate errors or fraud. The rich semantic structure of assertions also enables counterfactual analysis: "If we had adopted MACRS depreciation for financial reporting, how would our trend in earnings have differed?" Such analyses currently require maintaining parallel systems or extensive manual reconstruction; assertive accounting makes them native queries against a single integrated record.
+
+Machine learning can make full use of and extend these capabilities. Because each assertion is an explicit and interpretable feature, models can be trained directly on semantically meaningful data. Predictive models can estimate probabilities for future events, recommend missing assertions, or detect inconsistencies in real time. Unlike opaque black-box predictions, these outputs can be traced back through the same logical chains that generated the training data, maintaining explainability and auditability without the need for extensive supplementary documentation.
+
+In summary, assertive accounting converts the accounting system from a source of analytical inputs into an analytical system in its own right. It integrates recording, reporting, and analysis within the same system, using the same language, and enables reasoning, prediction, and assurance to occur within the same logical environment that records economic events. 
+
+* Conclusion
+In this paper I outline a system of assertive accounting that replaces accounts with logical assertions about transactions. The assertive accounting system is flexible, extensible, tractable within modern computing systems, and allows for a wider range of reporting. An assertive system also better supports forward-looking and non-financial information. Assertive accounting recognizes that far more is demanded of managers and accounting systems now than in the sixteenth century and utilizes modern information systems concepts and techniques to create an accounting system suitable for the twenty-first. 
+
+#+latex: \newpage
+\singlespacing
+\printbibliography
+
+[fn:utb] Current US GAAP does require and provide a double-entry framework for recording uncertain tax positions and possible consequences if these positions are not upheld, but this treatment hardly conveys the "why" of regulatory compliance and the complexities of the firm's relationship with the IRS.
+
+* Notes :noexport:
+
+** Email from Jason with lit review [[notmuch:id:DS0PR05MB9966D6BC023660FB462830DFDF462@DS0PR05MB9966.namprd05.prod.outlook.com][Email from Jason Kim: Re: GA Work : Scholar papers on the REA model]]
+
+** [[notmuch:id:87e72c85-3432-0c15-aa77-e2920dfb2c2b@mail.elicit.com][Email from Elicit: Your Elicit report "Classification vs. Articulation in Academic Liter…" is ready]]

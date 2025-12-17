@@ -1,5 +1,7 @@
 (ns assertive-app.classification
-  "Core classification engine for matching assertions to transaction types.")
+  "Core classification engine for matching assertions to transaction types."
+  (:require [clojure.set]
+            [clojure.string]))
 
 ;; Helper function to create assertion code -> label lookup
 (defn- assertion-code-to-label
@@ -12,8 +14,30 @@
 
 ;; Assertion definitions - aligned with research framework
 (def available-assertions
-  {:exchange
-   [{:code :provides
+  (array-map
+   ;; Event domain - applies to all events, not just exchanges
+   :event
+   [{:code :has-date
+     :label "Has Date"
+     :description "The date when the event occurred"
+     :level 0
+     :domain :event
+     :parameterized true
+     :parameters {:date {:type :date
+                         :label "Event date"}}}]
+
+   :exchange
+   [{:code :has-counterparty
+     :label "Has Counterparty"
+     :description "Identifies the other party to the transaction"
+     :level 0
+     :domain :exchange
+     :parameterized true
+     :parameters {:name {:type :text
+                         :label "Counterparty name"
+                         :optional true}}}
+
+    {:code :provides
      :label "Provides"
      :description "The entity gives something in an exchange"
      :level 0
@@ -48,13 +72,7 @@
                                :optional true}
                   :quantity {:type :number
                              :label "Quantity"
-                             :optional true}}}
-
-    {:code :has-counterparty
-     :label "Has Counterparty"
-     :description "Identifies the other party to the transaction"
-     :level 0
-     :domain :exchange}]
+                             :optional true}}}]
 
    :forward-looking
    [{:code :requires
@@ -107,36 +125,138 @@
      :domain :forward-looking}]
 
    :transformation
-   [{:code :consumes
-     :label "Consumes"
-     :description "Uses up resources in an internal transformation"
+   [;; Input assertions - each captures a specific type of resource consumed
+    {:code :consumes-inventory
+     :label "Consumes Inventory"
+     :description "Uses inventory items (raw materials) in production"
      :level 2
-     :domain :transformation}
+     :domain :transformation
+     :parameterized true
+     :parameters {:item {:type :text
+                         :label "Item name"}
+                  :quantity {:type :number
+                             :label "Quantity"}
+                  :unit-cost {:type :currency
+                              :label "Unit cost ($)"}}}
+
+    {:code :consumes-supplies
+     :label "Consumes Supplies"
+     :description "Uses supplies (ink, packaging, indirect materials) in production"
+     :level 2
+     :domain :transformation
+     :parameterized true
+     :parameters {:item {:type :text
+                         :label "Supply type"}
+                  :quantity {:type :number
+                             :label "Quantity"}
+                  :unit-cost {:type :currency
+                              :label "Unit cost ($)"}}}
+
+    {:code :consumes-labor
+     :label "Consumes Labor"
+     :description "Uses labor/effort in production"
+     :level 2
+     :domain :transformation
+     :parameterized true
+     :parameters {:hours {:type :number
+                          :label "Hours"}
+                  :rate {:type :currency
+                         :label "Hourly rate ($)"}}}
+
+    {:code :uses-equipment
+     :label "Uses Equipment"
+     :description "Uses equipment that enables this production (references prior capability)"
+     :level 2
+     :domain :transformation
+     :parameterized true
+     :parameters {:equipment {:type :text
+                              :label "Equipment name"}}}
+
+    ;; Output assertion - cost is derived from sum of inputs
+    {:code :creates-finished-goods
+     :label "Creates Finished Goods"
+     :description "Produces finished goods from transformation of inputs"
+     :level 2
+     :domain :transformation
+     :parameterized true
+     :parameters {:item {:type :text
+                         :label "Product name"}
+                  :quantity {:type :number
+                             :label "Quantity"}}}
+
+    ;; Keep generic versions for simpler scenarios or backward compatibility
+    {:code :consumes
+     :label "Consumes (Simple)"
+     :description "Generic consumption for simple transformations"
+     :level 2
+     :domain :transformation
+     :parameterized true
+     :parameters {:unit {:type :dropdown
+                         :label "What is consumed"
+                         :options [{:value "raw-materials" :label "Raw Materials"}
+                                   {:value "supplies" :label "Supplies"}
+                                   {:value "effort" :label "Effort/Labor"}]}
+                  :quantity {:type :number
+                             :label "Quantity"
+                             :optional true}}}
 
     {:code :creates
-     :label "Creates"
-     :description "Produces new resources through internal transformation"
+     :label "Creates (Simple)"
+     :description "Generic creation for simple transformations"
      :level 2
-     :domain :transformation}]
+     :domain :transformation
+     :parameterized true
+     :parameters {:unit {:type :dropdown
+                         :label "What is created"
+                         :options [{:value "finished-goods" :label "Finished Goods"}
+                                   {:value "service-output" :label "Service/Deliverable"}
+                                   {:value "intellectual-property" :label "Design/IP"}]}
+                  :quantity {:type :number
+                             :label "Quantity"
+                             :optional true}}}]
 
    :legal-regulatory
    [{:code :is-allowed-by
      :label "Is Allowed By"
      :description "References the legal/regulatory framework that permits this event"
      :level 3
-     :domain :legal-regulatory}
+     :domain :legal-regulatory
+     :parameterized true
+     :parameters {:framework {:type :dropdown
+                              :label "Legal framework"
+                              :options [{:value "ucc" :label "Uniform Commercial Code (sales/commerce)"}
+                                        {:value "employment-law" :label "Employment Law"}
+                                        {:value "state-business-law" :label "State Business Law (LLC, Corp)"}
+                                        {:value "gaap" :label "GAAP (accounting standards)"}
+                                        {:value "contract-law" :label "Contract Law"}]}}}
 
     {:code :is-required-by
      :label "Is Required By"
      :description "References the legal/regulatory framework that mandates this event"
      :level 3
-     :domain :legal-regulatory}
+     :domain :legal-regulatory
+     :parameterized true
+     :parameters {:framework {:type :dropdown
+                              :label "Requiring framework"
+                              :options [{:value "tax-code" :label "Tax Code (IRS/State)"}
+                                        {:value "sec-regulations" :label "SEC Regulations"}
+                                        {:value "employment-law" :label "Employment Law (min wage, etc.)"}
+                                        {:value "environmental-regs" :label "Environmental Regulations"}
+                                        {:value "industry-regs" :label "Industry-Specific Regulations"}]}}}
 
     {:code :is-protected-by
      :label "Is Protected By"
      :description "References the legal/regulatory framework that protects this event"
      :level 3
-     :domain :legal-regulatory}]
+     :domain :legal-regulatory
+     :parameterized true
+     :parameters {:framework {:type :dropdown
+                              :label "Protective framework"
+                              :options [{:value "copyright" :label "Copyright Law"}
+                                        {:value "trademark" :label "Trademark Law"}
+                                        {:value "patent" :label "Patent Law"}
+                                        {:value "contract-law" :label "Contract Law"}
+                                        {:value "trade-secret" :label "Trade Secret Law"}]}}}]
 
    :state-modification
    [{:code :modifies
@@ -149,7 +269,7 @@
      :label "Fulfills"
      :description "Satisfies a prior expectation or requirement"
      :level 4
-     :domain :state-modification}]})
+     :domain :state-modification}]))
 
 ;; Create lookup map from assertion codes to labels
 (def assertion-labels
@@ -197,7 +317,7 @@
    asset-type is optional (e.g., 'inventory' or 'equipment')"
   [description journal-entry & {:keys [provides-unit receives-unit asset-type note examples level]
                                  :or {level 0}}]
-  (let [base {:required #{:provides :receives :has-counterparty}
+  (let [base {:required #{:has-date :provides :receives :has-counterparty}
               :prohibited #{:requires :expects :allows}  ;; Cash exchanges don't involve capability recognition
               :description description
               :journal-entry journal-entry
@@ -220,7 +340,7 @@
                                                          asset-type note examples level]
                                                   :or {level 1}}]
   (let [present-assertion (if (= present-action :provides) :provides :receives)
-        base {:required #{present-assertion :has-counterparty future-assertion}
+        base {:required #{:has-date present-assertion :has-counterparty future-assertion}
               :prohibited #{}
               :description description
               :journal-entry journal-entry
@@ -335,12 +455,126 @@
      :examples ["SP pays $6,000 for 12-month insurance policy in advance"
                 "SP prepays $3,000 for rent covering next 3 months"])
 
+   ;; ==================== Level 2: Transformation Events ====================
+   ;; Key insight: Transformations have NO counterparty - they are internal processes
+
+   ;; Comprehensive production using detailed input assertions
+   :production-full
+   {:required #{:consumes-inventory :consumes-supplies :consumes-labor :uses-equipment :creates-finished-goods}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Full production: inventory + supplies + labor → finished goods"
+    :journal-entry :derived  ;; Special marker - JE is calculated from assertion values
+    :note "Complete production transformation. Journal entry is derived from costs:
+           DR Finished Goods (total cost)
+              CR Raw Materials Inventory (inventory cost)
+              CR Supplies (supplies cost)
+              CR Wages Payable (labor cost)"
+    :examples ["SP transforms blank t-shirts + ink + labor into printed t-shirts"]
+    :level 2}
+
+   ;; Production with just inventory and labor (no supplies)
+   :production-inventory-labor
+   {:required #{:consumes-inventory :consumes-labor :uses-equipment :creates-finished-goods}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Production: inventory + labor → finished goods"
+    :journal-entry :derived
+    :note "Production using raw materials and labor. Supplies consumed separately if any."
+    :examples ["SP uses blank t-shirts and labor to create printed t-shirts"]
+    :level 2}
+
+   ;; Simpler classifications using generic assertions (for backward compatibility)
+   :production-raw-to-wip
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "raw-materials"}
+                          :creates {:unit "work-in-process"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Production: Raw materials → Work in Process"
+    :journal-entry [{:debit "Work in Process" :credit "Raw Materials"}]
+    :note "Internal transformation - no counterparty involved. Raw materials are consumed to create partially completed goods."
+    :examples ["SP moves blank t-shirts into production"
+               "SP begins printing process on inventory"]
+    :level 2}
+
+   :production-wip-to-finished
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "work-in-process"}
+                          :creates {:unit "finished-goods"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Production: Work in Process → Finished Goods"
+    :journal-entry [{:debit "Finished Goods" :credit "Work in Process"}]
+    :note "Completing production - WIP becomes saleable finished goods."
+    :examples ["SP completes printing and packaging of t-shirts"
+               "SP transfers completed shirts to finished goods inventory"]
+    :level 2}
+
+   :production-direct
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "raw-materials"}
+                          :creates {:unit "finished-goods"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Direct production: Raw materials → Finished Goods (single step)"
+    :journal-entry [{:debit "Finished Goods" :credit "Raw Materials"}]
+    :note "Simplified single-step production for small operations."
+    :examples ["SP prints and packages t-shirts in one operation"
+               "SP converts raw materials directly to finished goods"]
+    :level 2}
+
+   :production-with-labor
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "effort"}
+                          :creates {:unit "work-in-process"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Labor applied to production"
+    :journal-entry [{:debit "Work in Process" :credit "Wages Payable"}]
+    :note "Recording labor effort consumed in production process."
+    :examples ["SP's workers spend time printing t-shirts"
+               "Production staff applies effort to manufacturing"]
+    :level 2}
+
+   :service-delivery
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "effort"}
+                          :creates {:unit "service-output"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Service creation through effort"
+    :journal-entry [{:debit "Service Cost" :credit "Wages Payable"}]
+    :note "Converting labor effort into service deliverables."
+    :examples ["SP's designer creates custom artwork"
+               "SP provides consulting services"]
+    :level 2}
+
+   :design-creation
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Creating intellectual property/designs"
+    :journal-entry [{:debit "Design Asset" :credit "Wages Payable"}]
+    :note "Effort transformed into intellectual property (designs, artwork, etc.)."
+    :examples ["SP's designer creates new t-shirt design"
+               "SP develops proprietary printing technique"]
+    :level 2}
+
+   :supplies-consumption
+   {:required #{:consumes :creates}
+    :required-parameters {:consumes {:unit "supplies"}
+                          :creates {:unit "work-in-process"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Supplies consumed in production"
+    :journal-entry [{:debit "Work in Process" :credit "Supplies"}]
+    :note "Indirect materials (ink, packaging) consumed during production."
+    :examples ["SP uses ink to print designs on t-shirts"
+               "SP consumes packaging materials"]
+    :level 2}
+
+   ;; Legacy/simple production (for backward compatibility)
    :production
    {:required #{:consumes :creates}
     :prohibited #{:has-counterparty}
     :description "Internal transformation (consume inputs, create outputs)"
     :journal-entry [{:debit "Work in Process" :credit "Raw Materials"}]
-    :examples ["SP consumes blank t-shirt and ink to create printed t-shirt"]}
+    :examples ["SP consumes blank t-shirt and ink to create printed t-shirt"]
+    :level 2}
 
    :expense-recognition
    {:required #{:consumes :provides}
@@ -358,7 +592,215 @@
     :journal-entry [{:debit "Equipment" :credit "Cash"}]
     :note "Like cash equipment purchase, but student explicitly recognizes the capability created."
     :examples ["SP purchases printer that allows future shirt printing"]
-    :level 2}})
+    :level 2}
+
+   ;; ==================== Level 3: Legal & Regulatory Context ====================
+   ;; Key insight: Events exist within legal frameworks that enable, require, or protect them
+
+   :sale-under-ucc
+   {:required #{:provides :receives :has-counterparty :is-allowed-by}
+    :required-parameters {:provides {:unit "physical-unit"}
+                          :receives {:unit "monetary-unit"}
+                          :is-allowed-by {:framework "ucc"}}
+    :prohibited #{}
+    :description "Commercial sale enabled by Uniform Commercial Code"
+    :journal-entry [{:debit "Cash" :credit "Revenue"}]
+    :note "The UCC provides the legal framework that makes commercial sales enforceable."
+    :examples ["SP sells t-shirts under standard commercial law"
+               "SP engages in commerce enabled by UCC Article 2"]
+    :level 3}
+
+   :employment-under-law
+   {:required #{:provides :receives :has-counterparty :is-allowed-by :is-required-by}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :receives {:unit "effort"}
+                          :is-allowed-by {:framework "employment-law"}
+                          :is-required-by {:framework "employment-law"}}
+    :prohibited #{}
+    :description "Employment relationship with legal requirements"
+    :journal-entry [{:debit "Wage Expense" :credit "Wages Payable"}]
+    :note "Employment is both enabled by and subject to employment law (minimum wage, benefits, etc.)."
+    :examples ["SP hires employee subject to minimum wage requirements"
+               "SP employs staff under labor law framework"]
+    :level 3}
+
+   :copyright-protected-creation
+   {:required #{:consumes :creates :is-protected-by}
+    :required-parameters {:consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}
+                          :is-protected-by {:framework "copyright"}}
+    :prohibited #{:has-counterparty}
+    :description "Creative work protected by copyright"
+    :journal-entry [{:debit "Design Asset" :credit "Wages Payable"}]
+    :note "Original creative works are automatically protected by copyright law."
+    :examples ["SP creates original t-shirt design protected by copyright"
+               "SP develops artwork that receives copyright protection"]
+    :level 3}
+
+   :trademark-protected-brand
+   {:required #{:consumes :creates :is-protected-by}
+    :required-parameters {:consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}
+                          :is-protected-by {:framework "trademark"}}
+    :prohibited #{:has-counterparty}
+    :description "Brand/logo protected by trademark"
+    :journal-entry [{:debit "Intangible Asset" :credit "Wages Payable"}]
+    :note "Trademarks protect brand names, logos, and distinctive marks used in commerce."
+    :examples ["SP creates company logo protected by trademark"
+               "SP develops brand identity with trademark protection"]
+    :level 3}
+
+   :tax-required-filing
+   {:required #{:provides :is-required-by}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :is-required-by {:framework "tax-code"}}
+    :prohibited #{:receives}
+    :description "Tax payment required by law"
+    :journal-entry [{:debit "Tax Expense" :credit "Cash"}]
+    :note "Tax payments are mandated by federal and state tax codes."
+    :examples ["SP files and pays quarterly estimated taxes"
+               "SP remits sales tax as required by state law"]
+    :level 3}
+
+   :regulatory-compliance
+   {:required #{:provides :is-required-by}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :is-required-by {:framework "industry-regs"}}
+    :prohibited #{}
+    :description "Payment for regulatory compliance"
+    :journal-entry [{:debit "Compliance Expense" :credit "Cash"}]
+    :note "Many industries have specific regulations requiring fees, certifications, or compliance costs."
+    :examples ["SP pays for required business license"
+               "SP obtains industry-required certification"]
+    :level 3}
+
+   :contract-protected-agreement
+   {:required #{:provides :receives :has-counterparty :expects :is-protected-by}
+    :required-parameters {:is-protected-by {:framework "contract-law"}}
+    :prohibited #{}
+    :description "Agreement protected by contract law"
+    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue"}]
+    :note "Contract law enables parties to create legally binding agreements with enforceable terms."
+    :examples ["SP enters sales contract with legal protections"
+               "SP signs service agreement enforceable under contract law"]
+    :level 3}
+
+   :business-formation
+   {:required #{:provides :is-allowed-by}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :is-allowed-by {:framework "state-business-law"}}
+    :prohibited #{:receives}
+    :description "Business entity formation under state law"
+    :journal-entry [{:debit "Organization Costs" :credit "Cash"}]
+    :note "State business laws enable formation of LLCs, corporations, and other legal entities."
+    :examples ["SP forms LLC under state business law"
+               "SP incorporates business as permitted by state statutes"]
+    :level 3}
+
+   :gaap-compliant-reporting
+   {:required #{:is-allowed-by :is-required-by}
+    :required-parameters {:is-allowed-by {:framework "gaap"}
+                          :is-required-by {:framework "sec-regulations"}}
+    :prohibited #{}
+    :description "Financial reporting under GAAP/SEC requirements"
+    :journal-entry [{:debit "Reporting Expense" :credit "Accounts Payable"}]
+    :note "Public companies must report financials under GAAP as required by SEC regulations."
+    :examples ["SP prepares GAAP-compliant financial statements"
+               "SP files SEC-required quarterly report"]
+    :level 3}})
+
+;; ==================== Assertion-Account Mapping ====================
+;; Maps assertions and their parameters to accounts and JE effects.
+;; This enables the UI to show which assertion ties to which account.
+
+(def assertion-account-mapping
+  "Maps assertion patterns to their corresponding accounts and JE effects."
+  {:provides
+   {:monetary-unit {:account "Cash" :effect :credit :description "Providing cash"}
+    :physical-unit {:account "Revenue" :effect :credit :description "Providing goods/services"}}
+
+   :receives
+   {:monetary-unit {:account "Cash" :effect :debit :description "Receiving cash"}
+    :physical-unit {:accounts-by-asset-type
+                    {:inventory "Inventory"
+                     :equipment "Equipment (Fixed Asset)"
+                     :default "Asset"}
+                    :effect :debit
+                    :description "Receiving physical asset"}}
+
+   :requires
+   {:provides-monetary-unit {:account "Accounts Payable" :effect :credit
+                             :description "Obligation to pay (liability)"}
+    :provides-physical-unit {:account "Deferred Revenue (Liability)" :effect :credit
+                             :description "Obligation to deliver (liability)"}}
+
+   :expects
+   {:receives-monetary-unit {:account "Accounts Receivable" :effect :debit
+                             :description "Expected to receive payment (asset)"}
+    :receives-physical-unit {:account "Prepaid Expense (Asset)" :effect :debit
+                             :description "Expected to receive goods/services (asset)"}}})
+
+(defn resolve-assertion-to-account
+  "Given an assertion and its parameters, determine the linked account.
+   Returns a map with :account, :effect, and :description if a mapping exists."
+  [assertion-code params]
+  (case assertion-code
+    :has-counterparty
+    ;; Counterparty applies to both sides of the transaction
+    {:assertion :has-counterparty
+     :params params
+     :description "The other party to the transaction"}
+
+    :provides
+    (let [unit (or (:unit params) "monetary-unit")
+          mapping (get-in assertion-account-mapping [:provides (keyword unit)])]
+      (when mapping
+        (assoc mapping :assertion :provides :params params)))
+
+    :receives
+    (let [unit (or (:unit params) "monetary-unit")
+          asset-type (:asset-type params)]
+      (if (= unit "physical-unit")
+        (let [base-mapping (get-in assertion-account-mapping [:receives :physical-unit])
+              account (get-in base-mapping [:accounts-by-asset-type (keyword asset-type)]
+                              (get-in base-mapping [:accounts-by-asset-type :default]))]
+          {:account account
+           :effect (:effect base-mapping)
+           :description (:description base-mapping)
+           :assertion :receives
+           :params params})
+        (let [mapping (get-in assertion-account-mapping [:receives (keyword unit)])]
+          (when mapping
+            (assoc mapping :assertion :receives :params params)))))
+
+    :requires
+    (let [action (:action params)
+          unit (:unit params)
+          key (keyword (str action "-" unit))
+          mapping (get-in assertion-account-mapping [:requires key])]
+      (when mapping
+        (assoc mapping :assertion :requires :params params)))
+
+    :expects
+    (let [action (:action params)
+          unit (:unit params)
+          key (keyword (str action "-" unit))
+          mapping (get-in assertion-account-mapping [:expects key])]
+      (when mapping
+        (assoc mapping :assertion :expects :params params)))
+
+    ;; No mapping for other assertion types
+    nil))
+
+(defn build-assertion-linkages
+  "Build a map of assertion linkages from the selected assertions.
+   Returns a map of assertion-code -> linkage-data."
+  [assertions-map]
+  (into {}
+        (for [[code params] assertions-map
+              :let [linkage (resolve-assertion-to-account code params)]
+              :when linkage]
+          [code linkage])))
 
 (defn parameters-match?
   "Check if student parameters match required parameters for an assertion."
@@ -514,164 +956,456 @@
                                        #(- (count (get-in classifications [(:type %) :prohibited]))))
                                   all-distances)))]
 
-    {:exact-matches exact-matches
-     :closest closest
-     :feedback (cond
-                 (seq exact-matches)
-                 (let [match-key (first exact-matches)
-                       classification (get classifications match-key)
-                       ;; Check if this is the correct classification
-                       is-correct-match (or (nil? correct-classification)
-                                           (= match-key correct-classification))
-                       status (if is-correct-match :correct :incorrect)]
-                   {:status status
-                    :message (if is-correct-match
-                               (str "Correct! This is: " (:description classification))
-                               (str "Your assertions describe: " (:description classification)
-                                    " But that's not what this transaction is. Re-read the narrative."))
-                    :classification (when is-correct-match
-                                      ;; Augment journal entry with quantities from parameters
-                                      (update classification :journal-entry
-                                              augment-journal-entry assertions-map))
-                    :hints (when (not is-correct-match)
-                             (let [matched-desc (:description classification)
-                                   correct-desc (get-in classifications [correct-classification :description])]
-                               [(str "Your assertions describe: " matched-desc)
-                                (str "But this transaction is: " correct-desc)
-                                "Check what the entity is providing vs. receiving."]))})
+    ;; Build assertion linkages for all assertions
+    (let [linkages (build-assertion-linkages assertions-map)]
+      {:exact-matches exact-matches
+       :closest closest
+       :assertion-linkages linkages
+       :feedback (cond
+                   (seq exact-matches)
+                   (let [match-key (first exact-matches)
+                         classification (get classifications match-key)
+                         ;; Check if this is the correct classification
+                         is-correct-match (or (nil? correct-classification)
+                                             (= match-key correct-classification))
+                         status (if is-correct-match :correct :incorrect)]
+                     {:status status
+                      :message (if is-correct-match
+                                 (str "Correct! This is: " (:description classification))
+                                 (str "Your assertions describe: " (:description classification)
+                                      " But that's not what this transaction is. Re-read the narrative."))
+                      :classification (when is-correct-match
+                                        ;; Augment journal entry with quantities from parameters
+                                        (update classification :journal-entry
+                                                augment-journal-entry assertions-map))
+                      :assertion-linkages linkages
+                      :hints (when (not is-correct-match)
+                               (let [matched-desc (:description classification)
+                                     correct-desc (get-in classifications [correct-classification :description])]
+                                 [(str "Your assertions describe: " matched-desc)
+                                  (str "But this transaction is: " correct-desc)
+                                  "Check what the entity is providing vs. receiving."]))})
 
-                 closest
-                 (let [closest-classification (get classifications (:type closest))
-                       ;; Generate hints against correct classification if provided, otherwise closest
-                       hint-target (or correct-classification (:type closest))
-                       hint-data (generate-dynamic-hints assertions-map hint-target)
-                       dynamic-hints (format-hints hint-data)]
-                   {:status :incorrect
-                    :message (str "Your assertions are closest to: "
-                                 (:description closest-classification))
-                    :hints dynamic-hints})
+                   closest
+                   (let [closest-classification (get classifications (:type closest))
+                         ;; Generate hints against correct classification if provided, otherwise closest
+                         hint-target (or correct-classification (:type closest))
+                         hint-data (generate-dynamic-hints assertions-map hint-target)
+                         dynamic-hints (format-hints hint-data)]
+                     {:status :incorrect
+                      :message (str "Your assertions are closest to: "
+                                   (:description closest-classification))
+                      :assertion-linkages linkages
+                      :hints dynamic-hints})
 
-                 :else
-                 {:status :indeterminate
-                  :message "Unable to classify with current assertions. Try reviewing the transaction."})}))
+                   :else
+                   {:status :indeterminate
+                    :message "Unable to classify with current assertions. Try reviewing the transaction."})})))
 
 ;; Problem generation - using research assertions
 (def transaction-templates
   {:cash-inventory-purchase
-   {:narrative-template "SP purchases {inventory-type} from {vendor} for ${amount} cash."
-    :required-assertions {:provides {:unit "monetary-unit"}
-                          :receives {:unit "physical-unit" :asset-type "inventory"}
-                          :has-counterparty {}}
+   {:narrative-template "On {date}, SP purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "physical-unit" :asset-type "inventory" :quantity :quantity}
+                          :has-counterparty {:name :vendor}}
     :correct-classification :cash-inventory-purchase
     :level 0
-    :variables {:inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
                 :vendor ["Vendor-A" "TShirtVendor" "SupplyCo"]
+                :quantity [50 100 200 500]
                 :amount [500 1000 2000 3000 5000]}}
 
    :cash-equipment-purchase
-   {:narrative-template "SP purchases {equipment-type} from {vendor} for ${amount} cash."
-    :required-assertions {:provides {:unit "monetary-unit"}
-                          :receives {:unit "physical-unit" :asset-type "equipment"}
-                          :has-counterparty {}}
+   {:narrative-template "On {date}, SP purchases {equipment-type} from {vendor} for ${amount} cash."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "physical-unit" :asset-type "equipment" :quantity 1}
+                          :has-counterparty {:name :vendor}}
     :correct-classification :cash-equipment-purchase
     :level 0
-    :variables {:equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
                 :vendor ["OfficeSupplyCo" "EquipmentVendor" "TechSupply"]
                 :amount [2000 5000 8000 10000 12000 15000]}}
 
    :cash-sale
-   {:narrative-template "SP sells {product} to {customer} for ${amount} cash."
-    :required-assertions {:provides {:unit "physical-unit"}
-                          :receives {:unit "monetary-unit"}
-                          :has-counterparty {}}
+   {:narrative-template "On {date}, SP sells {quantity} {product} to {customer} for ${amount} cash."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "physical-unit" :quantity :quantity}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :customer}}
     :correct-classification :cash-sale
     :level 0
-    :variables {:product ["printed t-shirts" "custom apparel" "merchandise"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :product ["printed t-shirts" "custom apparel" "merchandise"]
                 :customer ["Customer-A" "Customer-B" "RetailStore-X"]
+                :quantity [10 25 50 100]
                 :amount [500 1000 2500 5000]}}
 
    :credit-inventory-purchase
-   {:narrative-template "SP receives {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
-    :required-assertions {:receives {:unit "physical-unit" :asset-type "inventory"}
-                          :has-counterparty {}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+   {:narrative-template "On {date}, SP receives {quantity} {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "physical-unit" :asset-type "inventory" :quantity :quantity}
+                          :has-counterparty {:name :vendor}
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :inventory-purchase-on-credit
     :level 1
-    :variables {:inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
                 :vendor ["Vendor-A" "TShirtVendor" "InkVendor"]
+                :quantity [50 100 200 500]
                 :amount [500 1000 2000 3000 5000]
                 :days [30 60 90]}}
 
    :credit-equipment-purchase
-   {:narrative-template "SP receives {equipment-type} from {vendor}, agreeing to pay ${amount} in {days} days."
-    :required-assertions {:receives {:unit "physical-unit" :asset-type "equipment"}
-                          :has-counterparty {}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "physical-unit" :asset-type "equipment" :quantity 1}
+                          :has-counterparty {:name :vendor}
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :equipment-purchase-on-credit
     :level 1
-    :variables {:equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
                 :vendor ["OfficeSupplyCo" "EquipmentVendor" "TechSupply"]
                 :amount [5000 8000 10000 12000 15000]
                 :days [30 60 90]}}
 
    :credit-sale
-   {:narrative-template "SP provides {product} to {customer}, expecting payment of ${amount} in {days} days."
-    :required-assertions {:provides {:unit "physical-unit"}
-                          :has-counterparty {}
-                          :expects {:action "receives" :unit "monetary-unit"}}
+   {:narrative-template "On {date}, SP provides {quantity} {product} to {customer}, expecting payment of ${amount} in {days} days."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "physical-unit" :quantity :quantity}
+                          :has-counterparty {:name :customer}
+                          :expects {:action "receives" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :sale-on-credit
     :level 1
-    :variables {:product ["printed t-shirts" "custom designs" "merchandise"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :product ["printed t-shirts" "custom designs" "merchandise"]
                 :customer ["Customer-A" "RegularCustomer-001" "RetailStore-X"]
+                :quantity [10 25 50 100]
                 :amount [500 1000 2500 5000 7500]
                 :days [30 60 90]}}
 
    :prepayment
-   {:narrative-template "SP receives ${amount} advance payment from {customer} for {service} to be delivered in {days} days."
-    :required-assertions {:receives {:unit "monetary-unit"}
-                          :has-counterparty {}
+   {:narrative-template "On {date}, SP receives ${amount} advance payment from {customer} for {service} to be delivered in {days} days."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :customer}
                           :requires {:action "provides" :unit "physical-unit"}}
     :correct-classification :deferred-revenue
     :level 1
-    :variables {:customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
                 :service ["custom t-shirt printing services" "merchandise fulfillment" "a bulk order"]
                 :amount [2000 5000 10000 15000 20000]
                 :days [30 60 90 180]}}
 
    :prepaid-expense-transaction
-   {:narrative-template "SP pays ${amount} to {vendor} for {service} covering the next {months} months."
-    :required-assertions {:provides {:unit "monetary-unit"}
-                          :has-counterparty {}
+   {:narrative-template "On {date}, SP pays ${amount} to {vendor} for {service} covering the next {months} months."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :vendor}
                           :expects {:action "receives" :unit "physical-unit"}}
     :correct-classification :prepaid-expense
     :level 1
-    :variables {:vendor ["InsuranceCo" "Landlord" "ServiceProvider"]
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :vendor ["InsuranceCo" "Landlord" "ServiceProvider"]
                 :service ["insurance coverage" "rent" "maintenance services"]
                 :amount [3000 6000 9000 12000 18000]
                 :months [3 6 12 24]}}
 
-   :production-event
-   {:narrative-template "SP uses {input} and ink to create {output}."
-    :required-assertions #{:consumes :creates}
+   ;; ==================== Level 2: Transformation Templates ====================
+   ;; Key teaching point: Transformations have NO counterparty - internal processes
+   ;; Detailed production templates use specific assertions with costs for JE derivation
+
+   :production-tshirt-printing
+   {:narrative-template "On {date}, SP prints {quantity} t-shirts using the following resources:
+• {quantity} blank t-shirts from inventory @ ${tshirt-cost} each
+• {ink-quantity} oz of ink @ ${ink-cost} per oz
+• {labor-hours} hours of labor @ ${labor-rate}/hour
+• The t-shirt printer (purchased earlier)
+
+The printed t-shirts are now finished goods ready for sale."
+    :required-assertions {:has-date {:date :date}
+                          :consumes-inventory {:item "blank t-shirts" :quantity :quantity :unit-cost :tshirt-cost}
+                          :consumes-supplies {:item "ink" :quantity :ink-quantity :unit-cost :ink-cost}
+                          :consumes-labor {:hours :labor-hours :rate :labor-rate}
+                          :uses-equipment {:equipment "t-shirt printer"}
+                          :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
+    :correct-classification :production-full
     :level 2
-    :variables {:input ["blank t-shirts" "unprinted inventory"]
-                :output ["printed t-shirts" "finished products"]}}
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50]
+                :tshirt-cost [4 5 6]
+                :ink-quantity [5 10 25]      ;; oz of ink used
+                :ink-cost [2 2.50 3]         ;; cost per oz
+                :labor-hours [1 2 4]
+                :labor-rate [15 18 20]}}
+
+   :production-simple-printing
+   {:narrative-template "On {date}, SP's production team prints {quantity} custom t-shirts:
+• {quantity} blank t-shirts @ ${tshirt-cost} each
+• {labor-hours} hours of labor @ ${labor-rate}/hour
+• Using the t-shirt printer
+
+The printed t-shirts are now finished goods ready for sale."
+    :required-assertions {:has-date {:date :date}
+                          :consumes-inventory {:item "blank t-shirts" :quantity :quantity :unit-cost :tshirt-cost}
+                          :consumes-labor {:hours :labor-hours :rate :labor-rate}
+                          :uses-equipment {:equipment "t-shirt printer"}
+                          :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
+    :correct-classification :production-inventory-labor
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50 100]
+                :tshirt-cost [4 5 6]
+                :labor-hours [1 2 3 4]
+                :labor-rate [15 18 20]}}
+
+   ;; Simpler templates using generic assertions (for introductory problems)
+   :production-raw-to-wip
+   {:narrative-template "On {date}, SP takes {quantity} {raw-material} from inventory and begins the printing process. The blank shirts are now in production but not yet complete."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "raw-materials"}
+                          :creates {:unit "work-in-process"}}
+    :correct-classification :production-raw-to-wip
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50 100 200]
+                :raw-material ["blank t-shirts" "unprinted shirts" "blank merchandise"]}}
+
+   :production-wip-to-finished
+   {:narrative-template "On {date}, SP completes the printing and packaging of {quantity} t-shirts. The shirts are now ready for sale."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "work-in-process"}
+                          :creates {:unit "finished-goods"}}
+    :correct-classification :production-wip-to-finished
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50 100 200]}}
+
+   :production-direct
+   {:narrative-template "On {date}, SP prints and packages {quantity} {product} in a single operation, converting raw materials directly into finished goods ready for sale."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "raw-materials"}
+                          :creates {:unit "finished-goods"}}
+    :correct-classification :production-direct
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50 100]
+                :product ["t-shirts" "custom apparel items" "printed merchandise"]}}
+
+   :production-labor
+   {:narrative-template "On {date}, SP's production staff spends {hours} hours operating the printing equipment, applying their labor to the manufacturing process."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "effort"}
+                          :creates {:unit "work-in-process"}}
+    :correct-classification :production-with-labor
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :hours [2 4 8 16 40]}}
+
+   :supplies-used
+   {:narrative-template "On {date}, SP uses {supplies} during the printing process. These supplies are consumed to produce the printed shirts."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "supplies"}
+                          :creates {:unit "work-in-process"}}
+    :correct-classification :supplies-consumption
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :supplies ["ink cartridges" "specialty inks" "printing supplies" "packaging materials"]}}
+
+   :design-creation
+   {:narrative-template "On {date}, SP's designer spends {hours} hours creating a new {design-type} for the upcoming product line."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}}
+    :correct-classification :design-creation
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :hours [4 8 16 24 40]
+                :design-type ["t-shirt design" "logo" "artwork" "graphic design" "product concept"]}}
+
+   :service-creation
+   {:narrative-template "On {date}, SP's team spends {hours} hours providing {service} to fulfill a customer order."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "effort"}
+                          :creates {:unit "service-output"}}
+    :correct-classification :service-delivery
+    :level 2
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :hours [2 4 8 16]
+                :service ["custom printing services" "design consultation" "rush order processing"]}}
 
    :capability-purchase
-   {:narrative-template "SP purchases {equipment} for ${amount}, which allows SP to {capability}."
-    :required-assertions #{:provides :receives :has-counterparty :allows}
+   {:narrative-template "On {date}, SP purchases {equipment} from {vendor} for ${amount} cash, which allows SP to {capability} in the future."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit"}
+                          :receives {:unit "physical-unit" :asset-type "equipment"}
+                          :has-counterparty {:name :vendor}
+                          :allows {}}
+    :correct-classification :capability-acquisition
     :level 2
-    :variables {:equipment ["a t-shirt printer" "production equipment" "an ink cartridge system"]
-                :capability ["print custom t-shirts" "produce merchandise" "create designs"]
-                :amount [5000 8000 12000 15000]}}})
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :equipment ["a t-shirt printer" "production equipment" "an embroidery machine" "a heat press"]
+                :vendor ["EquipmentVendor" "MachinerySupply" "PrinterCo"]
+                :capability ["print custom t-shirts" "produce merchandise" "create embroidered items" "apply transfers"]
+                :amount [5000 8000 12000 15000 20000]}}
+
+   ;; ==================== Level 3: Legal & Regulatory Templates ====================
+   ;; Key teaching point: Business events exist within legal frameworks
+
+   :ucc-sale
+   {:narrative-template "On {date}, SP sells {quantity} {product} to {customer} for ${amount}. This commercial transaction is conducted under the standard framework of the Uniform Commercial Code."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "physical-unit"}
+                          :receives {:unit "monetary-unit"}
+                          :has-counterparty {:name :customer}
+                          :is-allowed-by {:framework "ucc"}}
+    :correct-classification :sale-under-ucc
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :quantity [10 25 50 100]
+                :product ["printed t-shirts" "custom merchandise" "branded apparel"]
+                :customer ["RetailCo" "WholesaleBuyer" "CorporateClient"]
+                :amount [500 1000 2500 5000]}}
+
+   :hire-employee
+   {:narrative-template "On {date}, SP hires {employee} as a {position}, agreeing to pay ${wage}/hour. This employment relationship is governed by federal and state employment laws including minimum wage requirements."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit"}
+                          :receives {:unit "effort"}
+                          :has-counterparty {:name :employee}
+                          :is-allowed-by {:framework "employment-law"}
+                          :is-required-by {:framework "employment-law"}}
+    :correct-classification :employment-under-law
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :employee ["Alex" "Jordan" "Taylor" "Morgan"]
+                :position ["production assistant" "designer" "sales associate" "warehouse worker"]
+                :wage [15 18 20 25]}}
+
+   :copyright-design
+   {:narrative-template "On {date}, SP's designer spends {hours} hours creating an original {design-type}. As an original creative work, this design is automatically protected by copyright law."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}
+                          :is-protected-by {:framework "copyright"}}
+    :correct-classification :copyright-protected-creation
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :hours [8 16 24 40]
+                :design-type ["t-shirt graphic" "logo design" "illustration" "pattern artwork"]}}
+
+   :trademark-brand
+   {:narrative-template "On {date}, SP develops a distinctive {brand-element} for the company. SP registers this as a trademark to protect the brand identity in commerce."
+    :required-assertions {:has-date {:date :date}
+                          :consumes {:unit "effort"}
+                          :creates {:unit "intellectual-property"}
+                          :is-protected-by {:framework "trademark"}}
+    :correct-classification :trademark-protected-brand
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
+
+   :pay-taxes
+   {:narrative-template "On {date}, SP calculates and pays ${amount} in {tax-type} as required by the tax code. Failure to pay would result in penalties and interest."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit"}
+                          :is-required-by {:framework "tax-code"}}
+    :correct-classification :tax-required-filing
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :amount [500 1000 2500 5000 10000]
+                :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
+
+   :business-license
+   {:narrative-template "On {date}, SP pays ${amount} to obtain a {license-type}. This is required by {authority} regulations to operate legally."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit"}
+                          :is-required-by {:framework "industry-regs"}}
+    :correct-classification :regulatory-compliance
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :amount [100 250 500 1000]
+                :license-type ["business license" "seller's permit" "occupational license" "zoning permit"]
+                :authority ["city" "county" "state" "federal"]}}
+
+   :form-llc
+   {:narrative-template "On {date}, SP pays ${amount} to the state to form an LLC (Limited Liability Company). State business law enables this legal structure that protects the owner's personal assets."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit"}
+                          :is-allowed-by {:framework "state-business-law"}}
+    :correct-classification :business-formation
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :amount [100 150 250 500]}}
+
+   :contract-sale
+   {:narrative-template "On {date}, SP enters into a written contract with {customer} to provide {product} for ${amount}, with payment expected in {days} days. The contract is legally enforceable under contract law."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "physical-unit"}
+                          :receives {:unit "monetary-unit"}
+                          :has-counterparty {:name :customer}
+                          :expects {:action "receives" :unit "monetary-unit"}
+                          :is-protected-by {:framework "contract-law"}}
+    :correct-classification :contract-protected-agreement
+    :level 3
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]
+                :product ["custom merchandise" "bulk t-shirt order" "branded apparel"]
+                :amount [5000 10000 25000 50000]
+                :days [30 60 90]}}})
+
+(def month-names
+  ["January" "February" "March" "April" "May" "June"
+   "July" "August" "September" "October" "November" "December"])
+
+(defn format-iso-date
+  "Convert ISO date (2025-01-15) to readable format (January 15, 2025)."
+  [iso-date]
+  (if (and iso-date (re-matches #"\d{4}-\d{2}-\d{2}" iso-date))
+    (let [[year month day] (clojure.string/split iso-date #"-")
+          month-idx (dec (Integer/parseInt month))
+          day-num (Integer/parseInt day)]
+      (str (nth month-names month-idx) " " day-num ", " year))
+    iso-date))
 
 (defn apply-template
-  "Replace {variables} in template string with actual values."
+  "Replace {variables} in template string with actual values.
+   Dates in ISO format are converted to readable format."
   [template vars]
   (reduce (fn [s [k v]]
-            (clojure.string/replace s (str "{" (name k) "}") (str v)))
+            (let [display-value (if (= k :date) (format-iso-date v) v)]
+              (clojure.string/replace s (str "{" (name k) "}") (str display-value))))
           template
           vars))
+
+(defn resolve-assertion-values
+  "Resolve variable references in required-assertions.
+   When a value is a keyword that matches a variable key, substitute it.
+   Otherwise, keep the value as-is.
+   Handles nested maps (assertions with multiple parameters)."
+  [required-assertions vars]
+  (letfn [(resolve-value [v]
+            (if (and (keyword? v) (contains? vars v))
+              (get vars v)
+              v))
+          (resolve-map [m]
+            (into {} (for [[k v] m]
+                       [k (cond
+                            (map? v) (resolve-map v)
+                            :else (resolve-value v))])))]
+    (if (map? required-assertions)
+      (into {} (for [[assertion-key assertion-params] required-assertions]
+                 [assertion-key (if (map? assertion-params)
+                                  (resolve-map assertion-params)
+                                  (resolve-value assertion-params))]))
+      ;; For set-based assertions (old format), return as-is
+      required-assertions)))
 
 (defn generate-problem
   "Generate a random problem at the specified level.
@@ -700,11 +1434,15 @@
                                  (:journal-entry classification))
                             (:journal-entry classification))))
 
+        ;; Resolve variable references in required-assertions
+        resolved-assertions (resolve-assertion-values (:required-assertions template) vars)
+
         base-problem {:id (str (random-uuid))
                       :template template-key
-                      :correct-assertions (:required-assertions template)
+                      :correct-assertions resolved-assertions
                       :correct-classification (:correct-classification template)
-                      :level level
+                      :level level                        ; Student's current level
+                      :template-level (:level template)   ; Template's difficulty level
                       :variables vars
                       :problem-type problem-type}]
 

@@ -5,19 +5,40 @@
 ;; Application state
 (defonce app-state
   (r/atom
-   {:current-problem nil
+   {;; Authentication
+    :user nil              ; User map: {:id, :email}
+    :session-token nil     ; UUID string for API auth
+    :logged-in? false
+    :login-error nil
+
+    ;; Progress tracking
+    :progress nil          ; {:current-level, :unlocked-levels, :level-stats}
+
+    ;; Problem state
+    :current-problem nil
     :available-assertions {}
-    :selected-assertions {}  ; Changed from set to map to store parameters
+    :selected-assertions {}  ; Map to store parameters
     :feedback nil
     :current-level 0
     :problem-type "forward"  ; "forward", "reverse", or "construct"
     :unlocked-levels #{0}
     :loading? false
     :error nil
+
     ;; Journal entry construction fields
     :je-debit-account nil
     :je-credit-account nil
-    :je-amount nil}))
+    :je-amount nil
+
+    ;; App mode: :practice or :simulation
+    :app-mode :practice
+
+    ;; Business Simulation state
+    :simulation {:business-state nil      ; Current business state
+                 :pending-transaction nil  ; Transaction awaiting classification
+                 :available-actions []     ; Actions user can take
+                 :ledger []                ; Completed transactions
+                 :user-level 0}}))
 
 ;; State accessors
 (defn current-problem []
@@ -90,3 +111,145 @@
   {:debit-account (:je-debit-account @app-state)
    :credit-account (:je-credit-account @app-state)
    :amount (:je-amount @app-state)})
+
+;; ==================== Authentication ====================
+
+(defn user []
+  (:user @app-state))
+
+(defn session-token []
+  (:session-token @app-state))
+
+(defn logged-in? []
+  (:logged-in? @app-state))
+
+(defn login-error []
+  (:login-error @app-state))
+
+(defn progress []
+  (:progress @app-state))
+
+(defn unlocked-levels []
+  (:unlocked-levels @app-state))
+
+(defn set-user!
+  "Set user info after successful login. Updates all auth-related state."
+  [user-data]
+  (let [unlocked (set (:unlocked-levels user-data [0]))]
+    (swap! app-state assoc
+           :user {:id (:user-id user-data)
+                  :email (:email user-data)}
+           :session-token (:session-token user-data)
+           :logged-in? true
+           :login-error nil
+           :current-level (:current-level user-data 0)
+           :unlocked-levels unlocked
+           :progress {:current-level (:current-level user-data 0)
+                      :unlocked-levels (vec unlocked)
+                      :level-stats (:level-stats user-data {})})))
+
+(defn set-login-error! [error]
+  (swap! app-state assoc :login-error error))
+
+(defn clear-login-error! []
+  (swap! app-state assoc :login-error nil))
+
+(defn logout!
+  "Clear all auth state and reset to logged-out state."
+  []
+  (swap! app-state assoc
+         :user nil
+         :session-token nil
+         :logged-in? false
+         :login-error nil
+         :progress nil
+         :current-level 0
+         :unlocked-levels #{0}))
+
+(defn update-progress!
+  "Update progress state from server response.
+   Note: Does NOT update :current-level - that's user-controlled via the dropdown.
+   The server's current-level represents the user's 'home' level, but the UI
+   level should persist until the user explicitly changes it."
+  [progress-data]
+  (let [unlocked (set (:unlocked-levels progress-data [0]))]
+    ;; Only update progress and unlocked-levels, never change current-level
+    ;; User controls their level via the dropdown
+    (swap! app-state assoc
+           :progress progress-data
+           :unlocked-levels unlocked)))
+
+;; ==================== App Mode ====================
+
+(defn app-mode []
+  (:app-mode @app-state))
+
+(defn set-app-mode! [mode]
+  (swap! app-state assoc :app-mode mode))
+
+(defn simulation-mode? []
+  (= :simulation (:app-mode @app-state)))
+
+(defn practice-mode? []
+  (= :practice (:app-mode @app-state)))
+
+;; ==================== Business Simulation ====================
+
+(defn business-state []
+  (get-in @app-state [:simulation :business-state]))
+
+(defn pending-transaction []
+  (get-in @app-state [:simulation :pending-transaction]))
+
+(defn simulation-available-actions []
+  (get-in @app-state [:simulation :available-actions]))
+
+(defn ledger []
+  (get-in @app-state [:simulation :ledger]))
+
+(defn simulation-user-level []
+  (get-in @app-state [:simulation :user-level]))
+
+(defn set-simulation-state!
+  "Update entire simulation state from server response."
+  [sim-state]
+  (swap! app-state update :simulation merge
+         {:business-state (:business-state sim-state)
+          :pending-transaction (:pending-transaction sim-state)
+          :available-actions (:available-actions sim-state)
+          :user-level (:user-level sim-state)}))
+
+(defn set-business-state! [state]
+  (swap! app-state assoc-in [:simulation :business-state] state))
+
+(defn set-pending-transaction! [tx]
+  (swap! app-state assoc-in [:simulation :pending-transaction] tx))
+
+(defn set-simulation-available-actions! [actions]
+  (swap! app-state assoc-in [:simulation :available-actions] actions))
+
+(defn set-ledger! [entries]
+  (swap! app-state assoc-in [:simulation :ledger] entries))
+
+(defn clear-pending-transaction! []
+  (swap! app-state assoc-in [:simulation :pending-transaction] nil))
+
+(defn update-simulation-after-classify!
+  "Update simulation state after a classify response."
+  [response]
+  (when (:business-state response)
+    (set-business-state! (:business-state response)))
+  (when (:available-actions response)
+    (set-simulation-available-actions! (:available-actions response)))
+  (swap! app-state assoc-in [:simulation :pending-transaction]
+         (:pending-transaction response)))
+
+(defn reset-simulation!
+  "Reset simulation state to initial values."
+  []
+  (swap! app-state assoc :simulation
+         {:business-state nil
+          :pending-transaction nil
+          :available-actions []
+          :ledger []
+          :user-level 0}))

@@ -14,11 +14,11 @@
 
 (defn ^:export init []
   (println "Initializing Assertive Accounting App...")
-  ;; Load initial data
-  (api/fetch-assertions! 0)
-  (api/fetch-problem! 0)
-  ;; Mount the app
-  (mount-root))
+  ;; Mount the app first
+  (mount-root)
+  ;; Try to restore session from localStorage
+  ;; This will fetch assertions and problems if session is valid
+  (api/restore-session!))
 
 (defn ^:dev/after-load reload []
   (mount-root))

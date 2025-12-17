@@ -222,14 +222,231 @@ Complete implementation of SP's t-shirt company as Clojure data structures (maps
 **Technology Stack:**
 - Frontend: ClojureScript + Reagent (React wrapper) + shadow-cljs
 - Backend: Clojure + Ring + Compojure
-- Database: PostgreSQL (JSON support, full-text search)
-- State Management: Reagent atoms (pilot), re-frame (production)
-- Analytics: Vega/Vega-Lite for visualizations
+- Database: Datomic (shared transactor with Accrue system)
+- State Management: Reagent atoms
+- Build: shadow-cljs with hot reloading
 
 **Scope:**
 - Introduction to Financial Accounting through Advanced Analytics
 - Progressive assertion mastery across multiple courses
 - Longitudinal learning analytics and research data collection
+
+## Business Simulation Mode (NEW)
+
+AALP now supports a **Business Simulation Mode** that transforms the platform from disposable practice exercises into a persistent business simulation game.
+
+### Vision
+
+Students manage "SP's t-shirt company" by:
+- Building their own transaction ledger through correctly-classified transactions
+- Selecting actions from available choices ("What should SP do next?")
+- Retrying failed transactions until correct (authentic to real accounting)
+- Facing realistic dependency constraints (can't sell inventory before purchasing it)
+- Progressing through a time/move-based simulation with unlockable actions
+
+### Key Differences from Practice Mode
+
+| Aspect | Practice Mode | Simulation Mode |
+|--------|--------------|-----------------|
+| Problems | Disposable - new random problem each time | Persistent - must complete current transaction |
+| State | No business state | Tracks cash, inventory, A/P, A/R |
+| Ledger | No history | Personal transaction ledger |
+| Wrong answers | Get feedback, move on | Must retry same transaction |
+| Progression | Level-based unlocking | Level + business state prerequisites |
+
+### Simulation Actions
+
+**Level 0-1 (Purchases):**
+- `purchase-materials-cash` - Buy raw materials for cash
+- `purchase-materials-credit` - Buy raw materials on account
+- `purchase-equipment-cash` - Buy equipment for cash
+- `purchase-equipment-credit` - Buy equipment on account
+- `pay-vendor` - Pay down accounts payable (when A/P exists)
+
+**Level 2 (Production & Sales):**
+- `produce-tshirts` - Create finished goods (requires materials + equipment)
+- `sell-tshirts-cash` - Sell for cash (requires finished goods)
+- `sell-tshirts-credit` - Sell on account (requires finished goods)
+- `collect-receivable` - Collect accounts receivable (when A/R exists)
+
+### Business State Tracking
+
+The simulation tracks:
+- **Cash**: Starting capital of $10,000
+- **Raw Materials**: Units of blank t-shirts
+- **Finished Goods**: Units of printed t-shirts
+- **Equipment**: Set of owned equipment (e.g., t-shirt printer)
+- **Accounts Payable**: Map of vendor -> amount owed
+- **Accounts Receivable**: Map of customer -> amount owed
+- **Simulation Date**: Current in-game date
+
+### Action Prerequisites
+
+Actions become available based on:
+1. **User Level**: Must have unlocked the required level
+2. **Cash**: Minimum cash for purchases (e.g., $100 for materials)
+3. **Materials**: Raw materials needed for production
+4. **Finished Goods**: Inventory needed for sales
+5. **Equipment**: Specific equipment for production
+6. **Obligations**: A/P or A/R must exist for payment/collection
+
+### Retry Until Correct
+
+When a student submits an incorrect classification:
+1. Feedback shows what was wrong
+2. The same transaction remains pending
+3. Attempt count increments
+4. Student must try again with same transaction
+5. Only correct classification advances the business
+
+### Personal Ledger
+
+Correctly-classified transactions are recorded in the student's ledger with:
+- Transaction date
+- Action type
+- Narrative
+- Variables used
+- Assertion selections
+- Resulting journal entry
+
+### Implementation Files
+
+**Backend:**
+- `simulation.clj` - Business simulation engine
+  - Action definitions with prerequisites and effects
+  - Business state management
+  - Transaction generation
+  - Ledger persistence
+
+**Frontend:**
+- `state.cljs` - Added simulation state and mode toggle
+- `api.cljs` - Added simulation API functions
+- `views.cljs` - Added business dashboard, action panel, ledger view
+
+**Database (schema.clj):**
+- `:business-state/*` - Business state entity
+- `:pending-tx/*` - Pending transaction entity
+- `:ledger-entry/*` - Ledger entry entity
+
+### API Endpoints
+
+```
+GET  /api/simulation/state          - Get business state and available actions
+POST /api/simulation/start-action   - Start a new action
+POST /api/simulation/classify       - Submit classification (retry if wrong)
+GET  /api/simulation/ledger         - Get transaction history
+POST /api/simulation/reset          - Reset simulation to initial state
+POST /api/simulation/advance-period - Advance to next period
+```
+
+## Development Setup
+
+### Starting the Services
+
+```bash
+# From aalp/ directory:
+
+# 1. Start the backend (requires Datomic transactor to be running)
+./start-backend.sh > /tmp/aalp.log 2>&1 &
+
+# Or restart (kills existing processes first)
+./restart-backend.sh > /tmp/aalp.log 2>&1 &
+
+# 2. Start the frontend with hot reloading
+npx shadow-cljs watch app
+```
+
+**CRITICAL: Always use `start-backend.sh` or `restart-backend.sh` to start the backend.**
+
+Do NOT start the backend manually with:
+```bash
+# WRONG - shell escaping issues with ! character cause URISyntaxException
+DATOMIC_DB_PASSWORD='ms&MWh@!8@70' clojure -M -m assertive-app.server
+```
+
+The `!` character triggers shell history expansion in some contexts, causing the password to be mangled (e.g., `\%21` instead of `%21`). The `start-backend.sh` script properly handles this.
+
+### Development Ports
+
+| Service | Port | URL |
+|---------|------|-----|
+| Backend API | 3000 | http://localhost:3000/api |
+| Frontend (shadow-cljs) | 8081 | http://localhost:8081 |
+| shadow-cljs dashboard | 9630 | http://localhost:9630 |
+| nREPL | 7888 | For Emacs/CIDER connection |
+
+### Remote Access (via nginx)
+
+- **AALP App:** http://arcweb01.rs.gsu.edu/aalp/
+- **API:** http://arcweb01.rs.gsu.edu/aalp/api/
+- **WebSocket (hot reload):** ws://arcweb01.rs.gsu.edu/aalp-ws/
+
+### Known Issues & Fixes
+
+#### nginx IPv6 Resolution Issue
+nginx may resolve `localhost` to IPv6 (`[::1]`) but the backend only listens on IPv4. The nginx config in `/etc/nginx/nginx.conf` uses explicit `127.0.0.1` for AALP routes:
+```nginx
+location /aalp/api/ {
+    proxy_pass http://127.0.0.1:3000/api/;  # NOT localhost!
+    ...
+}
+```
+
+#### Database Password URL Encoding
+The Datomic password contains special characters (`ms&MWh@!8@70`). In `schema.clj`, these are URL-encoded:
+- `&` → `%26`
+- `@` → `%40`
+- `!` → `%21`
+
+If you see `URISyntaxException` errors about illegal characters, check that all special characters are properly encoded.
+
+#### Backend Route Handler Pattern
+**AVOID** this pattern - it returns `nil` for authenticated users:
+```clojure
+;; WRONG - two separate when expressions
+(when-let [user (:user request)]
+  (response/response {...}))
+(when-not (:user request)
+  (response/response {...}))
+```
+
+**USE** `if-let` instead:
+```clojure
+;; CORRECT - single if-let/else
+(if-let [user (:user request)]
+  (response/response {...with-progress...})
+  (response/response {...without-progress...}))
+```
+
+#### Frontend JSON Key Lookup
+When cljs-ajax parses JSON with `keywords? true`, numeric string keys like `"0"` become keywords like `:0`. Use `(keyword (str level))` for lookups:
+```clojure
+;; WRONG
+(get-in progress [:level-stats level] {})        ; level is integer
+(get-in progress [:level-stats (str level)] {})  ; string doesn't match
+
+;; CORRECT
+(get-in progress [:level-stats (keyword (str level))] {})  ; :0, :1, etc.
+```
+
+#### Session Token Testing Warning
+**Do not test the `/api/login` endpoint with a real user's email** - it replaces their session token and invalidates their browser session. Use a test email like `test@test.com` instead.
+
+### Memory Constraints
+
+The server has limited RAM (~4GB) with no swap. When running multiple Java processes (Datomic transactor, Accrue backend, AALP backend, shadow-cljs), memory can become constrained.
+
+**Diagnostic commands:**
+```bash
+free -m                           # Check available memory
+ps aux --sort=-%mem | head -10    # Top memory consumers
+pgrep -f "java" | xargs ps -o pid,rss,cmd -p  # Java process memory
+```
+
+**If backend won't start:**
+1. Check if another instance is already running: `pgrep -f assertive`
+2. Check memory availability: `free -m`
+3. Kill orphan processes if needed: `pkill -f assertive`
 
 ### Core Pedagogical Model
 
@@ -387,79 +604,94 @@ Level 0 (Basic Existence & Control)
 - **Generated variations**: Same assertion structure, randomized details
 - **Transfer problems**: Novel contexts requiring assertion application
 
-### Data Schema
+### Data Schema (Datomic)
 
-**Core tables:**
+The platform uses Datomic for persistence, shared with the Accrue system.
 
-**users**: id, email, name, institution, role
+**User Entity:**
+- `:user/id` - UUID (unique identity)
+- `:user/email` - Email address (unique identity)
+- `:user/current-level` - Current level (0-based)
+- `:user/unlocked-levels` - EDN string of unlocked level set
+- `:user/level-stats` - EDN string of per-level statistics
+- `:user/session-token` - Current session token (UUID)
+- `:user/problem-history` - EDN string of attempt history
 
-**courses**: id, code, name, level, institution, term
+**Business State Entity (Simulation Mode):**
+- `:business-state/user` - Reference to user (unique identity)
+- `:business-state/cash` - BigDecimal cash balance
+- `:business-state/raw-materials` - Long units count
+- `:business-state/finished-goods` - Long units count
+- `:business-state/equipment` - EDN string of equipment set
+- `:business-state/accounts-payable` - EDN string map (vendor -> amount)
+- `:business-state/accounts-receivable` - EDN string map (customer -> amount)
+- `:business-state/simulation-date` - String date in simulation
 
-**enrollments**: id, user_id, course_id, enrolled_at
+**Pending Transaction Entity:**
+- `:pending-tx/user` - Reference to user (unique identity)
+- `:pending-tx/action-type` - Keyword action type
+- `:pending-tx/narrative` - String transaction narrative
+- `:pending-tx/variables` - EDN string of variable values
+- `:pending-tx/correct-assertions` - EDN string of correct assertions
+- `:pending-tx/attempts` - Long attempt count
+- `:pending-tx/template-key` - Keyword template reference
+- `:pending-tx/problem-id` - UUID for tracking
 
-**assertions**:
-- id, code (keyword), domain, level
-- natural_language (display text)
-- formal_notation (optional)
-- introduced_in_course, version
+**Ledger Entry Entity:**
+- `:ledger-entry/id` - UUID (unique identity)
+- `:ledger-entry/user` - Reference to user
+- `:ledger-entry/date` - String in-simulation date
+- `:ledger-entry/action-type` - Keyword action type
+- `:ledger-entry/narrative` - String transaction narrative
+- `:ledger-entry/variables` - EDN string of variable values
+- `:ledger-entry/assertions` - EDN string of assertion selections
+- `:ledger-entry/journal-entry` - EDN string (debit, credit, amount)
+- `:ledger-entry/template-key` - Keyword template reference
 
-**transaction_templates**:
-- id, type (anchor/variation), course_level, branch
-- narrative_template, variables (jsonb)
-- correct_assertions (array of UUIDs)
-- difficulty, prerequisites (array)
+**Note:** Complex data types (maps, sets) are stored as EDN strings due to Datomic's type system.
 
-**problems** (generated instances):
-- id, template_id, narrative
-- variables (jsonb - actual values)
-- correct_assertions (array)
-- course_id, assigned_at
-
-**student_progress**:
-- id, user_id, course_id
-- unlocked_assertions (array), unlocked_branches (array)
-- completed_branches (array), current_level
-
-**problem_attempts**:
-- id, user_id, problem_id
-- selected_assertions (array)
-- correct (boolean)
-- attempt_number, time_spent_seconds
-- started_at, completed_at, hint_used (boolean)
-
-**Analytics extension tables:**
+**Future Analytics Tables (Planned):**
 
 **transaction_datasets**:
 - id, name, description, course_id
-- entity_context (jsonb), period_start, period_end
+- entity_context, period_start, period_end
 - transaction_count
 
 **transactions** (for analytics courses):
 - id, dataset_id, date, narrative
 - entity, amount
 - assertions (array of UUIDs)
-- accounts_affected (jsonb - bridge to traditional)
-- metadata (jsonb)
+- accounts_affected (bridge to traditional)
 
 **analytics_assignments**:
 - id, course_id, dataset_id
-- objective (text), required_assertions (array)
+- objective, required_assertions
 - query_template, due_date
 
 **analytics_submissions**:
 - id, assignment_id, user_id
-- query (student's SQL), results (jsonb)
-- assertion_filters (array), submitted_at, grade
+- query (student's SQL), results
+- assertion_filters, submitted_at, grade
 
 ### Implementation Phases
 
-**Phase 1 - Pilot (20-24 hours development time):**
-- Scope: Introduction to Financial Accounting, single section
-- Core classification engine and assertion matching logic
-- Three-column UI with Reagent
-- 3 assertion levels, 2 branches, 15-18 problems total
-- Simple data logging (flat files or basic PostgreSQL)
-- Focus: Pedagogical validation and user feedback
+**Phase 1 - Core Platform (COMPLETE):**
+- [x] Core classification engine and assertion matching logic
+- [x] Three-column UI with Reagent
+- [x] 3 assertion levels (0, 1, 2)
+- [x] User authentication with email and session tokens
+- [x] Progress tracking with level unlocking
+- [x] Datomic database integration
+- [x] Problem templates with variable substitution
+- [x] Hints system for incorrect answers
+
+**Phase 1.5 - Business Simulation (COMPLETE):**
+- [x] Business simulation mode with action selection
+- [x] Personal transaction ledger
+- [x] Business state tracking (cash, inventory, A/P, A/R)
+- [x] Action prerequisites based on business state
+- [x] Retry-until-correct for pending transactions
+- [x] Mode toggle between Practice and Simulation
 
 **Pilot structure:**
 1. Transaction 1: Pure tutorial with guidance
@@ -473,12 +705,13 @@ Level 0 (Basic Existence & Control)
 - Attempt count before correct
 - Post-pilot survey (1-5 scale + open-ended)
 
-**Phase 2 - Multi-Course Expansion:**
-- Multiple intro sections
-- Intermediate course integration
-- Expanded assertion library (measurement, disclosure)
-- Longitudinal tracking across courses
-- Instructor dashboard for diagnostics
+**Phase 2 - Simulation Enhancements (In Progress):**
+- [ ] Period advancement with automatic events
+- [ ] Production constraints and recipes
+- [ ] More sophisticated action prerequisites
+- [ ] Multiple assertion levels (3+)
+- [ ] Branching progression paths
+- [ ] Instructor dashboard for diagnostics
 
 **Phase 3 - Analytics Integration:**
 - Transaction datasets (hundreds/thousands of transactions)

@@ -9,14 +9,14 @@
         compojure/compojure {:mvn/version "1.7.0"}
 
         ;; Database
-        com.github.seancorfield/next.jdbc {:mvn/version "1.3.894"}
+        com.datomic/peer {:mvn/version "1.0.7075"}
         org.postgresql/postgresql {:mvn/version "42.6.0"}
-        com.github.seancorfield/honeysql {:mvn/version "2.4.1066"}
 
-        ;; ClojureScript (for REPL, actual compilation via shadow-cljs)
+        ;; ClojureScript + shadow-cljs (pinned for Java 11 compatibility)
         org.clojure/clojurescript {:mvn/version "1.11.60"}
-        thheller/shadow-cljs {:mvn/version "2.26.2"}
+        thheller/shadow-cljs {:mvn/version "2.25.10"}
         reagent/reagent {:mvn/version "1.2.0"}
+        cljs-ajax/cljs-ajax {:mvn/version "0.8.4"}
 
         ;; Utilities
         metosin/reitit {:mvn/version "0.6.0"}

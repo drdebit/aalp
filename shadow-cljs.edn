@@ -1,9 +1,10 @@
-{:source-paths ["src/cljs" "src/clj"]
+{;; Use deps.edn for dependencies
+ :deps true
 
- :dependencies [[reagent "1.2.0"]
-                [cljs-ajax "0.8.4"]]
+ ;; Fixed nREPL port for consistent Emacs/CIDER connections
+ :nrepl {:port 7888}
 
- :dev-http {8080 "resources/public"}
+ :dev-http {8081 "resources/public"}
 
  :builds
  {:app {:target :browser
@@ -11,4 +12,6 @@
         :asset-path "/js"
         :modules {:main {:init-fn assertive-app.core/init}}
         :devtools {:http-root "resources/public"
-                   :http-port 8080}}}}
+                   :http-port 8081
+                   ;; WebSocket URL for remote access via nginx proxy
+                   :devtools-url "ws://arcweb01.rs.gsu.edu/aalp-ws/"}}}}

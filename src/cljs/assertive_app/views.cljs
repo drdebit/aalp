@@ -489,15 +489,15 @@
                        [:div.entry-line
                         [:span.debit "DR: " (:debit entry)]
                         (when debit-linkage
-                          [:span.linkage " ← " (format-linkage debit-linkage)])]
+                          [:span.linkage " ← " (format-linkage debit-linkage)])
+                        (when counterparty-str
+                          [:span.linkage ", " counterparty-str])]
                        [:div.entry-line
                         [:span.credit "CR: " (:credit entry)]
                         (when credit-linkage
-                          [:span.linkage " ← " (format-linkage credit-linkage)])]]))
-                  ;; Show counterparty on its own line
-                  (when counterparty-str
-                    [:div.counterparty-line
-                     [:span.linkage "Counterparty: " counterparty-str]])]))
+                          [:span.linkage " ← " (format-linkage credit-linkage)])
+                        (when counterparty-str
+                          [:span.linkage ", " counterparty-str])]]))]))
 
              ;; For incorrect answers, also show what the correct JE should be
              (when (and is-incorrect? correct-class)

@@ -837,6 +837,27 @@ header {
     color: #27ae60;
 }
 
+/* ==================== Incorrect/Correct JE Feedback ==================== */
+
+.journal-entry.incorrect-je {
+    background-color: #fdf2f2;
+    border-left: 4px solid #e74c3c;
+}
+
+.journal-entry.incorrect-je h4 {
+    color: #c0392b;
+}
+
+.journal-entry.correct-je {
+    background-color: #f0fdf4;
+    border-left: 4px solid #27ae60;
+    margin-top: 15px;
+}
+
+.journal-entry.correct-je h4 {
+    color: #1e7e34;
+}
+
 /* ==================== Account Select with Hints ==================== */
 
 .account-select option {

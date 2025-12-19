@@ -479,12 +479,17 @@
         (when (and (not is-reverse?) (some? (:classification feedback)))
           (let [classification (:classification feedback)
                 linkages (:assertion-linkages feedback)
-                counterparty-str (format-counterparty-linkage linkages)]
+                counterparty-str (format-counterparty-linkage linkages)
+                is-incorrect? (= (:status feedback) :incorrect)
+                correct-class (:correct-classification feedback)]
             [:div
+             ;; For incorrect answers, label this as "Your answer would produce:"
              (when-let [journal-entries (:journal-entry classification)]
                (when (seq journal-entries)
-                 [:div.journal-entry
-                  [:h4 "Journal Entry:"]
+                 [:div.journal-entry {:class (when is-incorrect? "incorrect-je")}
+                  [:h4 (if is-incorrect?
+                         "Your assertions would produce:"
+                         "Journal Entry:")]
                   (for [entry journal-entries]
                     (let [debit-linkage (find-linkage-for-account linkages (:debit entry) :debit)
                           credit-linkage (find-linkage-for-account linkages (:credit entry) :credit)]
@@ -502,6 +507,21 @@
                           [:span.linkage " ← " (format-linkage credit-linkage)])
                         (when counterparty-str
                           [:span.linkage ", " counterparty-str])]]))]))
+
+             ;; For incorrect answers, also show what the correct JE should be
+             (when (and is-incorrect? correct-class)
+               (when-let [correct-entries (:journal-entry correct-class)]
+                 (when (seq correct-entries)
+                   [:div.journal-entry.correct-je
+                    [:h4 "Correct journal entry:"]
+                    (for [entry correct-entries]
+                      ^{:key (str "correct-" (:debit entry) "-" (:credit entry))}
+                      [:div.entry
+                       [:div.entry-line
+                        [:span.debit "DR: " (:debit entry)]]
+                       [:div.entry-line
+                        [:span.credit "CR: " (:credit entry)]]])])))
+
              (when-let [note (:note classification)]
                [:p.note note])]))
 

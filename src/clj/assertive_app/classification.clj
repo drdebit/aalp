@@ -1169,17 +1169,24 @@
                          ;; Check if this is the correct classification
                          is-correct-match (or (nil? correct-classification)
                                              (= match-key correct-classification))
-                         status (if is-correct-match :correct :incorrect)]
+                         status (if is-correct-match :correct :incorrect)
+                         ;; Augment journal entry with quantities from student's parameters
+                         augmented-classification (update classification :journal-entry
+                                                          augment-journal-entry assertions-map)]
                      {:status status
                       :message (if is-correct-match
                                  (str "Correct! This is: " (:description classification))
                                  (str "Your assertions describe: " (:description classification)
                                       " But that's not what this transaction is. Re-read the narrative."))
-                      :classification (when is-correct-match
-                                        ;; Augment journal entry with quantities from parameters
-                                        (update classification :journal-entry
-                                                augment-journal-entry assertions-map))
+                      ;; Include classification for both correct and incorrect (for detailed feedback)
+                      :classification augmented-classification
                       :assertion-linkages linkages
+                      ;; For incorrect answers, also include what the correct answer would be
+                      :correct-classification (when (and (not is-correct-match) correct-classification)
+                                               (let [correct-class (get classifications correct-classification)]
+                                                 {:type correct-classification
+                                                  :description (:description correct-class)
+                                                  :journal-entry (:journal-entry correct-class)}))
                       :hints (when (not is-correct-match)
                                (let [matched-desc (:description classification)
                                      correct-desc (get-in classifications [correct-classification :description])]

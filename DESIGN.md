@@ -200,16 +200,33 @@ Equity transactions (capital contributions, stock issuance, dividends, etc.) nee
 - Stock issuance may be `is-required-by` SEC regulations (for public companies)
 - Dividend declarations follow corporate governance rules
 
-**Possible assertions for equity:**
-- `provides` (monetary-unit) - investor gives cash
-- `receives` (ownership-unit?) - investor gets ownership interest
-- `is-allowed-by` (state-business-law) - legal framework enabling the transaction
+**From the SP Example (example.clj):**
+
+The research example shows equity issuance as:
+```
+equity-issuance:
+  is-allowed-by: BusinessFormation-001 (the LLC formation event)
+  has-counterparty: ParentMember
+  receives: 20000 USD (cash from investor)
+  provides: 20 ownership-percentage (membership interest)
+  requires: Annual report to member (is-required-by BusinessFormation-001)
+```
+
+Key insights from the example:
+- Equity issuance references the business formation event (not a generic "state law")
+- Uses `ownership-percentage` as the unit type for membership interests
+- The reporting obligation is tied to the business formation, not a separate requirement
+- Entity `receives` cash and `provides` ownership (from entity's perspective)
+
+**Implementation approach:**
+- Add `ownership-unit` or `ownership-percentage` as a unit type
+- Equity transactions `is-allowed-by` the business formation event
+- May also create `requires` for ongoing reporting obligations
 
 **Open questions:**
-- Do we need a new unit type for ownership interests (ownership-unit)?
-- How do we represent the entity's side (receiving cash, issuing ownership)?
-- Should equity be a separate level, or integrated into L4 Legal/Regulatory?
-- How does this connect to the SP example (LLC formation, member capital)?
+- Should business formation be a prerequisite transaction in simulation mode?
+- How do we handle the chain: state law → business formation → equity issuance?
+- Do we need to track member/shareholder identities for dividend distributions?
 
 ---
 

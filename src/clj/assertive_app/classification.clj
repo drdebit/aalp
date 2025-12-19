@@ -85,27 +85,15 @@
     :account-type :asset
     :enables [:sale]
     :available-for #{:provides :receives}
-    :unlock-level 2
+    :unlock-level 0  ;; Must be level 0 since cash-sale template is level 0
     ;; Simulation properties
     :unit-cost nil  ;; Not directly purchasable
     :sell-price 25
     :category :finished-good
     :purchasable? false
-    :sellable? true}
-
-   :services
-   {:label "Services"
-    :description "service provided"
-    :account "Service Revenue"
-    :account-type :revenue
-    :enables []
-    :available-for #{:provides}
-    :unlock-level 1
-    ;; Simulation properties
-    :unit-cost nil
-    :category :service
-    :purchasable? false
-    :sellable? true}})
+    :sellable? true}}
+   ;; Note: Services removed from physical-items - use effort-unit for service transactions
+   )
 
 ;; ==================== Unit Type Options ====================
 ;; Single source of truth for unit type dropdown options used across assertions
@@ -113,7 +101,7 @@
 (def unit-type-options
   "Standard unit type options for provides/receives/requires/expects assertions."
   [{:value "monetary-unit" :label "Cash/Money"}
-   {:value "physical-unit" :label "Goods/Services"}
+   {:value "physical-unit" :label "Physical Units"}
    {:value "time-unit" :label "Time"}
    {:value "effort-unit" :label "Effort/Labor"}])
 
@@ -164,6 +152,16 @@
   (when-let [item-def (get physical-items (keyword item-key))]
     (str (:label item-def) " (" (:account item-def) ")")))
 
+(defn equipment-options
+  "Generate dropdown options for equipment items (for is-allowed-by assertion)."
+  [& {:keys [max-level] :or {max-level 99}}]
+  (vec
+   (for [[item-key item-def] physical-items
+         :when (and (= (:category item-def) :equipment)
+                    (<= (:unlock-level item-def) max-level))]
+     {:value (name item-key)
+      :label (:label item-def)})))
+
 (defn resolve-physical-item-options
   "Resolve :derives-from-physical-items-* markers to actual options.
    Called when sending assertions to frontend."
@@ -186,6 +184,8 @@
                                                   (physical-item-options :provides :max-level level)
                                                   :derives-from-physical-items-receives
                                                   (physical-item-options :receives :max-level level)
+                                                  :derives-from-physical-items-equipment
+                                                  (equipment-options :max-level level)
                                                   ;; Default: keep as-is
                                                   (:options param-spec))))
                                        param-spec)])))
@@ -336,14 +336,15 @@
                   :rate {:type :currency
                          :label "Hourly rate ($)"}}}
 
-    {:code :uses-equipment
-     :label "Uses Equipment"
-     :description "Uses equipment that enables this production (references prior capability)"
+    {:code :is-allowed-by
+     :label "Is Allowed By"
+     :description "This event is enabled by a prior capability (equipment purchase enables production)"
      :level 2
      :domain :transformation
      :parameterized true
-     :parameters {:equipment {:type :text
-                              :label "Equipment name"}}}
+     :parameters {:capacity {:type :dropdown
+                             :label "Enabled by"
+                             :options :derives-from-physical-items-equipment}}}
 
     ;; Output assertion - cost is derived from sum of inputs
     {:code :creates-finished-goods
@@ -389,24 +390,13 @@
                              :optional true}}}]
 
    :legal-regulatory
-   [{:code :is-allowed-by
-     :label "Is Allowed By"
-     :description "References the legal/regulatory framework that permits this event"
-     :level 3
-     :domain :legal-regulatory
-     :parameterized true
-     :parameters {:framework {:type :dropdown
-                              :label "Legal framework"
-                              :options [{:value "ucc" :label "Uniform Commercial Code (sales/commerce)"}
-                                        {:value "employment-law" :label "Employment Law"}
-                                        {:value "state-business-law" :label "State Business Law (LLC, Corp)"}
-                                        {:value "gaap" :label "GAAP (accounting standards)"}
-                                        {:value "contract-law" :label "Contract Law"}]}}}
+   [;; Note: is-allowed-by is now unified in transformation domain (L2 for equipment, L4 for legal)
+    ;; When we expand to L4, we'll add legal framework options to the transformation domain assertion
 
     {:code :is-required-by
      :label "Is Required By"
      :description "References the legal/regulatory framework that mandates this event"
-     :level 3
+     :level 4
      :domain :legal-regulatory
      :parameterized true
      :parameters {:framework {:type :dropdown
@@ -420,7 +410,7 @@
     {:code :is-protected-by
      :label "Is Protected By"
      :description "References the legal/regulatory framework that protects this event"
-     :level 3
+     :level 4
      :domain :legal-regulatory
      :parameterized true
      :parameters {:framework {:type :dropdown
@@ -430,6 +420,26 @@
                                         {:value "patent" :label "Patent Law"}
                                         {:value "contract-law" :label "Contract Law"}
                                         {:value "trade-secret" :label "Trade Secret Law"}]}}}]
+
+   :recognition
+   [{:code :reports
+     :label "Reports"
+     :description "Recognizes an amount to be reported on the financial statements"
+     :level 3
+     :domain :recognition
+     :parameterized true
+     :parameters {:category {:type :dropdown
+                             :label "Recognition type"
+                             :options [{:value "revenue" :label "Revenue (Income Statement)"}
+                                       {:value "expense" :label "Expense/Cost (Income Statement)"}
+                                       {:value "gain" :label "Gain (Income Statement)"}
+                                       {:value "loss" :label "Loss (Income Statement)"}]}
+                  :basis {:type :dropdown
+                          :label "Measurement basis"
+                          :options [{:value "cash-received" :label "Equal to cash received"}
+                                    {:value "cash-paid" :label "Equal to cash paid"}
+                                    {:value "cost-of-goods" :label "Equal to cost of goods provided"}
+                                    {:value "service-value" :label "Equal to value of service performed"}]}}}]
 
    :state-modification
    [{:code :modifies
@@ -537,15 +547,20 @@
 
 ;; Classification rules - using research assertions
 (def classifications
-  {:cash-sale
-   (cash-exchange
-     "Cash sale (provide goods/services, receive cash)"
-     [{:debit "Cash" :credit "Revenue"}]
-     :provides-unit "physical-unit"
-     :provides-item "printed-tshirts"
-     :receives-unit "monetary-unit"
-     :note "Simplified - in practice would also record: DR: Cost of Goods Sold, CR: Inventory"
-     :examples ["SP sells printed t-shirts for cash"])
+  {;; ==================== Level 3: Sales with Recognition ====================
+   ;; Sales require reporting assertions because we recognize revenue and COGS
+
+   :cash-sale
+   {:required #{:has-date :provides :receives :has-counterparty :reports}
+    :prohibited #{:requires :expects}
+    :required-parameters {:provides {:unit "physical-unit" :physical-item "printed-tshirts"}
+                          :receives {:unit "monetary-unit"}}
+    :description "Cash sale with revenue and cost recognition"
+    :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
+                    {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
+    :note "A sale requires recognizing both revenue (equal to cash received) and the cost of goods sold (equal to inventory cost)."
+    :examples ["SP sells printed t-shirts for cash, recognizing revenue and COGS"]
+    :level 3}
 
    :cash-inventory-purchase
    (cash-exchange
@@ -595,17 +610,16 @@
      :examples ["SP receives t-shirt printer, requires future payment of $3,000"])
 
    :sale-on-credit
-   (credit-transaction
-     "Credit sale (provide goods now, expect payment later)"
-     [{:debit "Accounts Receivable" :credit "Revenue"}]
-     :expects
-     :present-action :provides
-     :present-unit "physical-unit"
-     :provides-item "printed-tshirts"
-     :future-action "receives"
-     :future-unit "monetary-unit"
-     :note "SP provides goods immediately and expects to receive cash in the future (uncertain - customer may not pay)."
-     :examples ["SP provides printed t-shirts, expects payment in 30 days"])
+   {:required #{:has-date :provides :has-counterparty :expects :reports}
+    :prohibited #{:receives :requires}
+    :required-parameters {:provides {:unit "physical-unit" :physical-item "printed-tshirts"}
+                          :expects {:action "receives" :unit "monetary-unit"}}
+    :description "Credit sale with revenue and cost recognition"
+    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
+                    {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
+    :note "A credit sale recognizes revenue (equal to expected payment) and COGS. The receivable represents the expected future cash."
+    :examples ["SP provides printed t-shirts on credit, recognizing revenue and COGS"]
+    :level 3}
 
    :deferred-revenue
    (credit-transaction
@@ -638,7 +652,7 @@
 
    ;; Comprehensive production using detailed input assertions
    :production-full
-   {:required #{:consumes-inventory :consumes-supplies :consumes-labor :uses-equipment :creates-finished-goods}
+   {:required #{:consumes-inventory :consumes-supplies :consumes-labor :is-allowed-by :creates-finished-goods}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Full production: inventory + supplies + labor → finished goods"
     :journal-entry :derived  ;; Special marker - JE is calculated from assertion values
@@ -652,7 +666,7 @@
 
    ;; Production with just inventory and labor (no supplies)
    :production-inventory-labor
-   {:required #{:consumes-inventory :consumes-labor :uses-equipment :creates-finished-goods}
+   {:required #{:consumes-inventory :consumes-labor :is-allowed-by :creates-finished-goods}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Production: inventory + labor → finished goods"
     :journal-entry :derived
@@ -686,15 +700,16 @@
     :level 2}
 
    :production-direct
-   {:required #{:consumes :creates}
+   {:required #{:consumes :creates :is-allowed-by}
     :required-parameters {:consumes {:unit "raw-materials"}
-                          :creates {:unit "finished-goods"}}
+                          :creates {:unit "finished-goods"}
+                          :is-allowed-by {:capacity "t-shirt-printer"}}
     :prohibited #{:has-counterparty :provides :receives}
-    :description "Direct production: Raw materials → Finished Goods (single step)"
+    :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
     :journal-entry [{:debit "Finished Goods" :credit "Raw Materials"}]
-    :note "Simplified single-step production for small operations."
-    :examples ["SP prints and packages t-shirts in one operation"
-               "SP converts raw materials directly to finished goods"]
+    :note "Production uses equipment purchased earlier. This connects back to your equipment purchase!"
+    :examples ["SP uses t-shirt printer to convert blank shirts to printed shirts"
+               "SP uses equipment to transform raw materials into finished goods"]
     :level 2}
 
    :production-with-labor
@@ -772,7 +787,7 @@
     :examples ["SP purchases t-shirt printer that allows future shirt printing"]
     :level 2}
 
-   ;; ==================== Level 3: Legal & Regulatory Context ====================
+   ;; ==================== Level 4: Legal & Regulatory Context ====================
    ;; Key insight: Events exist within legal frameworks that enable, require, or protect them
 
    :sale-under-ucc
@@ -786,7 +801,7 @@
     :note "The UCC provides the legal framework that makes commercial sales enforceable."
     :examples ["SP sells t-shirts under standard commercial law"
                "SP engages in commerce enabled by UCC Article 2"]
-    :level 3}
+    :level 4}
 
    :employment-under-law
    {:required #{:provides :receives :has-counterparty :is-allowed-by :is-required-by}
@@ -800,7 +815,7 @@
     :note "Employment is both enabled by and subject to employment law (minimum wage, benefits, etc.)."
     :examples ["SP hires employee subject to minimum wage requirements"
                "SP employs staff under labor law framework"]
-    :level 3}
+    :level 4}
 
    :copyright-protected-creation
    {:required #{:consumes :creates :is-protected-by}
@@ -813,7 +828,7 @@
     :note "Original creative works are automatically protected by copyright law."
     :examples ["SP creates original t-shirt design protected by copyright"
                "SP develops artwork that receives copyright protection"]
-    :level 3}
+    :level 4}
 
    :trademark-protected-brand
    {:required #{:consumes :creates :is-protected-by}
@@ -826,7 +841,7 @@
     :note "Trademarks protect brand names, logos, and distinctive marks used in commerce."
     :examples ["SP creates company logo protected by trademark"
                "SP develops brand identity with trademark protection"]
-    :level 3}
+    :level 4}
 
    :tax-required-filing
    {:required #{:provides :is-required-by}
@@ -838,7 +853,7 @@
     :note "Tax payments are mandated by federal and state tax codes."
     :examples ["SP files and pays quarterly estimated taxes"
                "SP remits sales tax as required by state law"]
-    :level 3}
+    :level 4}
 
    :regulatory-compliance
    {:required #{:provides :is-required-by}
@@ -850,7 +865,7 @@
     :note "Many industries have specific regulations requiring fees, certifications, or compliance costs."
     :examples ["SP pays for required business license"
                "SP obtains industry-required certification"]
-    :level 3}
+    :level 4}
 
    :contract-protected-agreement
    {:required #{:provides :receives :has-counterparty :expects :is-protected-by}
@@ -861,7 +876,7 @@
     :note "Contract law enables parties to create legally binding agreements with enforceable terms."
     :examples ["SP enters sales contract with legal protections"
                "SP signs service agreement enforceable under contract law"]
-    :level 3}
+    :level 4}
 
    :business-formation
    {:required #{:provides :is-allowed-by}
@@ -873,7 +888,7 @@
     :note "State business laws enable formation of LLCs, corporations, and other legal entities."
     :examples ["SP forms LLC under state business law"
                "SP incorporates business as permitted by state statutes"]
-    :level 3}
+    :level 4}
 
    :gaap-compliant-reporting
    {:required #{:is-allowed-by :is-required-by}
@@ -885,7 +900,7 @@
     :note "Public companies must report financials under GAAP as required by SEC regulations."
     :examples ["SP prepares GAAP-compliant financial statements"
                "SP files SEC-required quarterly report"]
-    :level 3}})
+    :level 4}})
 
 ;; ==================== Assertion-Account Mapping ====================
 ;; Maps assertions and their parameters to accounts and JE effects.
@@ -1030,6 +1045,57 @@
      :incorrect-assertions incorrect-assertions
      :missing-parameters missing-parameters}))
 
+(defn- format-param-key
+  "Convert parameter key to human-readable form."
+  [param-key]
+  (case param-key
+    :unit "Unit Type"
+    :physical-item "Item"
+    :quantity "Quantity"
+    :action "Action"
+    :name "Name"
+    :date "Date"
+    :category "Recognition Type"
+    :basis "Measurement Basis"
+    :capacity "Enabled by"
+    ;; Default: capitalize and replace hyphens with spaces
+    (clojure.string/replace (clojure.string/capitalize (name param-key)) "-" " ")))
+
+(defn- format-param-value
+  "Convert parameter value to human-readable form."
+  [param-key param-value]
+  (case param-key
+    :unit (case param-value
+            "monetary-unit" "Cash/Money"
+            "physical-unit" "Physical Units"
+            "time-unit" "Time"
+            "effort-unit" "Effort/Labor"
+            param-value)
+    :physical-item (if-let [item-def (get physical-items (keyword param-value))]
+                     (:label item-def)
+                     param-value)
+    :capacity (if-let [item-def (get physical-items (keyword param-value))]
+                (:label item-def)
+                param-value)
+    :action (case param-value
+              "provides" "Provide"
+              "receives" "Receive"
+              param-value)
+    :category (case param-value
+                "revenue" "Revenue"
+                "expense" "Expense/Cost"
+                "gain" "Gain"
+                "loss" "Loss"
+                param-value)
+    :basis (case param-value
+             "cash-received" "Equal to cash received"
+             "cash-paid" "Equal to cash paid"
+             "cost-of-goods" "Equal to cost of goods provided"
+             "service-value" "Equal to value of service performed"
+             param-value)
+    ;; Default: just return value
+    param-value))
+
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
   [hint-data]
@@ -1049,9 +1115,11 @@
       (seq missing-parameters)
       (into (for [[assertion-code params] missing-parameters]
               (str "For " (get assertion-labels assertion-code (name assertion-code))
-                   ", you need to specify: "
+                   ": "
                    (clojure.string/join ", " (for [[param-key param-value] params]
-                                               (str param-key " = " param-value)))))))))
+                                               (str (format-param-key param-key)
+                                                    " should be "
+                                                    (format-param-value param-key param-value))))))))))
 
 (defn augment-journal-entry
   "Add quantity information to journal entry if available."
@@ -1196,15 +1264,36 @@
 
                    closest
                    (let [closest-classification (get classifications (:type closest))
-                         ;; Generate hints against correct classification if provided, otherwise closest
-                         hint-target (or correct-classification (:type closest))
-                         hint-data (generate-dynamic-hints assertions-map hint-target)
-                         dynamic-hints (format-hints hint-data)]
+                         closest-desc (:description closest-classification)
+                         correct-class (when correct-classification
+                                        (get classifications correct-classification))
+                         correct-desc (when correct-class (:description correct-class))
+                         ;; Generate parameter-level hints against correct classification
+                         hint-data (generate-dynamic-hints assertions-map
+                                                           (or correct-classification (:type closest)))
+                         param-hints (format-hints hint-data)
+                         ;; Augment closest classification with quantities for JE display
+                         augmented-closest (update closest-classification :journal-entry
+                                                   augment-journal-entry assertions-map)
+                         ;; Build narrative hints similar to exact-match style
+                         narrative-hints (if (and correct-classification
+                                                  (not= (:type closest) correct-classification))
+                                          [(str "Your assertions are closest to: " closest-desc)
+                                           (str "But this transaction is: " correct-desc)]
+                                          [(str "Your assertions are closest to: " closest-desc)])
+                         ;; Combine narrative with parameter-specific hints
+                         all-hints (into narrative-hints param-hints)]
                      {:status :incorrect
-                      :message (str "Your assertions are closest to: "
-                                   (:description closest-classification))
+                      :message (first narrative-hints)
+                      ;; Include classification for JE display (what student's assertions describe)
+                      :classification augmented-closest
                       :assertion-linkages linkages
-                      :hints dynamic-hints})
+                      ;; Include correct classification for JE comparison
+                      :correct-classification (when correct-class
+                                               {:type correct-classification
+                                                :description correct-desc
+                                                :journal-entry (:journal-entry correct-class)})
+                      :hints all-hints})
 
                    :else
                    {:status :indeterminate
@@ -1241,17 +1330,20 @@
                 :amount [3000]}}
 
    :cash-sale
-   {:narrative-template "On {date}, you sell {quantity} printed t-shirts to {customer} for ${amount} cash."
+   {:narrative-template "On {date}, you sell {quantity} printed t-shirts to {customer} for ${amount} cash. The t-shirts cost ${cogs} to produce."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :receives {:unit "monetary-unit" :quantity :amount}
-                          :has-counterparty {:name :customer}}
+                          :has-counterparty {:name :customer}
+                          ;; Reports assertions for revenue and COGS recognition
+                          :reports {:category "revenue" :basis "cash-received"}}
     :correct-classification :cash-sale
-    :level 0
+    :level 3
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
                 :quantity [10 25 50]
-                :amount [250 625 1250]}}
+                :amount [250 625 1250]
+                :cogs [100 250 500]}}  ;; Cost of goods sold (paired with quantity)
 
    :credit-inventory-purchase
    {:narrative-template "On {date}, you receive {quantity} {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
@@ -1284,17 +1376,20 @@
                 :days [30 60 90]}}
 
    :credit-sale
-   {:narrative-template "On {date}, you provide {quantity} printed t-shirts to {customer}, expecting payment of ${amount} in {days} days."
+   {:narrative-template "On {date}, you provide {quantity} printed t-shirts to {customer}, expecting payment of ${amount} in {days} days. The t-shirts cost ${cogs} to produce."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
-                          :expects {:action "receives" :unit "monetary-unit" :quantity :amount}}
+                          :expects {:action "receives" :unit "monetary-unit" :quantity :amount}
+                          ;; Reports assertions for revenue and COGS recognition
+                          :reports {:category "revenue" :basis "cash-received"}}
     :correct-classification :sale-on-credit
-    :level 1
+    :level 3
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
                 :quantity [10 25 50]
                 :amount [250 625 1250]
+                :cogs [100 250 500]   ;; Cost of goods sold (paired with quantity)
                 :days [30 60 90]}}
 
    :prepayment
@@ -1341,7 +1436,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :consumes-inventory {:item "blank t-shirts" :quantity :quantity :unit-cost :tshirt-cost}
                           :consumes-supplies {:item "ink" :quantity :ink-quantity :unit-cost :ink-cost}
                           :consumes-labor {:hours :labor-hours :rate :labor-rate}
-                          :uses-equipment {:equipment "t-shirt printer"}
+                          :is-allowed-by {:capacity "t-shirt-printer"}
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-full
     :level 2
@@ -1363,7 +1458,7 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :consumes-inventory {:item "blank t-shirts" :quantity :quantity :unit-cost :tshirt-cost}
                           :consumes-labor {:hours :labor-hours :rate :labor-rate}
-                          :uses-equipment {:equipment "t-shirt printer"}
+                          :is-allowed-by {:capacity "t-shirt-printer"}
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-inventory-labor
     :level 2
@@ -1396,15 +1491,18 @@ The printed t-shirts are now finished goods ready for sale."
                 :quantity [10 25 50 100 200]}}
 
    :production-direct
-   {:narrative-template "On {date}, SP prints and packages {quantity} {product} in a single operation, converting raw materials directly into finished goods ready for sale."
+   {:narrative-template "On {date}, SP produces {quantity} {product}, converting raw materials into finished goods ready for sale.
+
+This production is allowed by having the t-shirt printer you purchased earlier."
     :required-assertions {:has-date {:date :date}
                           :consumes {:unit "raw-materials"}
-                          :creates {:unit "finished-goods"}}
+                          :creates {:unit "finished-goods"}
+                          :is-allowed-by {:capacity "t-shirt-printer"}}
     :correct-classification :production-direct
     :level 2
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :quantity [10 25 50 100]
-                :product ["t-shirts" "custom apparel items" "printed merchandise"]}}
+                :product ["printed t-shirts" "custom t-shirts" "branded shirts"]}}
 
    :production-labor
    {:narrative-template "On {date}, SP's production staff spends {hours} hours operating the printing equipment, applying their labor to the manufacturing process."
@@ -1461,7 +1559,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]}}
 
-   ;; ==================== Level 3: Legal & Regulatory Templates ====================
+   ;; ==================== Level 4: Legal & Regulatory Templates ====================
    ;; Key teaching point: Business events exist within legal frameworks
 
    :ucc-sale
@@ -1472,7 +1570,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :has-counterparty {:name :customer}
                           :is-allowed-by {:framework "ucc"}}
     :correct-classification :sale-under-ucc
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :quantity [10 25 50 100]
                 :product ["printed t-shirts" "custom merchandise" "branded apparel"]
@@ -1488,7 +1586,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :is-allowed-by {:framework "employment-law"}
                           :is-required-by {:framework "employment-law"}}
     :correct-classification :employment-under-law
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :employee ["Alex" "Jordan" "Taylor" "Morgan"]
                 :position ["production assistant" "designer" "sales associate" "warehouse worker"]
@@ -1501,7 +1599,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "copyright"}}
     :correct-classification :copyright-protected-creation
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :hours [8 16 24 40]
                 :design-type ["t-shirt graphic" "logo design" "illustration" "pattern artwork"]}}
@@ -1513,7 +1611,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "trademark"}}
     :correct-classification :trademark-protected-brand
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
 
@@ -1523,7 +1621,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :provides {:unit "monetary-unit"}
                           :is-required-by {:framework "tax-code"}}
     :correct-classification :tax-required-filing
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :amount [500 1000 2500 5000 10000]
                 :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
@@ -1534,7 +1632,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :provides {:unit "monetary-unit"}
                           :is-required-by {:framework "industry-regs"}}
     :correct-classification :regulatory-compliance
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :amount [100 250 500 1000]
                 :license-type ["business license" "seller's permit" "occupational license" "zoning permit"]
@@ -1546,7 +1644,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :provides {:unit "monetary-unit"}
                           :is-allowed-by {:framework "state-business-law"}}
     :correct-classification :business-formation
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :amount [100 150 250 500]}}
 
@@ -1559,7 +1657,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :expects {:action "receives" :unit "monetary-unit"}
                           :is-protected-by {:framework "contract-law"}}
     :correct-classification :contract-protected-agreement
-    :level 3
+    :level 4
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]
                 :product ["custom merchandise" "bulk t-shirt order" "branded apparel"]
@@ -1613,6 +1711,20 @@ The printed t-shirts are now finished goods ready for sale."
       ;; For set-based assertions (old format), return as-is
       required-assertions)))
 
+(defn- select-paired-variables
+  "Select variables with same-length arrays using the same index.
+   This ensures correlated values like quantity/amount stay paired.
+   Variables with unique lengths are selected independently."
+  [variables]
+  (let [;; Group variable keys by the length of their option arrays
+        by-length (group-by (fn [[_k options]] (count options)) variables)
+        ;; For each length group, pick a random index once and apply to all
+        selected (for [[length vars-in-group] by-length
+                       :let [idx (rand-int length)]]
+                   (for [[k options] vars-in-group]
+                     [k (nth options idx)]))]
+    (into {} (apply concat selected))))
+
 (defn generate-problem
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
@@ -1620,8 +1732,8 @@ The printed t-shirts are now finished goods ready for sale."
   [level & {:keys [problem-type show-assertions] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
         [template-key template] (rand-nth (seq available-templates))
-        vars (into {} (for [[k options] (:variables template)]
-                        [k (rand-nth options)]))
+        ;; Use indexed selection for same-length variable arrays to keep values paired
+        vars (select-paired-variables (:variables template))
         narrative (apply-template (:narrative-template template) vars)
         classification (get classifications (:correct-classification template))
 

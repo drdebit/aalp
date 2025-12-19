@@ -94,13 +94,15 @@
                               (api/fetch-assertions! new-level)
                               (api/fetch-problem! new-level)))}
       [:option {:value 0 :disabled (not (contains? unlocked 0))}
-       (str "0 - Cash Transactions" (when-not (contains? unlocked 0) " 🔒"))]
+       (str "0 - Cash Purchases" (when-not (contains? unlocked 0) " 🔒"))]
       [:option {:value 1 :disabled (not (contains? unlocked 1))}
-       (str "1 - Credit Transactions" (when-not (contains? unlocked 1) " 🔒"))]
+       (str "1 - Credit Purchases" (when-not (contains? unlocked 1) " 🔒"))]
       [:option {:value 2 :disabled (not (contains? unlocked 2))}
-       (str "2 - Production/Transformation" (when-not (contains? unlocked 2) " 🔒"))]
+       (str "2 - Transformations" (when-not (contains? unlocked 2) " 🔒"))]
       [:option {:value 3 :disabled (not (contains? unlocked 3))}
-       (str "3 - Legal/Regulatory" (when-not (contains? unlocked 3) " 🔒"))]]
+       (str "3 - Sales & Recognition" (when-not (contains? unlocked 3) " 🔒"))]
+      [:option {:value 4 :disabled (not (contains? unlocked 4))}
+       (str "4 - Legal/Regulatory" (when-not (contains? unlocked 4) " 🔒"))]]
      [:label {:style {:margin-left "20px"}}
       "Mode: "]
      [:select {:value current-problem-type
@@ -330,7 +332,7 @@
      (when (and selected? (:parameterized assertion))
        [:div.parameters
         (for [[param-key param-spec] (:parameters assertion)]
-          ;; Only show physical-item when unit is "physical-unit" (Goods/Services)
+          ;; Only show physical-item when unit is "physical-unit" (Physical Units)
           (when (or (not= param-key :physical-item)
                     (= (get current-params :unit) "physical-unit"))
             ^{:key param-key}

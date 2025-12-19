@@ -21,7 +21,7 @@
     :feedback nil
     :current-level 0
     :problem-type "forward"  ; "forward", "reverse", or "construct"
-    :unlocked-levels #{0}
+    :unlocked-levels #{0 1 2 3 4}  ;; All levels unlocked for testing
     :loading? false
     :error nil
 
@@ -164,7 +164,7 @@
          :login-error nil
          :progress nil
          :current-level 0
-         :unlocked-levels #{0}))
+         :unlocked-levels #{0 1 2 3}))  ;; All levels unlocked for testing
 
 (defn update-progress!
   "Update progress state from server response.

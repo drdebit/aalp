@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 This is the **Assertive Accounting Learning Platform (AALP)** - a curriculum-spanning educational web application that teaches accounting through logical assertions rather than traditional classification-based approaches.
 
+**See also:** [DESIGN.md](DESIGN.md) for design decisions, philosophy, level progression rationale, and future plans.
+
 ### What is Assertive Accounting?
 
 Assertive accounting represents a paradigm shift in how business events are recorded:

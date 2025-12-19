@@ -381,14 +381,21 @@
            first))))
 
 (defn- format-linkage
-  "Format linkage for display: 'receives (monetary-unit)'"
+  "Format linkage for display: 'receives (physical-unit, blank-tshirts)'"
   [[code data]]
   (let [params (:params data)
         assertion-name (name code)
         unit (:unit params)
-        parts (cond-> [assertion-name]
-                unit (conj (str "(" unit ")")))]
-    (str/join " " parts)))
+        physical-item (:physical-item params)
+        ;; Build parameter string like "(physical-unit, blank-tshirts)" or "(monetary-unit)"
+        param-parts (cond-> []
+                      unit (conj unit)
+                      physical-item (conj physical-item))
+        param-str (when (seq param-parts)
+                    (str "(" (str/join ", " param-parts) ")"))]
+    (if param-str
+      (str assertion-name " " param-str)
+      assertion-name)))
 
 (defn- format-counterparty-linkage
   "Format the counterparty info for display"
@@ -454,41 +461,25 @@
         [:div.status {:class (name (:status feedback))}
          [:h3 (case (:status feedback)
                 :correct "✓ Correct!"
-                :incorrect "Needs work"
+                :incorrect "✗ Incorrect"
                 :incomplete "⚠ Incomplete"
                 :indeterminate "Cannot classify"
-                (str "Status: " (:status feedback)))]
-         [:p (:message feedback)]]
+                (str "Status: " (:status feedback)))]]
 
-        ;; For reverse problems, show the transaction narrative after submission
-        (when (and is-reverse? (:narrative problem))
-          [:div.narrative-reveal
-           [:h4 "Transaction:"]
-           [:p (:narrative problem)]])
-
-        (when-let [hints (:hints feedback)]
-          (when (seq hints)
-            [:div.hints
-             [:h4 "Hints:"]
-             [:ul
-              (for [hint hints]
-                ^{:key hint}
-                [:li hint])]]))
-
-        ;; Only show journal entry for forward problems (reverse problems already show it)
+        ;; Show journal entries FIRST (before hints) for forward problems
         (when (and (not is-reverse?) (some? (:classification feedback)))
           (let [classification (:classification feedback)
                 linkages (:assertion-linkages feedback)
                 counterparty-str (format-counterparty-linkage linkages)
                 is-incorrect? (= (:status feedback) :incorrect)
                 correct-class (:correct-classification feedback)]
-            [:div
-             ;; For incorrect answers, label this as "Your answer would produce:"
+            [:div.je-comparison
+             ;; Student's answer (incorrect or correct)
              (when-let [journal-entries (:journal-entry classification)]
                (when (seq journal-entries)
                  [:div.journal-entry {:class (when is-incorrect? "incorrect-je")}
                   [:h4 (if is-incorrect?
-                         "Your assertions would produce:"
+                         "Your assertions would produce this (incorrect) entry:"
                          "Journal Entry:")]
                   (for [entry journal-entries]
                     (let [debit-linkage (find-linkage-for-account linkages (:debit entry) :debit)
@@ -498,22 +489,22 @@
                        [:div.entry-line
                         [:span.debit "DR: " (:debit entry)]
                         (when debit-linkage
-                          [:span.linkage " ← " (format-linkage debit-linkage)])
-                        (when counterparty-str
-                          [:span.linkage ", " counterparty-str])]
+                          [:span.linkage " ← " (format-linkage debit-linkage)])]
                        [:div.entry-line
                         [:span.credit "CR: " (:credit entry)]
                         (when credit-linkage
-                          [:span.linkage " ← " (format-linkage credit-linkage)])
-                        (when counterparty-str
-                          [:span.linkage ", " counterparty-str])]]))]))
+                          [:span.linkage " ← " (format-linkage credit-linkage)])]]))
+                  ;; Show counterparty on its own line
+                  (when counterparty-str
+                    [:div.counterparty-line
+                     [:span.linkage "Counterparty: " counterparty-str]])]))
 
              ;; For incorrect answers, also show what the correct JE should be
              (when (and is-incorrect? correct-class)
                (when-let [correct-entries (:journal-entry correct-class)]
                  (when (seq correct-entries)
                    [:div.journal-entry.correct-je
-                    [:h4 "Correct journal entry:"]
+                    [:h4 "The correct entry should be:"]
                     (for [entry correct-entries]
                       ^{:key (str "correct-" (:debit entry) "-" (:credit entry))}
                       [:div.entry
@@ -524,6 +515,22 @@
 
              (when-let [note (:note classification)]
                [:p.note note])]))
+
+        ;; For reverse problems, show the transaction narrative after submission
+        (when (and is-reverse? (:narrative problem))
+          [:div.narrative-reveal
+           [:h4 "Transaction:"]
+           [:p (:narrative problem)]])
+
+        ;; Hints come after the JE comparison
+        (when-let [hints (:hints feedback)]
+          (when (seq hints)
+            [:div.hints
+             [:h4 "Why was this wrong?"]
+             [:ul
+              (for [hint hints]
+                ^{:key hint}
+                [:li hint])]]))
 
         [:div.actions
          [:button.primary

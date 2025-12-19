@@ -839,6 +839,10 @@ header {
 
 /* ==================== Incorrect/Correct JE Feedback ==================== */
 
+.je-comparison {
+    margin: 15px 0;
+}
+
 .journal-entry.incorrect-je {
     background-color: #fdf2f2;
     border-left: 4px solid #e74c3c;
@@ -856,6 +860,17 @@ header {
 
 .journal-entry.correct-je h4 {
     color: #1e7e34;
+}
+
+.counterparty-line {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed #ddd;
+}
+
+.counterparty-line .linkage {
+    font-style: normal;
+    color: #555;
 }
 
 /* ==================== Account Select with Hints ==================== */

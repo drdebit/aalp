@@ -1150,13 +1150,21 @@
                                   all-distances)))]
 
     ;; Build assertion linkages for all assertions
-    (let [linkages (build-assertion-linkages assertions-map)]
+    (let [linkages (build-assertion-linkages assertions-map)
+          ;; When multiple exact matches, prefer the most specific one (most required-parameters)
+          best-exact-match (when (seq exact-matches)
+                            (first (sort-by
+                                    (fn [class-key]
+                                      (let [req-params (get-in classifications [class-key :required-parameters])]
+                                        ;; Negative for descending sort - more params = more specific
+                                        (- (reduce + 0 (map (comp count val) req-params)))))
+                                    exact-matches)))]
       {:exact-matches exact-matches
        :closest closest
        :assertion-linkages linkages
        :feedback (cond
                    (seq exact-matches)
-                   (let [match-key (first exact-matches)
+                   (let [match-key best-exact-match
                          classification (get classifications match-key)
                          ;; Check if this is the correct classification
                          is-correct-match (or (nil? correct-classification)

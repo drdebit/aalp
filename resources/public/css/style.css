@@ -1181,6 +1181,118 @@ header {
     font-style: italic;
 }
 
+/* Inline Ledger (when no transaction pending) */
+.ledger-inline {
+    margin-top: 20px;
+}
+
+.ledger-inline .ledger-section {
+    margin-bottom: 0;
+}
+
+.ledger-inline .ledger-section h3 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 1.1em;
+    border-bottom: 2px solid #27ae60;
+    padding-bottom: 8px;
+}
+
+/* Transaction Confirmation */
+.transaction-confirmation {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #28a745;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.confirmation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.confirmation-header .checkmark {
+    font-size: 1.5em;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.confirmation-header .message {
+    flex: 1;
+    color: #155724;
+    font-weight: 500;
+    font-size: 1.05em;
+}
+
+.dismiss-btn {
+    padding: 6px 14px;
+    background: white;
+    border: 1px solid #28a745;
+    border-radius: 4px;
+    color: #28a745;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.dismiss-btn:hover {
+    background: #28a745;
+    color: white;
+}
+
+/* Journal Entry in Confirmation */
+.confirmation-je {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #a3d9a5;
+}
+
+.confirmation-je h4 {
+    margin: 0 0 10px 0;
+    color: #155724;
+    font-size: 0.95em;
+}
+
+.je-table {
+    width: auto;
+    border-collapse: collapse;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+}
+
+.je-table td {
+    padding: 4px 12px;
+}
+
+.je-debit .je-account {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.je-credit .je-account {
+    color: #2c3e50;
+}
+
+.je-amount {
+    text-align: right;
+    color: #155724;
+    font-weight: 500;
+}
+
 /* Reset Button */
 .reset-btn {
     padding: 10px 20px;

@@ -17,9 +17,44 @@
 
 ;; ==================== Configuration ====================
 
+;; ==================== Game Constants ====================
 (def STARTING_CASH 10000M)
 (def MOVES_PER_PERIOD 5)
 (def STARTING_DATE "2026-01-01")
+
+;; ==================== Derived from classification/physical-items ====================
+;; These are derived from the single source of truth in classification.clj
+
+(def inventory-types
+  "Purchasable inventory items (derived from classification/physical-items)."
+  classification/purchasable-inventory-items)
+
+(def equipment-types
+  "Purchasable equipment items (derived from classification/physical-items)."
+  classification/equipment-items)
+
+(defn get-item-unit-cost
+  "Get the unit cost for any physical item.
+   Accepts optional default value (defaults to 5)."
+  ([item-key] (get-item-unit-cost item-key 5))
+  ([item-key default]
+   (or (get-in classification/physical-items [(keyword item-key) :unit-cost])
+       default)))
+
+(defn get-item-sell-price
+  "Get the sell price for any sellable item.
+   Accepts optional default value (defaults to 25)."
+  ([item-key] (get-item-sell-price item-key 25))
+  ([item-key default]
+   (or (get-in classification/physical-items [(keyword item-key) :sell-price])
+       default)))
+
+;; Production recipe - what's needed to produce finished goods
+(def production-recipe
+  "Resources consumed to produce one batch of printed t-shirts."
+  {:blank-tshirts 10      ;; 10 blank shirts per batch
+   :ink-cartridges 1      ;; 1 ink cartridge per batch
+   :output-quantity 10})  ;; Produces 10 finished shirts
 
 ;; ==================== Action Definitions ====================
 
@@ -33,36 +68,36 @@
   - :prerequisites - Conditions that must be met (checked against business-state)
   - :effects - Functions that modify business state when transaction completes"
 
-  {:purchase-materials-cash
-   {:label "Purchase Raw Materials (Cash)"
-    :description "Buy blank t-shirts, paying cash"
+  {:purchase-inventory-cash
+   {:label "Purchase Inventory (Cash)"
+    :description "Buy blank t-shirts or ink cartridges, paying cash"
     :level 0
     :template-key :cash-inventory-purchase
     :prerequisites {:min-cash 100}
     :effects {:cash :subtract-amount
-              :raw-materials :add-quantity}}
+              :inventory :add-inventory-item}}
 
-   :purchase-materials-credit
-   {:label "Purchase Raw Materials (Credit)"
-    :description "Buy blank t-shirts on account, pay later"
+   :purchase-inventory-credit
+   {:label "Purchase Inventory (Credit)"
+    :description "Buy blank t-shirts or ink cartridges on account"
     :level 1
     :template-key :credit-inventory-purchase
     :prerequisites {}
     :effects {:accounts-payable :add-vendor-amount
-              :raw-materials :add-quantity}}
+              :inventory :add-inventory-item}}
 
    :purchase-equipment-cash
    {:label "Purchase Equipment (Cash)"
-    :description "Buy a t-shirt printer, paying cash"
+    :description "Buy a T-shirt Printer for $3,000"
     :level 0
     :template-key :cash-equipment-purchase
-    :prerequisites {:min-cash 1000}
+    :prerequisites {:min-cash 3000}
     :effects {:cash :subtract-amount
               :equipment :add-equipment}}
 
    :purchase-equipment-credit
    {:label "Purchase Equipment (Credit)"
-    :description "Buy a t-shirt printer on account"
+    :description "Buy a T-shirt Printer for $3,000 on account"
     :level 1
     :template-key :credit-equipment-purchase
     :prerequisites {}
@@ -80,12 +115,13 @@
 
    :produce-tshirts
    {:label "Produce T-Shirts"
-    :description "Print designs on blank t-shirts"
+    :description "Print designs on blank t-shirts (requires 10 shirts + 1 ink)"
     :level 2
     :template-key :production-direct
-    :prerequisites {:min-raw-materials 10
-                    :has-equipment :t-shirt-printer}
-    :effects {:raw-materials :subtract-quantity-consumed
+    :prerequisites {:has-equipment :t-shirt-printer
+                    :min-inventory {:blank-tshirts 10
+                                   :ink-cartridges 1}}
+    :effects {:inventory :consume-production-inputs
               :finished-goods :add-quantity-produced}}
 
    :sell-tshirts-cash
@@ -131,7 +167,8 @@
     {:current-period (:business-state/current-period entity 1)
      :moves-remaining (:business-state/moves-remaining entity MOVES_PER_PERIOD)
      :cash (:business-state/cash entity STARTING_CASH)
-     :raw-materials (:business-state/raw-materials entity 0)
+     :inventory (parse-edn-field (:business-state/inventory entity)
+                                 {:blank-tshirts 0 :ink-cartridges 0})
      :finished-goods (:business-state/finished-goods entity 0)
      :equipment (parse-edn-field (:business-state/equipment entity) #{})
      :accounts-payable (parse-edn-field (:business-state/accounts-payable entity) {})
@@ -144,7 +181,8 @@
   {:current-period 1
    :moves-remaining MOVES_PER_PERIOD
    :cash STARTING_CASH
-   :raw-materials 0
+   :inventory {:blank-tshirts 0
+               :ink-cartridges 0}
    :finished-goods 0
    :equipment #{}
    :accounts-payable {}
@@ -158,7 +196,7 @@
    :business-state/current-period (:current-period state)
    :business-state/moves-remaining (:moves-remaining state)
    :business-state/cash (bigdec (:cash state))
-   :business-state/raw-materials (:raw-materials state)
+   :business-state/inventory (pr-str (:inventory state))
    :business-state/finished-goods (:finished-goods state)
    :business-state/equipment (pr-str (:equipment state))
    :business-state/accounts-payable (pr-str (:accounts-payable state))
@@ -166,6 +204,17 @@
    :business-state/simulation-date (:simulation-date state)})
 
 ;; ==================== Prerequisite Checking ====================
+
+(defn- check-inventory-requirements
+  "Check if all required inventory items are available.
+  Returns nil if all ok, or a reason string if not."
+  [inventory required-inventory]
+  (some (fn [[item-key required-qty]]
+          (let [have (get inventory item-key 0)
+                item-label (get-in classification/physical-items [item-key :label] (name item-key))]
+            (when (< have required-qty)
+              (str "Need " required-qty " " item-label " (have " have ")"))))
+        required-inventory))
 
 (defn check-prerequisites
   "Check if an action's prerequisites are met given current business state.
@@ -180,17 +229,17 @@
 
       ;; Level requirement
       (< user-level (:level action 0))
-      {:ok false :reason (str "Requires Level " (:level action))}
+      {:ok false :reason (str "Unlock in Practice Mode (L" (:level action) ")")}
 
       ;; Minimum cash
       (and (:min-cash prereqs)
            (< (:cash business-state 0) (:min-cash prereqs)))
       {:ok false :reason (str "Need at least $" (:min-cash prereqs) " cash")}
 
-      ;; Minimum raw materials
-      (and (:min-raw-materials prereqs)
-           (< (:raw-materials business-state 0) (:min-raw-materials prereqs)))
-      {:ok false :reason (str "Need at least " (:min-raw-materials prereqs) " raw material units")}
+      ;; Minimum inventory (new structured check)
+      (and (:min-inventory prereqs)
+           (check-inventory-requirements (:inventory business-state {}) (:min-inventory prereqs)))
+      {:ok false :reason (check-inventory-requirements (:inventory business-state {}) (:min-inventory prereqs))}
 
       ;; Minimum finished goods
       (and (:min-finished-goods prereqs)
@@ -248,22 +297,29 @@
     :add-amount
     (update state :cash + (bigdec (:amount variables)))
 
-    ;; Inventory effects
-    :add-quantity
-    (update state :raw-materials + (:quantity variables))
+    ;; New inventory effects (using inventory map)
+    :add-inventory-item
+    (let [item-type (keyword (:inventory-type variables))
+          qty (:quantity variables)]
+      (update-in state [:inventory item-type] (fnil + 0) qty))
 
+    :consume-production-inputs
+    ;; Consume items according to production recipe
+    (let [recipe production-recipe]
+      (-> state
+          (update-in [:inventory :blank-tshirts] - (:blank-tshirts recipe))
+          (update-in [:inventory :ink-cartridges] - (:ink-cartridges recipe))))
+
+    ;; Finished goods effects
     :subtract-quantity
     (update state :finished-goods - (:quantity variables))
 
-    :subtract-quantity-consumed
-    (update state :raw-materials - (:quantity-consumed variables (:quantity variables)))
-
     :add-quantity-produced
-    (update state :finished-goods + (:quantity-produced variables (:quantity variables)))
+    (update state :finished-goods + (:output-quantity production-recipe))
 
     ;; Equipment effects
     :add-equipment
-    (update state :equipment conj (keyword (:equipment-type variables "t-shirt-printer")))
+    (update state :equipment conj :t-shirt-printer)
 
     ;; Accounts Payable effects
     :add-vendor-amount
@@ -340,7 +396,7 @@
 (def simulation-templates
   "Custom templates for simulation-specific actions."
   {:vendor-payment
-   {:narrative-template "On {date}, SP pays {vendor} ${amount} for a previous credit purchase."
+   {:narrative-template "On {date}, you pay {vendor} ${amount} for a previous credit purchase."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :fulfills {:action "requires" :unit "monetary-unit" :quantity :amount}
@@ -349,7 +405,7 @@
     :level 1}
 
    :customer-collection
-   {:narrative-template "On {date}, SP receives ${amount} from {customer} for a previous credit sale."
+   {:narrative-template "On {date}, you receive ${amount} from {customer} for a previous credit sale."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
                           :fulfills {:action "expects" :unit "monetary-unit" :quantity :amount}
@@ -358,6 +414,196 @@
     :level 2}})
 
 ;; ==================== Transaction Generation ====================
+
+;; Simulation-specific variable options (derived from physical-items where possible)
+(def simulation-variables
+  "Override template variables with simulation-appropriate options."
+  {:equipment-type [(str "a " (:label (first (vals equipment-types))))]
+   ;; Inventory options derived from purchasable-inventory-items
+   :inventory-options (vec (for [[k v] inventory-types]
+                             {:type k :label (:label v) :unit-cost (:unit-cost v)}))
+   :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters" "GarmentWholesale"]
+   :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo" "RetailPartner"]
+   :product ["printed t-shirts" "custom t-shirts" "branded shirts"]})
+
+;; ==================== Action Schemas ====================
+;; Single source of truth for action parameters - frontend derives from this
+
+(defn- inventory-type-options
+  "Generate inventory type options with prices from physical-items."
+  []
+  (vec (for [[k v] inventory-types]
+         {:value (name k)
+          :label (str (:label v) " ($" (:unit-cost v) "/unit)")})))
+
+(def action-schemas
+  "Defines parameter schemas for each action type.
+   Frontend fetches this to render parameter forms dynamically.
+
+   Parameter types:
+   - :select - Dropdown with :options or :options-fn
+   - :number - Numeric input with :min and optional :max-fn (business state key)
+
+   Options format:
+   - :options - Static list of {:value :label} or strings
+   - :options-fn - Keyword referencing a dynamic option generator"
+  {:purchase-inventory-cash
+   {:parameters
+    [{:key :inventory-type
+      :label "Item Type"
+      :type :select
+      :options-fn :inventory-types}
+     {:key :quantity
+      :label "Quantity"
+      :type :number
+      :min 1}
+     {:key :vendor
+      :label "Vendor"
+      :type :select
+      :options-fn :vendors}]}
+
+   :purchase-inventory-credit
+   {:parameters
+    [{:key :inventory-type
+      :label "Item Type"
+      :type :select
+      :options-fn :inventory-types}
+     {:key :quantity
+      :label "Quantity"
+      :type :number
+      :min 1}
+     {:key :vendor
+      :label "Vendor"
+      :type :select
+      :options-fn :vendors}]}
+
+   :sell-tshirts-cash
+   {:parameters
+    [{:key :quantity
+      :label "Quantity"
+      :type :number
+      :min 1
+      :max-fn :finished-goods}
+     {:key :customer
+      :label "Customer"
+      :type :select
+      :options-fn :customers}]}
+
+   :sell-tshirts-credit
+   {:parameters
+    [{:key :quantity
+      :label "Quantity"
+      :type :number
+      :min 1
+      :max-fn :finished-goods}
+     {:key :customer
+      :label "Customer"
+      :type :select
+      :options-fn :customers}]}})
+
+(defn resolve-action-schema-options
+  "Resolve :options-fn references to actual option values."
+  [schema]
+  (update schema :parameters
+          (fn [params]
+            (vec (for [param params]
+                   (if-let [opts-fn (:options-fn param)]
+                     (-> param
+                         (dissoc :options-fn)
+                         (assoc :options
+                                (case opts-fn
+                                  :inventory-types (inventory-type-options)
+                                  :vendors (vec (for [v (:vendor simulation-variables)]
+                                                  {:value v :label v}))
+                                  :customers (vec (for [c (:customer simulation-variables)]
+                                                    {:value c :label c}))
+                                  [])))
+                     param))))))
+
+(defn get-action-schemas
+  "Get all action schemas with options resolved."
+  []
+  (into {}
+        (for [[action-key schema] action-schemas]
+          [action-key (resolve-action-schema-options schema)])))
+
+(defn- simulation-vars
+  "Generate variables appropriate for the simulation context.
+   Student-provided vars override defaults where applicable."
+  [action-key business-state template-vars student-vars]
+  (let [cash (:cash business-state 0)]
+    (case action-key
+      ;; Inventory purchases: student chooses type and quantity
+      :purchase-inventory-cash
+      (let [inv-type (or (keyword (:inventory-type student-vars))
+                         :blank-tshirts)
+            unit-cost (get-item-unit-cost inv-type)
+            max-qty (int (/ cash unit-cost))
+            qty (or (:quantity student-vars)
+                    (min 20 (max 1 max-qty)))
+            amount (* qty unit-cost)]
+        {:inventory-type (name inv-type)
+         :physical-item (name inv-type)  ;; For classification system
+         :quantity qty
+         :amount amount
+         :vendor (or (:vendor student-vars)
+                     (rand-nth (:vendor simulation-variables)))})
+
+      :purchase-inventory-credit
+      (let [inv-type (or (keyword (:inventory-type student-vars))
+                         :blank-tshirts)
+            unit-cost (get-item-unit-cost inv-type)
+            qty (or (:quantity student-vars) 20)
+            amount (* qty unit-cost)]
+        {:inventory-type (name inv-type)
+         :physical-item (name inv-type)  ;; For classification system
+         :quantity qty
+         :amount amount
+         :vendor (or (:vendor student-vars)
+                     (rand-nth (:vendor simulation-variables)))})
+
+      :purchase-equipment-cash
+      {:amount 3000  ;; Fixed price for T-shirt Printer
+       :equipment-type (first (:equipment-type simulation-variables))
+       :vendor (or (:vendor student-vars)
+                   (rand-nth (:vendor simulation-variables)))}
+
+      :purchase-equipment-credit
+      {:amount 3000  ;; Fixed price for T-shirt Printer
+       :equipment-type (first (:equipment-type simulation-variables))
+       :vendor (or (:vendor student-vars)
+                   (rand-nth (:vendor simulation-variables)))}
+
+      ;; Sales
+      :sell-tshirts-cash
+      (let [qty (or (:quantity student-vars)
+                    (min 10 (:finished-goods business-state 1)))
+            sell-price (get-item-sell-price :printed-tshirts)
+            amount (* qty sell-price)]
+        {:quantity qty
+         :product (rand-nth (:product simulation-variables))
+         :customer (or (:customer student-vars)
+                       (rand-nth (:customer simulation-variables)))
+         :amount amount})
+
+      :sell-tshirts-credit
+      (let [qty (or (:quantity student-vars)
+                    (min 10 (:finished-goods business-state 1)))
+            sell-price (get-item-sell-price :printed-tshirts)
+            amount (* qty sell-price)]
+        {:quantity qty
+         :product (rand-nth (:product simulation-variables))
+         :customer (or (:customer student-vars)
+                       (rand-nth (:customer simulation-variables)))
+         :amount amount})
+
+      ;; Production - uses fixed recipe
+      :produce-tshirts
+      {:quantity-consumed (:blank-tshirts production-recipe)
+       :quantity-produced (:output-quantity production-recipe)}
+
+      ;; Default: no overrides
+      {})))
 
 (defn- get-template
   "Get template from classification or simulation templates."
@@ -375,32 +621,54 @@
 
 (defn generate-transaction
   "Generate a transaction for the given action.
+  Accepts optional student-provided variables that override defaults.
   Returns problem data including narrative, variables, and correct assertions."
-  [action-key business-state]
-  (let [action (get actions action-key)
-        template-key (:template-key action)
-        template (get-template template-key)]
-    (when template
-      (let [sim-date (:simulation-date business-state STARTING_DATE)
-            ;; Generate random variables from template options
-            base-vars (into {:date sim-date}
-                           (for [[k options] (:variables template {})]
-                             [k (if (sequential? options)
-                                  (rand-nth options)
-                                  options)]))
+  ([action-key business-state] (generate-transaction action-key business-state {}))
+  ([action-key business-state student-vars]
+   (let [action (get actions action-key)
+         template-key (:template-key action)
+         template (get-template template-key)]
+     (when template
+       (let [sim-date (:simulation-date business-state STARTING_DATE)
+             ;; Filter out nil/empty student vars first
+             clean-student-vars (into {} (filter (fn [[_ v]] (and v (not= v ""))) student-vars))
+             ;; Get simulation-specific variable overrides (which now use student-vars)
+             sim-overrides (simulation-vars action-key business-state (:variables template {}) clean-student-vars)
+             ;; Generate base variables from template options (excluding :date - we use sim-date)
+             base-vars (into {}
+                            (for [[k options] (:variables template {})
+                                  :when (not= k :date)]  ;; Don't use template's random dates
+                              [k (if (sequential? options)
+                                   (rand-nth options)
+                                   options)]))
+             ;; Merge: base < simulation-overrides (simulation-vars already used student-vars)
+             ;; Always use simulation date, never template random dates
+             vars (assoc (merge base-vars sim-overrides) :date sim-date)
             ;; For vendor payment, use existing vendor from A/P
             vars (if (= action-key :pay-vendor)
                    (let [ap (:accounts-payable business-state {})
                          vendor (first (keys ap))
                          amount (get ap vendor 0)]
-                     (assoc base-vars :vendor vendor :amount (long amount)))
-                   base-vars)
+                     (assoc vars :vendor vendor :amount (long amount)))
+                   vars)
             ;; For customer collection, use existing customer from A/R
             vars (if (= action-key :collect-receivable)
                    (let [ar (:accounts-receivable business-state {})
                          customer (first (keys ar))
                          amount (get ar customer 0)]
                      (assoc vars :customer customer :amount (long amount)))
+                   vars)
+            ;; For sales, calculate amount from quantity * price per unit
+            vars (if (and (contains? #{:sell-tshirts-cash :sell-tshirts-credit} action-key)
+                          (nil? (:amount vars)))
+                   (let [qty (:quantity vars 1)
+                         price-per-unit (rand-nth [15 20 25 30])]  ;; $15-30 per shirt
+                     (assoc vars :amount (* qty price-per-unit)))
+                   vars)
+            ;; For production, set produced = consumed
+            vars (if (and (= action-key :produce-tshirts)
+                          (nil? (:quantity-produced vars)))
+                   (assoc vars :quantity-produced (:quantity-consumed vars 10))
                    vars)
             ;; Generate narrative from template
             narrative (apply-template-string (:narrative-template template) vars)
@@ -415,7 +683,7 @@
          :required-assertions resolved-assertions
          :correct-classification (:correct-classification template)
          :action-type action-key
-         :level (:level action)}))))
+         :level (:level action)})))))
 
 ;; ==================== Database Operations ====================
 
@@ -542,24 +810,26 @@
 
 (defn start-action!
   "Start a new action, creating a pending transaction.
+  Accepts optional student-provided variables that override defaults.
   Returns the generated problem or an error."
-  [user-id action-key user-level]
-  (let [business-state (get-business-state user-id)
-        pending (get-pending-transaction user-id)]
-    (cond
-      ;; Already have a pending transaction
-      pending
-      {:error "Complete the pending transaction first"
-       :pending-transaction pending}
+  ([user-id action-key user-level] (start-action! user-id action-key user-level {}))
+  ([user-id action-key user-level student-vars]
+   (let [business-state (get-business-state user-id)
+         pending (get-pending-transaction user-id)]
+     (cond
+       ;; Already have a pending transaction
+       pending
+       {:error "Complete the pending transaction first"
+        :pending-transaction pending}
 
-      ;; Check prerequisites
-      (not (action-available? action-key business-state user-level))
-      (let [check (check-prerequisites action-key business-state user-level)]
-        {:error (:reason check)})
+       ;; Check prerequisites
+       (not (action-available? action-key business-state user-level))
+       (let [check (check-prerequisites action-key business-state user-level)]
+         {:error (:reason check)})
 
-      ;; Generate and save transaction
-      :else
-      (let [tx (generate-transaction action-key business-state)]
+       ;; Generate and save transaction
+       :else
+       (let [tx (generate-transaction action-key business-state student-vars)]
         (if tx
           (let [pending-tx {:action-type action-key
                             :narrative (:narrative tx)
@@ -575,7 +845,7 @@
              :problem-id (:problem-id tx)
              :action-type action-key
              :level (get-in actions [action-key :level])})
-          {:error "Failed to generate transaction"})))))
+          {:error "Failed to generate transaction"}))))))
 
 (defn complete-transaction!
   "Complete a pending transaction after correct classification.

@@ -330,8 +330,8 @@
      (when (and selected? (:parameterized assertion))
        [:div.parameters
         (for [[param-key param-spec] (:parameters assertion)]
-          ;; Only show asset-type when unit is "physical-unit"
-          (when (or (not= param-key :asset-type)
+          ;; Only show physical-item when unit is "physical-unit" (Goods/Services)
+          (when (or (not= param-key :physical-item)
                     (= (get current-params :unit) "physical-unit"))
             ^{:key param-key}
             [:div.parameter
@@ -412,7 +412,7 @@
      (when is-construct?
        [je-constructor problem :disabled? (some? feedback)])
 
-     ;; Show Submit/Clear buttons before feedback is received
+     ;; Show Submit/Clear/Cancel buttons before feedback is received
      (when (nil? feedback)
        [:div.actions
         (if is-construct?
@@ -435,7 +435,12 @@
          {:on-click #(if is-construct?
                       (state/clear-je-fields!)
                       (state/clear-selections!))}
-         "Clear"]])
+         "Clear"]
+        ;; Cancel button only in simulation mode
+        (when (state/simulation-mode?)
+          [:button.cancel-btn
+           {:on-click #(api/cancel-transaction!)}
+           "Cancel Transaction"])])
 
      (cond
        ;; Show current selection status
@@ -543,17 +548,20 @@
   (let [bstate (state/business-state)]
     (when bstate
       [:div.business-dashboard
-       [:h3 "SP's Business Status"]
+       [:h3 "Your Business Status"]
        [:div.metrics-grid
         [:div.metric
          [:span.metric-label "Cash"]
          [:span.metric-value (format-currency (:cash bstate))]]
         [:div.metric
-         [:span.metric-label "Raw Materials"]
-         [:span.metric-value (str (:raw-materials bstate 0) " units")]]
+         [:span.metric-label "Blank T-Shirts"]
+         [:span.metric-value (str (get-in bstate [:inventory :blank-tshirts] 0) " units")]]
+        [:div.metric
+         [:span.metric-label "Ink Cartridges"]
+         [:span.metric-value (str (get-in bstate [:inventory :ink-cartridges] 0) " units")]]
         [:div.metric
          [:span.metric-label "Finished Goods"]
-         [:span.metric-value (str (:finished-goods bstate 0) " units")]]
+         [:span.metric-value (str (:finished-goods bstate 0) " printed shirts")]]
         (when (seq (:accounts-payable bstate))
           [:div.metric
            [:span.metric-label "Accounts Payable"]
@@ -574,40 +582,153 @@
         [:span.moves (str "Moves: " (:moves-remaining bstate 5) " remaining")]
         [:span.sim-date (str "Date: " (:simulation-date bstate))]]])))
 
+;; Actions that require student parameter selection
+(def actions-requiring-params
+  "These actions need student input before starting."
+  #{:purchase-inventory-cash :purchase-inventory-credit})
+
 (defn action-button
-  "Renders a single action button."
+  "Renders a single action button.
+   Actions in actions-requiring-params are staged for parameter entry;
+   others start directly."
   [{:keys [key label description level available reason]}]
   [:button.action-btn
    {:class (when-not available "disabled")
     :disabled (not available)
     :title (if available description reason)
-    :on-click #(when available (api/start-simulation-action! key))}
+    :on-click #(when available
+                 (if (contains? actions-requiring-params key)
+                   (state/set-staged-action! key)
+                   (api/start-simulation-action! key)))}
    [:span.action-label label]
    [:span.action-level (str "L" level)]
    (when-not available
      [:span.action-reason reason])])
 
+;; Parameter definitions for each action type
+(def action-parameters
+  "Defines the parameters students can enter for each action type."
+  {:purchase-inventory-cash
+   [{:key :inventory-type :label "Item Type" :type :select
+     :options [["blank-tshirts" "Blank T-Shirts ($5/unit)"]
+               ["ink-cartridges" "Ink Cartridges ($25/unit)"]]}
+    {:key :quantity :label "Quantity" :type :number :min 1}
+    {:key :vendor :label "Vendor" :type :select
+     :options ["PrintSupplyCo" "TextileDirect" "InkMasters" "GarmentWholesale"]}]
+
+   :purchase-inventory-credit
+   [{:key :inventory-type :label "Item Type" :type :select
+     :options [["blank-tshirts" "Blank T-Shirts ($5/unit)"]
+               ["ink-cartridges" "Ink Cartridges ($25/unit)"]]}
+    {:key :quantity :label "Quantity" :type :number :min 1}
+    {:key :vendor :label "Vendor" :type :select
+     :options ["PrintSupplyCo" "TextileDirect" "InkMasters" "GarmentWholesale"]}]
+
+   :sell-tshirts-cash
+   [{:key :quantity :label "Quantity" :type :number :min 1 :max-fn :finished-goods}
+    {:key :customer :label "Customer" :type :select
+     :options ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo" "RetailPartner"]}]
+
+   :sell-tshirts-credit
+   [{:key :quantity :label "Quantity" :type :number :min 1 :max-fn :finished-goods}
+    {:key :customer :label "Customer" :type :select
+     :options ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo" "RetailPartner"]}]})
+
+(defn param-input
+  "Render a single parameter input field.
+   Options can be in multiple formats:
+   - Maps: [{:value 'v1' :label 'Label 1'} ...]
+   - Tuples: [['value1' 'Label 1'] ...]
+   - Strings: ['Option1' 'Option2']"
+  [param-def business-state]
+  (let [k (:key param-def)
+        current-val (get (state/staged-params) k)
+        max-val (when-let [max-fn (:max-fn param-def)]
+                  (get business-state max-fn))]
+    [:div.param-field
+     [:label (:label param-def)]
+     (case (:type param-def)
+       :number
+       [:input {:type "number"
+                :min (:min param-def 0)
+                :max (or max-val 999999)
+                :value (or current-val "")
+                :placeholder (str (:label param-def)
+                                 (when max-val (str " (max: " max-val ")")))
+                :on-change #(state/update-staged-param! k (js/parseInt (.. % -target -value)))}]
+
+       :select
+       [:select {:value (or current-val "")
+                 :on-change #(state/update-staged-param! k (.. % -target -value))}
+        [:option {:value ""} (str "Select " (:label param-def))]
+        (for [opt (:options param-def)]
+          ;; Handle map {:value :label}, tuple [value label], or string formats
+          (let [[value label] (cond
+                                (map? opt) [(:value opt) (:label opt)]
+                                (vector? opt) opt
+                                :else [opt opt])]
+            ^{:key value}
+            [:option {:value value} label]))])]))
+
+(defn action-param-form
+  "Form for entering parameters for a staged action."
+  []
+  (let [staged (state/staged-action)
+        params (state/staged-params)
+        business-state (state/business-state)
+        ;; Use dynamic schemas from backend, fallback to hardcoded for compatibility
+        schemas (state/action-schemas)
+        param-defs (or (get-in schemas [staged :parameters])
+                       (get action-parameters staged []))
+        action-info (first (filter #(= (:key %) staged) (state/simulation-available-actions)))]
+    (when staged
+      [:div.param-form
+       [:h4 (str "Configure: " (:label action-info (:name staged)))]
+       [:div.param-fields
+        (for [param-def param-defs]
+          ^{:key (:key param-def)}
+          [param-input param-def business-state])]
+       [:div.param-actions
+        [:button.start-tx-btn
+         {:on-click #(api/start-simulation-action! staged params)}
+         "Start Transaction"]
+        [:button.cancel-btn
+         {:on-click #(state/clear-staged-action!)}
+         "Cancel"]]])))
+
 (defn action-selection-panel
   "Panel for selecting actions in simulation mode."
   []
   (let [actions (state/simulation-available-actions)
-        pending (state/pending-transaction)]
+        pending (state/pending-transaction)
+        staged (state/staged-action)]
     [:div.action-panel
-     [:h3 "What should SP do next?"]
-     (if pending
+     [:h3 "What do you want to do?"]
+     (cond
+       ;; Has pending transaction - show info only
+       pending
        [:div.pending-alert
-        [:p.pending-message "Complete the pending transaction first:"]
-        [:p.pending-attempts (str "Attempts: " (:attempts pending 0))]]
-       (if (seq actions)
-         [:div.action-buttons
-          (for [action actions]
-            ^{:key (:key action)}
-            [action-button action])]
-         [:div.no-actions
-          [:p "Loading available actions..."]
-          [:button.refresh-btn
-           {:on-click #(api/fetch-simulation-state!)}
-           "Refresh"]]))]))
+        [:p.pending-message "Complete the current transaction to continue."]
+        [:span.pending-attempts (str "Attempts: " (:attempts pending 0))]]
+
+       ;; Has staged action - show parameter form
+       staged
+       [action-param-form]
+
+       ;; Show action buttons
+       (seq actions)
+       [:div.action-buttons
+        (for [action actions]
+          ^{:key (:key action)}
+          [action-button action])]
+
+       ;; Loading
+       :else
+       [:div.no-actions
+        [:p "Loading available actions..."]
+        [:button.refresh-btn
+         {:on-click #(api/fetch-simulation-state!)}
+         "Refresh"]])]))
 
 (defn ledger-entry-row
   "Renders a single ledger entry."
@@ -642,41 +763,122 @@
            [ledger-entry-row entry])]]
        [:p.empty-ledger "No transactions recorded yet. Start by selecting an action above!"])]))
 
-(defn simulation-narrative-panel
-  "Narrative panel for simulation mode."
+;; Action type labels for display
+(def action-labels
+  {:purchase-inventory-cash "Purchasing Inventory (Cash)"
+   :purchase-inventory-credit "Purchasing Inventory (on Credit)"
+   :purchase-equipment-cash "Purchasing Equipment (Cash)"
+   :purchase-equipment-credit "Purchasing Equipment (on Credit)"
+   :sell-tshirts-cash "Selling T-Shirts (Cash)"
+   :sell-tshirts-credit "Selling T-Shirts (on Credit)"
+   :produce-tshirts "Producing T-Shirts"
+   :pay-vendor "Paying Vendor"
+   :collect-receivable "Collecting from Customer"})
+
+(def inventory-type-labels
+  "Human-readable labels for inventory types (raw materials)."
+  {"blank-tshirts" "Blank T-Shirts (Raw Materials)"
+   "ink-cartridges" "Ink Cartridges (Raw Materials)"
+   :blank-tshirts "Blank T-Shirts (Raw Materials)"
+   :ink-cartridges "Ink Cartridges (Raw Materials)"})
+
+(defn transaction-summary-panel
+  "Shows structured transaction details instead of narrative prose."
   []
-  (let [problem (state/current-problem)
-        pending (state/pending-transaction)]
-    [:div.column.narrative-panel
-     [:h2 "Current Transaction"]
-     (if (or problem pending)
-       [:div.narrative-text
-        [:p (or (:narrative problem) (:narrative pending))]]
-       [:div.no-transaction
-        [:p "Select an action above to start a new transaction."]])]))
+  (let [pending (state/pending-transaction)
+        vars (:variables pending)]
+    [:div.column.transaction-panel
+     [:h2 "Your Transaction"]
+     (when pending
+       [:div.transaction-summary
+        [:div.transaction-type
+         [:strong (get action-labels (:action-type pending) "Transaction")]]
+        [:div.transaction-date
+         [:span.label "Date: "] [:span.value (:date vars)]]
+
+        ;; Show relevant details based on transaction type
+        (when-let [equip (:equipment-type vars)]
+          [:div.transaction-detail
+           [:span.label "Equipment: "] [:span.value equip]])
+
+        ;; Show inventory type (new)
+        (when-let [inv-type (:inventory-type vars)]
+          [:div.transaction-detail
+           [:span.label "Item: "] [:span.value (get inventory-type-labels inv-type inv-type)]])
+
+        (when-let [qty (:quantity vars)]
+          [:div.transaction-detail
+           [:span.label "Quantity: "] [:span.value qty " units"]])
+
+        (when-let [qty (:quantity-consumed vars)]
+          [:div.transaction-detail
+           [:span.label "Materials Used: "] [:span.value qty " units"]])
+
+        (when-let [vendor (:vendor vars)]
+          [:div.transaction-detail
+           [:span.label "Vendor: "] [:span.value vendor]])
+
+        (when-let [customer (:customer vars)]
+          [:div.transaction-detail
+           [:span.label "Customer: "] [:span.value customer]])
+
+        (when-let [amt (:amount vars)]
+          [:div.transaction-amount
+           [:span.label "Amount: "] [:span.value "$" amt]])])]))
+
+(defn transaction-confirmation
+  "Shows a confirmation message after successfully completing a transaction."
+  []
+  (when-let [tx (state/last-completed-transaction)]
+    (let [je (:journal-entry tx)
+          vars (:variables tx)
+          amount (:amount vars)]
+      [:div.transaction-confirmation
+       [:div.confirmation-header
+        [:span.checkmark "✓"]
+        [:span.message "Transaction recorded successfully!"]
+        [:button.dismiss-btn
+         {:on-click #(state/clear-last-completed-transaction!)}
+         "Dismiss"]]
+       ;; Show the journal entry
+       (when je
+         [:div.confirmation-je
+          [:h4 "Journal Entry:"]
+          [:table.je-table
+           [:tbody
+            [:tr.je-debit
+             [:td.je-account (:debit je)]
+             [:td.je-amount (str "$" amount)]
+             [:td ""]]
+            [:tr.je-credit
+             [:td.je-account (str "\u00A0\u00A0\u00A0\u00A0" (:credit je))]  ;; Indent credit
+             [:td ""]
+             [:td.je-amount (str "$" amount)]]]]])])))
 
 (defn simulation-content
   "Main content for simulation mode."
   []
-  (let [problem (state/current-problem)
-        pending (state/pending-transaction)]
+  (let [pending (state/pending-transaction)
+        last-tx (state/last-completed-transaction)]
     [:div.simulation-container
      [:div.simulation-top
       [business-dashboard]
+      ;; When no pending transaction, show ledger directly below dashboard
+      (when-not pending
+        [:div.ledger-inline
+         ;; Show confirmation if just completed a transaction
+         [transaction-confirmation]
+         [:div.ledger-section
+          [:h3 "Transaction Ledger"]
+          [ledger-view]]])
       [action-selection-panel]]
+     ;; When there's a pending transaction, show the three-column layout
      [:div.simulation-main
-      (when (or problem pending)
+      (when pending
         [:div.three-column-layout
-         [simulation-narrative-panel]
+         [transaction-summary-panel]
          [assertion-panel]
          [feedback-panel]])]
-     [:div.simulation-bottom
-      [:div.ledger-section
-       [:div.ledger-header
-        [:button.view-ledger-btn
-         {:on-click #(api/fetch-ledger!)}
-         "Refresh Ledger"]]
-       [ledger-view]]]
      [:div.simulation-actions
       [:button.reset-btn
        {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
@@ -700,7 +902,10 @@
       {:class (when (= mode :simulation) "active")
        :on-click #(do
                     (state/set-app-mode! :simulation)
+                    (state/set-current-problem! nil)  ;; Clear practice problem
+                    (state/clear-feedback!)
                     (api/fetch-simulation-state!)
+                    (api/fetch-action-schemas!)  ;; Fetch action parameter schemas
                     (api/fetch-ledger!)
                     (api/fetch-assertions! (state/current-level)))}
       "Simulation"]]))

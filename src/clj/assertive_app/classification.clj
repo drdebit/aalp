@@ -12,7 +12,187 @@
               assertion assertions]
           [(:code assertion) (:label assertion)])))
 
-;; Assertion definitions - aligned with research framework
+;; ==================== Physical Items: Single Source of Truth ====================
+;; This is the authoritative definition for all physical items in the system.
+;; All dropdown options, account mappings, hints, and labels derive from this.
+
+(def physical-items
+  "Unified definition of physical items with their properties and account mappings.
+   This is the SINGLE SOURCE OF TRUTH for all item-related data in the system.
+
+   Classification Properties:
+   - :label - Human-readable name
+   - :description - What this item is (shown in hints)
+   - :account - Journal entry account when receiving this item
+   - :provides-account - Account when providing/selling (defaults to Revenue)
+   - :account-type - :asset, :revenue, :expense for classification
+   - :enables - What this item allows [:production, :sale, :capability]
+   - :available-for - Which assertions can use this [:provides, :receives]
+   - :unlock-level - Level at which the item→account mapping is revealed in feedback
+
+   Simulation Properties:
+   - :unit-cost - Cost per unit in simulation (nil for non-purchasable items)
+   - :category - :raw-material, :equipment, :finished-good, :service
+   - :sellable? - Can this item be sold?
+   - :purchasable? - Can this item be purchased?"
+  {:blank-tshirts
+   {:label "Blank T-Shirts"
+    :description "raw materials for production"
+    :account "Raw Materials Inventory"
+    :account-type :asset
+    :enables [:production]
+    :available-for #{:provides :receives}
+    :unlock-level 0
+    ;; Simulation properties
+    :unit-cost 5
+    :category :raw-material
+    :purchasable? true
+    :sellable? false}
+
+   :ink-cartridges
+   {:label "Ink Cartridges"
+    :description "supplies for production"
+    :account "Raw Materials Inventory"
+    :account-type :asset
+    :enables [:production]
+    :available-for #{:provides :receives}
+    :unlock-level 0
+    ;; Simulation properties
+    :unit-cost 25
+    :category :raw-material
+    :purchasable? true
+    :sellable? false}
+
+   :t-shirt-printer
+   {:label "T-shirt Printer"
+    :description "equipment enabling production"
+    :account "Equipment (Fixed Asset)"
+    :account-type :asset
+    :enables [:capability]
+    :available-for #{:receives}
+    :unlock-level 0
+    ;; Simulation properties
+    :unit-cost 3000
+    :category :equipment
+    :purchasable? true
+    :sellable? false}
+
+   :printed-tshirts
+   {:label "Printed T-Shirts"
+    :description "finished goods for sale"
+    :account "Finished Goods Inventory"
+    :provides-account "Revenue"
+    :account-type :asset
+    :enables [:sale]
+    :available-for #{:provides :receives}
+    :unlock-level 2
+    ;; Simulation properties
+    :unit-cost nil  ;; Not directly purchasable
+    :sell-price 25
+    :category :finished-good
+    :purchasable? false
+    :sellable? true}
+
+   :services
+   {:label "Services"
+    :description "service provided"
+    :account "Service Revenue"
+    :account-type :revenue
+    :enables []
+    :available-for #{:provides}
+    :unlock-level 1
+    ;; Simulation properties
+    :unit-cost nil
+    :category :service
+    :purchasable? false
+    :sellable? true}})
+
+;; ==================== Unit Type Options ====================
+;; Single source of truth for unit type dropdown options used across assertions
+
+(def unit-type-options
+  "Standard unit type options for provides/receives/requires/expects assertions."
+  [{:value "monetary-unit" :label "Cash/Money"}
+   {:value "physical-unit" :label "Goods/Services"}
+   {:value "time-unit" :label "Time"}
+   {:value "effort-unit" :label "Effort/Labor"}])
+
+;; Derived helpers for simulation
+(def purchasable-inventory-items
+  "Items that can be purchased in simulation mode (derived from physical-items)."
+  (into {}
+        (for [[k v] physical-items
+              :when (and (:purchasable? v) (= :raw-material (:category v)))]
+          [k v])))
+
+(def equipment-items
+  "Equipment items that can be purchased (derived from physical-items)."
+  (into {}
+        (for [[k v] physical-items
+              :when (and (:purchasable? v) (= :equipment (:category v)))]
+          [k v])))
+
+;; Derived helpers from physical-items
+(defn physical-item-options
+  "Generate dropdown options for an assertion type (:provides or :receives).
+   Filters items by what they're available for and optionally by unlock level."
+  [assertion-type & {:keys [max-level] :or {max-level 99}}]
+  (vec
+   (for [[item-key item-def] physical-items
+         :when (and (contains? (:available-for item-def) assertion-type)
+                    (<= (:unlock-level item-def) max-level))]
+     {:value (name item-key)
+      :label (str (:label item-def) " (" (:description item-def) ")")})))
+
+(defn get-physical-item-account
+  "Get the account for a physical item, considering whether providing or receiving."
+  [item-key assertion-type]
+  (let [item-def (get physical-items (keyword item-key))]
+    (if (and (= assertion-type :provides) (:provides-account item-def))
+      (:provides-account item-def)
+      (:account item-def))))
+
+(defn get-physical-item-label
+  "Get the display label with account info for a physical item."
+  [item-key]
+  (when-let [item-def (get physical-items (keyword item-key))]
+    (str (:label item-def) " (" (:account item-def) ")")))
+
+(defn physical-item-hint-label
+  "Get a hint-appropriate label showing what account the item maps to."
+  [item-key]
+  (when-let [item-def (get physical-items (keyword item-key))]
+    (str (:label item-def) " (" (:account item-def) ")")))
+
+(defn resolve-physical-item-options
+  "Resolve :derives-from-physical-items-* markers to actual options.
+   Called when sending assertions to frontend."
+  [assertions-map level]
+  (into {}
+        (for [[domain assertions] assertions-map]
+          [domain
+           (mapv (fn [assertion]
+                   (if-let [params (:parameters assertion)]
+                     (assoc assertion :parameters
+                            (into {}
+                                  (for [[param-key param-spec] params]
+                                    [param-key
+                                     (if (keyword? (:options param-spec))
+                                       ;; Resolve the marker to actual options
+                                       (let [options-key (:options param-spec)]
+                                         (assoc param-spec :options
+                                                (case options-key
+                                                  :derives-from-physical-items-provides
+                                                  (physical-item-options :provides :max-level level)
+                                                  :derives-from-physical-items-receives
+                                                  (physical-item-options :receives :max-level level)
+                                                  ;; Default: keep as-is
+                                                  (:options param-spec))))
+                                       param-spec)])))
+                     assertion))
+                 assertions)])))
+
+;; ==================== Assertion Definitions ====================
 (def available-assertions
   (array-map
    ;; Event domain - applies to all events, not just exchanges
@@ -45,10 +225,12 @@
      :parameterized true
      :parameters {:unit {:type :dropdown
                          :label "Unit type"
-                         :options [{:value "monetary-unit" :label "Cash/Money"}
-                                   {:value "physical-unit" :label "Goods/Services"}
-                                   {:value "time-unit" :label "Time"}
-                                   {:value "effort-unit" :label "Effort/Labor"}]}
+                         :options unit-type-options}
+                  ;; Physical item specifies what kind of goods (appears when unit is physical-unit)
+                  ;; Options derived from physical-items single source of truth
+                  :physical-item {:type :dropdown
+                                  :label "Physical item"
+                                  :options :derives-from-physical-items-provides}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}}}
@@ -61,15 +243,12 @@
      :parameterized true
      :parameters {:unit {:type :dropdown
                          :label "Unit type"
-                         :options [{:value "monetary-unit" :label "Cash/Money"}
-                                   {:value "physical-unit" :label "Goods/Services"}
-                                   {:value "time-unit" :label "Time"}
-                                   {:value "effort-unit" :label "Effort/Labor"}]}
-                  :asset-type {:type :dropdown
-                               :label "Asset type"
-                               :options [{:value "inventory" :label "Inventory (for resale/production)"}
-                                         {:value "equipment" :label "Equipment (long-term use)"}]
-                               :optional true}
+                         :options unit-type-options}
+                  ;; Physical item specifies what kind of goods (appears when unit is physical-unit)
+                  ;; Options derived from physical-items single source of truth
+                  :physical-item {:type :dropdown
+                                  :label "Physical item"
+                                  :options :derives-from-physical-items-receives}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}}}]
@@ -87,10 +266,7 @@
                                      {:value "receives" :label "Receive (get something)"}]}
                   :unit {:type :dropdown
                          :label "Unit type"
-                         :options [{:value "monetary-unit" :label "Cash/Money"}
-                                   {:value "physical-unit" :label "Goods/Services"}
-                                   {:value "time-unit" :label "Time"}
-                                   {:value "effort-unit" :label "Effort/Labor"}]}
+                         :options unit-type-options}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}}}
@@ -107,10 +283,7 @@
                                      {:value "receives" :label "Receive (get something)"}]}
                   :unit {:type :dropdown
                          :label "Unit type"
-                         :options [{:value "monetary-unit" :label "Cash/Money"}
-                                   {:value "physical-unit" :label "Goods/Services"}
-                                   {:value "time-unit" :label "Time"}
-                                   {:value "effort-unit" :label "Effort/Labor"}]}
+                         :options unit-type-options}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}
@@ -279,18 +452,18 @@
 (def accounts-by-level
   "Accounts available at each level for JE construction problems.
    Progressively unlocks more complex accounts as students advance."
-  {0 {:asset ["Cash" "Inventory" "Equipment" "Prepaid Expense"]
+  {0 {:asset ["Cash" "Raw Materials Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable"]
       :revenue ["Revenue"]
       :expense ["Cost of Goods Sold" "Expense"]}
 
-   1 {:asset ["Cash" "Accounts Receivable" "Inventory" "Equipment" "Prepaid Expense"]
+   1 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable"]
       :revenue ["Revenue"]
       :expense ["Cost of Goods Sold" "Expense"]}
 
-   2 {:asset ["Cash" "Accounts Receivable" "Inventory" "Raw Materials"
-              "Work in Process" "Finished Goods" "Equipment" "Prepaid Expense"]
+   2 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
+              "Work in Process" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable"]
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}})
@@ -314,8 +487,8 @@
 (defn cash-exchange
   "Template for cash exchange transactions (simultaneous exchange, no future obligation).
    entity-provides and entity-receives can be :cash or :goods/:services
-   asset-type is optional (e.g., 'inventory' or 'equipment')"
-  [description journal-entry & {:keys [provides-unit receives-unit asset-type note examples level]
+   physical-item specifies the specific item (e.g., 'blank-tshirts', 't-shirt-printer')"
+  [description journal-entry & {:keys [provides-unit provides-item receives-unit physical-item note examples level]
                                  :or {level 0}}]
   (let [base {:required #{:has-date :provides :receives :has-counterparty}
               :prohibited #{:requires :expects :allows}  ;; Cash exchanges don't involve capability recognition
@@ -323,10 +496,12 @@
               :journal-entry journal-entry
               :level level}
         params (merge {}
-                     (when provides-unit {:provides {:unit provides-unit}})
+                     (when provides-unit
+                       {:provides (merge {:unit provides-unit}
+                                        (when provides-item {:physical-item provides-item}))})
                      (when receives-unit
                        {:receives (merge {:unit receives-unit}
-                                        (when asset-type {:asset-type asset-type}))}))]
+                                        (when physical-item {:physical-item physical-item}))}))]
     (cond-> base
       (seq params) (assoc :required-parameters params)
       note (assoc :note note)
@@ -334,10 +509,11 @@
 
 (defn credit-transaction
   "Template for credit transactions (receive/provide now, obligation/expectation for future).
-   future-assertion is either :requires (obligation) or :expects (expectation)"
+   future-assertion is either :requires (obligation) or :expects (expectation)
+   physical-item specifies the specific item being received (e.g., 'blank-tshirts', 't-shirt-printer')"
   [description journal-entry future-assertion & {:keys [present-action present-unit
                                                          future-action future-unit
-                                                         asset-type note examples level]
+                                                         physical-item provides-item note examples level]
                                                   :or {level 1}}]
   (let [present-assertion (if (= present-action :provides) :provides :receives)
         base {:required #{:has-date present-assertion :has-counterparty future-assertion}
@@ -348,7 +524,10 @@
         params (merge {}
                      (when present-unit
                        {present-assertion (merge {:unit present-unit}
-                                                 (when asset-type {:asset-type asset-type}))})
+                                                 (when (and (= present-action :receives) physical-item)
+                                                   {:physical-item physical-item})
+                                                 (when (and (= present-action :provides) provides-item)
+                                                   {:physical-item provides-item}))})
                      (when (and future-action future-unit)
                        {future-assertion {:action future-action :unit future-unit}}))]
     (cond-> base
@@ -363,20 +542,21 @@
      "Cash sale (provide goods/services, receive cash)"
      [{:debit "Cash" :credit "Revenue"}]
      :provides-unit "physical-unit"
+     :provides-item "printed-tshirts"
      :receives-unit "monetary-unit"
      :note "Simplified - in practice would also record: DR: Cost of Goods Sold, CR: Inventory"
-     :examples ["SP sells printed t-shirt for $25 cash"
-                "SP provides consulting services for $1,000 cash"])
+     :examples ["SP sells printed t-shirts for cash"])
 
    :cash-inventory-purchase
    (cash-exchange
-     "Cash purchase of inventory (provide cash, receive inventory for resale)"
-     [{:debit "Inventory" :credit "Cash"}]
+     "Cash purchase of raw materials (provide cash, receive materials for production)"
+     [{:debit "Raw Materials Inventory" :credit "Cash"}]
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
-     :asset-type "inventory"
-     :examples ["SP purchases blank t-shirts for $5,000 cash"
-                "SP purchases ink supplies for $1,200 cash"])
+     ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
+     ;; The account mapping will determine Raw Materials Inventory from the physical-item
+     :examples ["SP purchases blank t-shirts for cash"
+                "SP purchases ink cartridges for cash"])
 
    :cash-equipment-purchase
    (cash-exchange
@@ -384,23 +564,22 @@
      [{:debit "Equipment (Fixed Asset)" :credit "Cash"}]
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
-     :asset-type "equipment"
-     :examples ["SP purchases t-shirt printer for $12,000 cash"
-                "SP purchases office furniture for $3,000 cash"])
+     :physical-item "t-shirt-printer"
+     :examples ["SP purchases t-shirt printer for $3,000 cash"])
 
    :inventory-purchase-on-credit
    (credit-transaction
-     "Credit purchase of inventory (receive inventory now, obligation to pay later)"
-     [{:debit "Inventory" :credit "Accounts Payable"}]
+     "Credit purchase of raw materials (receive materials now, obligation to pay later)"
+     [{:debit "Raw Materials Inventory" :credit "Accounts Payable"}]
      :requires
      :present-action :receives
      :present-unit "physical-unit"
-     :asset-type "inventory"
+     ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
      :future-action "provides"
      :future-unit "monetary-unit"
-     :note "SP receives inventory immediately but requires (is obligated to) provide cash in the future."
-     :examples ["SP receives 200 blank t-shirts, requires payment in 60 days"
-                "SP receives ink supplies, requires payment of $800 in 30 days"])
+     :note "SP receives raw materials immediately but requires (is obligated to) provide cash in the future."
+     :examples ["SP receives blank t-shirts, requires payment in 60 days"
+                "SP receives ink cartridges, requires payment in 30 days"])
 
    :equipment-purchase-on-credit
    (credit-transaction
@@ -409,12 +588,11 @@
      :requires
      :present-action :receives
      :present-unit "physical-unit"
-     :asset-type "equipment"
+     :physical-item "t-shirt-printer"
      :future-action "provides"
      :future-unit "monetary-unit"
      :note "SP receives equipment immediately but requires (is obligated to) provide cash in the future."
-     :examples ["SP receives t-shirt printer, requires future payment of $12,000"
-                "SP receives office furniture, requires payment in 90 days"])
+     :examples ["SP receives t-shirt printer, requires future payment of $3,000"])
 
    :sale-on-credit
    (credit-transaction
@@ -423,11 +601,11 @@
      :expects
      :present-action :provides
      :present-unit "physical-unit"
+     :provides-item "printed-tshirts"
      :future-action "receives"
      :future-unit "monetary-unit"
      :note "SP provides goods immediately and expects to receive cash in the future (uncertain - customer may not pay)."
-     :examples ["SP provides printed t-shirts, expects payment in 30 days"
-                "SP provides custom apparel, expects $2,500 payment later"])
+     :examples ["SP provides printed t-shirts, expects payment in 30 days"])
 
    :deferred-revenue
    (credit-transaction
@@ -586,12 +764,12 @@
    :capability-acquisition
    {:required #{:provides :receives :has-counterparty :allows}
     :required-parameters {:provides {:unit "monetary-unit"}
-                          :receives {:unit "physical-unit" :asset-type "equipment"}}
+                          :receives {:unit "physical-unit" :physical-item "t-shirt-printer"}}
     :prohibited #{}
     :description "Equipment purchase with explicit capability recognition"
     :journal-entry [{:debit "Equipment" :credit "Cash"}]
     :note "Like cash equipment purchase, but student explicitly recognizes the capability created."
-    :examples ["SP purchases printer that allows future shirt printing"]
+    :examples ["SP purchases t-shirt printer that allows future shirt printing"]
     :level 2}
 
    ;; ==================== Level 3: Legal & Regulatory Context ====================
@@ -713,6 +891,13 @@
 ;; Maps assertions and their parameters to accounts and JE effects.
 ;; This enables the UI to show which assertion ties to which account.
 
+;; Build accounts-by-physical-item dynamically from physical-items
+(def ^:private accounts-by-physical-item
+  "Derived map of physical item keys to their receiving accounts."
+  (into {:default "Asset"}
+        (for [[item-key item-def] physical-items]
+          [item-key (:account item-def)])))
+
 (def assertion-account-mapping
   "Maps assertion patterns to their corresponding accounts and JE effects."
   {:provides
@@ -721,10 +906,7 @@
 
    :receives
    {:monetary-unit {:account "Cash" :effect :debit :description "Receiving cash"}
-    :physical-unit {:accounts-by-asset-type
-                    {:inventory "Inventory"
-                     :equipment "Equipment (Fixed Asset)"
-                     :default "Asset"}
+    :physical-unit {:accounts-by-physical-item accounts-by-physical-item
                     :effect :debit
                     :description "Receiving physical asset"}}
 
@@ -739,6 +921,16 @@
                              :description "Expected to receive payment (asset)"}
     :receives-physical-unit {:account "Prepaid Expense (Asset)" :effect :debit
                              :description "Expected to receive goods/services (asset)"}}})
+
+;; Derived helper - kept for backward compatibility but now derives from physical-items
+(def physical-item-accounts
+  "Maps physical items to their journal entry accounts (derived from physical-items)."
+  (into {}
+        (for [[item-key item-def] physical-items]
+          [(name item-key)
+           (if (:provides-account item-def)
+             (:provides-account item-def)  ;; Use provides-account for items that can be sold
+             (:account item-def))])))
 
 (defn resolve-assertion-to-account
   "Given an assertion and its parameters, determine the linked account.
@@ -759,16 +951,17 @@
 
     :receives
     (let [unit (or (:unit params) "monetary-unit")
-          asset-type (:asset-type params)]
+          physical-item (:physical-item params)]
       (if (= unit "physical-unit")
         (let [base-mapping (get-in assertion-account-mapping [:receives :physical-unit])
-              account (get-in base-mapping [:accounts-by-asset-type (keyword asset-type)]
-                              (get-in base-mapping [:accounts-by-asset-type :default]))]
+              account (get-in base-mapping [:accounts-by-physical-item (keyword physical-item)]
+                              (get-in base-mapping [:accounts-by-physical-item :default]))]
           {:account account
            :effect (:effect base-mapping)
            :description (:description base-mapping)
            :assertion :receives
-           :params params})
+           :params params
+           :physical-item physical-item})
         (let [mapping (get-in assertion-account-mapping [:receives (keyword unit)])]
           (when mapping
             (assoc mapping :assertion :receives :params params)))))
@@ -1005,88 +1198,88 @@
 ;; Problem generation - using research assertions
 (def transaction-templates
   {:cash-inventory-purchase
-   {:narrative-template "On {date}, SP purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
+   {:narrative-template "On {date}, you purchase {quantity} {inventory-type} from {vendor} for ${amount} cash."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
-                          :receives {:unit "physical-unit" :asset-type "inventory" :quantity :quantity}
+                          :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-inventory-purchase
     :level 0
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
-                :vendor ["Vendor-A" "TShirtVendor" "SupplyCo"]
-                :quantity [50 100 200 500]
-                :amount [500 1000 2000 3000 5000]}}
+                :inventory-type ["blank t-shirts" "ink cartridges"]
+                :physical-item ["blank-tshirts" "ink-cartridges"]  ;; Maps to account via physical-item-accounts
+                :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
+                :quantity [20 50 100]
+                :amount [100 250 500 1000]}}
 
    :cash-equipment-purchase
-   {:narrative-template "On {date}, SP purchases {equipment-type} from {vendor} for ${amount} cash."
+   {:narrative-template "On {date}, you purchase {equipment-type} from {vendor} for ${amount} cash."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
-                          :receives {:unit "physical-unit" :asset-type "equipment" :quantity 1}
+                          :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-equipment-purchase
     :level 0
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
-                :vendor ["OfficeSupplyCo" "EquipmentVendor" "TechSupply"]
-                :amount [2000 5000 8000 10000 12000 15000]}}
+                :equipment-type ["a T-shirt Printer"]
+                :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
+                :amount [3000]}}
 
    :cash-sale
-   {:narrative-template "On {date}, SP sells {quantity} {product} to {customer} for ${amount} cash."
+   {:narrative-template "On {date}, you sell {quantity} printed t-shirts to {customer} for ${amount} cash."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "physical-unit" :quantity :quantity}
+                          :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :receives {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :customer}}
     :correct-classification :cash-sale
     :level 0
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :product ["printed t-shirts" "custom apparel" "merchandise"]
-                :customer ["Customer-A" "Customer-B" "RetailStore-X"]
-                :quantity [10 25 50 100]
-                :amount [500 1000 2500 5000]}}
+                :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
+                :quantity [10 25 50]
+                :amount [250 625 1250]}}
 
    :credit-inventory-purchase
-   {:narrative-template "On {date}, SP receives {quantity} {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+   {:narrative-template "On {date}, you receive {quantity} {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
     :required-assertions {:has-date {:date :date}
-                          :receives {:unit "physical-unit" :asset-type "inventory" :quantity :quantity}
+                          :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
                           :has-counterparty {:name :vendor}
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :inventory-purchase-on-credit
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :inventory-type ["blank t-shirts" "ink supplies" "packaging materials" "raw materials"]
-                :vendor ["Vendor-A" "TShirtVendor" "InkVendor"]
-                :quantity [50 100 200 500]
-                :amount [500 1000 2000 3000 5000]
+                :inventory-type ["blank t-shirts" "ink cartridges"]
+                :physical-item ["blank-tshirts" "ink-cartridges"]
+                :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
+                :quantity [20 50 100]
+                :amount [100 250 500 1000]
                 :days [30 60 90]}}
 
    :credit-equipment-purchase
-   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+   {:narrative-template "On {date}, you receive {equipment-type} from {vendor}, agreeing to pay ${amount} in {days} days."
     :required-assertions {:has-date {:date :date}
-                          :receives {:unit "physical-unit" :asset-type "equipment" :quantity 1}
+                          :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
                           :has-counterparty {:name :vendor}
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :equipment-purchase-on-credit
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :equipment-type ["a t-shirt printer" "office furniture" "a computer system" "production equipment"]
-                :vendor ["OfficeSupplyCo" "EquipmentVendor" "TechSupply"]
-                :amount [5000 8000 10000 12000 15000]
+                :equipment-type ["a T-shirt Printer"]
+                :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
+                :amount [3000]
                 :days [30 60 90]}}
 
    :credit-sale
-   {:narrative-template "On {date}, SP provides {quantity} {product} to {customer}, expecting payment of ${amount} in {days} days."
+   {:narrative-template "On {date}, you provide {quantity} printed t-shirts to {customer}, expecting payment of ${amount} in {days} days."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "physical-unit" :quantity :quantity}
+                          :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
                           :expects {:action "receives" :unit "monetary-unit" :quantity :amount}}
     :correct-classification :sale-on-credit
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :product ["printed t-shirts" "custom designs" "merchandise"]
-                :customer ["Customer-A" "RegularCustomer-001" "RetailStore-X"]
-                :quantity [10 25 50 100]
-                :amount [500 1000 2500 5000 7500]
+                :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
+                :quantity [10 25 50]
+                :amount [250 625 1250]
                 :days [30 60 90]}}
 
    :prepayment
@@ -1241,19 +1434,17 @@ The printed t-shirts are now finished goods ready for sale."
                 :service ["custom printing services" "design consultation" "rush order processing"]}}
 
    :capability-purchase
-   {:narrative-template "On {date}, SP purchases {equipment} from {vendor} for ${amount} cash, which allows SP to {capability} in the future."
+   {:narrative-template "On {date}, you purchase a T-shirt Printer from {vendor} for ${amount} cash, which allows you to print custom t-shirts in the future."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
-                          :receives {:unit "physical-unit" :asset-type "equipment"}
+                          :receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
                           :has-counterparty {:name :vendor}
                           :allows {}}
     :correct-classification :capability-acquisition
     :level 2
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :equipment ["a t-shirt printer" "production equipment" "an embroidery machine" "a heat press"]
-                :vendor ["EquipmentVendor" "MachinerySupply" "PrinterCo"]
-                :capability ["print custom t-shirts" "produce merchandise" "create embroidered items" "apply transfers"]
-                :amount [5000 8000 12000 15000 20000]}}
+                :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
+                :amount [3000]}}
 
    ;; ==================== Level 3: Legal & Regulatory Templates ====================
    ;; Key teaching point: Business events exist within legal frameworks
@@ -1514,11 +1705,13 @@ The printed t-shirts are now finished goods ready for sale."
       ;; If assertions show what entity receives
       (:receives assertions)
       (conj (let [unit (get-in assertions [:receives :unit])
-                  asset-type (get-in assertions [:receives :asset-type])]
+                  physical-item (get-in assertions [:receives :physical-item])]
               (str "But the assertions show the entity receives "
                    (cond
-                     (= unit "physical-unit") (str "a physical asset"
-                                                  (when asset-type (str " (" (name asset-type) ")")))
+                     (and (= unit "physical-unit") physical-item)
+                     ;; Use physical-item-hint-label derived from physical-items
+                     (physical-item-hint-label physical-item)
+                     (= unit "physical-unit") "a physical asset"
                      (= unit "monetary-unit") "money (cash)"
                      :else "something")
                    ". What account represents what's being received?")))

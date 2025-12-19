@@ -4,7 +4,7 @@
             [assertive-app.state :as state]))
 
 ;; Forward declarations for functions used before definition
-(declare fetch-assertions! fetch-problem!)
+(declare fetch-assertions! fetch-problem! fetch-ledger!)
 
 ;; Detect if we're running under a subpath (e.g., /aalp/)
 ;; and adjust API base accordingly
@@ -20,6 +20,32 @@
 
 ;; LocalStorage key for session persistence
 (def session-storage-key "aalp-session")
+
+;; ==================== Error Handler Factory ====================
+
+(defn make-error-handler
+  "Factory for creating consistent error handlers.
+   Options:
+   - :message - User-facing error message (required)
+   - :set-loading? - Whether to set loading to false (default true)
+   - :log-label - Label for console log (optional, defaults to :message)
+   - :extract-body? - Whether to extract error from response body (default false)"
+  [{:keys [message set-loading? log-label extract-body?]
+    :or {set-loading? true}}]
+  (fn [error]
+    (let [error-msg (if extract-body?
+                      (or (get-in error [:response :error]) message)
+                      message)]
+      (state/set-error! error-msg))
+    (when set-loading?
+      (state/set-loading! false))
+    (println (or log-label message) error)))
+
+(defn silent-error-handler
+  "Error handler that only logs to console (no user-facing error)."
+  [label]
+  (fn [error]
+    (println label error)))
 
 ;; ==================== Auth Helpers ====================
 
@@ -87,15 +113,17 @@
        :response-format :json
        :keywords? true
        :handler (fn [response]
-                  ;; Session valid - restore state
-                  (swap! state/app-state assoc
-                         :session-token token
-                         :logged-in? true)
-                  (state/update-progress! response)
-                  ;; Fetch assertions and problem
-                  (fetch-assertions! (:current-level response 0))
-                  (fetch-problem! (:current-level response 0))
-                  (state/set-loading! false))
+                  (let [user-level (:current-level response 0)]
+                    ;; Session valid - restore state including current-level
+                    (swap! state/app-state assoc
+                           :session-token token
+                           :logged-in? true
+                           :current-level user-level)
+                    (state/update-progress! response)
+                    ;; Fetch assertions and problem at user's level
+                    (fetch-assertions! user-level)
+                    (fetch-problem! user-level)
+                    (state/set-loading! false)))
        :error-handler (fn [_]
                         ;; Invalid session - clear it
                         (clear-session!)
@@ -111,9 +139,8 @@
      :keywords? true
      :handler (fn [response]
                 (state/set-available-assertions! (:assertions response)))
-     :error-handler (fn [error]
-                      (state/set-error! "Failed to load assertions")
-                      (println "Error loading assertions:" error))}))
+     :error-handler (make-error-handler {:message "Failed to load assertions"
+                                          :set-loading? false})}))
 
 (defn fetch-problem! [level]
   (state/set-loading! true)
@@ -129,10 +156,7 @@
                 (state/clear-selections!)
                 (state/clear-feedback!)
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (state/set-error! "Failed to load problem")
-                      (state/set-loading! false)
-                      (println "Error loading problem:" error))}))
+     :error-handler (make-error-handler {:message "Failed to load problem"})}))
 
 ;; ==================== Answer Submission ====================
 
@@ -161,10 +185,7 @@
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))
                   (state/set-loading! false))
-       :error-handler (fn [error]
-                        (state/set-error! "Failed to submit answer")
-                        (state/set-loading! false)
-                        (println "Error submitting answer:" error))})))
+       :error-handler (make-error-handler {:message "Failed to submit answer"})})))
 
 (defn submit-je!
   "Submit journal entry for construct mode. Includes problem metadata for tracking."
@@ -194,10 +215,7 @@
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))
                   (state/set-loading! false))
-       :error-handler (fn [error]
-                        (state/set-error! "Failed to validate journal entry")
-                        (state/set-loading! false)
-                        (println "Error validating JE:" error))})))
+       :error-handler (make-error-handler {:message "Failed to validate journal entry"})})))
 
 ;; ==================== Business Simulation ====================
 
@@ -219,19 +237,29 @@
                      :template (:template-key pending)
                      :correct-assertions (:correct-assertions pending)}))
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (state/set-error! "Failed to fetch simulation state")
-                      (state/set-loading! false)
-                      (println "Error fetching simulation state:" error))}))
+     :error-handler (make-error-handler {:message "Failed to fetch simulation state"})}))
+
+(defn fetch-action-schemas!
+  "Fetch action parameter schemas from backend."
+  []
+  (GET (str api-base "/simulation/action-schemas")
+    {:response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-action-schemas! (:schemas response)))
+     :error-handler (silent-error-handler "Error fetching action schemas:")}))
 
 (defn start-simulation-action!
-  "Start a new action in simulation mode."
-  [action-key]
-  (state/set-loading! true)
-  (state/clear-feedback!)
-  (POST (str api-base "/simulation/start-action")
-    {:params {:action-key action-key}
-     :format :json
+  "Start a new action in simulation mode. Optionally accepts student-provided parameters."
+  ([action-key] (start-simulation-action! action-key {}))
+  ([action-key params]
+   (state/set-loading! true)
+   (state/clear-feedback!)
+   (state/clear-staged-action!)
+   (state/clear-last-completed-transaction!)
+   (POST (str api-base "/simulation/start-action")
+     {:params {:action-key action-key :variables params}
+      :format :json
      :headers (auth-headers)
      :response-format :json
      :keywords? true
@@ -251,11 +279,8 @@
                    :action-type (:action-type response)})
                 (state/clear-selections!)
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (let [err-body (get-in error [:response :error])]
-                        (state/set-error! (or err-body "Failed to start action")))
-                      (state/set-loading! false)
-                      (println "Error starting action:" error))}))
+     :error-handler (make-error-handler {:message "Failed to start action"
+                                          :extract-body? true})})))
 
 (defn submit-simulation-answer!
   "Submit answer for simulation mode. Handles both correct and incorrect responses."
@@ -270,16 +295,17 @@
      :handler (fn [response]
                 (state/set-feedback! (:feedback response))
                 (state/update-simulation-after-classify! response)
-                ;; If correct, clear the problem
+                ;; If correct, clear the problem and refresh ledger
                 (when (:correct? response)
                   (state/set-current-problem! nil)
-                  (state/clear-selections!))
+                  (state/clear-selections!)
+                  ;; Store last completed transaction for confirmation display
+                  (state/set-last-completed-transaction! (:ledger-entry response))
+                  ;; Refresh the ledger
+                  (fetch-ledger!))
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (let [err-body (get-in error [:response :error])]
-                        (state/set-error! (or err-body "Failed to submit answer")))
-                      (state/set-loading! false)
-                      (println "Error submitting simulation answer:" error))}))
+     :error-handler (make-error-handler {:message "Failed to submit answer"
+                                          :extract-body? true})}))
 
 (defn fetch-ledger!
   "Fetch user's transaction ledger."
@@ -290,8 +316,7 @@
      :keywords? true
      :handler (fn [response]
                 (state/set-ledger! (:entries response)))
-     :error-handler (fn [error]
-                      (println "Error fetching ledger:" error))}))
+     :error-handler (silent-error-handler "Error fetching ledger:")}))
 
 (defn reset-simulation!
   "Reset user's simulation to initial state."
@@ -311,10 +336,24 @@
                 (fetch-simulation-state!)
                 (when on-success (on-success))
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (state/set-error! "Failed to reset simulation")
-                      (state/set-loading! false)
-                      (println "Error resetting simulation:" error))}))
+     :error-handler (make-error-handler {:message "Failed to reset simulation"})}))
+
+(defn cancel-transaction!
+  "Cancel the pending transaction without affecting business state."
+  []
+  (POST (str api-base "/simulation/cancel")
+    {:format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [_response]
+                (state/set-pending-transaction! nil)
+                (state/set-current-problem! nil)
+                (state/clear-feedback!)
+                (state/clear-selections!)
+                (fetch-simulation-state!))
+     :error-handler (make-error-handler {:message "Failed to cancel transaction"
+                                          :set-loading? false})}))
 
 (defn advance-period!
   "Advance to the next period in simulation."
@@ -328,7 +367,4 @@
      :handler (fn [response]
                 (state/set-business-state! (:business-state response))
                 (state/set-loading! false))
-     :error-handler (fn [error]
-                      (state/set-error! "Failed to advance period")
-                      (state/set-loading! false)
-                      (println "Error advancing period:" error))}))
+     :error-handler (make-error-handler {:message "Failed to advance period"})}))

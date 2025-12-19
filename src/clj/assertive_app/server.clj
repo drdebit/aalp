@@ -74,9 +74,12 @@
           ;; Filter assertions based on student level
           filtered-assertions (into {}
                                    (for [[domain assertions] classification/available-assertions]
-                                     [domain (filter #(<= (:level % 0) student-level) assertions)]))]
+                                     [domain (filter #(<= (:level % 0) student-level) assertions)]))
+          ;; Resolve physical-item options from single source of truth
+          resolved-assertions (classification/resolve-physical-item-options
+                               filtered-assertions student-level)]
       (response/response
-        {:assertions filtered-assertions})))
+        {:assertions resolved-assertions})))
 
   (POST "/api/classify" {body :body :as request}
     (let [selected-assertions-raw (:selected-assertions body)
@@ -162,12 +165,18 @@
            :user-level user-level}))
       {:status 401 :body {:error "Authentication required"}}))
 
+  (GET "/api/simulation/action-schemas" []
+    (response/response
+      {:schemas (simulation/get-action-schemas)}))
+
   (POST "/api/simulation/start-action" {body :body :as request}
     (if-let [user (:user request)]
       (let [user-id (:db/id user)
             action-key (keyword (:action-key body))
+            ;; Student-provided variables (optional)
+            student-vars (or (:variables body) {})
             user-level (or (:current-level (progress/get-user-progress user-id)) 0)
-            result (simulation/start-action! user-id action-key user-level)]
+            result (simulation/start-action! user-id action-key user-level student-vars)]
         (if (:error result)
           {:status 400 :body {:error (:error result)
                               :pending-transaction (:pending-transaction result)}}
@@ -263,6 +272,13 @@
                           (assoc :moves-remaining simulation/MOVES_PER_PERIOD))]
         (simulation/save-business-state! user-id new-state)
         (response/response {:business-state new-state}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/simulation/cancel" request
+    (if-let [user (:user request)]
+      (do
+        (simulation/clear-pending-transaction! (:db/id user))
+        (response/response {:success true}))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; CORS preflight

@@ -166,7 +166,12 @@
    {:db/ident :business-state/raw-materials
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
-    :db/doc "Raw material units (blank t-shirts)"}
+    :db/doc "DEPRECATED - Raw material units (blank t-shirts)"}
+
+   {:db/ident :business-state/inventory
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN map of inventory type -> quantity (e.g., {:blank-tshirts 50, :ink-cartridges 5})"}
 
    {:db/ident :business-state/finished-goods
     :db/valueType :db.type/long

@@ -312,26 +312,60 @@ Correctly-classified transactions are recorded in the student's ledger with:
 ### Implementation Files
 
 **Backend:**
+- `classification.clj` - Core classification engine
+  - `physical-items` - **Single source of truth** for all item definitions
+  - `unit-type-options` - Shared constant for unit type dropdowns
+  - Assertion definitions, transaction templates, classification logic
 - `simulation.clj` - Business simulation engine
   - Action definitions with prerequisites and effects
-  - Business state management
-  - Transaction generation
-  - Ledger persistence
+  - `action-schemas` - Parameter schemas for frontend forms
+  - Business state management, transaction generation, ledger persistence
+  - Derives `inventory-types` and `equipment-types` from classification
 
 **Frontend:**
-- `state.cljs` - Added simulation state and mode toggle
-- `api.cljs` - Added simulation API functions
-- `views.cljs` - Added business dashboard, action panel, ledger view
+- `state.cljs` - Application state management with Reagent atoms
+- `api.cljs` - API client with `make-error-handler` factory for consistent error handling
+- `views.cljs` - UI components, uses dynamic action schemas from backend
 
 **Database (schema.clj):**
 - `:business-state/*` - Business state entity
 - `:pending-tx/*` - Pending transaction entity
 - `:ledger-entry/*` - Ledger entry entity
 
+### Architecture Patterns
+
+**Single Source of Truth:**
+- `physical-items` in classification.clj defines ALL item properties (labels, accounts, prices, categories)
+- Simulation derives `inventory-types`, `equipment-types` from physical-items
+- Frontend fetches action schemas dynamically instead of hardcoding options
+
+**Key data flow:**
+```
+classification.clj:physical-items
+    ├── classification.clj:accounts-by-physical-item (account mappings)
+    ├── classification.clj:resolve-physical-item-options (frontend dropdowns)
+    ├── simulation.clj:inventory-types (purchasable items)
+    ├── simulation.clj:equipment-types (equipment items)
+    └── simulation.clj:get-item-unit-cost/get-item-sell-price (pricing helpers)
+```
+
+**Error Handler Factory (api.cljs):**
+```clojure
+;; Standard error handler with loading state
+(make-error-handler {:message "Failed to load data"})
+
+;; Extract error from response body
+(make-error-handler {:message "Failed" :extract-body? true})
+
+;; Silent (log-only) handler
+(silent-error-handler "Error fetching data:")
+```
+
 ### API Endpoints
 
 ```
 GET  /api/simulation/state          - Get business state and available actions
+GET  /api/simulation/action-schemas - Get parameter schemas for action forms
 POST /api/simulation/start-action   - Start a new action
 POST /api/simulation/classify       - Submit classification (retry if wrong)
 GET  /api/simulation/ledger         - Get transaction history

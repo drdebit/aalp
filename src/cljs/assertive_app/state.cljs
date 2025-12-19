@@ -231,8 +231,23 @@
 (defn set-ledger! [entries]
   (swap! app-state assoc-in [:simulation :ledger] entries))
 
+(defn action-schemas []
+  (get-in @app-state [:simulation :action-schemas] {}))
+
+(defn set-action-schemas! [schemas]
+  (swap! app-state assoc-in [:simulation :action-schemas] schemas))
+
 (defn clear-pending-transaction! []
   (swap! app-state assoc-in [:simulation :pending-transaction] nil))
+
+(defn last-completed-transaction []
+  (get-in @app-state [:simulation :last-completed-transaction]))
+
+(defn set-last-completed-transaction! [tx]
+  (swap! app-state assoc-in [:simulation :last-completed-transaction] tx))
+
+(defn clear-last-completed-transaction! []
+  (swap! app-state assoc-in [:simulation :last-completed-transaction] nil))
 
 (defn update-simulation-after-classify!
   "Update simulation state after a classify response."
@@ -252,4 +267,29 @@
           :pending-transaction nil
           :available-actions []
           :ledger []
-          :user-level 0}))
+          :user-level 0
+          :staged-action nil
+          :staged-params {}
+          :last-completed-transaction nil}))
+
+;; Staged action state (for parameter entry before starting transaction)
+(defn staged-action []
+  (get-in @app-state [:simulation :staged-action]))
+
+(defn staged-params []
+  (get-in @app-state [:simulation :staged-params] {}))
+
+(defn set-staged-action!
+  "Set the action being configured (before transaction starts)."
+  [action-key]
+  (swap! app-state assoc-in [:simulation :staged-action] action-key)
+  (swap! app-state assoc-in [:simulation :staged-params] {}))
+
+(defn clear-staged-action! []
+  (swap! app-state assoc-in [:simulation :staged-action] nil)
+  (swap! app-state assoc-in [:simulation :staged-params] {}))
+
+(defn update-staged-param!
+  "Update a single parameter for the staged action."
+  [param-key value]
+  (swap! app-state assoc-in [:simulation :staged-params param-key] value))

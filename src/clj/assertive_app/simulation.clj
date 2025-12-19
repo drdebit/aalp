@@ -69,8 +69,8 @@
   - :effects - Functions that modify business state when transaction completes"
 
   {:purchase-inventory-cash
-   {:label "Purchase Inventory (Cash)"
-    :description "Buy blank t-shirts or ink cartridges, paying cash"
+   {:label "Buy Raw Materials (Cash)"
+    :description "Select and purchase blank t-shirts or ink cartridges for cash"
     :level 0
     :template-key :cash-inventory-purchase
     :prerequisites {:min-cash 100}
@@ -78,8 +78,8 @@
               :inventory :add-inventory-item}}
 
    :purchase-inventory-credit
-   {:label "Purchase Inventory (Credit)"
-    :description "Buy blank t-shirts or ink cartridges on account"
+   {:label "Buy Raw Materials (Credit)"
+    :description "Select and purchase blank t-shirts or ink cartridges on account"
     :level 1
     :template-key :credit-inventory-purchase
     :prerequisites {}
@@ -87,8 +87,8 @@
               :inventory :add-inventory-item}}
 
    :purchase-equipment-cash
-   {:label "Purchase Equipment (Cash)"
-    :description "Buy a T-shirt Printer for $3,000"
+   {:label "Buy Equipment (Cash)"
+    :description "Buy a T-shirt Printer for $3,000 - this allows future production"
     :level 0
     :template-key :cash-equipment-purchase
     :prerequisites {:min-cash 3000}
@@ -96,8 +96,8 @@
               :equipment :add-equipment}}
 
    :purchase-equipment-credit
-   {:label "Purchase Equipment (Credit)"
-    :description "Buy a T-shirt Printer for $3,000 on account"
+   {:label "Buy Equipment (Credit)"
+    :description "Buy a T-shirt Printer for $3,000 on account - this allows future production"
     :level 1
     :template-key :credit-equipment-purchase
     :prerequisites {}
@@ -114,8 +114,8 @@
               :accounts-payable :subtract-vendor-amount}}
 
    :produce-tshirts
-   {:label "Produce T-Shirts"
-    :description "Print designs on blank t-shirts (requires 10 shirts + 1 ink)"
+   {:label "Produce Printed T-Shirts"
+    :description "Use equipment to transform raw materials into finished goods (is-allowed-by T-shirt Printer)"
     :level 2
     :template-key :production-direct
     :prerequisites {:has-equipment :t-shirt-printer
@@ -126,8 +126,8 @@
 
    :sell-tshirts-cash
    {:label "Sell T-Shirts (Cash)"
-    :description "Sell printed t-shirts for cash"
-    :level 2
+    :description "Sell printed t-shirts for cash - requires revenue and cost recognition"
+    :level 3
     :template-key :cash-sale
     :prerequisites {:min-finished-goods 1}
     :effects {:finished-goods :subtract-quantity
@@ -135,8 +135,8 @@
 
    :sell-tshirts-credit
    {:label "Sell T-Shirts (Credit)"
-    :description "Sell printed t-shirts on account"
-    :level 2
+    :description "Sell printed t-shirts on account - requires revenue and cost recognition"
+    :level 3
     :template-key :credit-sale
     :prerequisites {:min-finished-goods 1}
     :effects {:finished-goods :subtract-quantity
@@ -144,8 +144,8 @@
 
    :collect-receivable
    {:label "Collect from Customer"
-    :description "Receive payment for credit sale"
-    :level 2
+    :description "Receive payment for a previous credit sale"
+    :level 3
     :template-key :customer-collection  ;; Custom template in simulation
     :prerequisites {:has-receivable true}
     :effects {:cash :add-amount

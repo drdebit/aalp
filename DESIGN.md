@@ -192,6 +192,25 @@ How do we measure student understanding?
 - Improvement over time?
 - Ability to handle novel transactions?
 
+### Equity Transactions
+
+Equity transactions (capital contributions, stock issuance, dividends, etc.) need to be incorporated into the platform. These likely belong at Level 4 with Legal/Regulatory assertions since:
+
+- LLC member contributions are `is-allowed-by` state business law
+- Stock issuance may be `is-required-by` SEC regulations (for public companies)
+- Dividend declarations follow corporate governance rules
+
+**Possible assertions for equity:**
+- `provides` (monetary-unit) - investor gives cash
+- `receives` (ownership-unit?) - investor gets ownership interest
+- `is-allowed-by` (state-business-law) - legal framework enabling the transaction
+
+**Open questions:**
+- Do we need a new unit type for ownership interests (ownership-unit)?
+- How do we represent the entity's side (receiving cash, issuing ownership)?
+- Should equity be a separate level, or integrated into L4 Legal/Regulatory?
+- How does this connect to the SP example (LLC formation, member capital)?
+
 ---
 
 ## Terminology Decisions

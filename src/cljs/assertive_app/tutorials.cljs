@@ -257,7 +257,296 @@ Both blank t-shirts and printed t-shirts are your assets. Production just change
 
 The simulation tracks this! You can't produce without the inputs.
 
-Complete **3 successful production transactions** to master the basics!"}]}}})
+Complete **3 successful production transactions** to master the basics!"}]}}
+
+   5 {:title "Stage 5: Adjusting Entries"
+      :subtitle "Match revenues and expenses to the correct period"
+      :unlocked-actions #{:purchase-materials-cash :purchase-equipment-cash
+                          :purchase-materials-credit :purchase-equipment-credit
+                          :pay-vendor
+                          :sell-tshirts-cash :sell-tshirts-credit
+                          :collect-receivable
+                          :produce-tshirts
+                          :record-depreciation :adjust-prepaid :accrue-wages :accrue-interest}
+      :mastery-required 3
+      :prerequisite-stage 4
+      :tutorial
+      {:sections
+       [{:heading "End-of-Period Adjustments"
+         :content "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.
+
+Adjusting entries ensure:
+- Expenses are recognized when incurred (not just when paid)
+- Revenues are recognized when earned (not just when received)
+- Assets reflect their current value"}
+
+        {:heading "The 'reports' Assertion"
+         :content "Adjusting entries introduce a new assertion:
+
+**reports** — Records a calculated amount based on some method or basis
+
+Unlike exchanges (provides/receives) or transformations (consumes/creates), adjusting entries are about **recognizing** economic reality that hasn't yet been recorded.
+
+Common bases:
+- **systematic-allocation** — Depreciation (spreading cost over time)
+- **estimation** — Bad debts (predicting future losses)
+- **accrual** — Wages/interest (recognizing expense before payment)
+- **time-based** — Prepaid expenses (recognizing expired benefits)"}
+
+        {:heading "Depreciation"
+         :content "Equipment loses value over time. We allocate its cost over its useful life:
+
+**Example: Monthly depreciation on $3,000 printer with 5-year life**
+- has-date: End of month
+- reports: expense (systematic-allocation basis)
+- consumes: asset-value
+
+**The Pattern:**
+- Asset value is consumed (credited via contra-account)
+- Expense is recognized (debited)
+
+→ **Journal Entry:** DR Depreciation Expense, CR Accumulated Depreciation
+
+Note: Accumulated Depreciation is a **contra-asset** that reduces equipment value."}
+
+        {:heading "Accrued Expenses"
+         :content "Some expenses are incurred before they're paid:
+
+**Wages Accrual** — Employees worked, but payday hasn't arrived
+- reports: expense (accrual basis)
+- requires: future payment
+
+**Interest Accrual** — Interest accumulates daily on loans
+- reports: expense (accrual basis)
+- requires: future payment
+
+**The Pattern:**
+- **requires** → Creates a liability (wages/interest payable)
+- **reports** → Recognizes the expense now
+
+→ **Journal Entry:** DR Expense, CR Payable"}
+
+        {:heading "Prepaid Expense Adjustments"
+         :content "When you prepay for something (insurance, rent), you have an asset. As time passes, you 'use up' the prepayment:
+
+**Example: $1,200 annual insurance, one month used**
+- has-date: End of month
+- reports: expense (time-based)
+- consumes: prepaid-benefit
+
+**The Pattern:**
+- The prepaid asset is consumed (credited)
+- The expense is recognized (debited)
+
+→ **Journal Entry:** DR Insurance Expense $100, CR Prepaid Insurance $100"}
+
+        {:heading "No Counterparty!"
+         :content "Like production, adjusting entries have **no counterparty**. They don't involve trading with anyone—they're internal recognitions of economic changes.
+
+Key differences from exchanges:
+- No provides/receives (nothing changing hands)
+- Uses **reports** to recognize calculated amounts
+- May use **consumes** for using up prepayments/asset value
+- May use **requires** to recognize new obligations
+
+Complete **3 successful adjusting entries** to unlock Stage 6!"}]}}
+
+   6 {:title "Stage 6: Equity Transactions"
+      :subtitle "Record owner investments, withdrawals, and dividends"
+      :unlocked-actions #{:purchase-materials-cash :purchase-equipment-cash
+                          :purchase-materials-credit :purchase-equipment-credit
+                          :pay-vendor
+                          :sell-tshirts-cash :sell-tshirts-credit
+                          :collect-receivable
+                          :produce-tshirts
+                          :record-depreciation :adjust-prepaid :accrue-wages :accrue-interest
+                          :owner-invest :issue-stock :declare-dividend :pay-dividend :owner-withdraw}
+      :mastery-required 3
+      :prerequisite-stage 5
+      :tutorial
+      {:sections
+       [{:heading "Owner Transactions"
+         :content "So far, we've focused on operating transactions—buying, selling, producing. Now we'll record transactions with **owners**:
+
+- **Owner investments** — Putting money into the business
+- **Owner withdrawals** — Taking money out of the business
+- **Stock issuance** — Corporations selling shares
+- **Dividends** — Returning profits to shareholders
+
+These transactions affect **equity**, not revenue or expense."}
+
+        {:heading "Owner Investments"
+         :content "When an owner contributes capital:
+
+**Example: Pat invests $20,000 for 20% ownership**
+- has-counterparty: Pat (owner)
+- receives: $20,000 (monetary-unit)
+- provides: ownership-interest
+
+**The Pattern:**
+- Company **receives** cash → Debit Cash (asset increases)
+- Company **provides** ownership → Credit Owner's Capital (equity increases)
+
+→ **Journal Entry:** DR Cash $20,000, CR Owner's Capital $20,000
+
+Note: This isn't revenue! The company isn't earning money—it's receiving investment."}
+
+        {:heading "Stock Issuance (Corporations)"
+         :content "For corporations, stock issuance is similar but uses different accounts:
+
+**Example: Issue 1,000 shares at $10 each**
+- has-counterparty: Investor
+- receives: $10,000 (monetary-unit)
+- provides: stock-shares
+
+→ **Journal Entry:** DR Cash, CR Common Stock
+
+The company receives cash in exchange for shares of ownership."}
+
+        {:heading "Dividend Declaration & Payment"
+         :content "Dividends return profits to owners. It's a **two-step process**:
+
+**Step 1: Declaration** (Board declares dividend)
+- reports: distribution (declared)
+- requires: future cash payment
+
+→ **Journal Entry:** DR Retained Earnings, CR Dividends Payable
+
+The company now has an obligation to pay.
+
+**Step 2: Payment** (Cash paid to shareholders)
+- has-counterparty: Shareholders
+- provides: cash (monetary-unit)
+- fulfills: the dividend obligation
+
+→ **Journal Entry:** DR Dividends Payable, CR Cash"}
+
+        {:heading "Owner Withdrawals"
+         :content "In sole proprietorships and partnerships, owners can withdraw funds:
+
+**Example: SP withdraws $1,000 for personal use**
+- has-counterparty: SP (owner)
+- provides: $1,000 (monetary-unit)
+
+**The Pattern:**
+- Cash goes out → Credit Cash
+- Owner's equity decreases → Debit Owner's Drawing
+
+→ **Journal Entry:** DR Owner's Drawing, CR Cash
+
+Note: This is NOT an expense! It's a return of capital to the owner."}
+
+        {:heading "The Equity Pattern"
+         :content "**Key insight:** Equity transactions change the **composition** of the balance sheet without affecting income.
+
+| Transaction | Effect on Assets | Effect on Equity |
+|-------------|-----------------|------------------|
+| Investment | + Cash | + Capital |
+| Withdrawal | - Cash | - Drawing |
+| Dividend Declaration | No change | - Retained Earnings, + Payable |
+| Dividend Payment | - Cash | - Payable |
+
+Complete **3 successful equity transactions** to unlock Stage 7!"}]}}
+
+   7 {:title "Stage 7: Notes & Interest"
+      :subtitle "Borrow and lend with formal promissory notes"
+      :unlocked-actions #{:purchase-materials-cash :purchase-equipment-cash
+                          :purchase-materials-credit :purchase-equipment-credit
+                          :pay-vendor
+                          :sell-tshirts-cash :sell-tshirts-credit
+                          :collect-receivable
+                          :produce-tshirts
+                          :record-depreciation :adjust-prepaid :accrue-wages :accrue-interest
+                          :owner-invest :issue-stock :declare-dividend :pay-dividend :owner-withdraw
+                          :borrow-note :repay-note :pay-interest :lend-note}
+      :mastery-required 3
+      :prerequisite-stage 6
+      :tutorial
+      {:sections
+       [{:heading "Formal Borrowing & Lending"
+         :content "Notes payable and receivable are **formal written promises** to pay a specific amount, usually with interest. They're more formal than accounts payable/receivable.
+
+Key concepts:
+- **Principal** — The amount borrowed
+- **Interest** — The cost of borrowing (charged over time)
+- **Maturity** — When the note is due"}
+
+        {:heading "Borrowing with a Note Payable"
+         :content "When SP borrows from a bank:
+
+**Example: Borrow $10,000 at 8% for 12 months**
+- has-counterparty: Bank
+- receives: $10,000 (monetary-unit)
+- requires: future repayment
+
+**The Pattern:**
+- **receives** cash → Debit Cash
+- **requires** repayment → Credit Notes Payable
+
+→ **Journal Entry:** DR Cash $10,000, CR Notes Payable $10,000
+
+Notice: This is like a credit purchase, but the obligation is a **formal note**, not just accounts payable."}
+
+        {:heading "Interest Over Time"
+         :content "Interest accrues continuously on borrowed money. Even if you don't pay it yet, you owe it:
+
+**Monthly interest on $10,000 at 8%:**
+- $10,000 × 8% ÷ 12 = $67/month
+
+**Accrual entry (from Stage 5):**
+- reports: expense (accrual)
+- requires: future payment
+
+→ **Journal Entry:** DR Interest Expense, CR Interest Payable
+
+**Payment entry:**
+- provides: cash
+- fulfills: the interest obligation
+
+→ **Journal Entry:** DR Interest Payable, CR Cash"}
+
+        {:heading "Repaying the Note"
+         :content "When the note matures, you repay the principal:
+
+**Example: Repay $10,000 note**
+- has-counterparty: Bank
+- provides: $10,000 (monetary-unit)
+- fulfills: the note obligation
+
+→ **Journal Entry:** DR Notes Payable, CR Cash
+
+The **fulfills** assertion connects this payment back to the original borrowing."}
+
+        {:heading "Lending with a Note Receivable"
+         :content "SP can also be the lender:
+
+**Example: Lend $5,000 to supplier**
+- has-counterparty: Supplier
+- provides: $5,000 (monetary-unit)
+- expects: future repayment with interest
+
+→ **Journal Entry:** DR Notes Receivable, CR Cash
+
+**Interest revenue accrual:**
+- reports: revenue (accrual)
+- expects: future receipt
+
+→ **Journal Entry:** DR Interest Receivable, CR Interest Revenue"}
+
+        {:heading "The Complete Picture"
+         :content "You've now mastered the full ACCT 2101 transaction cycle:
+
+| Stage | Focus | Key Assertions |
+|-------|-------|----------------|
+| 1 | Cash exchanges | provides, receives, has-counterparty |
+| 2 | Credit | requires, expects |
+| 3 | Sales | provides goods, receives/expects cash |
+| 4 | Production | consumes, creates, is-allowed-by |
+| 5 | Adjusting | reports, accruals, depreciation |
+| 6 | Equity | owner transactions, dividends |
+| 7 | Notes | formal borrowing, interest |
+
+**Congratulations!** You've completed the simulation course."}]}}})
 
 ;; ==================== Helper Functions ====================
 

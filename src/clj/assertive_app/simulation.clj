@@ -149,7 +149,125 @@
     :template-key :customer-collection  ;; Custom template in simulation
     :prerequisites {:has-receivable true}
     :effects {:cash :add-amount
-              :accounts-receivable :subtract-customer-amount}}})
+              :accounts-receivable :subtract-customer-amount}}
+
+   ;; ==================== Stage 5: Adjusting Entries ====================
+
+   :record-depreciation
+   {:label "Record Depreciation"
+    :description "Record monthly depreciation expense on equipment"
+    :level 5
+    :template-key :record-depreciation
+    :prerequisites {:has-equipment :t-shirt-printer}
+    :effects {:depreciation :add-accumulated}}
+
+   :accrue-wages
+   {:label "Accrue Wages"
+    :description "Accrue wages earned but not yet paid"
+    :level 5
+    :template-key :accrue-wages
+    :prerequisites {}
+    :effects {:wages-payable :add-amount}}
+
+   :accrue-interest
+   {:label "Accrue Interest"
+    :description "Accrue interest expense on notes payable"
+    :level 5
+    :template-key :accrue-interest
+    :prerequisites {:has-notes-payable true}
+    :effects {:interest-payable :add-amount}}
+
+   :adjust-prepaid
+   {:label "Adjust Prepaid Expense"
+    :description "Recognize expense from prepaid asset"
+    :level 5
+    :template-key :adjust-prepaid-expense
+    :prerequisites {:has-prepaid true}
+    :effects {:prepaid :subtract-amount}}
+
+   ;; ==================== Stage 6: Equity Transactions ====================
+
+   :owner-invest
+   {:label "Owner Investment"
+    :description "Owner contributes capital to the business"
+    :level 6
+    :template-key :owner-invests-cash
+    :prerequisites {}
+    :effects {:cash :add-amount
+              :equity :add-capital}}
+
+   :issue-stock
+   {:label "Issue Common Stock"
+    :description "Issue shares of stock for cash"
+    :level 6
+    :template-key :issue-common-stock
+    :prerequisites {}
+    :effects {:cash :add-amount
+              :equity :add-stock}}
+
+   :declare-dividend
+   {:label "Declare Dividend"
+    :description "Board declares a cash dividend to shareholders"
+    :level 6
+    :template-key :declare-dividend
+    :prerequisites {:min-retained-earnings 100}
+    :effects {:dividends-payable :add-amount}}
+
+   :pay-dividend
+   {:label "Pay Dividend"
+    :description "Pay previously declared dividend"
+    :level 6
+    :template-key :pay-dividend
+    :prerequisites {:has-dividends-payable true}
+    :effects {:cash :subtract-amount
+              :dividends-payable :subtract-amount}}
+
+   :owner-withdraw
+   {:label "Owner Withdrawal"
+    :description "Owner withdraws funds for personal use"
+    :level 6
+    :template-key :owner-withdraws-cash
+    :prerequisites {:min-cash 100}
+    :effects {:cash :subtract-amount
+              :equity :subtract-drawing}}
+
+   ;; ==================== Stage 7: Notes & Interest ====================
+
+   :borrow-note
+   {:label "Borrow with Note"
+    :description "Borrow money from bank with formal promissory note"
+    :level 7
+    :template-key :borrow-with-note
+    :prerequisites {}
+    :effects {:cash :add-amount
+              :notes-payable :add-amount}}
+
+   :repay-note
+   {:label "Repay Note Principal"
+    :description "Pay off the principal on a note payable"
+    :level 7
+    :template-key :repay-note-principal
+    :prerequisites {:has-notes-payable true}
+    :effects {:cash :subtract-amount
+              :notes-payable :subtract-amount}}
+
+   :pay-interest
+   {:label "Pay Interest"
+    :description "Pay accrued interest on notes payable"
+    :level 7
+    :template-key :pay-interest-on-note
+    :prerequisites {:has-interest-payable true}
+    :effects {:cash :subtract-amount
+              :interest-payable :subtract-amount}}
+
+   :lend-note
+   {:label "Lend with Note"
+    :description "Lend money and receive a promissory note"
+    :level 7
+    :template-key :lend-with-note
+    :prerequisites {:min-cash 1000}
+    :effects {:cash :subtract-amount
+              :notes-receivable :add-amount}}})
 
 ;; ==================== Business State Helpers ====================
 

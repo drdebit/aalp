@@ -476,7 +476,55 @@
               "Work in Process" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable"]
       :revenue ["Revenue" "Service Revenue"]
-      :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}})
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
+
+   3 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
+              "Work in Process" "Equipment" "Prepaid Expense"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
+      :revenue ["Revenue" "Service Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
+
+   4 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
+              "Work in Process" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
+      :revenue ["Revenue" "Service Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Tax Expense" "Compliance Expense"
+                "Reporting Expense" "Organization Costs"]}
+
+   5 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
+              "Work in Process" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Design Asset" "Intangible Asset"]
+      :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
+                  "Deferred Revenue (Liability)" "Unearned Revenue"]
+      :revenue ["Revenue" "Service Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
+                "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
+                "Tax Expense" "Compliance Expense" "Reporting Expense"]}
+
+   6 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
+              "Work in Process" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Design Asset" "Intangible Asset"]
+      :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
+                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :revenue ["Revenue" "Service Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
+                "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
+                "Tax Expense" "Compliance Expense" "Reporting Expense"]}
+
+   7 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
+              "Raw Materials Inventory" "Finished Goods Inventory" "Work in Process"
+              "Equipment" "Prepaid Expense" "Prepaid Insurance" "Design Asset" "Intangible Asset"]
+      :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
+                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
+                "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
+                "Tax Expense" "Compliance Expense" "Reporting Expense"]}})
 
 (defn get-accounts-for-level
   "Returns all accounts available at the specified level."
@@ -900,7 +948,207 @@
     :note "Public companies must report financials under GAAP as required by SEC regulations."
     :examples ["SP prepares GAAP-compliant financial statements"
                "SP files SEC-required quarterly report"]
-    :level 4}})
+    :level 4}
+
+   ;; ==================== Level 5: Adjusting Entries ====================
+   ;; End-of-period adjustments to properly match revenues and expenses
+
+   :depreciation-expense
+   {:required #{:has-date :reports :consumes}
+    :required-parameters {:reports {:category "expense" :basis "systematic-allocation"}
+                          :consumes {:unit "asset-value"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Depreciation of long-term asset"
+    :journal-entry [{:debit "Depreciation Expense" :credit "Accumulated Depreciation"}]
+    :note "Depreciation allocates the cost of a long-term asset over its useful life. This is a non-cash expense."
+    :examples ["SP records monthly depreciation on t-shirt printer"
+               "SP allocates equipment cost over 5-year useful life"]
+    :level 5}
+
+   :bad-debt-expense
+   {:required #{:has-date :reports :expects}
+    :required-parameters {:reports {:category "expense" :basis "estimation"}
+                          :expects {:action "uncollectible" :unit "monetary-unit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Allowance for doubtful accounts"
+    :journal-entry [{:debit "Bad Debt Expense" :credit "Allowance for Doubtful Accounts"}]
+    :note "Bad debt expense recognizes that some receivables may not be collected. The allowance is a contra-asset."
+    :examples ["SP estimates 2% of receivables will be uncollectible"
+               "SP adjusts allowance for doubtful accounts at year-end"]
+    :level 5}
+
+   :accrued-wages
+   {:required #{:has-date :reports :requires}
+    :required-parameters {:reports {:category "expense" :basis "accrual"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Wages earned but not yet paid"
+    :journal-entry [{:debit "Wages Expense" :credit "Wages Payable"}]
+    :note "Employees have worked but payroll hasn't been processed yet. The expense is recognized when earned."
+    :examples ["SP accrues $500 for wages earned but not yet paid"
+               "SP records wages payable at end of pay period"]
+    :level 5}
+
+   :accrued-interest-expense
+   {:required #{:has-date :reports :requires}
+    :required-parameters {:reports {:category "expense" :basis "accrual"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Interest incurred but not yet paid"
+    :journal-entry [{:debit "Interest Expense" :credit "Interest Payable"}]
+    :note "Interest accumulates over time on borrowed money. It must be accrued even if not yet due."
+    :examples ["SP accrues interest on notes payable"
+               "SP records interest expense for the month"]
+    :level 5}
+
+   :prepaid-expense-adjustment
+   {:required #{:has-date :reports :consumes}
+    :required-parameters {:reports {:category "expense" :basis "time-based"}
+                          :consumes {:unit "prepaid-benefit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Recognizing expense from prepaid asset"
+    :journal-entry [{:debit "Insurance Expense" :credit "Prepaid Insurance"}]
+    :note "As time passes, prepaid expenses are 'used up' and become expenses."
+    :examples ["SP recognizes one month of prepaid insurance as expense"
+               "SP adjusts prepaid rent for expired portion"]
+    :level 5}
+
+   :unearned-revenue-adjustment
+   {:required #{:has-date :reports :fulfills}
+    :required-parameters {:reports {:category "revenue" :basis "earned"}
+                          :fulfills {:action "requires"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Earning previously deferred revenue"
+    :journal-entry [{:debit "Unearned Revenue" :credit "Revenue"}]
+    :note "When performance obligations are satisfied, deferred revenue becomes earned revenue."
+    :examples ["SP earns portion of advance payment by delivering shirts"
+               "SP recognizes revenue as service is performed"]
+    :level 5}
+
+   ;; ==================== Level 6: Equity Transactions ====================
+   ;; Owner investments, withdrawals, and dividends
+
+   :owner-investment
+   {:required #{:has-date :receives :provides :has-counterparty}
+    :required-parameters {:receives {:unit "monetary-unit"}
+                          :provides {:unit "ownership-interest"}}
+    :prohibited #{:requires :expects :consumes :creates}
+    :description "Owner contributes capital to business"
+    :journal-entry [{:debit "Cash" :credit "Owner's Capital"}]
+    :note "Owners invest money in exchange for ownership interest. This increases both assets and equity."
+    :examples ["SP's parents invest $20,000 for 20% ownership"
+               "Owner contributes additional capital to the business"]
+    :level 6}
+
+   :stock-issuance
+   {:required #{:has-date :receives :provides :has-counterparty}
+    :required-parameters {:receives {:unit "monetary-unit"}
+                          :provides {:unit "stock-shares"}}
+    :prohibited #{:requires :expects :consumes :creates}
+    :description "Corporation issues stock for cash"
+    :journal-entry [{:debit "Cash" :credit "Common Stock"}]
+    :note "Corporations raise capital by issuing shares of stock to investors."
+    :examples ["SP Corp issues 1,000 shares at $10 per share"
+               "Company conducts initial public offering"]
+    :level 6}
+
+   :dividend-declaration
+   {:required #{:has-date :reports :requires}
+    :required-parameters {:reports {:category "distribution" :basis "declared"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Board declares dividend to shareholders"
+    :journal-entry [{:debit "Retained Earnings" :credit "Dividends Payable"}]
+    :note "When declared, dividends become a liability. Retained earnings decrease."
+    :examples ["Board declares $0.50 per share dividend"
+               "SP declares quarterly dividend to shareholders"]
+    :level 6}
+
+   :dividend-payment
+   {:required #{:has-date :provides :has-counterparty :fulfills}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :fulfills {:action "requires"}}
+    :prohibited #{:receives :expects :requires}
+    :description "Payment of previously declared dividend"
+    :journal-entry [{:debit "Dividends Payable" :credit "Cash"}]
+    :note "The dividend payable liability is settled when cash is paid to shareholders."
+    :examples ["SP pays declared dividend to shareholders"
+               "Quarterly dividend payment processed"]
+    :level 6}
+
+   :owner-withdrawal
+   {:required #{:has-date :provides :has-counterparty}
+    :required-parameters {:provides {:unit "monetary-unit"}}
+    :prohibited #{:receives :requires :expects}
+    :description "Owner withdraws capital from business"
+    :journal-entry [{:debit "Owner's Drawing" :credit "Cash"}]
+    :note "In sole proprietorships and partnerships, owners can withdraw funds. This reduces equity."
+    :examples ["SP withdraws $1,000 for personal use"
+               "Partner takes monthly draw from business"]
+    :level 6}
+
+   ;; ==================== Level 7: Notes and Interest ====================
+   ;; Borrowing and lending with explicit interest
+
+   :notes-payable-issuance
+   {:required #{:has-date :receives :has-counterparty :requires}
+    :required-parameters {:receives {:unit "monetary-unit"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :prohibited #{:provides :expects}
+    :description "Borrow money with formal note"
+    :journal-entry [{:debit "Cash" :credit "Notes Payable"}]
+    :note "Notes payable are formal written promises to pay a specific amount, usually with interest."
+    :examples ["SP borrows $10,000 from bank with 12-month note"
+               "SP signs promissory note for equipment financing"]
+    :level 7}
+
+   :notes-payable-payment
+   {:required #{:has-date :provides :has-counterparty :fulfills}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :fulfills {:action "requires"}}
+    :prohibited #{:receives :expects}
+    :description "Pay principal on notes payable"
+    :journal-entry [{:debit "Notes Payable" :credit "Cash"}]
+    :note "When the note matures, the principal must be repaid. Interest is recorded separately."
+    :examples ["SP repays $10,000 note at maturity"
+               "Monthly principal payment on installment note"]
+    :level 7}
+
+   :interest-payment
+   {:required #{:has-date :provides :has-counterparty :fulfills}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :fulfills {:action "requires"}}
+    :prohibited #{:receives :expects}
+    :description "Pay accrued interest"
+    :journal-entry [{:debit "Interest Payable" :credit "Cash"}]
+    :note "Paying the interest that was previously accrued. Reduces the interest payable liability."
+    :examples ["SP pays $100 interest on bank note"
+               "Monthly interest payment on loan"]
+    :level 7}
+
+   :notes-receivable-creation
+   {:required #{:has-date :provides :has-counterparty :expects}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :expects {:action "receives" :unit "monetary-unit"}}
+    :prohibited #{:receives :requires}
+    :description "Lend money to another party"
+    :journal-entry [{:debit "Notes Receivable" :credit "Cash"}]
+    :note "Notes receivable are amounts owed to the business, usually with interest."
+    :examples ["SP lends $5,000 to supplier with promissory note"
+               "SP accepts note receivable from customer"]
+    :level 7}
+
+   :interest-revenue-accrual
+   {:required #{:has-date :reports :expects}
+    :required-parameters {:reports {:category "revenue" :basis "accrual"}
+                          :expects {:action "receives" :unit "monetary-unit"}}
+    :prohibited #{:has-counterparty :provides :receives}
+    :description "Accrue interest earned but not yet received"
+    :journal-entry [{:debit "Interest Receivable" :credit "Interest Revenue"}]
+    :note "Interest income is earned over time, even if not yet received in cash."
+    :examples ["SP accrues interest earned on notes receivable"
+               "Monthly interest revenue recognition"]
+    :level 7}})
 
 ;; ==================== Assertion-Account Mapping ====================
 ;; Maps assertions and their parameters to accounts and JE effects.
@@ -1662,7 +1910,222 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                 :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]
                 :product ["custom merchandise" "bulk t-shirt order" "branded apparel"]
                 :amount [5000 10000 25000 50000]
-                :days [30 60 90]}}})
+                :days [30 60 90]}}
+
+   ;; ==================== Level 5: Adjusting Entry Templates ====================
+   ;; End-of-period adjustments to properly match revenues and expenses
+
+   :record-depreciation
+   {:narrative-template "On {date}, SP records depreciation expense on the {asset}. The {asset} cost ${cost} and has a {years}-year useful life with no salvage value. Monthly depreciation is ${depreciation}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "expense" :basis "systematic-allocation"}
+                          :consumes {:unit "asset-value"}}
+    :correct-classification :depreciation-expense
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+                :asset ["t-shirt printer" "delivery van" "office equipment" "production equipment"]
+                :cost [3000 12000 6000 15000]
+                :years [5 5 3 10]
+                :depreciation [50 200 167 125]}}
+
+   :record-bad-debt
+   {:narrative-template "On {date}, SP estimates that {percent}% of its accounts receivable totaling ${ar-balance} will be uncollectible. SP records bad debt expense of ${bad-debt-amount}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "expense" :basis "estimation"}
+                          :expects {:action "uncollectible" :unit "monetary-unit"}}
+    :correct-classification :bad-debt-expense
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30" "2026-12-31"]
+                :percent [2 3 5 1]
+                :ar-balance [5000 10000 20000 50000]
+                :bad-debt-amount [100 300 1000 500]}}
+
+   :accrue-wages
+   {:narrative-template "On {date}, SP has {days} days of unpaid wages for employees. Total wages earned but not yet paid amount to ${amount}. Payday is {payday}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "expense" :basis "accrual"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :correct-classification :accrued-wages
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+                :days [2 3 4 5]
+                :amount [400 600 800 1000]
+                :payday ["next Monday" "February 5" "next Friday" "the 5th of next month"]}}
+
+   :accrue-interest
+   {:narrative-template "On {date}, SP accrues interest on its ${principal} note payable at {rate}% annual interest. The note was issued {months} months ago and interest is paid quarterly. Interest accrued this period is ${interest}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "expense" :basis "accrual"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :correct-classification :accrued-interest-expense
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30" "2026-09-30"]
+                :principal [5000 10000 15000 20000]
+                :rate [6 8 10 12]
+                :months [1 2 3 1]
+                :interest [25 133 375 200]}}
+
+   :adjust-prepaid-expense
+   {:narrative-template "On {date}, SP adjusts prepaid {expense-type}. The original prepayment of ${total} covers {months} months. One month (${monthly}) has now been used up."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "expense" :basis "time-based"}
+                          :consumes {:unit "prepaid-benefit"}}
+    :correct-classification :prepaid-expense-adjustment
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+                :expense-type ["insurance" "rent" "advertising" "subscriptions"]
+                :total [1200 6000 2400 600]
+                :months [12 6 12 12]
+                :monthly [100 1000 200 50]}}
+
+   :recognize-unearned-revenue
+   {:narrative-template "On {date}, SP has earned a portion of advance payments received from {customer}. Of the ${total} received in advance, SP has now delivered ${earned} worth of {product-or-service}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "revenue" :basis "earned"}
+                          :fulfills {:action "requires"}}
+    :correct-classification :unearned-revenue-adjustment
+    :level 5
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+                :customer ["LocalSportsTeam" "CorporateClient" "RetailPartner"]
+                :total [2000 5000 10000]
+                :earned [500 2000 2500]
+                :product-or-service ["custom t-shirts" "printing services" "merchandise"]}}
+
+   ;; ==================== Level 6: Equity Transaction Templates ====================
+   ;; Owner investments, withdrawals, and dividends
+
+   :owner-invests-cash
+   {:narrative-template "On {date}, {owner} invests ${amount} cash into SP in exchange for a {percent}% ownership interest in the company."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :provides {:unit "ownership-interest"}
+                          :has-counterparty {:name :owner}}
+    :correct-classification :owner-investment
+    :level 6
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :owner ["Pat (Parent)" "Terry (Investor)" "Jordan (Partner)" "Alex (Founder)"]
+                :amount [10000 20000 50000 100000]
+                :percent [10 20 25 50]}}
+
+   :issue-common-stock
+   {:narrative-template "On {date}, SP Corporation issues {shares} shares of common stock to {investor} for ${amount} cash. The stock has a par value of ${par-value} per share."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :provides {:unit "stock-shares"}
+                          :has-counterparty {:name :investor}}
+    :correct-classification :stock-issuance
+    :level 6
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :shares [100 500 1000 5000]
+                :investor ["First Investor" "Venture Fund" "Angel Investor" "Private Equity"]
+                :amount [1000 5000 10000 50000]
+                :par-value [1 1 10 10]}}
+
+   :declare-dividend
+   {:narrative-template "On {date}, SP's Board of Directors declares a cash dividend of ${per-share} per share on {shares} outstanding shares. Total dividend payable is ${total}. Payment date is {payment-date}."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "distribution" :basis "declared"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :correct-classification :dividend-declaration
+    :level 6
+    :variables {:date ["2026-01-15" "2026-03-15" "2026-06-15" "2026-09-15" "2026-12-15"]
+                :per-share [0.25 0.50 1.00 0.10]
+                :shares [1000 2000 5000 10000]
+                :total [250 1000 5000 1000]
+                :payment-date ["February 1" "April 1" "July 1" "October 1"]}}
+
+   :pay-dividend
+   {:narrative-template "On {date}, SP pays the previously declared dividend of ${amount} to shareholders. This fulfills the dividend obligation declared on {declaration-date}."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name "Shareholders"}
+                          :fulfills {:action "requires"}}
+    :correct-classification :dividend-payment
+    :level 6
+    :variables {:date ["2026-02-01" "2026-04-01" "2026-07-01" "2026-10-01"]
+                :amount [250 1000 5000 1000]
+                :declaration-date ["January 15" "March 15" "June 15" "September 15"]}}
+
+   :owner-withdraws-cash
+   {:narrative-template "On {date}, {owner} withdraws ${amount} from SP for personal use. This is recorded as an owner's draw against the owner's capital account."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :owner}}
+    :correct-classification :owner-withdrawal
+    :level 6
+    :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15"]
+                :owner ["SP (Owner)" "Alex (Partner)" "Jordan (Partner)"]
+                :amount [500 1000 2000 3000]}}
+
+   ;; ==================== Level 7: Notes and Interest Templates ====================
+   ;; Borrowing and lending with explicit interest
+
+   :borrow-with-note
+   {:narrative-template "On {date}, SP borrows ${amount} from {lender} by signing a {months}-month note payable at {rate}% annual interest. Principal and interest are due at maturity."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :lender}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :correct-classification :notes-payable-issuance
+    :level 7
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+                :amount [5000 10000 20000 50000]
+                :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
+                :months [6 12 24 36]
+                :rate [6 8 10 12]}}
+
+   :repay-note-principal
+   {:narrative-template "On {date}, SP repays the ${amount} principal on its note payable to {lender}. The note matures today after {months} months."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :lender}
+                          :fulfills {:action "requires"}}
+    :correct-classification :notes-payable-payment
+    :level 7
+    :variables {:date ["2026-07-15" "2026-01-15" "2027-01-10" "2029-04-22"]
+                :amount [5000 10000 20000 50000]
+                :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
+                :months [6 12 24 36]}}
+
+   :pay-interest-on-note
+   {:narrative-template "On {date}, SP pays ${amount} interest to {lender} on its note payable. This payment covers the interest accrued during the past {period}."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :lender}
+                          :fulfills {:action "requires"}}
+    :correct-classification :interest-payment
+    :level 7
+    :variables {:date ["2026-04-15" "2026-07-15" "2026-10-15" "2027-01-15"]
+                :amount [125 250 500 1500]
+                :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
+                :period ["quarter" "6 months" "quarter" "year"]}}
+
+   :lend-with-note
+   {:narrative-template "On {date}, SP lends ${amount} to {borrower} and receives a {months}-month promissory note at {rate}% annual interest."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :borrower}
+                          :expects {:action "receives" :unit "monetary-unit"}}
+    :correct-classification :notes-receivable-creation
+    :level 7
+    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22"]
+                :amount [2000 5000 10000 25000]
+                :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]
+                :months [3 6 12 24]
+                :rate [6 8 10 12]}}
+
+   :accrue-interest-revenue
+   {:narrative-template "On {date}, SP accrues ${amount} of interest revenue on the ${principal} note receivable from {borrower}. The note carries {rate}% annual interest."
+    :required-assertions {:has-date {:date :date}
+                          :reports {:category "revenue" :basis "accrual"}
+                          :expects {:action "receives" :unit "monetary-unit"}}
+    :correct-classification :interest-revenue-accrual
+    :level 7
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30"]
+                :amount [10 42 83 250]
+                :principal [2000 5000 10000 25000]
+                :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]
+                :rate [6 8 10 12]}}})
 
 (def month-names
   ["January" "February" "March" "April" "May" "June"

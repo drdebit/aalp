@@ -1339,3 +1339,366 @@ header {
     padding: 40px;
     color: #7f8c8d;
 }
+
+/* ==================== Tutorial Components ==================== */
+
+/* Tutorial Modal Overlay */
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.tutorial-modal {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.tutorial-header {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.tutorial-header h1 {
+    margin: 0 0 8px 0;
+    font-size: 1.8em;
+}
+
+.tutorial-header .subtitle {
+    color: #bdc3c7;
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+}
+
+.tutorial-header .section-indicator {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.tutorial-content {
+    padding: 30px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.tutorial-content h2 {
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Markdown Content Styling */
+.markdown-content p {
+    margin-bottom: 15px;
+    line-height: 1.7;
+}
+
+.markdown-content p.conclusion {
+    background: #e8f4f8;
+    padding: 12px 16px;
+    border-left: 4px solid #3498db;
+    border-radius: 0 4px 4px 0;
+    font-weight: 500;
+}
+
+.markdown-content ul {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+.markdown-content li {
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.markdown-content strong {
+    color: #2c3e50;
+}
+
+.tutorial-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 0.95em;
+}
+
+.tutorial-table th,
+.tutorial-table td {
+    border: 1px solid #ddd;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.tutorial-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.tutorial-table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+/* Tutorial Footer / Navigation */
+.tutorial-footer {
+    background: #f8f9fa;
+    padding: 20px 30px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.tutorial-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.nav-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.nav-btn.prev {
+    background: #e0e0e0;
+    color: #666;
+}
+
+.nav-btn.prev:hover:not(:disabled) {
+    background: #d0d0d0;
+}
+
+.nav-btn.prev:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nav-btn.next,
+.nav-btn.start {
+    background: #3498db;
+    color: white;
+}
+
+.nav-btn.next:hover,
+.nav-btn.start:hover {
+    background: #2980b9;
+}
+
+.nav-btn.start {
+    background: #27ae60;
+}
+
+.nav-btn.start:hover {
+    background: #219a52;
+}
+
+/* Section Dots */
+.section-dots {
+    display: flex;
+    gap: 8px;
+}
+
+.section-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.section-dot:hover {
+    background: #bbb;
+}
+
+.section-dot.active {
+    background: #3498db;
+    transform: scale(1.2);
+}
+
+/* ==================== Stage Progress Bar ==================== */
+
+.stage-progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stage-progress {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.stage-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.stage-indicator.current {
+    background: #3498db;
+    color: white;
+}
+
+.stage-indicator.complete {
+    background: #27ae60;
+    color: white;
+}
+
+.stage-indicator.locked {
+    background: #e0e0e0;
+    color: #999;
+}
+
+.stage-num {
+    font-weight: 600;
+}
+
+.stage-progress-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.stage-progress-dots .progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.stage-progress-dots .progress-dot.filled {
+    background: white;
+}
+
+.stage-indicator .checkmark {
+    font-size: 1.1em;
+}
+
+/* Tutorial Trigger Button */
+.tutorial-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f0f0f0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+}
+
+.tutorial-trigger:hover {
+    background: #e8e8e8;
+    border-color: #ccc;
+}
+
+.tutorial-trigger .help-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* Stage Advancement Notification */
+.stage-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.stage-notification .celebration {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 15px;
+}
+
+.stage-notification h3 {
+    color: #27ae60;
+    margin-bottom: 10px;
+}
+
+.stage-notification p {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.stage-notification .start-btn {
+    padding: 12px 24px;
+    background: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    cursor: pointer;
+}
+
+.stage-notification .start-btn:hover {
+    background: #219a52;
+}
+
+/* Locked Actions Hint */
+.locked-actions-hint {
+    margin-top: 15px;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border: 1px dashed #ddd;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.locked-actions-hint p {
+    margin: 0;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.no-actions .hint {
+    color: #95a5a6;
+    font-size: 0.9em;
+    margin-top: 5px;
+}

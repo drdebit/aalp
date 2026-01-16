@@ -3,7 +3,8 @@
   (:require [reagent.core :as r]
             [clojure.string :as str]
             [assertive-app.state :as state]
-            [assertive-app.api :as api]))
+            [assertive-app.api :as api]
+            [assertive-app.tutorials :as tutorials]))
 
 ;; ==================== Authentication Components ====================
 
@@ -726,11 +727,18 @@
          "Cancel"]]])))
 
 (defn action-selection-panel
-  "Panel for selecting actions in simulation mode."
+  "Panel for selecting actions in simulation mode.
+   Filters actions based on the current tutorial stage."
   []
-  (let [actions (state/simulation-available-actions)
+  (let [all-actions (state/simulation-available-actions)
         pending (state/pending-transaction)
-        staged (state/staged-action)]
+        staged (state/staged-action)
+        current-stage (state/current-stage)
+        unlocked-action-keys (tutorials/get-unlocked-actions current-stage)
+        ;; Filter actions to only show those unlocked at current stage
+        actions (filter #(contains? unlocked-action-keys (keyword (:key %))) all-actions)
+        ;; Check if there are locked actions the student can't access yet
+        locked-count (- (count all-actions) (count actions))]
     [:div.action-panel
      [:h3 "What do you want to do?"]
      (cond
@@ -749,12 +757,18 @@
        [:div.action-buttons
         (for [action actions]
           ^{:key (:key action)}
-          [action-button action])]
+          [action-button action])
+        ;; Show hint about locked actions
+        (when (pos? locked-count)
+          [:div.locked-actions-hint
+           [:p (str locked-count " more action" (when (> locked-count 1) "s")
+                    " available at higher stages")]])]
 
-       ;; Loading
+       ;; No actions available
        :else
        [:div.no-actions
-        [:p "Loading available actions..."]
+        [:p "No actions available yet."]
+        [:p.hint "Complete the tutorial to unlock actions."]
         [:button.refresh-btn
          {:on-click #(api/fetch-simulation-state!)}
          "Refresh"]])]))
@@ -855,6 +869,183 @@
           [:div.transaction-amount
            [:span.label "Amount: "] [:span.value "$" amt]])])]))
 
+;; ==================== Tutorial Components ====================
+
+(defn- render-markdown
+  "Simple markdown-like rendering for tutorial content.
+   Handles **bold**, tables, and basic formatting."
+  [text]
+  (if (str/blank? text)
+    [:span]
+    (let [;; Split into paragraphs
+          paragraphs (str/split text #"\n\n+")]
+      [:div.markdown-content
+       (for [[idx para] (map-indexed vector paragraphs)]
+         ^{:key idx}
+         (cond
+           ;; Table detection (starts with |)
+           (str/starts-with? (str/trim para) "|")
+           (let [lines (str/split-lines para)
+                 ;; Filter out separator lines (|---|---|)
+                 data-lines (remove #(re-matches #"\|[-|\s]+\|" %) lines)
+                 rows (for [line data-lines]
+                        (-> line
+                            (str/replace #"^\||\|$" "")
+                            (str/split #"\|")
+                            (->> (map str/trim))))]
+             [:table.tutorial-table {:key idx}
+              [:thead
+               [:tr
+                (for [[cidx cell] (map-indexed vector (first rows))]
+                  ^{:key cidx}
+                  [:th cell])]]
+              [:tbody
+               (for [[ridx row] (map-indexed vector (rest rows))]
+                 ^{:key ridx}
+                 [:tr
+                  (for [[cidx cell] (map-indexed vector row)]
+                    ^{:key cidx}
+                    [:td cell])])]])
+
+           ;; List items (starts with - or *)
+           (re-find #"^[\-\*]\s" (str/trim para))
+           [:ul {:key idx}
+            (for [[lidx item] (map-indexed vector (str/split-lines para))]
+              ^{:key lidx}
+              [:li (-> item
+                       (str/replace #"^[\-\*]\s+" "")
+                       (str/replace #"\*\*([^*]+)\*\*" [:strong "$1"]))])]
+
+           ;; Arrow notation (→)
+           (str/includes? para "→")
+           [:p.conclusion {:key idx}
+            (-> para
+                (str/replace #"\*\*([^*]+)\*\*"
+                             (fn [[_ content]] (str "BOLD_START" content "BOLD_END")))
+                (str/split #"(BOLD_START|BOLD_END)")
+                (->> (map-indexed
+                      (fn [i part]
+                        (if (even? i)
+                          [:span {:key i} part]
+                          [:strong {:key i} part])))))]
+
+           ;; Regular paragraph with bold support
+           :else
+           [:p {:key idx}
+            (-> para
+                (str/replace #"\*\*([^*]+)\*\*"
+                             (fn [[_ content]] (str "BOLD_START" content "BOLD_END")))
+                (str/split #"(BOLD_START|BOLD_END)")
+                (->> (map-indexed
+                      (fn [i part]
+                        (if (even? i)
+                          [:span {:key i} part]
+                          [:strong {:key i} part])))))]))])))
+
+(defn stage-progress-indicator
+  "Shows progress through stages and current stage status."
+  []
+  (let [current-stage (state/current-stage)
+        all-stages (tutorials/all-stages)]
+    [:div.stage-progress
+     (for [stage all-stages]
+       (let [success-count (state/get-stage-success-count stage)
+             mastery-required (tutorials/get-mastery-required stage)
+             is-current? (= stage current-stage)
+             is-complete? (>= success-count mastery-required)
+             is-locked? (> stage current-stage)]
+         ^{:key stage}
+         [:div.stage-indicator
+          {:class (str (when is-current? "current ")
+                       (when is-complete? "complete ")
+                       (when is-locked? "locked "))}
+          [:span.stage-num stage]
+          (when (and is-current? (not is-complete?))
+            [:span.stage-progress-dots
+             (for [i (range mastery-required)]
+               ^{:key i}
+               [:span.progress-dot {:class (when (< i success-count) "filled")}])])
+          (when is-complete?
+            [:span.checkmark "✓"])]))]))
+
+(defn tutorial-modal
+  "Modal overlay displaying tutorial content for the current stage."
+  []
+  (let [current-stage (state/current-stage)
+        stage-data (tutorials/get-stage current-stage)
+        tutorial (:tutorial stage-data)
+        sections (:sections tutorial)
+        section-idx (state/tutorial-section-index)
+        current-section (get sections section-idx)
+        total-sections (count sections)
+        is-last-section? (= section-idx (dec total-sections))
+        is-first-section? (= section-idx 0)]
+    [:div.tutorial-overlay
+     [:div.tutorial-modal
+      [:div.tutorial-header
+       [:h1 (:title stage-data)]
+       [:p.subtitle (:subtitle stage-data)]
+       [:div.section-indicator
+        (str "Section " (inc section-idx) " of " total-sections)]]
+
+      [:div.tutorial-content
+       [:h2 (:heading current-section)]
+       [render-markdown (:content current-section)]]
+
+      [:div.tutorial-footer
+       [:div.tutorial-nav
+        [:button.nav-btn.prev
+         {:disabled is-first-section?
+          :on-click #(state/set-tutorial-section-index! (dec section-idx))}
+         "← Previous"]
+
+        [:div.section-dots
+         (for [i (range total-sections)]
+           ^{:key i}
+           [:span.section-dot
+            {:class (when (= i section-idx) "active")
+             :on-click #(state/set-tutorial-section-index! i)}])]
+
+        (if is-last-section?
+          [:button.nav-btn.start
+           {:on-click (fn []
+                        (state/mark-tutorial-viewed! current-stage)
+                        (state/set-show-tutorial! false))}
+           "Start Learning →"]
+          [:button.nav-btn.next
+           {:on-click #(state/set-tutorial-section-index! (inc section-idx))}
+           "Next →"])]]]]))
+
+(defn tutorial-trigger-button
+  "Button to re-open the tutorial for current stage."
+  []
+  (let [current-stage (state/current-stage)
+        stage-data (tutorials/get-stage current-stage)]
+    [:button.tutorial-trigger
+     {:on-click (fn []
+                  (state/set-tutorial-section-index! 0)
+                  (state/set-show-tutorial! true))}
+     [:span.help-icon "?"]
+     [:span.btn-text (str "Review " (:title stage-data))]]))
+
+(defn stage-advancement-notification
+  "Shows when student advances to a new stage."
+  []
+  (let [current-stage (state/current-stage)
+        stage-data (tutorials/get-stage current-stage)]
+    [:div.stage-notification
+     [:div.notification-content
+      [:span.celebration "🎉"]
+      [:h3 "Stage Complete!"]
+      [:p (str "You've mastered Stage " (dec current-stage) ". Ready for " (:title stage-data) "?")]
+      [:button.start-btn
+       {:on-click (fn []
+                    (state/set-tutorial-section-index! 0)
+                    (state/set-show-tutorial! true))}
+       "Start Next Stage"]]]))
+
+;; ==================== Transaction Confirmation ====================
+
 (defn transaction-confirmation
   "Shows a confirmation message after successfully completing a transaction."
   []
@@ -888,8 +1079,18 @@
   "Main content for simulation mode."
   []
   (let [pending (state/pending-transaction)
-        last-tx (state/last-completed-transaction)]
+        last-tx (state/last-completed-transaction)
+        show-tutorial? (state/show-tutorial?)]
     [:div.simulation-container
+     ;; Tutorial modal overlay (when active)
+     (when show-tutorial?
+       [tutorial-modal])
+
+     ;; Stage progress bar at top
+     [:div.stage-progress-bar
+      [stage-progress-indicator]
+      [tutorial-trigger-button]]
+
      [:div.simulation-top
       [business-dashboard]
       ;; When no pending transaction, show ledger directly below dashboard
@@ -911,7 +1112,8 @@
      [:div.simulation-actions
       [:button.reset-btn
        {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
-                    (api/reset-simulation! nil))}
+                    (api/reset-simulation! nil)
+                    (state/reset-tutorial-state!))}
        "Reset Business"]]]))
 
 (defn mode-toggle
@@ -933,6 +1135,9 @@
                     (state/set-app-mode! :simulation)
                     (state/set-current-problem! nil)  ;; Clear practice problem
                     (state/clear-feedback!)
+                    ;; Initialize tutorial state if not already set
+                    (when-not (state/tutorial-viewed? (state/current-stage))
+                      (state/init-tutorial-state!))
                     (api/fetch-simulation-state!)
                     (api/fetch-action-schemas!)  ;; Fetch action parameter schemas
                     (api/fetch-ledger!)

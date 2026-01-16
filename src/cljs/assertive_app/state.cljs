@@ -270,7 +270,12 @@
           :user-level 0
           :staged-action nil
           :staged-params {}
-          :last-completed-transaction nil}))
+          :last-completed-transaction nil
+          :tutorial {:current-stage 1
+                     :stage-successes {}
+                     :tutorials-viewed #{}
+                     :show-tutorial? true
+                     :section-index 0}}))
 
 ;; Staged action state (for parameter entry before starting transaction)
 (defn staged-action []
@@ -293,3 +298,95 @@
   "Update a single parameter for the staged action."
   [param-key value]
   (swap! app-state assoc-in [:simulation :staged-params param-key] value))
+
+;; ==================== Tutorial Progress ====================
+;; Tracks stage progression and tutorial completion in simulation mode
+
+(defn tutorial-state []
+  "Returns the current tutorial state."
+  (get-in @app-state [:simulation :tutorial] {}))
+
+(defn current-stage []
+  "Returns the current tutorial stage (1-4)."
+  (get-in @app-state [:simulation :tutorial :current-stage] 1))
+
+(defn stage-successes []
+  "Returns map of stage -> success count."
+  (get-in @app-state [:simulation :tutorial :stage-successes] {}))
+
+(defn tutorials-viewed []
+  "Returns set of stage numbers whose tutorials have been viewed."
+  (get-in @app-state [:simulation :tutorial :tutorials-viewed] #{}))
+
+(defn show-tutorial? []
+  "Returns true if tutorial modal should be shown."
+  (get-in @app-state [:simulation :tutorial :show-tutorial?] false))
+
+(defn tutorial-section-index []
+  "Returns current section index within tutorial."
+  (get-in @app-state [:simulation :tutorial :section-index] 0))
+
+(defn set-current-stage! [stage]
+  "Set the current tutorial stage."
+  (swap! app-state assoc-in [:simulation :tutorial :current-stage] stage))
+
+(defn set-show-tutorial! [show?]
+  "Show or hide the tutorial modal."
+  (swap! app-state assoc-in [:simulation :tutorial :show-tutorial?] show?))
+
+(defn set-tutorial-section-index! [idx]
+  "Set the current section index within the tutorial."
+  (swap! app-state assoc-in [:simulation :tutorial :section-index] idx))
+
+(defn mark-tutorial-viewed! [stage]
+  "Mark a stage's tutorial as viewed."
+  (swap! app-state update-in [:simulation :tutorial :tutorials-viewed]
+         (fn [viewed] (conj (or viewed #{}) stage))))
+
+(defn tutorial-viewed? [stage]
+  "Check if a stage's tutorial has been viewed."
+  (contains? (tutorials-viewed) stage))
+
+(defn increment-stage-success! [stage]
+  "Increment the success count for a stage."
+  (swap! app-state update-in [:simulation :tutorial :stage-successes stage]
+         (fn [count] (inc (or count 0)))))
+
+(defn get-stage-success-count [stage]
+  "Get the number of successful transactions for a stage."
+  (get-in @app-state [:simulation :tutorial :stage-successes stage] 0))
+
+(defn stage-mastered? [stage mastery-required]
+  "Check if a stage has been mastered (enough successful transactions)."
+  (>= (get-stage-success-count stage) mastery-required))
+
+(defn advance-stage!
+  "Advance to the next stage if current stage is mastered."
+  [next-stage]
+  (swap! app-state assoc-in [:simulation :tutorial :current-stage] next-stage)
+  ;; Automatically show the new stage's tutorial
+  (set-tutorial-section-index! 0)
+  (set-show-tutorial! true))
+
+(defn init-tutorial-state!
+  "Initialize tutorial state for a new simulation or from server data."
+  [& [server-data]]
+  (let [default-state {:current-stage 1
+                       :stage-successes {}
+                       :tutorials-viewed #{}
+                       :show-tutorial? true  ;; Show tutorial on first load
+                       :section-index 0}
+        state (if server-data
+                (merge default-state server-data)
+                default-state)]
+    (swap! app-state assoc-in [:simulation :tutorial] state)))
+
+(defn reset-tutorial-state!
+  "Reset tutorial progress."
+  []
+  (swap! app-state assoc-in [:simulation :tutorial]
+         {:current-stage 1
+          :stage-successes {}
+          :tutorials-viewed #{}
+          :show-tutorial? true
+          :section-index 0}))

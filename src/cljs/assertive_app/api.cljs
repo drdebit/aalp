@@ -1,7 +1,8 @@
 (ns assertive-app.api
   "API client for backend communication."
   (:require [ajax.core :refer [GET POST]]
-            [assertive-app.state :as state]))
+            [assertive-app.state :as state]
+            [assertive-app.tutorials :as tutorials]))
 
 ;; Forward declarations for functions used before definition
 (declare fetch-assertions! fetch-problem! fetch-ledger!)
@@ -283,7 +284,8 @@
                                           :extract-body? true})})))
 
 (defn submit-simulation-answer!
-  "Submit answer for simulation mode. Handles both correct and incorrect responses."
+  "Submit answer for simulation mode. Handles both correct and incorrect responses.
+   Tracks stage progress and advances when mastery is achieved."
   []
   (state/set-loading! true)
   (POST (str api-base "/simulation/classify")
@@ -295,8 +297,21 @@
      :handler (fn [response]
                 (state/set-feedback! (:feedback response))
                 (state/update-simulation-after-classify! response)
-                ;; If correct, clear the problem and refresh ledger
+                ;; If correct, handle success and stage progression
                 (when (:correct? response)
+                  (let [current-stage (state/current-stage)
+                        mastery-required (tutorials/get-mastery-required current-stage)]
+                    ;; Increment success count for current stage
+                    (state/increment-stage-success! current-stage)
+                    ;; Check if stage is now mastered
+                    (let [new-success-count (state/get-stage-success-count current-stage)]
+                      (when (and (>= new-success-count mastery-required)
+                                 (< current-stage (tutorials/max-stage)))
+                        ;; Advance to next stage after a short delay
+                        (js/setTimeout
+                         #(state/advance-stage! (inc current-stage))
+                         1500))))
+                  ;; Clear problem state
                   (state/set-current-problem! nil)
                   (state/clear-selections!)
                   ;; Store last completed transaction for confirmation display

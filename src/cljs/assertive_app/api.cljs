@@ -383,3 +383,16 @@
                 (state/set-business-state! (:business-state response))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to advance period"})}))
+
+(defn fetch-financial-statements!
+  "Fetch generated financial statements from ledger."
+  []
+  (state/set-loading! true)
+  (GET (str api-base "/simulation/statements")
+    {:headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-financial-statements! response)
+                (state/set-loading! false))
+     :error-handler (make-error-handler {:message "Failed to fetch financial statements"})}))

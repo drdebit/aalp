@@ -569,8 +569,8 @@
   "Format a number as currency."
   [amount]
   (if amount
-    (str "$" (.toLocaleString (js/Number amount)))
-    "$0"))
+    (str "$" (.toLocaleString (js/Math.abs amount) "en-US" #js {:minimumFractionDigits 2 :maximumFractionDigits 2}))
+    "$0.00"))
 
 (defn business-dashboard
   "Shows current business state metrics."
@@ -1075,16 +1075,149 @@
              [:td ""]
              [:td.je-amount (str "$" amount)]]]]])])))
 
+(defn account-row
+  "Render a single account row in a statement."
+  [{:keys [account balance]}]
+  [:tr
+   [:td.account-name account]
+   [:td.account-balance (format-currency balance)]])
+
+(defn financial-statements-panel
+  "Display the generated financial statements."
+  []
+  (let [statements (state/financial-statements)]
+    (if (nil? statements)
+      [:div.statements-loading
+       [:p "Loading financial statements..."]]
+      (let [bs (:balance-sheet statements)
+            is (:income-statement statements)
+            tx-count (:transaction-count statements)
+            as-of (:as-of-date statements)]
+        [:div.financial-statements
+         [:div.statements-header
+          [:h2 "Financial Statements"]
+          (when as-of
+            [:p.as-of-date "As of " as-of " (" tx-count " transactions)"])
+          [:button.close-statements
+           {:on-click #(state/set-show-statements! false)}
+           "×"]]
+
+         (if (zero? tx-count)
+           [:div.no-transactions
+            [:p "No transactions recorded yet."]
+            [:p "Complete some transactions in the simulation to see your financial statements."]]
+
+           [:div.statements-content
+            ;; Income Statement
+            [:div.statement-section
+             [:h3 "Income Statement"]
+             [:table.statement-table
+              [:thead
+               [:tr [:th "Account"] [:th "Amount"]]]
+              [:tbody
+               ;; Revenues
+               (when (seq (:revenues is))
+                 [:<>
+                  [:tr.section-header [:td {:colSpan 2} "Revenue"]]
+                  (for [rev (:revenues is)]
+                    ^{:key (:account rev)} [account-row rev])
+                  [:tr.subtotal
+                   [:td "Total Revenue"]
+                   [:td.account-balance (format-currency (get-in is [:totals :revenue]))]]])
+
+               ;; Expenses
+               (when (seq (:expenses is))
+                 [:<>
+                  [:tr.section-header [:td {:colSpan 2} "Expenses"]]
+                  (for [exp (:expenses is)]
+                    ^{:key (:account exp)} [account-row exp])
+                  [:tr.subtotal
+                   [:td "Total Expenses"]
+                   [:td.account-balance (format-currency (get-in is [:totals :expenses]))]]])
+
+               ;; Net Income
+               [:tr.total-row
+                [:td [:strong "Net Income"]]
+                [:td.account-balance {:class (if (neg? (get-in is [:totals :net-income])) "negative" "positive")}
+                 (format-currency (get-in is [:totals :net-income]))]]]]]
+
+            ;; Balance Sheet
+            [:div.statement-section
+             [:h3 "Balance Sheet"]
+             [:table.statement-table
+              [:thead
+               [:tr [:th "Account"] [:th "Amount"]]]
+              [:tbody
+               ;; Assets
+               (when (seq (:assets bs))
+                 [:<>
+                  [:tr.section-header [:td {:colSpan 2} "Assets"]]
+                  (for [asset (:assets bs)]
+                    ^{:key (:account asset)} [account-row asset])])
+
+               ;; Contra-Assets
+               (when (seq (:contra-assets bs))
+                 [:<>
+                  (for [ca (:contra-assets bs)]
+                    ^{:key (:account ca)}
+                    [:tr
+                     [:td.account-name.contra (str "Less: " (:account ca))]
+                     [:td.account-balance.contra (str "(" (format-currency (:balance ca)) ")")]])])
+
+               [:tr.subtotal
+                [:td "Total Assets"]
+                [:td.account-balance (format-currency (get-in bs [:totals :net-assets]))]]
+
+               ;; Liabilities
+               (when (seq (:liabilities bs))
+                 [:<>
+                  [:tr.section-header [:td {:colSpan 2} "Liabilities"]]
+                  (for [liab (:liabilities bs)]
+                    ^{:key (:account liab)} [account-row liab])
+                  [:tr.subtotal
+                   [:td "Total Liabilities"]
+                   [:td.account-balance (format-currency (get-in bs [:totals :liabilities]))]]])
+
+               ;; Equity
+               (when (seq (:equity bs))
+                 [:<>
+                  [:tr.section-header [:td {:colSpan 2} "Equity"]]
+                  (for [eq (:equity bs)]
+                    ^{:key (:account eq)} [account-row eq])
+                  [:tr.subtotal
+                   [:td "Total Equity"]
+                   [:td.account-balance (format-currency (get-in bs [:totals :equity]))]]])
+
+               [:tr.total-row
+                [:td [:strong "Total Liabilities + Equity"]]
+                [:td.account-balance (format-currency (get-in bs [:totals :liabilities-and-equity]))]]]]]
+
+            ;; Balance check
+            (let [assets (get-in bs [:totals :net-assets])
+                  liab-eq (get-in bs [:totals :liabilities-and-equity])
+                  balanced? (= assets liab-eq)]
+              [:div.balance-check {:class (if balanced? "balanced" "unbalanced")}
+               (if balanced?
+                 [:span "✓ Balance Sheet is balanced"]
+                 [:span "⚠ Balance Sheet is not balanced (difference: "
+                  (format-currency (- assets liab-eq)) ")"])])])]))))
+
 (defn simulation-content
   "Main content for simulation mode."
   []
   (let [pending (state/pending-transaction)
         last-tx (state/last-completed-transaction)
-        show-tutorial? (state/show-tutorial?)]
+        show-tutorial? (state/show-tutorial?)
+        show-statements? (state/show-statements?)]
     [:div.simulation-container
      ;; Tutorial modal overlay (when active)
      (when show-tutorial?
        [tutorial-modal])
+
+     ;; Financial statements overlay (when active)
+     (when show-statements?
+       [:div.statements-overlay
+        [financial-statements-panel]])
 
      ;; Stage progress bar at top
      [:div.stage-progress-bar
@@ -1110,6 +1243,11 @@
          [assertion-panel]
          [feedback-panel]])]
      [:div.simulation-actions
+      [:button.statements-btn
+       {:on-click #(do
+                     (api/fetch-financial-statements!)
+                     (state/set-show-statements! true))}
+       "View Financial Statements"]
       [:button.reset-btn
        {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
                     (api/reset-simulation! nil)

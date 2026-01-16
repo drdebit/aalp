@@ -924,6 +924,182 @@
                  :template-key (:ledger-entry/template-key e)}))
          (sort-by :date))))
 
+;; ==================== Financial Statement Generation ====================
+
+(def account-classifications
+  "Maps account names to their financial statement classification."
+  {;; Assets (Balance Sheet)
+   "Cash" {:type :asset :statement :balance-sheet :normal :debit}
+   "Accounts Receivable" {:type :asset :statement :balance-sheet :normal :debit}
+   "Notes Receivable" {:type :asset :statement :balance-sheet :normal :debit}
+   "Interest Receivable" {:type :asset :statement :balance-sheet :normal :debit}
+   "Raw Materials Inventory" {:type :asset :statement :balance-sheet :normal :debit}
+   "Finished Goods Inventory" {:type :asset :statement :balance-sheet :normal :debit}
+   "Work in Process" {:type :asset :statement :balance-sheet :normal :debit}
+   "Equipment" {:type :asset :statement :balance-sheet :normal :debit}
+   "Equipment (Fixed Asset)" {:type :asset :statement :balance-sheet :normal :debit}
+   "Prepaid Expense" {:type :asset :statement :balance-sheet :normal :debit}
+   "Prepaid Expense (Asset)" {:type :asset :statement :balance-sheet :normal :debit}
+   "Prepaid Insurance" {:type :asset :statement :balance-sheet :normal :debit}
+   "Design Asset" {:type :asset :statement :balance-sheet :normal :debit}
+   "Intangible Asset" {:type :asset :statement :balance-sheet :normal :debit}
+   ;; Contra-Assets
+   "Accumulated Depreciation" {:type :contra-asset :statement :balance-sheet :normal :credit}
+   "Allowance for Doubtful Accounts" {:type :contra-asset :statement :balance-sheet :normal :credit}
+   ;; Liabilities (Balance Sheet)
+   "Accounts Payable" {:type :liability :statement :balance-sheet :normal :credit}
+   "Notes Payable" {:type :liability :statement :balance-sheet :normal :credit}
+   "Wages Payable" {:type :liability :statement :balance-sheet :normal :credit}
+   "Interest Payable" {:type :liability :statement :balance-sheet :normal :credit}
+   "Dividends Payable" {:type :liability :statement :balance-sheet :normal :credit}
+   "Deferred Revenue (Liability)" {:type :liability :statement :balance-sheet :normal :credit}
+   "Unearned Revenue" {:type :liability :statement :balance-sheet :normal :credit}
+   ;; Equity (Balance Sheet)
+   "Owner's Capital" {:type :equity :statement :balance-sheet :normal :credit}
+   "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
+   "Retained Earnings" {:type :equity :statement :balance-sheet :normal :credit}
+   "Owner's Drawing" {:type :equity :statement :balance-sheet :normal :debit}
+   ;; Revenue (Income Statement)
+   "Revenue" {:type :revenue :statement :income-statement :normal :credit}
+   "Service Revenue" {:type :revenue :statement :income-statement :normal :credit}
+   "Interest Revenue" {:type :revenue :statement :income-statement :normal :credit}
+   ;; Expenses (Income Statement)
+   "Cost of Goods Sold" {:type :expense :statement :income-statement :normal :debit}
+   "Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Wage Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Wages Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Depreciation Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Bad Debt Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Interest Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Insurance Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Tax Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Compliance Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Reporting Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Organization Costs" {:type :expense :statement :income-statement :normal :debit}})
+
+(defn- parse-amount
+  "Extract numeric amount from account string like 'Cash $1,000'."
+  [account-str]
+  (if-let [match (re-find #"\$([0-9,]+(?:\.[0-9]+)?)" account-str)]
+    (-> (second match)
+        (str/replace "," "")
+        (Double/parseDouble))
+    0))
+
+(defn- extract-account-name
+  "Extract account name without amount, e.g., 'Cash $1,000' -> 'Cash'."
+  [account-str]
+  (-> account-str
+      (str/replace #"\s*\$[0-9,]+(?:\.[0-9]+)?\s*$" "")
+      str/trim))
+
+(defn- process-journal-entry
+  "Process a single journal entry and update account balances.
+   Journal entry format: {:debit 'Account $amount' :credit 'Account $amount'}"
+  [balances entry]
+  (let [debit-str (:debit entry)
+        credit-str (:credit entry)
+        debit-account (extract-account-name debit-str)
+        credit-account (extract-account-name credit-str)
+        ;; Try to get amount from debit first, then credit
+        amount (let [d-amt (parse-amount debit-str)
+                     c-amt (parse-amount credit-str)]
+                 (if (pos? d-amt) d-amt c-amt))]
+    (if (pos? amount)
+      (-> balances
+          (update debit-account (fnil + 0M) (bigdec amount))
+          (update credit-account (fnil - 0M) (bigdec amount)))
+      balances)))
+
+(defn- process-ledger-entries
+  "Process all ledger entries and compute account balances.
+   Uses debit-positive convention: debits add, credits subtract."
+  [entries]
+  (reduce
+    (fn [balances entry]
+      (let [je (:journal-entry entry)]
+        (cond
+          ;; Single journal entry (map)
+          (and (map? je) (:debit je))
+          (process-journal-entry balances je)
+          ;; Multiple journal entries (vector of maps)
+          (vector? je)
+          (reduce process-journal-entry balances je)
+          ;; No journal entry
+          :else balances)))
+    {}
+    entries))
+
+(defn- account-balance-to-normal
+  "Convert account balance to normal (positive) representation.
+   Assets/expenses are debit-normal (positive when debit > credit).
+   Liabilities/equity/revenue are credit-normal (positive when credit > debit)."
+  [account-name balance]
+  (let [classification (get account-classifications account-name
+                            {:type :unknown :normal :debit})]
+    (if (= :credit (:normal classification))
+      (* -1 balance)  ;; Credit-normal accounts: negate to show positive
+      balance)))
+
+(defn generate-financial-statements
+  "Generate financial statements from ledger entries.
+   Returns balance sheet and income statement with account balances."
+  [user-id]
+  (let [entries (get-ledger user-id)
+        ;; Get raw balances (debit-positive convention)
+        raw-balances (process-ledger-entries entries)
+        ;; Convert to normal representation and classify
+        classified-accounts
+        (for [[account raw-balance] raw-balances
+              :let [classification (get account-classifications account
+                                        {:type :unknown :statement :balance-sheet :normal :debit})
+                    balance (account-balance-to-normal account raw-balance)]
+              :when (not (zero? balance))]
+          {:account account
+           :balance balance
+           :type (:type classification)
+           :statement (:statement classification)})
+        ;; Group by statement
+        by-statement (group-by :statement classified-accounts)
+        ;; Build balance sheet
+        bs-accounts (get by-statement :balance-sheet [])
+        assets (filter #(= :asset (:type %)) bs-accounts)
+        contra-assets (filter #(= :contra-asset (:type %)) bs-accounts)
+        liabilities (filter #(= :liability (:type %)) bs-accounts)
+        equity (filter #(= :equity (:type %)) bs-accounts)
+        ;; Build income statement
+        is-accounts (get by-statement :income-statement [])
+        revenues (filter #(= :revenue (:type %)) is-accounts)
+        expenses (filter #(= :expense (:type %)) is-accounts)
+        ;; Calculate totals
+        total-assets (reduce + 0M (map :balance assets))
+        total-contra-assets (reduce + 0M (map :balance contra-assets))
+        net-assets (- total-assets total-contra-assets)
+        total-liabilities (reduce + 0M (map :balance liabilities))
+        total-equity (reduce + 0M (map :balance equity))
+        total-revenue (reduce + 0M (map :balance revenues))
+        total-expenses (reduce + 0M (map :balance expenses))
+        net-income (- total-revenue total-expenses)]
+    {:balance-sheet
+     {:assets (vec (sort-by :account assets))
+      :contra-assets (vec (sort-by :account contra-assets))
+      :liabilities (vec (sort-by :account liabilities))
+      :equity (vec (sort-by :account equity))
+      :totals {:assets total-assets
+               :contra-assets total-contra-assets
+               :net-assets net-assets
+               :liabilities total-liabilities
+               :equity total-equity
+               :liabilities-and-equity (+ total-liabilities total-equity)}}
+     :income-statement
+     {:revenues (vec (sort-by :account revenues))
+      :expenses (vec (sort-by :account expenses))
+      :totals {:revenue total-revenue
+               :expenses total-expenses
+               :net-income net-income}}
+     :transaction-count (count entries)
+     :as-of-date (when (seq entries) (:date (last entries)))}))
+
 ;; ==================== High-Level Operations ====================
 
 (defn start-action!

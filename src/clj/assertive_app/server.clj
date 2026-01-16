@@ -281,6 +281,12 @@
         (response/response {:success true}))
       {:status 401 :body {:error "Authentication required"}}))
 
+  (GET "/api/simulation/statements" request
+    (if-let [user (:user request)]
+      (response/response
+        (simulation/generate-financial-statements (:db/id user)))
+      {:status 401 :body {:error "Authentication required"}}))
+
   ;; CORS preflight
   (OPTIONS "*" []
     (response/response {:status "ok"}))

@@ -249,6 +249,22 @@
 (defn clear-last-completed-transaction! []
   (swap! app-state assoc-in [:simulation :last-completed-transaction] nil))
 
+;; Financial Statements state
+(defn financial-statements []
+  (get-in @app-state [:simulation :financial-statements]))
+
+(defn set-financial-statements! [statements]
+  (swap! app-state assoc-in [:simulation :financial-statements] statements))
+
+(defn show-statements? []
+  (get-in @app-state [:simulation :show-statements?] false))
+
+(defn set-show-statements! [show?]
+  (swap! app-state assoc-in [:simulation :show-statements?] show?))
+
+(defn toggle-statements! []
+  (swap! app-state update-in [:simulation :show-statements?] not))
+
 (defn update-simulation-after-classify!
   "Update simulation state after a classify response."
   [response]

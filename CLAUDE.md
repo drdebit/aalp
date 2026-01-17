@@ -311,23 +311,89 @@ Correctly-classified transactions are recorded in the student's ledger with:
 - Assertion selections
 - Resulting journal entry
 
+### Sentence Builder UI
+
+The platform uses a **sentence builder** interface that constructs assertions as natural language sentences, making the assertive accounting model intuitive for students.
+
+**Core Assertion Structure:**
+```
+"On [date], SP [provides/receives] [quantity] [unit-type] [to/from] [counterparty]"
+```
+
+**Forward-Looking Assertions:**
+- **requires**: Creates obligations - "This creates an obligation: [party] must provide [amount] [unit] to [recipient] by [due-date]"
+- **expects**: Creates expectations with confidence - "SP expects to receive [amount] [unit] from [party] with [confidence]% confidence"
+
+**Context-Aware Rendering:**
+- Credit sales: SP expects payment (customer obligated)
+- Credit purchases: SP must pay (SP obligated via `requires`)
+- Deferred revenue: SP must deliver goods (SP obligated)
+- Prepaid expenses: SP expects to receive services (vendor obligated)
+
+**Key Components (views.cljs):**
+- `sentence-builder` - Main component orchestrating the sentence construction
+- `render-provides-section`, `render-receives-section` - Economic exchange fragments
+- `render-requires-section`, `render-expects-section` - Forward-looking assertions
+- `render-reports-section` - Recognition with calculation builder integration
+- `inline-dropdown`, `inline-number-input`, `inline-date-input` - Inline form controls
+- `confidence-slider` - Visual slider for expectation confidence (0-100%)
+
+### Calculation Builder
+
+The **calculation builder** provides interactive formula-based calculations for adjusting entries. It integrates with the `reports` assertion to compute amounts for depreciation, bad debt, prepaid expense adjustments, and interest accrual.
+
+**Calculation Types:**
+
+| Basis | Formula | Inputs |
+|-------|---------|--------|
+| `systematic-allocation` | (Cost - Salvage) ÷ Life | Asset cost, salvage value, useful life, periods/year |
+| `estimation` | Σ(Receivable × (1 - Confidence)) | Data-driven from credit sales |
+| `time-based` | (Original ÷ Total Periods) × Elapsed | Original amount, total periods, periods elapsed |
+| `accrual` | Principal × Rate × Time | Principal, annual rate, time fraction |
+
+**Data-Driven Bad Debt:**
+The bad debt calculation demonstrates assertive accounting's power - confidence levels assigned during credit sales automatically feed into the allowance calculation:
+1. Student records credit sale with confidence level (e.g., 85%)
+2. Receivable appears in ledger with confidence metadata
+3. When calculating bad debt, system retrieves all receivables
+4. Expected loss = Amount × (1 - Confidence)
+5. Total bad debt = sum of expected losses
+
+**Key Components:**
+- `calculation-builder` - Main wrapper, shows appropriate UI based on basis
+- `formula-builder` - Interactive inputs for formula-based calculations
+- `bad-debt-calculation-display` - Data-driven table from receivables
+- `calculation-input-field` - Renders currency, number, dropdown, percentage inputs
+
+**API Endpoints:**
+- `GET /api/calculation-schemas` - Returns all calculation type schemas
+- `GET /api/simulation/receivables` - Returns outstanding receivables with confidence
+- `POST /api/calculate` - Computes result for given basis and inputs
+
 ### Implementation Files
 
 **Backend:**
 - `classification.clj` - Core classification engine
   - `physical-items` - **Single source of truth** for all item definitions
   - `unit-type-options` - Shared constant for unit type dropdowns
+  - `calculation-schemas` - Schema definitions for calculation builder
+  - `calculate-result` - Computes results for formula-based calculations
   - Assertion definitions, transaction templates, classification logic
 - `simulation.clj` - Business simulation engine
   - Action definitions with prerequisites and effects
   - `action-schemas` - Parameter schemas for frontend forms
+  - `get-receivables-summary` - Retrieves receivables for bad debt calculation
   - Business state management, transaction generation, ledger persistence
   - Derives `inventory-types` and `equipment-types` from classification
 
 **Frontend:**
 - `state.cljs` - Application state management with Reagent atoms
+  - Calculation state: `calculation-schemas`, `receivables-summary`, `calculation-inputs`, `calculation-result`
 - `api.cljs` - API client with `make-error-handler` factory for consistent error handling
+  - Calculation APIs: `fetch-calculation-schemas!`, `fetch-receivables-summary!`, `calculate!`
 - `views.cljs` - UI components, uses dynamic action schemas from backend
+  - Sentence builder components for natural language assertion construction
+  - Calculation builder components for adjusting entry calculations
 
 **Database (schema.clj):**
 - `:business-state/*` - Business state entity

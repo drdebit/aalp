@@ -360,6 +360,545 @@
         ^{:key domain-key}
         [assertion-group domain-key domain-assertions])]]))
 
+;; ==================== Sentence Builder Components ====================
+;; New UI for building assertions as natural language sentences
+
+(defn- format-unit-display
+  "Format a unit selection for display in the sentence."
+  [{:keys [unit physical-item quantity]}]
+  (case unit
+    "monetary-unit" (str "$" (or quantity "___") " Cash")
+    "physical-unit" (str (or quantity "___") " "
+                         (or (some-> physical-item (str/replace "-" " ") str/capitalize)
+                             "[select item]"))
+    "time-unit" (str (or quantity "___") " hours")
+    "effort-unit" (str (or quantity "___") " labor effort")
+    (str (or quantity "___") " " (or unit "[select unit]"))))
+
+(defn- format-date-display
+  "Format a date for display in the sentence."
+  [date-str]
+  (if (and date-str (re-matches #"\d{4}-\d{2}-\d{2}" date-str))
+    (let [[year month day] (str/split date-str #"-")
+          months ["January" "February" "March" "April" "May" "June"
+                  "July" "August" "September" "October" "November" "December"]
+          month-idx (dec (js/parseInt month))
+          day-num (js/parseInt day)]
+      (str (nth months month-idx) " " day-num ", " year))
+    (or date-str "[select date]")))
+
+(defn- inline-date-input
+  "Inline date input for sentence builder."
+  [assertion-code param-key current-value]
+  [:input.sentence-input.date-input
+   {:type "date"
+    :min "2026-01-01"
+    :max "2026-12-31"
+    :value (or current-value "")
+    :on-change #(state/update-assertion-parameter!
+                 assertion-code param-key
+                 (.. % -target -value))}])
+
+(defn- inline-number-input
+  "Inline number input for sentence builder."
+  [assertion-code param-key current-value placeholder]
+  [:input.sentence-input.number-input
+   {:type "number"
+    :placeholder (or placeholder "___")
+    :value (or current-value "")
+    :style {:width (str (max 3 (count (str current-value))) "ch")}
+    :on-change #(state/update-assertion-parameter!
+                 assertion-code param-key
+                 (.. % -target -value))}])
+
+(defn- inline-text-input
+  "Inline text input for sentence builder."
+  [assertion-code param-key current-value placeholder]
+  [:input.sentence-input.text-input
+   {:type "text"
+    :placeholder (or placeholder "___")
+    :value (or current-value "")
+    :style {:width (str (max 8 (+ 2 (count (str current-value)))) "ch")}
+    :on-change #(state/update-assertion-parameter!
+                 assertion-code param-key
+                 (.. % -target -value))}])
+
+(defn- inline-dropdown
+  "Inline dropdown for sentence builder."
+  [assertion-code param-key options current-value placeholder]
+  [:select.sentence-input.dropdown-input
+   {:value (or current-value "")
+    :on-change #(state/update-assertion-parameter!
+                 assertion-code param-key
+                 (.. % -target -value))}
+   [:option {:value ""} (or placeholder "select...")]
+   (for [option options]
+     ^{:key (:value option)}
+     [:option {:value (:value option)} (:label option)])])
+
+(defn- confidence-slider
+  "Confidence level slider with percentage display."
+  [assertion-code current-value]
+  (let [value (or current-value 85)]
+    [:span.confidence-input
+     [:input.sentence-input.slider-input
+      {:type "range"
+       :min 0
+       :max 100
+       :step 5
+       :value value
+       :on-change #(state/update-assertion-parameter!
+                    assertion-code :confidence
+                    (js/parseInt (.. % -target -value)))}]
+     [:span.confidence-value (str value "%")]]))
+
+(defn- customer-context-display
+  "Display customer payment history context for confidence decisions."
+  [customer-name customer-profiles]
+  (when-let [profile (get customer-profiles customer-name)]
+    [:div.customer-context
+     [:div.context-header "Customer Payment History:"]
+     [:div.context-body
+      [:p [:strong customer-name] " has paid on time for "
+       [:span.highlight (str (:total-orders profile) " orders")] "."]
+      [:p "Historical payment rate: "
+       [:span.highlight (str (:history-rate profile) "%")]]
+      [:p "Industry average: "
+       [:span.highlight (str (:industry-avg profile) "%")]]]]))
+
+(defn- vendor-context-display
+  "Display vendor reliability context for prepaid expense confidence decisions."
+  [vendor-name vendor-profiles]
+  (when-let [profile (get vendor-profiles vendor-name)]
+    [:div.customer-context  ;; Reuse same styling
+     [:div.context-header "Vendor Reliability:"]
+     [:div.context-body
+      [:p [:strong vendor-name] " has been in business for "
+       [:span.highlight (str (:years-in-business profile) " years")] "."]
+      [:p "Historical reliability rate: "
+       [:span.highlight (str (:reliability-rate profile) "%")]]
+      [:p "Industry average: "
+       [:span.highlight (str (:industry-avg profile) "%")]]]]))
+
+(defn- sentence-section
+  "A section of the sentence (main, obligation, expectation, etc.)."
+  [section-type label children]
+  [:div.sentence-section {:class (name section-type)}
+   (when label
+     [:div.section-label label])
+   [:div.section-content children]])
+
+(defn- remove-assertion-button
+  "Small button to remove an assertion from the sentence."
+  [assertion-code]
+  [:button.remove-assertion
+   {:on-click #(state/toggle-assertion! assertion-code)
+    :title "Remove this assertion"}
+   "×"])
+
+(defn- render-provides-fragment
+  "Render the 'provides' part of the sentence."
+  [params]
+  (let [unit-options [{:value "monetary-unit" :label "Cash/Money"}
+                      {:value "physical-unit" :label "Physical Units"}]
+        item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
+                      {:value "blank-tshirts" :label "Blank T-Shirts"}]]
+    [:span.assertion-fragment.provides
+     [:span.verb "provides "]
+     [inline-number-input :provides :quantity (:quantity params) "qty"]
+     " "
+     [inline-dropdown :provides :unit unit-options (:unit params) "unit type"]
+     (when (= (:unit params) "physical-unit")
+       [:span " "
+        [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]])
+     [remove-assertion-button :provides]]))
+
+(defn- render-receives-fragment
+  "Render the 'receives' part of the sentence."
+  [params]
+  (let [unit-options [{:value "monetary-unit" :label "Cash/Money"}
+                      {:value "physical-unit" :label "Physical Units"}]
+        item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
+                      {:value "blank-tshirts" :label "Blank T-Shirts"}
+                      {:value "ink-cartridges" :label "Ink Cartridges"}
+                      {:value "t-shirt-printer" :label "T-Shirt Printer"}]]
+    [:span.assertion-fragment.receives
+     [:span.verb "receives "]
+     [inline-number-input :receives :quantity (:quantity params) "qty"]
+     " "
+     [inline-dropdown :receives :unit unit-options (:unit params) "unit type"]
+     (when (= (:unit params) "physical-unit")
+       [:span " "
+        [inline-dropdown :receives :physical-item item-options (:physical-item params) "item"]])
+     [remove-assertion-button :receives]]))
+
+(defn- render-counterparty-fragment
+  "Render the counterparty part of the sentence."
+  [params connector]
+  [:span.assertion-fragment.counterparty
+   [:span.connector (str " " connector " ")]
+   [inline-text-input :has-counterparty :name (:name params) "party name"]
+   [remove-assertion-button :has-counterparty]])
+
+(defn- render-requires-section
+  "Render the 'requires' obligation section.
+   Context-aware: determines who is obligated based on main event structure.
+   - Credit sale (SP provides goods) → counterparty must provide cash
+   - Credit purchase (SP receives goods) → SP must provide cash to counterparty"
+  [params counterparty-name is-purchase?]
+  (let [action-options [{:value "provides" :label "Cash/Money"}
+                        {:value "receives" :label "Physical Units"}]
+        unit-options [{:value "monetary-unit" :label "Cash/Money"}
+                      {:value "physical-unit" :label "Physical Units"}]
+        ;; Determine obligated party and recipient based on transaction type
+        obligated-party (if is-purchase? "SP" (or counterparty-name "The counterparty"))
+        recipient (if is-purchase? (or counterparty-name "the vendor") "SP")]
+    [sentence-section :obligation "This creates an obligation:"
+     [:div.requires-content
+      [:span.party-name obligated-party]
+      [:span " must provide "]
+      [inline-number-input :requires :quantity (:quantity params) "amount"]
+      " "
+      [inline-dropdown :requires :unit unit-options (:unit params) "unit"]
+      [:span (str " to " recipient " by ")]
+      [inline-date-input :requires :due-date (:due-date params)]
+      [remove-assertion-button :requires]]]))
+
+(defn- render-expects-section
+  "Render the 'expects' confidence section with context.
+   Context-aware: shows customer context for credit sales, vendor context for prepaid expenses."
+  [params counterparty-name customer-profiles vendor-profiles is-prepaid?]
+  (let [context-label (if is-prepaid?
+                        "SP expects to receive services with"
+                        "SP expects payment with")]
+    [sentence-section :expectation "Expectation of fulfillment:"
+     [:div.expects-content
+      ;; Show appropriate context based on transaction type
+      (cond
+        (and is-prepaid? vendor-profiles)
+        [vendor-context-display counterparty-name vendor-profiles]
+
+        (and (not is-prepaid?) customer-profiles)
+        [customer-context-display counterparty-name customer-profiles])
+
+      [:div.confidence-row
+       [:span context-label " "]
+       [confidence-slider :expects (:confidence params)]
+       [:span " confidence."]
+       [remove-assertion-button :expects]]]]))
+
+;; ==================== Calculation Builder Components ====================
+
+(defn- calculation-input-field
+  "Render a single input field for the calculation builder."
+  [input-def current-value on-change]
+  (let [{:keys [key label type required min max default options]} input-def
+        input-key (keyword key)]
+    [:div.calc-input-field
+     [:label {:for (name input-key)} label
+      (when required [:span.required " *"])]
+     (case type
+       :currency
+       [:div.currency-input
+        [:span.currency-symbol "$"]
+        [:input {:type "number"
+                 :id (name input-key)
+                 :value (or current-value default "")
+                 :min (or min 0)
+                 :step "0.01"
+                 :on-change #(on-change input-key (js/parseFloat (.. % -target -value)))}]]
+
+       :number
+       [:input {:type "number"
+                :id (name input-key)
+                :value (or current-value default "")
+                :min (or min 1)
+                :max (or max 100)
+                :on-change #(on-change input-key (js/parseInt (.. % -target -value)))}]
+
+       :dropdown
+       (let [opts (or options [])
+             ;; Handle both map format {:value, :label} and simple values
+             get-value (fn [opt] (if (map? opt) (:value opt) opt))
+             get-label (fn [opt] (if (map? opt) (:label opt) (str opt)))
+             default-val (get-value (first opts))]
+         [:select {:id (name input-key)
+                   :value (or current-value default-val "")
+                   :on-change #(let [v (.. % -target -value)
+                                     ;; Parse numeric values
+                                     parsed (js/parseInt v)]
+                                 (on-change input-key (if (js/isNaN parsed) v parsed)))}
+          (for [opt opts]
+            ^{:key (get-value opt)}
+            [:option {:value (get-value opt)} (get-label opt)])])
+
+       :percentage
+       [:div.percentage-input
+        [:input {:type "number"
+                 :id (name input-key)
+                 :value (or current-value default "")
+                 :min 0
+                 :max 100
+                 :step "0.01"
+                 :on-change #(on-change input-key (js/parseFloat (.. % -target -value)))}]
+        [:span.percentage-symbol "%"]]
+
+       ;; Default to text input
+       [:input {:type "text"
+                :id (name input-key)
+                :value (or current-value default "")
+                :on-change #(on-change input-key (.. % -target -value))}])]))
+
+(defn- bad-debt-calculation-display
+  "Display the data-driven bad debt calculation from receivables."
+  []
+  (r/create-class
+   {:component-did-mount
+    (fn [_]
+      ;; Fetch receivables when component mounts
+      (api/fetch-receivables-summary!))
+
+    :reagent-render
+    (fn []
+      (let [summary (state/receivables-summary)
+            receivables (:receivables summary [])
+            total-ar (:total-receivables summary 0)
+            total-bad-debt (:total-bad-debt summary 0)]
+        [:div.bad-debt-calculation
+         [:div.calc-educational-note
+          [:p "Bad debt expense is calculated from the confidence levels you assigned when recording credit sales."]
+          [:p.formula "Formula: Σ (Receivable Amount × (1 - Confidence))"]]
+
+         (if (empty? receivables)
+           [:div.no-receivables
+            [:p "No outstanding receivables found."]
+            [:p.hint "Complete some credit sales first to see bad debt calculation."]]
+
+           [:div.receivables-table
+            [:table
+             [:thead
+              [:tr
+               [:th "Customer"]
+               [:th "Amount"]
+               [:th "Confidence"]
+               [:th "Expected Loss"]]]
+             [:tbody
+              (for [{:keys [customer amount confidence]} receivables]
+                (let [loss (* amount (- 1 (/ confidence 100)))]
+                  ^{:key customer}
+                  [:tr
+                   [:td customer]
+                   [:td.amount (str "$" (.toFixed amount 2))]
+                   [:td.confidence (str confidence "%")]
+                   [:td.loss (str "$" (.toFixed loss 2))]]))
+              [:tr.total-row
+               [:td "Total"]
+               [:td.amount (str "$" (.toFixed total-ar 2))]
+               [:td ""]
+               [:td.loss.total (str "$" (.toFixed total-bad-debt 2))]]]]
+
+            [:div.calc-result
+             [:span.result-label "Bad Debt Expense: "]
+             [:span.result-value (str "$" (.toFixed total-bad-debt 2))]]])]))}))
+
+(defn- formula-builder
+  "Interactive formula builder for calculations like depreciation."
+  [basis]
+  (let [schemas (state/calculation-schemas)
+        schema (get schemas (keyword basis))
+        inputs (state/calculation-inputs)
+        result (state/calculation-result)]
+    (if (nil? schema)
+      [:div.loading-schema "Loading calculation schema..."]
+      [:div.formula-builder
+       ;; Formula display
+       [:div.formula-display
+        [:span.formula-label "Formula: "]
+        [:span.formula (:formula-display schema)]]
+
+       ;; Input fields
+       [:div.calc-inputs
+        (for [input-def (:inputs schema)]
+          ^{:key (:key input-def)}
+          [calculation-input-field
+           input-def
+           (get inputs (keyword (:key input-def)))
+           (fn [k v] (state/set-calculation-input! k v))])]
+
+       ;; Calculate button
+       [:div.calc-actions
+        [:button.calculate-btn
+         {:on-click #(api/calculate!
+                      basis
+                      inputs
+                      (fn [response]
+                        (state/set-calculation-result! response)
+                        ;; Also update the assertion parameter with calculated value
+                        (when-let [amount (:value response)]
+                          (state/update-assertion-parameter! :reports :amount amount))))}
+         "Calculate"]]
+
+       ;; Result display
+       (when result
+         [:div.calc-result
+          {:class (when (:error result) "error")}
+          (if (:error result)
+            [:span.error-message (:error result)]
+            [:div
+             [:span.result-label (:result-label schema) ": "]
+             [:span.result-value (or (:display result)
+                                     (str "$" (.toFixed (:value result) 2)))]])])])))
+
+(defn- calculation-builder
+  "Main calculation builder component - shows appropriate UI based on basis type."
+  [basis]
+  (r/create-class
+   {:component-did-mount
+    (fn [_]
+      ;; Fetch calculation schemas when component mounts
+      (api/fetch-calculation-schemas!))
+
+    :reagent-render
+    (fn [basis]
+      (when basis
+        (let [simple-bases #{"earned" "cash-received" "cash-paid"}]
+          (when-not (simple-bases basis)
+            [:div.calculation-builder
+             [:h4 "Calculate Amount"]
+             (case basis
+               "estimation" [bad-debt-calculation-display]
+               ;; All others use the formula builder
+               [formula-builder basis])]))))}))
+
+(defn- render-reports-section
+  "Render the 'reports' recognition section."
+  [params]
+  (let [category-options [{:value "revenue" :label "Revenue"}
+                          {:value "expense" :label "Expense"}
+                          {:value "gain" :label "Gain"}
+                          {:value "loss" :label "Loss"}]
+        basis-options [{:value "earned" :label "Performance obligation satisfied"}
+                       {:value "cash-received" :label "Equal to cash received"}
+                       {:value "cash-paid" :label "Equal to cash paid"}
+                       {:value "systematic-allocation" :label "Systematic allocation (depreciation)"}
+                       {:value "estimation" :label "Estimation (bad debt)"}
+                       {:value "time-based" :label "Passage of time (prepaid)"}
+                       {:value "accrual" :label "Accrual over time (interest)"}]
+        selected-basis (:basis params)]
+    [:div.reports-section
+     [sentence-section :recognition "Recognition:"
+      [:div.reports-content
+       [:span "SP reports "]
+       [inline-dropdown :reports :category category-options (:category params) "type"]
+       [:span " calculated by "]
+       [inline-dropdown :reports :basis basis-options selected-basis "method"]
+       [remove-assertion-button :reports]]]
+
+     ;; Show calculation builder when a non-simple basis is selected
+     (when selected-basis
+       [calculation-builder selected-basis])]))
+
+(defn- add-assertion-menu
+  "Menu to add new assertions to the sentence."
+  [selected-assertions available-assertions]
+  (let [show-menu? (r/atom false)
+        ;; Flatten available assertions and filter out already selected
+        all-assertions (for [[_domain assertions] available-assertions
+                             assertion assertions
+                             :when (not (contains? selected-assertions (:code assertion)))]
+                         assertion)]
+    (fn [selected-assertions available-assertions]
+      [:div.add-assertion-menu
+       [:button.add-assertion-button
+        {:on-click #(swap! show-menu? not)}
+        (if @show-menu? "Cancel" "+ Add Assertion")]
+       (when @show-menu?
+         [:div.assertion-menu-dropdown
+          (for [assertion all-assertions]
+            ^{:key (:code assertion)}
+            [:button.menu-item
+             {:on-click #(do
+                          (state/toggle-assertion! (:code assertion))
+                          (auto-populate-assertion! (:code assertion))
+                          (reset! show-menu? false))
+              :title (:description assertion)}
+             (:label assertion)])])])))
+
+(defn sentence-builder
+  "Main sentence builder component - builds assertions as natural language."
+  []
+  (let [selected (state/selected-assertions)
+        available (state/available-assertions)
+        problem (state/current-problem)
+        counterparty-name (get-in selected [:has-counterparty :name])
+        customer-profiles (get-in problem [:customer-profiles])
+        vendor-profiles (get-in problem [:vendor-profiles])
+        ;; Determine transaction type based on what SP provides/receives
+        ;; Purchase: SP receives (goods) without providing (goods) - may provide cash
+        ;; Prepaid expense: SP provides (cash) and expects to receive services
+        is-purchase? (and (contains? selected :receives)
+                          (not (contains? selected :provides)))
+        ;; Prepaid: SP provides monetary-unit (cash) and expects to receive something
+        is-prepaid? (and (contains? selected :provides)
+                         (= (get-in selected [:provides :unit]) "monetary-unit")
+                         (contains? selected :expects))]
+    [:div.sentence-builder
+     [:h2 "Build Your Assertion"]
+
+     ;; Main sentence section
+     [:div.sentence-container
+      ;; Date fragment (always starts the sentence if present)
+      (when (contains? selected :has-date)
+        [:div.main-sentence
+         [:span "On "]
+         [inline-date-input :has-date :date (get-in selected [:has-date :date])]
+         [:span ", SP "]
+         [remove-assertion-button :has-date]
+
+         ;; Provides fragment
+         (when (contains? selected :provides)
+           [render-provides-fragment (:provides selected)])
+
+         ;; Counterparty after provides
+         (when (and (contains? selected :provides)
+                    (contains? selected :has-counterparty))
+           [render-counterparty-fragment (:has-counterparty selected) "to"])
+
+         ;; Receives fragment
+         (when (contains? selected :receives)
+           [:span
+            (when (contains? selected :provides) [:span.connector " and "])
+            [render-receives-fragment (:receives selected)]])
+
+         ;; Counterparty after receives (if no provides)
+         (when (and (not (contains? selected :provides))
+                    (contains? selected :receives)
+                    (contains? selected :has-counterparty))
+           [render-counterparty-fragment (:has-counterparty selected) "from"])
+
+         [:span "."]])
+
+      ;; If no date selected, show placeholder
+      (when-not (contains? selected :has-date)
+        [:div.sentence-placeholder
+         [:span.placeholder-text "Start by adding assertions to build your sentence..."]])
+
+      ;; Requires section (obligation) - context-aware for purchases vs sales
+      (when (contains? selected :requires)
+        [render-requires-section (:requires selected) counterparty-name is-purchase?])
+
+      ;; Expects section (confidence) - context-aware for sales vs prepaid expenses
+      (when (contains? selected :expects)
+        [render-expects-section (:expects selected) counterparty-name
+         customer-profiles vendor-profiles is-prepaid?])
+
+      ;; Reports section (recognition)
+      (when (contains? selected :reports)
+        [render-reports-section (:reports selected)])]
+
+     ;; Add assertion menu
+     [add-assertion-menu selected available]]))
+
 ;; ==================== Assertion Linkage Display ====================
 
 (defn- strip-amount
@@ -1240,7 +1779,7 @@
       (when pending
         [:div.three-column-layout
          [transaction-summary-panel]
-         [assertion-panel]
+         [sentence-builder]
          [feedback-panel]])]
      [:div.simulation-actions
       [:button.statements-btn
@@ -1318,7 +1857,7 @@
      [:div {:class (if is-construct? "two-column-layout" "three-column-layout")}
       [narrative-panel]
       (when-not is-construct?
-        [assertion-panel])
+        [sentence-builder])
       [feedback-panel]]]))
 
 (defn main-app []

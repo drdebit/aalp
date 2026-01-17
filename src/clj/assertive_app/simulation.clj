@@ -1197,3 +1197,57 @@
       @(d/transact conn retractions))
     {:success true
      :business-state (initialize-business-state)}))
+
+;; ==================== Outstanding Receivables for Bad Debt Calculation ====================
+
+(defn get-outstanding-receivables
+  "Get all outstanding receivables with their confidence levels from credit sales.
+   Returns a list of {:customer <name> :amount <number> :confidence <0-100> :date <string> :entry-id <uuid>}
+   Only includes receivables that haven't been collected yet (still in accounts-receivable)."
+  [user-id]
+  (let [ledger (get-ledger user-id)
+        business-state (get-business-state user-id)
+        current-ar (:accounts-receivable business-state {})
+        ;; Find credit sale entries
+        credit-sales (->> ledger
+                          (filter #(= (:action-type %) :sell-tshirts-credit))
+                          (map (fn [entry]
+                                 (let [vars (:variables entry)
+                                       assertions (:assertions entry)]
+                                   {:entry-id (:id entry)
+                                    :date (:date entry)
+                                    :customer (:customer vars)
+                                    :amount (:amount vars)
+                                    ;; Get confidence from expects assertion
+                                    :confidence (or (get-in assertions [:expects :confidence])
+                                                    ;; Fallback to 100% if not found
+                                                    100)}))))
+        ;; Filter to only include customers who still have outstanding balances
+        ;; and match the amounts (in case of partial payments in future)
+        outstanding (->> credit-sales
+                         (filter (fn [{:keys [customer amount]}]
+                                   ;; Customer still has outstanding balance
+                                   (when-let [ar-amount (get current-ar customer)]
+                                     (> ar-amount 0)))))]
+    outstanding))
+
+(defn get-receivables-summary
+  "Get a summary of outstanding receivables for the calculation builder UI.
+   Includes the individual receivables and the calculated bad debt amount."
+  [user-id]
+  (let [receivables (get-outstanding-receivables user-id)
+        ;; Calculate expected loss for each receivable
+        with-expected-loss
+        (map (fn [r]
+               (let [confidence (or (:confidence r) 100)
+                     expected-loss (* (:amount r) (/ (- 100 confidence) 100))]
+                 (assoc r
+                        :expected-loss expected-loss
+                        :non-collection-rate (- 100 confidence))))
+             receivables)
+        total-receivables (reduce + 0 (map :amount receivables))
+        total-bad-debt (reduce + 0 (map :expected-loss with-expected-loss))]
+    {:receivables with-expected-loss
+     :total-receivables total-receivables
+     :total-bad-debt total-bad-debt
+     :display (format "$%.2f" total-bad-debt)}))

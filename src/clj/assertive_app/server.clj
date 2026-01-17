@@ -287,6 +287,33 @@
         (simulation/generate-financial-statements (:db/id user)))
       {:status 401 :body {:error "Authentication required"}}))
 
+  ;; ==================== Calculation Builder Endpoints ====================
+
+  (GET "/api/calculation-schemas" []
+    ;; Return all calculation schemas for the frontend
+    (response/response
+      {:schemas classification/calculation-schemas}))
+
+  (GET "/api/calculation-schema/:basis" [basis]
+    ;; Return schema for a specific basis type
+    (if-let [schema (classification/get-calculation-schema basis)]
+      (response/response schema)
+      {:status 404 :body {:error (str "Unknown calculation basis: " basis)}}))
+
+  (GET "/api/simulation/receivables" request
+    ;; Get outstanding receivables for bad debt calculation
+    (if-let [user (:user request)]
+      (response/response
+        (simulation/get-receivables-summary (:db/id user)))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/calculate" {body :body}
+    ;; Calculate result for a given basis and inputs
+    (let [{:keys [basis inputs]} body]
+      (if-let [result (classification/calculate-result basis inputs)]
+        (response/response result)
+        {:status 400 :body {:error "Invalid calculation parameters"}})))
+
   ;; CORS preflight
   (OPTIONS "*" []
     (response/response {:status "ok"}))

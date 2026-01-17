@@ -396,3 +396,40 @@
                 (state/set-financial-statements! response)
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to fetch financial statements"})}))
+
+;; ==================== Calculation Builder ====================
+
+(defn fetch-calculation-schemas!
+  "Fetch all calculation schemas for the calculation builder UI."
+  []
+  (GET (str api-base "/calculation-schemas")
+    {:response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-calculation-schemas! (:schemas response)))
+     :error-handler (silent-error-handler "Error fetching calculation schemas:")}))
+
+(defn fetch-receivables-summary!
+  "Fetch outstanding receivables for bad debt calculation."
+  []
+  (GET (str api-base "/simulation/receivables")
+    {:headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-receivables-summary! response))
+     :error-handler (silent-error-handler "Error fetching receivables:")}))
+
+(defn calculate!
+  "Calculate result for a given basis and inputs.
+   Calls on-result with the calculation result."
+  [basis inputs on-result]
+  (POST (str api-base "/calculate")
+    {:params {:basis basis :inputs inputs}
+     :format :json
+     :response-format :json
+     :keywords? true
+     :handler on-result
+     :error-handler (fn [error]
+                      (on-result {:error (or (get-in error [:response :error])
+                                             "Calculation failed")}))}))

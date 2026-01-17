@@ -192,7 +192,229 @@
                      assertion))
                  assertions)])))
 
+;; ==================== Calculation Schemas ====================
+;; Defines the structure of calculations for each reports basis type.
+;; Used by the calculation-builder UI to render appropriate input fields.
+
+(def calculation-schemas
+  "Schemas for building calculations in the reports assertion.
+   Each basis type has:
+   - :label - Display name for the calculation type
+   - :description - Explanation of what this calculation does
+   - :formula - The formula structure (for display)
+   - :formula-display - Human-readable formula string
+   - :inputs - Vector of input field definitions
+   - :result-label - Label for the calculated result
+   - :data-driven? - If true, calculation uses data from prior assertions (e.g., bad debt)
+   - :data-source - For data-driven calcs, describes what data is needed"
+  {:systematic-allocation
+   {:label "Systematic Allocation (Depreciation)"
+    :description "Spreads the cost of a long-term asset over its useful life"
+    :formula [:divide [:subtract :asset-cost :salvage-value] :useful-life]
+    :formula-display "(Asset Cost - Salvage Value) ÷ Useful Life"
+    :inputs [{:key :asset-cost
+              :label "Asset Cost"
+              :type :currency
+              :placeholder "Original cost of asset"
+              :required true}
+             {:key :salvage-value
+              :label "Salvage Value"
+              :type :currency
+              :placeholder "Estimated value at end of life"
+              :default 0
+              :required true}
+             {:key :useful-life
+              :label "Useful Life (years)"
+              :type :number
+              :min 1
+              :max 50
+              :required true}
+             {:key :periods-per-year
+              :label "Periods per Year"
+              :type :dropdown
+              :options [{:value 1 :label "Annual (1)"}
+                        {:value 4 :label "Quarterly (4)"}
+                        {:value 12 :label "Monthly (12)"}]
+              :default 12
+              :required true}]
+    :result-label "Depreciation Expense"
+    :result-suffix "per period"}
+
+   :estimation
+   {:label "Estimation (Bad Debt)"
+    :description "Estimates uncollectible amounts based on confidence levels from credit sales"
+    :formula [:sum-product :receivables [:subtract 1 :confidence]]
+    :formula-display "Σ (Receivable Amount × (1 - Confidence))"
+    :data-driven? true
+    :data-source :outstanding-receivables
+    :data-description "Outstanding accounts receivable with their confidence levels from credit sales"
+    :inputs []  ;; No manual inputs - data comes from ledger
+    :result-label "Bad Debt Expense"
+    :educational-note "This calculation uses the confidence levels you assigned when recording each credit sale. Lower confidence = higher expected bad debt."}
+
+   :time-based
+   {:label "Time-Based (Prepaid Expenses)"
+    :description "Recognizes expense as time passes on a prepaid asset"
+    :formula [:multiply [:divide :original-amount :total-periods] :periods-elapsed]
+    :formula-display "(Original Amount ÷ Total Periods) × Periods Elapsed"
+    :inputs [{:key :original-amount
+              :label "Original Prepaid Amount"
+              :type :currency
+              :placeholder "Amount originally prepaid"
+              :required true}
+             {:key :total-periods
+              :label "Total Periods Covered"
+              :type :number
+              :min 1
+              :placeholder "e.g., 12 for 12-month policy"
+              :required true}
+             {:key :periods-elapsed
+              :label "Periods Elapsed"
+              :type :number
+              :min 1
+              :placeholder "Periods used up this adjustment"
+              :required true}]
+    :result-label "Expense to Recognize"
+    :result-suffix "this period"}
+
+   :accrual
+   {:label "Accrual (Interest)"
+    :description "Accrues interest over time based on principal, rate, and time"
+    :formula [:multiply :principal [:multiply [:divide :annual-rate 100] :time-fraction]]
+    :formula-display "Principal × (Annual Rate / 100) × Time Fraction"
+    :inputs [{:key :principal
+              :label "Principal Amount"
+              :type :currency
+              :placeholder "Amount owed/lent"
+              :required true}
+             {:key :annual-rate
+              :label "Annual Interest Rate (%)"
+              :type :number
+              :min 0
+              :max 100
+              :step 0.25
+              :placeholder "e.g., 6 for 6%"
+              :required true}
+             {:key :time-fraction
+              :label "Time Fraction"
+              :type :dropdown
+              :options [{:value 0.0833 :label "1 month (1/12)"}
+                        {:value 0.1667 :label "2 months (2/12)"}
+                        {:value 0.25 :label "3 months (1/4)"}
+                        {:value 0.5 :label "6 months (1/2)"}
+                        {:value 1.0 :label "1 year (1)"}]
+              :required true}]
+    :result-label "Interest Amount"
+    :result-suffix "accrued"}
+
+   ;; Simple basis types that don't need calculation builders
+   :cash-received
+   {:label "Cash Received"
+    :description "Revenue equals the cash received in the transaction"
+    :simple? true
+    :source-assertion :receives
+    :result-label "Revenue Amount"}
+
+   :cash-paid
+   {:label "Cash Paid"
+    :description "Expense equals the cash paid in the transaction"
+    :simple? true
+    :source-assertion :provides
+    :result-label "Expense Amount"}
+
+   :earned
+   {:label "Performance Obligation Satisfied"
+    :description "Revenue recognized when goods/services are delivered"
+    :simple? true
+    :source-assertion :provides
+    :result-label "Revenue Amount"}
+
+   :declared
+   {:label "Declared by Board"
+    :description "Distribution declared by board of directors"
+    :simple? true
+    :manual-entry? true
+    :result-label "Dividend Amount"}})
+
+(defn get-calculation-schema
+  "Get the calculation schema for a given basis type."
+  [basis]
+  (get calculation-schemas (keyword basis)))
+
+(defn calculation-requires-builder?
+  "Returns true if this basis type requires the calculation builder UI."
+  [basis]
+  (let [schema (get-calculation-schema basis)]
+    (and schema
+         (not (:simple? schema))
+         (or (seq (:inputs schema))
+             (:data-driven? schema)))))
+
+(defn calculate-result
+  "Calculate the result for a given basis type and input values.
+   Returns {:value <number> :display <formatted-string>} or {:error <message>}."
+  [basis inputs]
+  (let [schema (get-calculation-schema basis)]
+    (when schema
+      (try
+        (case (keyword basis)
+          :systematic-allocation
+          (let [{:keys [asset-cost salvage-value useful-life periods-per-year]
+                 :or {salvage-value 0 periods-per-year 12}} inputs
+                annual-depreciation (/ (- asset-cost salvage-value) useful-life)
+                period-depreciation (/ annual-depreciation periods-per-year)]
+            {:value period-depreciation
+             :annual-value annual-depreciation
+             :display (format "$%.2f" period-depreciation)})
+
+          :time-based
+          (let [{:keys [original-amount total-periods periods-elapsed]} inputs
+                period-amount (/ original-amount total-periods)
+                expense (* period-amount periods-elapsed)]
+            {:value expense
+             :period-amount period-amount
+             :display (format "$%.2f" expense)})
+
+          :accrual
+          (let [{:keys [principal annual-rate time-fraction]} inputs
+                interest (* principal (/ annual-rate 100) time-fraction)]
+            {:value interest
+             :display (format "$%.2f" interest)})
+
+          ;; Data-driven calculations handled separately
+          :estimation
+          {:error "Bad debt calculation requires receivables data - use calculate-bad-debt function"}
+
+          ;; Simple types don't need calculation
+          {:value (:amount inputs)
+           :display (format "$%.2f" (or (:amount inputs) 0))})
+        (catch Exception e
+          {:error (str "Calculation error: " (.getMessage e))})))))
+
+(defn calculate-bad-debt
+  "Calculate bad debt expense from a list of outstanding receivables.
+   Each receivable should have :amount and :confidence (0-1 scale).
+   Returns {:value <number> :receivables <list-with-expected-loss> :display <string>}."
+  [receivables]
+  (let [with-expected-loss
+        (map (fn [r]
+               (let [confidence (or (:confidence r) 1.0)
+                     expected-loss (* (:amount r) (- 1 (/ confidence 100)))]
+                 (assoc r :expected-loss expected-loss
+                          :non-collection-rate (- 100 confidence))))
+             receivables)
+        total-bad-debt (reduce + 0 (map :expected-loss with-expected-loss))]
+    {:value total-bad-debt
+     :receivables with-expected-loss
+     :display (format "$%.2f" total-bad-debt)}))
+
 ;; ==================== Assertion Definitions ====================
+;; Each assertion includes:
+;; - Core metadata (code, label, description, level, domain)
+;; - Sentence template for natural language rendering
+;; - Parameters for user input
+;; - Structure mapping to full assertive accounting format
+
 (def available-assertions
   (array-map
    ;; Event domain - applies to all events, not just exchanges
@@ -203,6 +425,13 @@
      :level 0
      :domain :event
      :parameterized true
+     ;; Sentence template: "On [date], SP..."
+     :sentence {:fragment "On"
+                :pattern [:date]
+                :suffix ", SP"
+                :position :start}
+     ;; Maps to full structure: {:date "2025-01-15"}
+     :structure {:date :date}
      :parameters {:date {:type :date
                          :label "Event date"}}}]
 
@@ -213,6 +442,14 @@
      :level 0
      :domain :exchange
      :parameterized true
+     ;; Sentence: "to/from [name]" - connector varies by context
+     :sentence {:fragment nil  ; No verb, just connector + name
+                :pattern [:name]
+                :connector-provides "to"    ; "provides X to [name]"
+                :connector-receives "from"  ; "receives X from [name]"
+                :position :after-exchange}
+     ;; Maps to: {:has-counterparty "Customer B"}
+     :structure {:has-counterparty :name}
      :parameters {:name {:type :text
                          :label "Counterparty name"
                          :optional true}}}
@@ -223,6 +460,16 @@
      :level 0
      :domain :exchange
      :parameterized true
+     ;; Sentence: "provides [quantity] [unit/item]"
+     :sentence {:fragment "provides"
+                :pattern [:quantity :unit-display]
+                :position :main-verb}
+     ;; Maps to full structure:
+     ;; {:provides {:has-quantity 100
+     ;;             :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}}
+     :structure {:provides
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "Unit type"
                          :options unit-type-options}
@@ -230,7 +477,8 @@
                   ;; Options derived from physical-items single source of truth
                   :physical-item {:type :dropdown
                                   :label "Physical item"
-                                  :options :derives-from-physical-items-provides}
+                                  :options :derives-from-physical-items-provides
+                                  :conditional {:unit "physical-unit"}}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}}}
@@ -241,6 +489,15 @@
      :level 0
      :domain :exchange
      :parameterized true
+     ;; Sentence: "receives [quantity] [unit/item]"
+     :sentence {:fragment "receives"
+                :pattern [:quantity :unit-display]
+                :connector-before "and"  ; "provides X and receives Y"
+                :position :main-verb}
+     ;; Maps to full structure (same pattern as provides)
+     :structure {:receives
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "Unit type"
                          :options unit-type-options}
@@ -248,7 +505,8 @@
                   ;; Options derived from physical-items single source of truth
                   :physical-item {:type :dropdown
                                   :label "Physical item"
-                                  :options :derives-from-physical-items-receives}
+                                  :options :derives-from-physical-items-receives
+                                  :conditional {:unit "physical-unit"}}
                   :quantity {:type :number
                              :label "Quantity"
                              :optional true}}}]
@@ -260,36 +518,70 @@
      :level 1
      :domain :forward-looking
      :parameterized true
+     ;; Sentence: section break, then "which requires [counterparty] to [action] [qty] [unit] by [date]"
+     :sentence {:fragment "which requires"
+                :pattern [:counterparty "to" :action :quantity :unit-display "by" :due-date]
+                :section-break true
+                :section-label "This creates an obligation:"
+                :position :new-section}
+     ;; Contains a nested event - maps to full structure:
+     ;; {:requires {:event {:has-identifier "auto-uuid"
+     ;;                     :date "2025-02-15"
+     ;;                     :provides/:receives {...}}}}
+     :contains-event true
+     :auto-identifier true
+     :nested-assertions #{:provides :receives}  ; What can go in the nested event
+     :inherits-counterparty true  ; Auto-fill counterparty from main event
+     :structure {:requires
+                 {:event
+                  {:has-identifier :auto-generated
+                   :date :due-date
+                   :nested-assertion :action-structure}}}
      :parameters {:action {:type :dropdown
-                           :label "Future event"
-                           :options [{:value "provides" :label "Provide (give something)"}
-                                     {:value "receives" :label "Receive (get something)"}]}
+                           :label "Obligated to"
+                           :options [{:value "provides" :label "Provide (they give us something)"}
+                                     {:value "receives" :label "Receive (we give them something)"}]}
                   :unit {:type :dropdown
                          :label "Unit type"
                          :options unit-type-options}
+                  :physical-item {:type :dropdown
+                                  :label "Physical item"
+                                  :options :derives-from-physical-items-receives
+                                  :conditional {:unit "physical-unit"}}
                   :quantity {:type :number
-                             :label "Quantity"
-                             :optional true}}}
+                             :label "Quantity"}
+                  :due-date {:type :date
+                             :label "Due date"}}}
 
     {:code :expects
      :label "Expects"
-     :description "Anticipates a future event (uncertain, with confidence level)"
+     :description "Anticipates fulfillment of an obligation (with confidence level)"
      :level 1
      :domain :forward-looking
      :parameterized true
-     :parameters {:action {:type :dropdown
-                           :label "Expected event"
-                           :options [{:value "provides" :label "Provide (give something)"}
-                                     {:value "receives" :label "Receive (get something)"}]}
-                  :unit {:type :dropdown
-                         :label "Unit type"
-                         :options unit-type-options}
-                  :quantity {:type :number
-                             :label "Quantity"
-                             :optional true}
-                  :confidence {:type :number
-                               :label "Confidence level (0-1)"
-                               :optional true}}}
+     ;; Sentence: section break, then "SP expects fulfillment with [confidence]% confidence"
+     :sentence {:fragment "SP expects fulfillment with"
+                :pattern [:confidence "% confidence"]
+                :section-break true
+                :section-label "Expectation of fulfillment:"
+                :position :new-section}
+     ;; References the requires event via fulfills - auto-linked
+     ;; Maps to: {:expects {:has-confidence-level 0.95
+     ;;                     :event {:fulfills "auto-uuid-from-requires"}}}
+     :references-requires true  ; Auto-link to preceding requires
+     :structure {:expects
+                 {:has-confidence-level :confidence
+                  :event {:fulfills :linked-requires-id}}}
+     ;; Contextual data for informed decision-making
+     :show-context true
+     :context-fields [:customer-history :industry-average]
+     :parameters {:confidence {:type :percentage
+                               :label "Confidence"
+                               :min 0
+                               :max 100
+                               :step 5
+                               :required true
+                               :help "Based on customer history and industry data"}}}
 
     {:code :allows
      :label "Allows"
@@ -305,6 +597,14 @@
      :level 2
      :domain :transformation
      :parameterized true
+     ;; Sentence: "consumes [qty] [item]"
+     :sentence {:fragment "consumes"
+                :pattern [:quantity :item]
+                :connector-before "and"
+                :position :transformation-input}
+     :structure {:consumes
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit {:is-denominated-in-physical-unit :item}}}
      :parameters {:item {:type :text
                          :label "Item name"}
                   :quantity {:type :number
@@ -318,6 +618,13 @@
      :level 2
      :domain :transformation
      :parameterized true
+     :sentence {:fragment "consumes"
+                :pattern [:quantity :item "(supplies)"]
+                :connector-before "and"
+                :position :transformation-input}
+     :structure {:consumes
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit {:is-denominated-in-physical-unit :item}}}
      :parameters {:item {:type :text
                          :label "Supply type"}
                   :quantity {:type :number
@@ -331,6 +638,16 @@
      :level 2
      :domain :transformation
      :parameterized true
+     ;; Sentence: "consumes [hours] hours of labor"
+     :sentence {:fragment "consumes"
+                :pattern [:hours "hours of labor"]
+                :connector-before "and"
+                :position :transformation-input}
+     :structure {:consumes
+                 [{:has-quantity :hours
+                   :is-denominated-in-unit {:is-denominated-in-time-unit :hour}}
+                  {:is-denominated-in-unit {:is-denominated-in-effort-unit
+                                            :is-denominated-in-employee-commitment}}]}
      :parameters {:hours {:type :number
                           :label "Hours"}
                   :rate {:type :currency
@@ -342,6 +659,13 @@
      :level 2
      :domain :transformation
      :parameterized true
+     ;; Sentence: "enabled by [equipment]"
+     :sentence {:fragment "enabled by"
+                :pattern [:capacity]
+                :section-break true
+                :section-label "This is:"
+                :position :modifier}
+     :structure {:is-allowed-by :capacity}
      :parameters {:capacity {:type :dropdown
                              :label "Enabled by"
                              :options :derives-from-physical-items-equipment}}}
@@ -353,18 +677,33 @@
      :level 2
      :domain :transformation
      :parameterized true
+     ;; Sentence: "creates [qty] [item]"
+     :sentence {:fragment "creates"
+                :pattern [:quantity :item]
+                :connector-before "and"
+                :position :transformation-output}
+     :structure {:creates
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit {:is-denominated-in-physical-unit :item}}}
      :parameters {:item {:type :text
                          :label "Product name"}
                   :quantity {:type :number
                              :label "Quantity"}}}
 
-    ;; Keep generic versions for simpler scenarios or backward compatibility
+    ;; Generic versions for simpler scenarios
     {:code :consumes
-     :label "Consumes (Simple)"
-     :description "Generic consumption for simple transformations"
+     :label "Consumes"
+     :description "Uses resources in a transformation"
      :level 2
      :domain :transformation
      :parameterized true
+     :sentence {:fragment "consumes"
+                :pattern [:quantity :unit-display]
+                :connector-before "and"
+                :position :transformation-input}
+     :structure {:consumes
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "What is consumed"
                          :options [{:value "raw-materials" :label "Raw Materials"}
@@ -375,11 +714,18 @@
                              :optional true}}}
 
     {:code :creates
-     :label "Creates (Simple)"
-     :description "Generic creation for simple transformations"
+     :label "Creates"
+     :description "Produces output from a transformation"
      :level 2
      :domain :transformation
      :parameterized true
+     :sentence {:fragment "creates"
+                :pattern [:quantity :unit-display]
+                :connector-before "and"
+                :position :transformation-output}
+     :structure {:creates
+                 {:has-quantity :quantity
+                  :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "What is created"
                          :options [{:value "finished-goods" :label "Finished Goods"}
@@ -424,39 +770,310 @@
    :recognition
    [{:code :reports
      :label "Reports"
-     :description "Recognizes an amount to be reported on the financial statements"
+     :description "Recognizes a calculated amount to be reported on the financial statements"
      :level 3
      :domain :recognition
      :parameterized true
+     ;; Sentence: "SP reports [category] calculated by [basis]"
+     :sentence {:fragment "SP reports"
+                :pattern [:category "calculated by" :basis]
+                :section-break true
+                :section-label "Recognition:"
+                :position :recognition}
+     ;; Maps to: {:reports {:category "revenue" :basis "accrual" ...}}
+     ;; Future: may include :collects for calculation assembly
+     :structure {:reports
+                 {:category :category
+                  :basis :basis}}
      :parameters {:category {:type :dropdown
                              :label "Recognition type"
-                             :options [{:value "revenue" :label "Revenue (Income Statement)"}
-                                       {:value "expense" :label "Expense/Cost (Income Statement)"}
-                                       {:value "gain" :label "Gain (Income Statement)"}
-                                       {:value "loss" :label "Loss (Income Statement)"}]}
+                             :options [{:value "revenue" :label "Revenue"}
+                                       {:value "expense" :label "Expense"}
+                                       {:value "gain" :label "Gain"}
+                                       {:value "loss" :label "Loss"}
+                                       {:value "distribution" :label "Distribution (dividends)"}]}
                   :basis {:type :dropdown
-                          :label "Measurement basis"
-                          :options [{:value "cash-received" :label "Equal to cash received"}
+                          :label "Calculation method"
+                          :options [;; Exchange-based (Level 3)
+                                    {:value "cash-received" :label "Equal to cash received"}
                                     {:value "cash-paid" :label "Equal to cash paid"}
                                     {:value "cost-of-goods" :label "Equal to cost of goods provided"}
-                                    {:value "service-value" :label "Equal to value of service performed"}]}}}]
+                                    {:value "service-value" :label "Equal to value of service performed"}
+                                    {:value "earned" :label "Performance obligation satisfied"}
+                                    ;; Adjusting entries (Level 5+)
+                                    {:value "systematic-allocation" :label "Systematic allocation over time (depreciation)"}
+                                    {:value "estimation" :label "Estimation of future amounts (bad debt)"}
+                                    {:value "time-based" :label "Passage of time (prepaid expenses)"}
+                                    {:value "accrual" :label "Accrual over time (interest)"}
+                                    {:value "declared" :label "Declared by board/owners"}]}}}]
 
    :state-modification
    [{:code :modifies
      :label "Modifies"
      :description "Updates or changes a prior assertion"
      :level 4
-     :domain :state-modification}
+     :domain :state-modification
+     :sentence {:fragment "modifies"
+                :pattern [:reference]
+                :position :modifier}}
 
     {:code :fulfills
      :label "Fulfills"
      :description "Satisfies a prior expectation or requirement"
      :level 4
-     :domain :state-modification}]))
+     :domain :state-modification
+     :parameterized true
+     ;; Sentence: "fulfilling [requirement]"
+     :sentence {:fragment "fulfilling"
+                :pattern [:requirement]
+                :position :modifier}
+     ;; Maps to: {:modifies {:fulfills "requirement-id"}}
+     :structure {:modifies {:fulfills :requirement-id}}
+     :parameters {:requirement {:type :reference
+                                :label "Fulfills requirement"
+                                :references :requires}}}]))
 
 ;; Create lookup map from assertion codes to labels
 (def assertion-labels
   (assertion-code-to-label available-assertions))
+
+;; ==================== Assertion Lookup Helpers ====================
+
+(defn get-assertion-def
+  "Get the full assertion definition by code."
+  [assertion-code]
+  (first
+   (for [[_domain assertions] available-assertions
+         assertion assertions
+         :when (= (:code assertion) assertion-code)]
+     assertion)))
+
+(defn get-assertion-sentence
+  "Get the sentence template for an assertion."
+  [assertion-code]
+  (:sentence (get-assertion-def assertion-code)))
+
+;; ==================== Structure Building Helpers ====================
+
+(defn build-unit-structure
+  "Build the nested unit structure from flat parameters.
+   {:unit 'monetary-unit' :quantity 500} ->
+   {:has-quantity 500 :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}
+
+   {:unit 'physical-unit' :physical-item 'printed-tshirts' :quantity 10} ->
+   {:has-quantity 10 :is-denominated-in-unit {:is-denominated-in-physical-unit :printed-tshirts}}"
+  [{:keys [unit physical-item quantity]}]
+  (let [unit-key (case unit
+                   "monetary-unit" :is-denominated-in-monetary-unit
+                   "physical-unit" :is-denominated-in-physical-unit
+                   "time-unit" :is-denominated-in-time-unit
+                   "effort-unit" :is-denominated-in-effort-unit
+                   :is-denominated-in-unit)
+        unit-value (case unit
+                     "monetary-unit" :USD
+                     "physical-unit" (keyword physical-item)
+                     "time-unit" :hour
+                     "effort-unit" :is-denominated-in-employee-commitment
+                     unit)]
+    (cond-> {:is-denominated-in-unit {unit-key unit-value}}
+      quantity (assoc :has-quantity quantity))))
+
+(defn generate-event-id
+  "Generate a unique identifier for a nested event."
+  [prefix]
+  (str prefix "-" (java.util.UUID/randomUUID)))
+
+(defn build-nested-structure
+  "Build the full nested assertive accounting structure from student selections.
+
+   Input: Map of assertion-code -> parameter-map
+   {:has-date {:date '2025-01-15'}
+    :provides {:unit 'physical-unit' :physical-item 'printed-tshirts' :quantity 10}
+    :has-counterparty {:name 'Customer B'}
+    :requires {:action 'provides' :unit 'monetary-unit' :quantity 250 :due-date '2025-02-15'}
+    :expects {:confidence 95}}
+
+   Output: Full nested structure per assertive accounting format"
+  [selections]
+  (let [;; Extract the requires identifier if present (for linking expects)
+        requires-id (when (:requires selections)
+                      (generate-event-id "Obligation"))
+
+        ;; Build each assertion's structure
+        build-assertion (fn [[code params]]
+                          (case code
+                            :has-date
+                            {:date (:date params)}
+
+                            :has-counterparty
+                            {:has-counterparty (:name params)}
+
+                            :provides
+                            {:provides (build-unit-structure params)}
+
+                            :receives
+                            {:receives (build-unit-structure params)}
+
+                            :requires
+                            (let [action-key (if (= (:action params) "provides")
+                                               :provides :receives)]
+                              {:requires
+                               {:event
+                                {:has-identifier requires-id
+                                 :date (:due-date params)
+                                 action-key (build-unit-structure params)}}})
+
+                            :expects
+                            {:expects
+                             {:has-confidence-level (/ (:confidence params 95) 100.0)
+                              :event {:fulfills requires-id}}}
+
+                            :consumes
+                            {:consumes (build-unit-structure params)}
+
+                            :creates
+                            {:creates (build-unit-structure params)}
+
+                            :reports
+                            {:reports {:category (:category params)
+                                       :basis (:basis params)}}
+
+                            :is-allowed-by
+                            {:is-allowed-by (:capacity params)}
+
+                            ;; Default: just return the params
+                            {code params}))]
+
+    ;; Merge all assertion structures into one event
+    {:event
+     (reduce (fn [acc [code params]]
+               (merge acc (build-assertion [code params])))
+             {}
+             selections)}))
+
+;; ==================== Sentence Rendering Helpers ====================
+
+(defn format-unit-display
+  "Format a unit for display in a sentence.
+   {:unit 'monetary-unit' :quantity 500} -> '$500 Cash'
+   {:unit 'physical-unit' :physical-item 'printed-tshirts' :quantity 10} -> '10 Printed T-Shirts'"
+  [{:keys [unit physical-item quantity]}]
+  (let [item-label (when physical-item
+                     (or (get-in physical-items [(keyword physical-item) :label])
+                         physical-item))]
+    (case unit
+      "monetary-unit" (str "$" quantity " Cash")
+      "physical-unit" (str quantity " " (or item-label physical-item))
+      "time-unit" (str quantity " hours")
+      "effort-unit" (str quantity " labor effort")
+      (str quantity " " unit))))
+
+(defn format-date-display
+  "Format a date for display."
+  [date-str]
+  (if (and date-str (re-matches #"\d{4}-\d{2}-\d{2}" date-str))
+    (let [[year month day] (clojure.string/split date-str #"-")
+          months ["January" "February" "March" "April" "May" "June"
+                  "July" "August" "September" "October" "November" "December"]
+          month-idx (dec (Integer/parseInt month))
+          day-num (Integer/parseInt day)]
+      (str (nth months month-idx) " " day-num ", " year))
+    date-str))
+
+(defn render-sentence
+  "Render a natural language sentence from assertion selections.
+   Returns a string representation of the transaction."
+  [selections]
+  (let [parts []
+
+        ;; Date part
+        parts (if-let [date-params (:has-date selections)]
+                (conj parts (str "On " (format-date-display (:date date-params)) ", SP"))
+                parts)
+
+        ;; Provides part
+        parts (if-let [provides-params (:provides selections)]
+                (conj parts (str "provides " (format-unit-display provides-params)))
+                parts)
+
+        ;; Counterparty (after provides)
+        parts (if (and (:provides selections) (:has-counterparty selections))
+                (conj parts (str "to " (:name (:has-counterparty selections))))
+                parts)
+
+        ;; Receives part
+        parts (if-let [receives-params (:receives selections)]
+                (conj parts (str "and receives " (format-unit-display receives-params)))
+                parts)
+
+        ;; Counterparty (after receives, if no provides)
+        parts (if (and (not (:provides selections)) (:receives selections) (:has-counterparty selections))
+                (conj parts (str "from " (:name (:has-counterparty selections))))
+                parts)
+
+        ;; Consumes part
+        parts (if-let [consumes-params (:consumes selections)]
+                (conj parts (str "consumes " (format-unit-display consumes-params)))
+                parts)
+
+        ;; Creates part
+        parts (if-let [creates-params (:creates selections)]
+                (conj parts (str "and creates " (format-unit-display creates-params)))
+                parts)
+
+        ;; Is-allowed-by part
+        parts (if-let [allowed-params (:is-allowed-by selections)]
+                (conj parts (str "(enabled by " (:capacity allowed-params) ")"))
+                parts)
+
+        ;; Requires part (new section)
+        parts (if-let [requires-params (:requires selections)]
+                (let [counterparty (or (get-in selections [:has-counterparty :name]) "the counterparty")
+                      action-verb (if (= (:action requires-params) "provides") "provide" "receive")]
+                  (-> parts
+                      (conj ".")
+                      (conj (str "\nThis creates an obligation: " counterparty
+                                 " must " action-verb " "
+                                 (format-unit-display requires-params)
+                                 " by " (format-date-display (:due-date requires-params))))))
+                parts)
+
+        ;; Expects part (new section)
+        parts (if-let [expects-params (:expects selections)]
+                (conj parts (str "\nSP expects fulfillment with " (:confidence expects-params) "% confidence."))
+                parts)
+
+        ;; Reports part (new section)
+        parts (if-let [reports-params (:reports selections)]
+                (conj parts (str "\nSP reports " (:category reports-params)
+                                 " calculated by " (:basis reports-params) "."))
+                parts)]
+
+    (clojure.string/join " " (remove nil? parts))))
+
+;; ==================== Customer Context Generation ====================
+;; For expects confidence decisions, we generate contextual data
+
+(defn generate-customer-context
+  "Generate customer history and industry context for confidence decisions.
+   Used when students need to set confidence levels on receivables."
+  [customer-name]
+  (let [;; Random but consistent-feeling data
+        total-orders (+ 10 (rand-int 30))
+        on-time-payments (- total-orders (rand-int (max 1 (int (/ total-orders 5)))))
+        historical-rate (int (* 100 (/ on-time-payments total-orders)))
+        industry-avg (+ 75 (rand-int 20))  ; 75-95%
+        days-outstanding (rand-int 60)]
+    {:customer-name customer-name
+     :total-orders total-orders
+     :on-time-payments on-time-payments
+     :historical-rate historical-rate
+     :industry-average industry-avg
+     :days-outstanding days-outstanding
+     :display-text (str customer-name " has paid on time for "
+                        on-time-payments " of " total-orders
+                        " previous orders (" historical-rate "% historical rate). "
+                        "Industry average for similar customers is " industry-avg "%.")}))
 
 ;; Available accounts for journal entry construction, organized by level and type
 (def accounts-by-level
@@ -631,69 +1248,66 @@
      :examples ["SP purchases t-shirt printer for $3,000 cash"])
 
    :inventory-purchase-on-credit
-   (credit-transaction
-     "Credit purchase of raw materials (receive materials now, obligation to pay later)"
-     [{:debit "Raw Materials Inventory" :credit "Accounts Payable"}]
-     :requires
-     :present-action :receives
-     :present-unit "physical-unit"
-     ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
-     :future-action "provides"
-     :future-unit "monetary-unit"
-     :note "SP receives raw materials immediately but requires (is obligated to) provide cash in the future."
-     :examples ["SP receives blank t-shirts, requires payment in 60 days"
-                "SP receives ink cartridges, requires payment in 30 days"])
+   {:required #{:has-date :receives :has-counterparty :requires}
+    :prohibited #{:provides :expects}  ;; No expects - we control our own payments
+    :required-parameters {:receives {:unit "physical-unit"}
+                          ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :description "Credit purchase of raw materials (receive materials now, obligation to pay later)"
+    :journal-entry [{:debit "Raw Materials Inventory" :credit "Accounts Payable"}]
+    :note "A credit purchase creates an obligation: SP receives materials immediately and is legally required to provide cash by a due date. Unlike credit sales, there's no 'expects' because SP controls their own payment - the obligation will definitely be fulfilled."
+    :examples ["SP receives blank t-shirts, must pay vendor $500 in 60 days"
+               "SP receives ink cartridges, must pay vendor $125 in 30 days"]
+    :level 1}
 
    :equipment-purchase-on-credit
-   (credit-transaction
-     "Credit purchase of equipment (receive equipment now, obligation to pay later)"
-     [{:debit "Equipment (Fixed Asset)" :credit "Accounts Payable"}]
-     :requires
-     :present-action :receives
-     :present-unit "physical-unit"
-     :physical-item "t-shirt-printer"
-     :future-action "provides"
-     :future-unit "monetary-unit"
-     :note "SP receives equipment immediately but requires (is obligated to) provide cash in the future."
-     :examples ["SP receives t-shirt printer, requires future payment of $3,000"])
+   {:required #{:has-date :receives :has-counterparty :requires}
+    :prohibited #{:provides :expects}  ;; No expects - we control our own payments
+    :required-parameters {:receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :description "Credit purchase of equipment (receive equipment now, obligation to pay later)"
+    :journal-entry [{:debit "Equipment (Fixed Asset)" :credit "Accounts Payable"}]
+    :note "A credit purchase of equipment creates an obligation: SP receives the equipment immediately and is legally required to provide cash by a due date."
+    :examples ["SP receives t-shirt printer, must pay $3,000 in 60 days"]
+    :level 1}
 
    :sale-on-credit
-   {:required #{:has-date :provides :has-counterparty :expects :reports}
-    :prohibited #{:receives :requires}
-    :required-parameters {:provides {:unit "physical-unit" :physical-item "printed-tshirts"}
-                          :expects {:action "receives" :unit "monetary-unit"}}
-    :description "Credit sale with revenue and cost recognition"
+   {:required #{:has-date :provides :has-counterparty :requires :expects :reports}
+    :prohibited #{:receives}
+    :required-parameters {:provides {:unit "physical-unit"}
+                          :requires {:action "provides" :unit "monetary-unit"}
+                          :expects {:confidence :any}  ; Student must provide confidence
+                          :reports {:category "revenue" :basis "earned"}}
+    :description "Credit sale: provide goods, customer obligated to pay, assess collection probability"
     :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "A credit sale recognizes revenue (equal to expected payment) and COGS. The receivable represents the expected future cash."
-    :examples ["SP provides printed t-shirts on credit, recognizing revenue and COGS"]
-    :level 3}
+    :note "A credit sale creates two things: (1) a legal obligation requiring the customer to pay, and (2) an expectation about whether they will actually pay, with a confidence level. The confidence level informs bad debt estimates later."
+    :examples ["SP provides printed t-shirts on credit, customer must pay $250 in 30 days, 92% confident they will pay"]
+    :level 1}
 
    :deferred-revenue
-   (credit-transaction
-     "Deferred revenue (receive payment now, obligation to provide goods later)"
-     [{:debit "Cash" :credit "Deferred Revenue (Liability)"}]
-     :requires
-     :present-action :receives
-     :present-unit "monetary-unit"
-     :future-action "provides"
-     :future-unit "physical-unit"
-     :note "SP receives cash immediately but requires (is obligated to) provide goods/services in the future."
-     :examples ["SP receives $10,000 advance payment for future custom orders"
-                "SP receives prepayment for 6-month service contract"])
+   {:required #{:has-date :receives :has-counterparty :requires}
+    :prohibited #{:provides :expects}  ;; No expects - SP controls their own delivery
+    :required-parameters {:receives {:unit "monetary-unit"}
+                          :requires {:action "provides" :unit "physical-unit"}}
+    :description "Deferred revenue (receive payment now, obligation to provide goods later)"
+    :journal-entry [{:debit "Cash" :credit "Deferred Revenue (Liability)"}]
+    :note "Deferred revenue creates an obligation: SP receives cash immediately and is legally required to provide goods/services by a due date. This is a liability because SP owes performance, not cash."
+    :examples ["SP receives $10,000 advance payment, must deliver custom t-shirts in 60 days"
+               "SP receives prepayment for 6-month service contract"]
+    :level 1}
 
    :prepaid-expense
-   (credit-transaction
-     "Prepaid expense (provide payment now, expect to receive goods/services later)"
-     [{:debit "Prepaid Expense (Asset)" :credit "Cash"}]
-     :expects
-     :present-action :provides
-     :present-unit "monetary-unit"
-     :future-action "receives"
-     :future-unit "physical-unit"
-     :note "SP provides cash immediately and expects to receive goods/services in the future."
-     :examples ["SP pays $6,000 for 12-month insurance policy in advance"
-                "SP prepays $3,000 for rent covering next 3 months"])
+   {:required #{:has-date :provides :has-counterparty :expects}
+    :prohibited #{:receives :requires}  ;; No requires - the vendor isn't legally obligated in same way
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :expects {:action "receives" :unit "physical-unit"}}
+    :description "Prepaid expense (provide payment now, expect to receive goods/services later)"
+    :journal-entry [{:debit "Prepaid Expense (Asset)" :credit "Cash"}]
+    :note "A prepaid expense is an asset representing SP's expectation of receiving future benefits. SP provides cash now and expects to receive services/goods over time. Unlike credit sales, confidence is typically high since vendors are contractually bound."
+    :examples ["SP pays $6,000 for 12-month insurance coverage"
+               "SP prepays $3,000 for rent covering next 3 months"]
+    :level 1}
 
    ;; ==================== Level 2: Transformation Events ====================
    ;; Key insight: Transformations have NO counterparty - they are internal processes
@@ -954,25 +1568,23 @@
    ;; End-of-period adjustments to properly match revenues and expenses
 
    :depreciation-expense
-   {:required #{:has-date :reports :consumes}
-    :required-parameters {:reports {:category "expense" :basis "systematic-allocation"}
-                          :consumes {:unit "asset-value"}}
-    :prohibited #{:has-counterparty :provides :receives}
+   {:required #{:has-date :reports}
+    :required-parameters {:reports {:category "expense" :basis "systematic-allocation"}}
+    :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Depreciation of long-term asset"
     :journal-entry [{:debit "Depreciation Expense" :credit "Accumulated Depreciation"}]
-    :note "Depreciation allocates the cost of a long-term asset over its useful life. This is a non-cash expense."
+    :note "Depreciation allocates the cost of a long-term asset over its useful life. This is a pure calculation—no exchange or transformation."
     :examples ["SP records monthly depreciation on t-shirt printer"
                "SP allocates equipment cost over 5-year useful life"]
     :level 5}
 
    :bad-debt-expense
-   {:required #{:has-date :reports :expects}
-    :required-parameters {:reports {:category "expense" :basis "estimation"}
-                          :expects {:action "uncollectible" :unit "monetary-unit"}}
-    :prohibited #{:has-counterparty :provides :receives}
+   {:required #{:has-date :reports}
+    :required-parameters {:reports {:category "expense" :basis "estimation"}}
+    :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Allowance for doubtful accounts"
     :journal-entry [{:debit "Bad Debt Expense" :credit "Allowance for Doubtful Accounts"}]
-    :note "Bad debt expense recognizes that some receivables may not be collected. The allowance is a contra-asset."
+    :note "Bad debt expense is an estimation of future uncollectible amounts. This is a pure calculation—no exchange or transformation."
     :examples ["SP estimates 2% of receivables will be uncollectible"
                "SP adjusts allowance for doubtful accounts at year-end"]
     :level 5}
@@ -1002,13 +1614,12 @@
     :level 5}
 
    :prepaid-expense-adjustment
-   {:required #{:has-date :reports :consumes}
-    :required-parameters {:reports {:category "expense" :basis "time-based"}
-                          :consumes {:unit "prepaid-benefit"}}
-    :prohibited #{:has-counterparty :provides :receives}
+   {:required #{:has-date :reports}
+    :required-parameters {:reports {:category "expense" :basis "time-based"}}
+    :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Recognizing expense from prepaid asset"
     :journal-entry [{:debit "Insurance Expense" :credit "Prepaid Insurance"}]
-    :note "As time passes, prepaid expenses are 'used up' and become expenses."
+    :note "Prepaid expense adjustment allocates previously-paid costs to expense as time passes. This is a pure calculation—no exchange or transformation."
     :examples ["SP recognizes one month of prepaid insurance as expense"
                "SP adjusts prepaid rent for expired portion"]
     :level 5}
@@ -1139,13 +1750,12 @@
     :level 7}
 
    :interest-revenue-accrual
-   {:required #{:has-date :reports :expects}
-    :required-parameters {:reports {:category "revenue" :basis "accrual"}
-                          :expects {:action "receives" :unit "monetary-unit"}}
-    :prohibited #{:has-counterparty :provides :receives}
+   {:required #{:has-date :reports}
+    :required-parameters {:reports {:category "revenue" :basis "accrual"}}
+    :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Accrue interest earned but not yet received"
     :journal-entry [{:debit "Interest Receivable" :credit "Interest Revenue"}]
-    :note "Interest income is earned over time, even if not yet received in cash."
+    :note "Interest revenue accrual recognizes interest income earned over time. This is a pure calculation—no exchange or transformation."
     :examples ["SP accrues interest earned on notes receivable"
                "Monthly interest revenue recognition"]
     :level 7}})
@@ -1594,11 +2204,12 @@
                 :cogs [100 250 500]}}  ;; Cost of goods sold (paired with quantity)
 
    :credit-inventory-purchase
-   {:narrative-template "On {date}, you receive {quantity} {inventory-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+   {:narrative-template "On {date}, SP receives {quantity} {inventory-type} from {vendor}. SP agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
                           :has-counterparty {:name :vendor}
-                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
+                          ;; The purchase creates an obligation for SP to pay
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}
     :correct-classification :inventory-purchase-on-credit
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
@@ -1607,66 +2218,99 @@
                 :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
                 :quantity [20 50 100]
                 :amount [100 250 500 1000]
-                :days [30 60 90]}}
+                :days [30 60 90]
+                ;; Due date derived from date + days
+                :due-date :calculated}}
 
    :credit-equipment-purchase
-   {:narrative-template "On {date}, you receive {equipment-type} from {vendor}, agreeing to pay ${amount} in {days} days."
+   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}. SP agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
                           :has-counterparty {:name :vendor}
-                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount}}
+                          ;; The purchase creates an obligation for SP to pay
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}
     :correct-classification :equipment-purchase-on-credit
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :equipment-type ["a T-shirt Printer"]
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]
-                :days [30 60 90]}}
+                :days [30 60 90]
+                ;; Due date derived from date + days
+                :due-date :calculated}}
 
    :credit-sale
-   {:narrative-template "On {date}, you provide {quantity} printed t-shirts to {customer}, expecting payment of ${amount} in {days} days. The t-shirts cost ${cogs} to produce."
+   {:narrative-template "On {date}, SP provides {quantity} printed t-shirts to {customer}. {customer} agrees to pay ${amount} within {days} days. The t-shirts cost ${cogs} to produce."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
-                          :expects {:action "receives" :unit "monetary-unit" :quantity :amount}
-                          ;; Reports assertions for revenue and COGS recognition
-                          :reports {:category "revenue" :basis "cash-received"}}
+                          ;; The sale creates a legal obligation for payment
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}
+                          ;; Our assessment of collection probability - student must think about this
+                          :expects {:confidence :confidence}
+                          ;; Reports revenue recognition
+                          :reports {:category "revenue" :basis "earned"}}
     :correct-classification :sale-on-credit
-    :level 3
+    :level 1  ;; Moved to level 1 since requires/expects are now level 1
+    ;; Customer context for confidence decisions
+    :show-customer-context true
+    :customer-context-field :customer
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
-                :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
+                :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo" "RegionalRetailer"]
                 :quantity [10 25 50]
                 :amount [250 625 1250]
-                :cogs [100 250 500]   ;; Cost of goods sold (paired with quantity)
-                :days [30 60 90]}}
+                :cogs [100 250 500]
+                :days [30 60 90]
+                ;; Due date derived from date + days (will be calculated)
+                :due-date :calculated
+                ;; Confidence is student-entered, but we provide context
+                :confidence :student-input}
+    ;; Customer profiles for context generation (consistent across transactions)
+    :customer-profiles {"LocalSportsTeam" {:history-rate 92 :total-orders 24 :industry-avg 85}
+                        "CampusBoutique" {:history-rate 78 :total-orders 15 :industry-avg 82}
+                        "EventPlannersCo" {:history-rate 95 :total-orders 31 :industry-avg 88}
+                        "RegionalRetailer" {:history-rate 65 :total-orders 8 :industry-avg 75}}}
 
    :prepayment
-   {:narrative-template "On {date}, SP receives ${amount} advance payment from {customer} for {service} to be delivered in {days} days."
+   {:narrative-template "On {date}, SP receives ${amount} advance payment from {customer} for {service}. SP must deliver within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :customer}
-                          :requires {:action "provides" :unit "physical-unit"}}
+                          ;; SP is obligated to provide goods/services
+                          :requires {:action "provides" :unit "physical-unit" :due-date :due-date}}
     :correct-classification :deferred-revenue
     :level 1
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
                 :service ["custom t-shirt printing services" "merchandise fulfillment" "a bulk order"]
                 :amount [2000 5000 10000 15000 20000]
-                :days [30 60 90 180]}}
+                :days [30 60 90 180]
+                ;; Due date derived from date + days
+                :due-date :calculated}}
 
    :prepaid-expense-transaction
    {:narrative-template "On {date}, SP pays ${amount} to {vendor} for {service} covering the next {months} months."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :vendor}
-                          :expects {:action "receives" :unit "physical-unit"}}
+                          ;; SP expects to receive services - high confidence since vendor is contractually bound
+                          :expects {:action "receives" :unit "physical-unit" :confidence :confidence}}
     :correct-classification :prepaid-expense
     :level 1
+    ;; Vendor context - vendors are typically reliable
+    :show-vendor-context true
+    :vendor-context-field :vendor
     :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
                 :vendor ["InsuranceCo" "Landlord" "ServiceProvider"]
                 :service ["insurance coverage" "rent" "maintenance services"]
                 :amount [3000 6000 9000 12000 18000]
-                :months [3 6 12 24]}}
+                :months [3 6 12 24]
+                ;; Confidence - student input, but vendors typically reliable (suggest high)
+                :confidence :student-input}
+    ;; Vendor profiles - generally high reliability
+    :vendor-profiles {"InsuranceCo" {:reliability-rate 98 :years-in-business 45 :industry-avg 96}
+                      "Landlord" {:reliability-rate 99 :years-in-business 12 :industry-avg 95}
+                      "ServiceProvider" {:reliability-rate 92 :years-in-business 8 :industry-avg 90}}}
 
    ;; ==================== Level 2: Transformation Templates ====================
    ;; Key teaching point: Transformations have NO counterparty - internal processes
@@ -1968,8 +2612,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :adjust-prepaid-expense
    {:narrative-template "On {date}, SP adjusts prepaid {expense-type}. The original prepayment of ${total} covers {months} months. One month (${monthly}) has now been used up."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "expense" :basis "time-based"}
-                          :consumes {:unit "prepaid-benefit"}}
+                          :reports {:category "expense" :basis "time-based"}}
     :correct-classification :prepaid-expense-adjustment
     :level 5
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
@@ -2117,8 +2760,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :accrue-interest-revenue
    {:narrative-template "On {date}, SP accrues ${amount} of interest revenue on the ${principal} note receivable from {borrower}. The note carries {rate}% annual interest."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "revenue" :basis "accrual"}
-                          :expects {:action "receives" :unit "monetary-unit"}}
+                          :reports {:category "revenue" :basis "accrual"}}
     :correct-classification :interest-revenue-accrual
     :level 7
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30"]

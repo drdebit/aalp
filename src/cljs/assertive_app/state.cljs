@@ -406,3 +406,46 @@
           :tutorials-viewed #{}
           :show-tutorial? true
           :section-index 0}))
+
+;; ==================== Calculation Builder ====================
+;; State for the interactive calculation builder UI
+
+(defn calculation-schemas []
+  "Get calculation schemas fetched from backend."
+  (get-in @app-state [:calculation :schemas] {}))
+
+(defn set-calculation-schemas! [schemas]
+  "Store calculation schemas from backend."
+  (swap! app-state assoc-in [:calculation :schemas] schemas))
+
+(defn receivables-summary []
+  "Get receivables summary for bad debt calculation."
+  (get-in @app-state [:calculation :receivables-summary] {}))
+
+(defn set-receivables-summary! [summary]
+  "Store receivables summary from backend."
+  (swap! app-state assoc-in [:calculation :receivables-summary] summary))
+
+(defn calculation-inputs []
+  "Get current calculation input values."
+  (get-in @app-state [:calculation :inputs] {}))
+
+(defn set-calculation-input! [input-key value]
+  "Set a single calculation input value."
+  (swap! app-state assoc-in [:calculation :inputs input-key] value))
+
+(defn clear-calculation-inputs! []
+  "Clear all calculation input values."
+  (swap! app-state assoc-in [:calculation :inputs] {}))
+
+(defn calculation-result []
+  "Get the current calculation result."
+  (get-in @app-state [:calculation :result]))
+
+(defn set-calculation-result! [result]
+  "Store a calculation result."
+  (swap! app-state assoc-in [:calculation :result] result))
+
+(defn clear-calculation-result! []
+  "Clear the calculation result."
+  (swap! app-state assoc-in [:calculation :result] nil))

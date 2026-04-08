@@ -11,7 +11,8 @@
             [assertive-app.auth :as auth]
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
-            [assertive-app.engine :as engine]))
+            [assertive-app.engine :as engine]
+            [assertive-app.analytics :as analytics]))
 
 (defn wrap-cors
   "Middleware to enable CORS for development"
@@ -118,11 +119,13 @@
                                   :problem-id (:problem-id body)
                                   :problem-type (or (:problem-type body) "forward")
                                   :level (or (:level body) 0)
-                                  :template-level (:template-level body)  ; Template's actual difficulty
+                                  :template-level (:template-level body)
                                   :template-key (:template-key body)
                                   :selected-assertions selected-assertions-raw
                                   :correct correct?
-                                  :feedback-status (name (get-in result [:feedback :status] :indeterminate))})]
+                                  :feedback-status (name (get-in result [:feedback :status] :indeterminate))
+                                  :correct-classification correct-classification
+                                  :classification-result result})]
           (response/response (assoc result :progress updated-progress)))
         ;; Response without progress for unauthenticated users
         (response/response result))))
@@ -235,7 +238,9 @@
                    :template-key (:template-key pending)
                    :selected-assertions selected-assertions-raw
                    :correct true
-                   :feedback-status "correct"})
+                   :feedback-status "correct"
+                   :correct-classification correct-classification
+                   :classification-result result})
                 (response/response
                   {:feedback (:feedback result)
                    :classification (:classification result)
@@ -256,7 +261,9 @@
                    :template-key (:template-key pending)
                    :selected-assertions selected-assertions-raw
                    :correct false
-                   :feedback-status "incorrect"})
+                   :feedback-status "incorrect"
+                   :correct-classification correct-classification
+                   :classification-result result})
                 (response/response
                   {:feedback (:feedback result)
                    :classification (:classification result)
@@ -327,6 +334,47 @@
       (if-let [result (classification/calculate-result basis inputs)]
         (response/response result)
         {:status 400 :body {:error "Invalid calculation parameters"}})))
+
+  ;; ==================== Analytics Endpoints ====================
+
+  (GET "/api/analytics/weaknesses" request
+    (if-let [user (:user request)]
+      (let [level (some-> (get-in request [:params "level"]) Integer/parseInt)]
+        (response/response
+          (analytics/student-weakness-report (:db/id user) :level level)))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/analytics/accuracy" request
+    (if-let [user (:user request)]
+      (let [level (some-> (get-in request [:params "level"]) Integer/parseInt)]
+        (response/response
+          (analytics/student-classification-accuracy (:db/id user) :level level)))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/analytics/needs-practice" request
+    (if-let [user (:user request)]
+      (let [assertion-type (some-> (get-in request [:params "assertion"]) keyword)
+            level (some-> (get-in request [:params "level"]) Integer/parseInt)]
+        (if assertion-type
+          (response/response
+            {:assertion-type assertion-type
+             :needs-practice (analytics/student-needs-practice?
+                               (:db/id user) assertion-type :level level)})
+          {:status 400 :body {:error "assertion parameter required"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/analytics/cohort/assertions" request
+    (let [level (some-> (get-in request [:params "level"]) Integer/parseInt)]
+      (response/response
+        {:ranking (analytics/assertion-difficulty-ranking :level level)})))
+
+  (GET "/api/analytics/cohort/classifications" request
+    (let [level (some-> (get-in request [:params "level"]) Integer/parseInt)]
+      (response/response
+        {:ranking (analytics/classification-difficulty-ranking :level level)})))
+
+  (GET "/api/analytics/je-correlation" []
+    (response/response (analytics/je-correlation)))
 
   ;; ==================== Assertive Engine Endpoints ====================
 

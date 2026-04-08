@@ -113,14 +113,22 @@
    - :template-key - keyword like :cash-sale
    - :selected-assertions - map of assertions
    - :je-debit, :je-credit, :je-amount - for construct mode
+   - :correct-classification - keyword, expected classification
+   - :classification-result - map from classify-transaction (:closest, :exact-matches)
 
    Progress is only counted toward level unlock when template-level >= level.
    This ensures students only advance by completing problems at their current level,
    not by answering easier review problems."
   [{:keys [user-id problem-id problem-type level template-level template-key
            selected-assertions je-debit je-credit je-amount
-           correct feedback-status]}]
+           correct feedback-status
+           correct-classification classification-result]}]
   (let [now (java.util.Date.)
+        ;; Extract classification diff from the result
+        closest (:closest classification-result)
+        ;; Determine what assertion types the student selected
+        selected-types (when (map? selected-assertions)
+                         (vec (keys selected-assertions)))
         ;; Build base attempt transaction
         attempt-tx (cond-> {:attempt/user user-id
                             :attempt/problem-id (str problem-id)
@@ -143,7 +151,33 @@
                      (assoc :attempt/je-credit-account je-credit)
 
                      je-amount
-                     (assoc :attempt/je-amount (bigdec je-amount)))]
+                     (assoc :attempt/je-amount (bigdec je-amount))
+
+                     ;; Option B: indexed classification diff attributes
+                     correct-classification
+                     (assoc :attempt/correct-classification (keyword correct-classification))
+
+                     (and closest (:type closest))
+                     (assoc :attempt/closest-classification (:type closest))
+
+                     (and closest (:distance closest))
+                     (assoc :attempt/distance (double (:distance closest)))
+
+                     (and closest (seq (:missing closest)))
+                     (assoc :attempt/missing-assertions (vec (:missing closest)))
+
+                     (and closest (seq (:extra-prohibited closest)))
+                     (assoc :attempt/extra-assertions (vec (:extra-prohibited closest)))
+
+                     (seq selected-types)
+                     (assoc :attempt/selected-assertion-types selected-types)
+
+                     (and closest (some? (:param-mismatches closest)))
+                     (assoc :attempt/param-mismatch-count (long (:param-mismatches closest)))
+
+                     ;; Option A: full diff as EDN for batch analytics
+                     closest
+                     (assoc :attempt/classification-diff (pr-str closest)))]
 
     ;; Record the attempt
     @(d/transact (schema/get-conn) [attempt-tx])

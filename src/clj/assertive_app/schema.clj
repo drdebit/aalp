@@ -145,6 +145,53 @@
     :db/index true
     :db/doc "When attempt was submitted"}
 
+   ;; -- Classification diff (Option B: indexed for real-time queries) --
+   {:db/ident :attempt/correct-classification
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "The expected classification (e.g., :cash-sale)"}
+
+   {:db/ident :attempt/closest-classification
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "Nearest matching classification from student's selections"}
+
+   {:db/ident :attempt/distance
+    :db/valueType :db.type/double
+    :db/cardinality :db.cardinality/one
+    :db/doc "Distance score from closest classification (0.0 = exact match)"}
+
+   {:db/ident :attempt/missing-assertions
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/many
+    :db/index true
+    :db/doc "Required assertion types the student omitted"}
+
+   {:db/ident :attempt/extra-assertions
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/many
+    :db/index true
+    :db/doc "Prohibited assertion types the student included"}
+
+   {:db/ident :attempt/selected-assertion-types
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/many
+    :db/index true
+    :db/doc "Set of assertion type keywords the student selected"}
+
+   {:db/ident :attempt/param-mismatch-count
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    :db/doc "Number of parameter values that didn't match"}
+
+   ;; -- Classification diff (Option A: full EDN for batch analytics) --
+   {:db/ident :attempt/classification-diff
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN map of full classification diff for batch analytics"}
+
    ;; ==================== Business State Entity ====================
    ;; Tracks current simulation state per user
    {:db/ident :business-state/user

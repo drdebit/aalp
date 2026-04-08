@@ -10,6 +10,9 @@
 
         ;; Database
         com.datomic/peer {:mvn/version "1.0.7075"}
+
+        ;; Assertive engine (assertion chain storage & query)
+        assertive-engine/assertive-engine {:local/root "../assertive-engine"}
         org.postgresql/postgresql {:mvn/version "42.6.0"}
 
         ;; ClojureScript + shadow-cljs (pinned for Java 11 compatibility)

@@ -10,7 +10,8 @@
             [assertive-app.classification :as classification]
             [assertive-app.auth :as auth]
             [assertive-app.progress :as progress]
-            [assertive-app.simulation :as simulation]))
+            [assertive-app.simulation :as simulation]
+            [assertive-app.engine :as engine]))
 
 (defn wrap-cors
   "Middleware to enable CORS for development"
@@ -327,6 +328,45 @@
         (response/response result)
         {:status 400 :body {:error "Invalid calculation parameters"}})))
 
+  ;; ==================== Assertive Engine Endpoints ====================
+
+  (GET "/api/engine/event/:event-id" [event-id :as request]
+    (if-let [user (:user request)]
+      (if-let [ewa (engine/get-event event-id)]
+        (response/response
+          {:event (engine/format-event-for-response ewa)})
+        {:status 404 :body {:error "Event not found"}})
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/engine/chain/:event-id" [event-id :as request]
+    (if-let [user (:user request)]
+      (let [direction (keyword (get-in request [:params "direction"] "both"))
+            depth (Integer/parseInt (get-in request [:params "depth"] "10"))
+            chain (engine/traverse-chain event-id :direction direction :depth depth)]
+        (response/response
+          {:chain (mapv engine/format-event-for-response (or chain []))}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/engine/events" request
+    (if-let [user (:user request)]
+      (let [user-id (str (:db/id user))
+            from (get-in request [:params "from"])
+            to (get-in request [:params "to"])
+            atype (some-> (get-in request [:params "type"]) keyword)
+            events (if atype
+                     (engine/get-user-events user-id atype :from from :to to)
+                     (engine/get-user-events-by-date user-id :from from :to to))]
+        (response/response
+          {:events (mapv engine/format-event-for-response (or events []))
+           :count (count (or events []))}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (GET "/api/engine/summary" request
+    (if-let [user (:user request)]
+      (let [summary (engine/get-user-summary (str (:db/id user)))]
+        (response/response (or summary {:error "Engine not available"})))
+      {:status 401 :body {:error "Authentication required"}}))
+
   ;; CORS preflight
   (OPTIONS "*" []
     (response/response {:status "ok"}))
@@ -347,6 +387,7 @@
   "Start the development server on port 3000"
   [& [port]]
   (let [port (or port 3000)]
+    (engine/init!)
     (jetty/run-jetty app {:port port :join? false})
     (println (str "Server started on http://localhost:" port))))
 

@@ -12,6 +12,7 @@
   (:require [datomic.api :as d]
             [assertive-app.schema :as schema]
             [assertive-app.classification :as classification]
+            [assertive-app.engine :as engine]
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
@@ -880,17 +881,19 @@
 (defn save-ledger-entry!
   "Save a correctly-classified transaction to the ledger."
   [user-id entry]
-  (let [tx-data {:ledger-entry/id (java.util.UUID/randomUUID)
-                 :ledger-entry/user user-id
-                 :ledger-entry/date (:date entry)
-                 :ledger-entry/period (:period entry)
-                 :ledger-entry/action-type (:action-type entry)
-                 :ledger-entry/narrative (:narrative entry)
-                 :ledger-entry/variables (pr-str (:variables entry))
-                 :ledger-entry/assertions (pr-str (:assertions entry))
-                 :ledger-entry/journal-entry (pr-str (:journal-entry entry))
-                 :ledger-entry/created-at (java.util.Date.)
-                 :ledger-entry/template-key (:template-key entry)}]
+  (let [tx-data (cond-> {:ledger-entry/id (java.util.UUID/randomUUID)
+                          :ledger-entry/user user-id
+                          :ledger-entry/date (:date entry)
+                          :ledger-entry/period (:period entry)
+                          :ledger-entry/action-type (:action-type entry)
+                          :ledger-entry/narrative (:narrative entry)
+                          :ledger-entry/variables (pr-str (:variables entry))
+                          :ledger-entry/assertions (pr-str (:assertions entry))
+                          :ledger-entry/journal-entry (pr-str (:journal-entry entry))
+                          :ledger-entry/created-at (java.util.Date.)
+                          :ledger-entry/template-key (:template-key entry)}
+                  (:engine-event-id entry)
+                  (assoc :ledger-entry/engine-event-id (:engine-event-id entry)))]
     @(d/transact (schema/get-conn) [tx-data])))
 
 (defn get-ledger
@@ -1143,7 +1146,8 @@
 
 (defn complete-transaction!
   "Complete a pending transaction after correct classification.
-  Updates business state and records ledger entry."
+  Updates business state and records ledger entry.
+  Also stores the event in the assertive-engine for chain queries."
   [user-id pending-tx journal-entry]
   (let [business-state (get-business-state user-id)
         action-key (:action-type pending-tx)
@@ -1153,15 +1157,24 @@
                       (apply-effects action-key variables)
                       (decrement-moves)
                       (advance-simulation-date))
-        ;; Create ledger entry
-        ledger-entry {:date (:date variables (:simulation-date business-state))
-                      :period (:current-period business-state)
-                      :action-type action-key
-                      :narrative (:narrative pending-tx)
-                      :variables variables
-                      :assertions (:correct-assertions pending-tx)
-                      :journal-entry journal-entry
-                      :template-key (:template-key pending-tx)}]
+        ;; Store in assertive-engine (non-blocking, failure-tolerant)
+        engine-event-id (engine/store-classified-event!
+                          {:assertions (:correct-assertions pending-tx)
+                           :date (:date variables (:simulation-date business-state))
+                           :asserted-by (str user-id)
+                           :template-key (:template-key pending-tx)
+                           :counterparty (:customer variables (:vendor variables))})
+        ;; Create ledger entry (with engine event link)
+        ledger-entry (cond-> {:date (:date variables (:simulation-date business-state))
+                              :period (:current-period business-state)
+                              :action-type action-key
+                              :narrative (:narrative pending-tx)
+                              :variables variables
+                              :assertions (:correct-assertions pending-tx)
+                              :journal-entry journal-entry
+                              :template-key (:template-key pending-tx)}
+                       engine-event-id
+                       (assoc :engine-event-id engine-event-id))]
     ;; Save everything
     (save-business-state! user-id new-state)
     (save-ledger-entry! user-id ledger-entry)

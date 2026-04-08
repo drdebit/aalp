@@ -307,7 +307,12 @@
    {:db/ident :ledger-entry/template-key
     :db/valueType :db.type/keyword
     :db/cardinality :db.cardinality/one
-    :db/doc "Template used for this transaction"}])
+    :db/doc "Template used for this transaction"}
+
+   {:db/ident :ledger-entry/engine-event-id
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "Event ID in the assertive-engine store (for chain linking)"}])
 
 ;; Database connection URI
 ;; Uses existing Datomic transactor with PostgreSQL backing store

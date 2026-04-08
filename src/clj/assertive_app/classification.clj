@@ -2053,24 +2053,49 @@
                                 distance (+ (* (:missing-assertion distance-weights) (count missing))
                                            (* (:prohibited-assertion distance-weights) (count extra-prohibited))
                                            (* (:unrequired-assertion distance-weights) (count extra-unrequired))
-                                           (* (:parameter-mismatch distance-weights) param-mismatches))]
+                                           (* (:parameter-mismatch distance-weights) param-mismatches))
+                                ;; Count parameter matches for tiebreaking
+                                param-matches (if (and required-parameters (seq present-assertions))
+                                                (count
+                                                  (filter (fn [[assertion-code required-params]]
+                                                            (when (contains? assertion-keys assertion-code)
+                                                              (parameters-match?
+                                                                (get assertions-map assertion-code)
+                                                                required-params)))
+                                                          required-parameters))
+                                                0)
+                                ;; Count total required parameter keys that match student values
+                                ;; (rewards more specific classifications when params match)
+                                param-specificity (if (and required-parameters (seq present-assertions))
+                                                   (reduce + 0
+                                                     (for [[assertion-code required-params] required-parameters
+                                                           :when (contains? assertion-keys assertion-code)
+                                                           [param-key param-value] required-params
+                                                           :when (= (get (get assertions-map assertion-code) param-key)
+                                                                    param-value)]
+                                                       1))
+                                                   0)]
                             {:type class-key
                              :distance distance
                              :missing missing
                              :extra-prohibited extra-prohibited
                              :extra-unrequired extra-unrequired
-                             :param-mismatches param-mismatches})))
+                             :param-mismatches param-mismatches
+                             :param-matches param-matches
+                             :param-specificity param-specificity})))
 
         closest (when all-distances
                   ;; Sort by distance first, then use tiebreakers
                   (first (sort-by (juxt :distance
-                                       ;; Tiebreaker 1: Prefer more required assertions present (negative for desc sort)
+                                       ;; Tiebreaker 1: Prefer more specific parameter matches (negative for desc sort)
+                                       #(- (:param-specificity %))
+                                       ;; Tiebreaker 2: Prefer more required assertions present (negative for desc sort)
                                        #(- (count (clojure.set/intersection
                                                     (get-in classifications [(:type %) :required])
                                                     assertion-keys)))
-                                       ;; Tiebreaker 2: Prefer lower level (simpler concepts)
+                                       ;; Tiebreaker 3: Prefer lower level (simpler concepts)
                                        #(get-in classifications [(:type %) :level] 0)
-                                       ;; Tiebreaker 3: Prefer more prohibitions (stricter rules, negative for desc)
+                                       ;; Tiebreaker 4: Prefer more prohibitions (stricter rules, negative for desc)
                                        #(- (count (get-in classifications [(:type %) :prohibited]))))
                                   all-distances)))]
 

@@ -48,3 +48,7 @@ missfont.log
 # Database
 *.db
 *.sqlite
+
+# Scripts with credentials
+start-backend.sh
+restart-backend.sh

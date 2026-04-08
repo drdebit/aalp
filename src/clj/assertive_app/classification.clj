@@ -1216,14 +1216,14 @@
    ;; Sales require reporting assertions because we recognize revenue and COGS
 
    :cash-sale
-   {:required #{:has-date :provides :receives :has-counterparty :reports}
+   {:required #{:has-date :provides :receives :has-counterparty}
     :prohibited #{:requires :expects}
     :required-parameters {:provides {:unit "physical-unit" :physical-item "printed-tshirts"}
                           :receives {:unit "monetary-unit"}}
     :description "Cash sale with revenue and cost recognition"
     :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "A sale requires recognizing both revenue (equal to cash received) and the cost of goods sold (equal to inventory cost)."
+    :note "When SP provides goods and receives cash, revenue is recognized. Revenue emerges from the assertion pattern — providing physical goods in exchange for monetary units with a counterparty."
     :examples ["SP sells printed t-shirts for cash, recognizing revenue and COGS"]
     :level 3}
 
@@ -1272,16 +1272,15 @@
     :level 1}
 
    :sale-on-credit
-   {:required #{:has-date :provides :has-counterparty :requires :expects :reports}
+   {:required #{:has-date :provides :has-counterparty :requires :expects}
     :prohibited #{:receives}
     :required-parameters {:provides {:unit "physical-unit"}
                           :requires {:action "provides" :unit "monetary-unit"}
-                          :expects {:confidence :any}  ; Student must provide confidence
-                          :reports {:category "revenue" :basis "earned"}}
+                          :expects {:confidence :any}}  ; Student must provide confidence
     :description "Credit sale: provide goods, customer obligated to pay, assess collection probability"
     :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "A credit sale creates two things: (1) a legal obligation requiring the customer to pay, and (2) an expectation about whether they will actually pay, with a confidence level. The confidence level informs bad debt estimates later."
+    :note "A credit sale creates two things: (1) a legal obligation requiring the customer to pay, and (2) an expectation about whether they will actually pay, with a confidence level. Revenue emerges from the assertion pattern — providing goods in exchange for a payment obligation."
     :examples ["SP provides printed t-shirts on credit, customer must pay $250 in 30 days, 92% confident they will pay"]
     :level 1}
 
@@ -2167,7 +2166,7 @@
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-inventory-purchase
     :level 0
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :inventory-type ["blank t-shirts" "ink cartridges"]
                 :physical-item ["blank-tshirts" "ink-cartridges"]  ;; Maps to account via physical-item-accounts
                 :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
@@ -2182,7 +2181,7 @@
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-equipment-purchase
     :level 0
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :equipment-type ["a T-shirt Printer"]
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]}}
@@ -2192,12 +2191,10 @@
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :receives {:unit "monetary-unit" :quantity :amount}
-                          :has-counterparty {:name :customer}
-                          ;; Reports assertions for revenue and COGS recognition
-                          :reports {:category "revenue" :basis "cash-received"}}
+                          :has-counterparty {:name :customer}}
     :correct-classification :cash-sale
     :level 3
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
                 :quantity [10 25 50]
                 :amount [250 625 1250]
@@ -2212,7 +2209,7 @@
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}
     :correct-classification :inventory-purchase-on-credit
     :level 1
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :inventory-type ["blank t-shirts" "ink cartridges"]
                 :physical-item ["blank-tshirts" "ink-cartridges"]
                 :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
@@ -2231,7 +2228,7 @@
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}
     :correct-classification :equipment-purchase-on-credit
     :level 1
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :equipment-type ["a T-shirt Printer"]
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]
@@ -2247,15 +2244,13 @@
                           ;; The sale creates a legal obligation for payment
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}
                           ;; Our assessment of collection probability - student must think about this
-                          :expects {:confidence :confidence}
-                          ;; Reports revenue recognition
-                          :reports {:category "revenue" :basis "earned"}}
+                          :expects {:confidence :confidence}}
     :correct-classification :sale-on-credit
     :level 1  ;; Moved to level 1 since requires/expects are now level 1
     ;; Customer context for confidence decisions
     :show-customer-context true
     :customer-context-field :customer
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo" "RegionalRetailer"]
                 :quantity [10 25 50]
                 :amount [250 625 1250]
@@ -2280,7 +2275,7 @@
                           :requires {:action "provides" :unit "physical-unit" :due-date :due-date}}
     :correct-classification :deferred-revenue
     :level 1
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
                 :service ["custom t-shirt printing services" "merchandise fulfillment" "a bulk order"]
                 :amount [2000 5000 10000 15000 20000]
@@ -2300,7 +2295,7 @@
     ;; Vendor context - vendors are typically reliable
     :show-vendor-context true
     :vendor-context-field :vendor
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :vendor ["InsuranceCo" "Landlord" "ServiceProvider"]
                 :service ["insurance coverage" "rent" "maintenance services"]
                 :amount [3000 6000 9000 12000 18000]
@@ -2332,7 +2327,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-full
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50]
                 :tshirt-cost [4 5 6]
                 :ink-quantity [5 10 25]      ;; oz of ink used
@@ -2354,7 +2349,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-inventory-labor
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100]
                 :tshirt-cost [4 5 6]
                 :labor-hours [1 2 3 4]
@@ -2368,7 +2363,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "work-in-process"}}
     :correct-classification :production-raw-to-wip
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100 200]
                 :raw-material ["blank t-shirts" "unprinted shirts" "blank merchandise"]}}
 
@@ -2379,7 +2374,7 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "finished-goods"}}
     :correct-classification :production-wip-to-finished
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100 200]}}
 
    :production-direct
@@ -2392,7 +2387,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-allowed-by {:capacity "t-shirt-printer"}}
     :correct-classification :production-direct
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100]
                 :product ["printed t-shirts" "custom t-shirts" "branded shirts"]}}
 
@@ -2403,7 +2398,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :creates {:unit "work-in-process"}}
     :correct-classification :production-with-labor
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [2 4 8 16 40]}}
 
    :supplies-used
@@ -2413,7 +2408,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :creates {:unit "work-in-process"}}
     :correct-classification :supplies-consumption
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :supplies ["ink cartridges" "specialty inks" "printing supplies" "packaging materials"]}}
 
    :design-creation
@@ -2423,7 +2418,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :creates {:unit "intellectual-property"}}
     :correct-classification :design-creation
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [4 8 16 24 40]
                 :design-type ["t-shirt design" "logo" "artwork" "graphic design" "product concept"]}}
 
@@ -2434,7 +2429,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :creates {:unit "service-output"}}
     :correct-classification :service-delivery
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [2 4 8 16]
                 :service ["custom printing services" "design consultation" "rush order processing"]}}
 
@@ -2447,7 +2442,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :allows {}}
     :correct-classification :capability-acquisition
     :level 2
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]}}
 
@@ -2463,7 +2458,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-allowed-by {:framework "ucc"}}
     :correct-classification :sale-under-ucc
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100]
                 :product ["printed t-shirts" "custom merchandise" "branded apparel"]
                 :customer ["RetailCo" "WholesaleBuyer" "CorporateClient"]
@@ -2479,7 +2474,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-required-by {:framework "employment-law"}}
     :correct-classification :employment-under-law
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :employee ["Alex" "Jordan" "Taylor" "Morgan"]
                 :position ["production assistant" "designer" "sales associate" "warehouse worker"]
                 :wage [15 18 20 25]}}
@@ -2492,7 +2487,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-protected-by {:framework "copyright"}}
     :correct-classification :copyright-protected-creation
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [8 16 24 40]
                 :design-type ["t-shirt graphic" "logo design" "illustration" "pattern artwork"]}}
 
@@ -2504,7 +2499,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-protected-by {:framework "trademark"}}
     :correct-classification :trademark-protected-brand
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
 
    :pay-taxes
@@ -2514,7 +2509,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-required-by {:framework "tax-code"}}
     :correct-classification :tax-required-filing
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [500 1000 2500 5000 10000]
                 :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
 
@@ -2525,7 +2520,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-required-by {:framework "industry-regs"}}
     :correct-classification :regulatory-compliance
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [100 250 500 1000]
                 :license-type ["business license" "seller's permit" "occupational license" "zoning permit"]
                 :authority ["city" "county" "state" "federal"]}}
@@ -2537,7 +2532,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-allowed-by {:framework "state-business-law"}}
     :correct-classification :business-formation
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [100 150 250 500]}}
 
    :contract-sale
@@ -2550,7 +2545,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :is-protected-by {:framework "contract-law"}}
     :correct-classification :contract-protected-agreement
     :level 4
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]
                 :product ["custom merchandise" "bulk t-shirt order" "branded apparel"]
                 :amount [5000 10000 25000 50000]
@@ -2566,7 +2561,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :consumes {:unit "asset-value"}}
     :correct-classification :depreciation-expense
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :asset ["t-shirt printer" "delivery van" "office equipment" "production equipment"]
                 :cost [3000 12000 6000 15000]
                 :years [5 5 3 10]
@@ -2579,7 +2574,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :expects {:action "uncollectible" :unit "monetary-unit"}}
     :correct-classification :bad-debt-expense
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30" "2026-12-31"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :percent [2 3 5 1]
                 :ar-balance [5000 10000 20000 50000]
                 :bad-debt-amount [100 300 1000 500]}}
@@ -2591,7 +2586,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :requires {:action "provides" :unit "monetary-unit"}}
     :correct-classification :accrued-wages
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :days [2 3 4 5]
                 :amount [400 600 800 1000]
                 :payday ["next Monday" "February 5" "next Friday" "the 5th of next month"]}}
@@ -2603,7 +2598,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :requires {:action "provides" :unit "monetary-unit"}}
     :correct-classification :accrued-interest-expense
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30" "2026-09-30"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :principal [5000 10000 15000 20000]
                 :rate [6 8 10 12]
                 :months [1 2 3 1]
@@ -2615,7 +2610,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :reports {:category "expense" :basis "time-based"}}
     :correct-classification :prepaid-expense-adjustment
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :expense-type ["insurance" "rent" "advertising" "subscriptions"]
                 :total [1200 6000 2400 600]
                 :months [12 6 12 12]
@@ -2628,7 +2623,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :fulfills {:action "requires"}}
     :correct-classification :unearned-revenue-adjustment
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :customer ["LocalSportsTeam" "CorporateClient" "RetailPartner"]
                 :total [2000 5000 10000]
                 :earned [500 2000 2500]
@@ -2645,7 +2640,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :has-counterparty {:name :owner}}
     :correct-classification :owner-investment
     :level 6
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :owner ["Pat (Parent)" "Terry (Investor)" "Jordan (Partner)" "Alex (Founder)"]
                 :amount [10000 20000 50000 100000]
                 :percent [10 20 25 50]}}
@@ -2658,7 +2653,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :has-counterparty {:name :investor}}
     :correct-classification :stock-issuance
     :level 6
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :shares [100 500 1000 5000]
                 :investor ["First Investor" "Venture Fund" "Angel Investor" "Private Equity"]
                 :amount [1000 5000 10000 50000]
@@ -2671,7 +2666,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :requires {:action "provides" :unit "monetary-unit"}}
     :correct-classification :dividend-declaration
     :level 6
-    :variables {:date ["2026-01-15" "2026-03-15" "2026-06-15" "2026-09-15" "2026-12-15"]
+    :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15" "2026-06-15" "2026-07-15" "2026-08-15" "2026-09-15" "2026-10-15" "2026-11-15" "2026-12-15"]
                 :per-share [0.25 0.50 1.00 0.10]
                 :shares [1000 2000 5000 10000]
                 :total [250 1000 5000 1000]
@@ -2685,7 +2680,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :fulfills {:action "requires"}}
     :correct-classification :dividend-payment
     :level 6
-    :variables {:date ["2026-02-01" "2026-04-01" "2026-07-01" "2026-10-01"]
+    :variables {:date ["2026-01-01" "2026-02-01" "2026-03-01" "2026-04-01" "2026-05-01" "2026-06-01" "2026-07-01" "2026-08-01" "2026-09-01" "2026-10-01" "2026-11-01" "2026-12-01"]
                 :amount [250 1000 5000 1000]
                 :declaration-date ["January 15" "March 15" "June 15" "September 15"]}}
 
@@ -2696,7 +2691,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :has-counterparty {:name :owner}}
     :correct-classification :owner-withdrawal
     :level 6
-    :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15"]
+    :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15" "2026-06-15" "2026-07-15" "2026-08-15" "2026-09-15" "2026-10-15" "2026-11-15" "2026-12-15"]
                 :owner ["SP (Owner)" "Alex (Partner)" "Jordan (Partner)"]
                 :amount [500 1000 2000 3000]}}
 
@@ -2711,7 +2706,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :requires {:action "provides" :unit "monetary-unit"}}
     :correct-classification :notes-payable-issuance
     :level 7
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-05"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [5000 10000 20000 50000]
                 :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
                 :months [6 12 24 36]
@@ -2751,7 +2746,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :expects {:action "receives" :unit "monetary-unit"}}
     :correct-classification :notes-receivable-creation
     :level 7
-    :variables {:date ["2026-01-15" "2026-02-03" "2026-03-10" "2026-04-22"]
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-19" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [2000 5000 10000 25000]
                 :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]
                 :months [3 6 12 24]
@@ -2763,7 +2758,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
                           :reports {:category "revenue" :basis "accrual"}}
     :correct-classification :interest-revenue-accrual
     :level 7
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-06-30"]
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :amount [10 42 83 250]
                 :principal [2000 5000 10000 25000]
                 :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]

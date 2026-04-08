@@ -295,11 +295,12 @@
 (defn- auto-populate-assertion!
   "Auto-populate assertion parameters at L1+ when assertion is selected."
   [assertion-code]
-  (let [level (state/current-level)
+  (let [code (keyword assertion-code)
+        level (state/current-level)
         problem (state/current-problem)
         vars (:variables problem)]
     (when (>= level 1)
-      (case assertion-code
+      (case code
         ;; Auto-populate Has Date from problem variables
         :has-date
         (when-let [date (:date vars)]
@@ -314,7 +315,7 @@
         nil))))
 
 (defn assertion-button [assertion]
-  (let [assertion-code (:code assertion)
+  (let [assertion-code (keyword (:code assertion))
         selected-assertions (state/selected-assertions)
         selected? (contains? selected-assertions assertion-code)
         current-params (get selected-assertions assertion-code)]
@@ -406,7 +407,7 @@
    {:type "number"
     :placeholder (or placeholder "___")
     :value (or current-value "")
-    :style {:width (str (max 3 (count (str current-value))) "ch")}
+    :style {:width (str (max 8 (+ 2 (count (str current-value)))) "ch")}
     :on-change #(state/update-assertion-parameter!
                  assertion-code param-key
                  (.. % -target -value))}])
@@ -499,26 +500,22 @@
 (defn- render-provides-fragment
   "Render the 'provides' part of the sentence."
   [params]
-  (let [unit-options [{:value "monetary-unit" :label "Cash/Money"}
-                      {:value "physical-unit" :label "Physical Units"}]
-        item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
+  (let [item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
                       {:value "blank-tshirts" :label "Blank T-Shirts"}]]
     [:span.assertion-fragment.provides
      [:span.verb "provides "]
      [inline-number-input :provides :quantity (:quantity params) "qty"]
      " "
-     [inline-dropdown :provides :unit unit-options (:unit params) "unit type"]
-     (when (= (:unit params) "physical-unit")
-       [:span " "
-        [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]])
+     (if (= (:unit params) "physical-unit")
+       [:span
+        [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]]
+       [:span.unit-label "cash"])
      [remove-assertion-button :provides]]))
 
 (defn- render-receives-fragment
   "Render the 'receives' part of the sentence."
   [params]
-  (let [unit-options [{:value "monetary-unit" :label "Cash/Money"}
-                      {:value "physical-unit" :label "Physical Units"}]
-        item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
+  (let [item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
                       {:value "blank-tshirts" :label "Blank T-Shirts"}
                       {:value "ink-cartridges" :label "Ink Cartridges"}
                       {:value "t-shirt-printer" :label "T-Shirt Printer"}]]
@@ -526,10 +523,10 @@
      [:span.verb "receives "]
      [inline-number-input :receives :quantity (:quantity params) "qty"]
      " "
-     [inline-dropdown :receives :unit unit-options (:unit params) "unit type"]
-     (when (= (:unit params) "physical-unit")
-       [:span " "
-        [inline-dropdown :receives :physical-item item-options (:physical-item params) "item"]])
+     (if (= (:unit params) "physical-unit")
+       [:span
+        [inline-dropdown :receives :physical-item item-options (:physical-item params) "item"]]
+       [:span.unit-label "cash"])
      [remove-assertion-button :receives]]))
 
 (defn- render-counterparty-fragment
@@ -546,11 +543,7 @@
    - Credit sale (SP provides goods) → counterparty must provide cash
    - Credit purchase (SP receives goods) → SP must provide cash to counterparty"
   [params counterparty-name is-purchase?]
-  (let [action-options [{:value "provides" :label "Cash/Money"}
-                        {:value "receives" :label "Physical Units"}]
-        unit-options [{:value "monetary-unit" :label "Cash/Money"}
-                      {:value "physical-unit" :label "Physical Units"}]
-        ;; Determine obligated party and recipient based on transaction type
+  (let [;; Determine obligated party and recipient based on transaction type
         obligated-party (if is-purchase? "SP" (or counterparty-name "The counterparty"))
         recipient (if is-purchase? (or counterparty-name "the vendor") "SP")]
     [sentence-section :obligation "This creates an obligation:"
@@ -559,7 +552,7 @@
       [:span " must provide "]
       [inline-number-input :requires :quantity (:quantity params) "amount"]
       " "
-      [inline-dropdown :requires :unit unit-options (:unit params) "unit"]
+      [:span.unit-label (if (= (:unit params) "physical-unit") "Physical Units" "cash")]
       [:span (str " to " recipient " by ")]
       [inline-date-input :requires :due-date (:due-date params)]
       [remove-assertion-button :requires]]]))
@@ -800,29 +793,61 @@
 
 (defn- add-assertion-menu
   "Menu to add new assertions to the sentence."
-  [selected-assertions available-assertions]
+  [_selected-assertions _available-assertions]
   (let [show-menu? (r/atom false)
-        ;; Flatten available assertions and filter out already selected
-        all-assertions (for [[_domain assertions] available-assertions
-                             assertion assertions
-                             :when (not (contains? selected-assertions (:code assertion)))]
-                         assertion)]
+        sub-menu (r/atom nil)]
     (fn [selected-assertions available-assertions]
-      [:div.add-assertion-menu
-       [:button.add-assertion-button
-        {:on-click #(swap! show-menu? not)}
-        (if @show-menu? "Cancel" "+ Add Assertion")]
-       (when @show-menu?
-         [:div.assertion-menu-dropdown
-          (for [assertion all-assertions]
-            ^{:key (:code assertion)}
-            [:button.menu-item
-             {:on-click #(do
-                          (state/toggle-assertion! (:code assertion))
-                          (auto-populate-assertion! (:code assertion))
-                          (reset! show-menu? false))
-              :title (:description assertion)}
-             (:label assertion)])])])))
+      (let [;; Flatten available assertions and filter out already selected
+            all-assertions (for [[_domain assertions] available-assertions
+                                 assertion assertions
+                                 :when (not (contains? selected-assertions (keyword (:code assertion))))]
+                             assertion)
+            ;; Assertions that need unit-type sub-menu
+            needs-unit-sub? #{"provides" "receives"}]
+        [:div.add-assertion-menu
+         [:button.add-assertion-button
+          {:on-click #(do (swap! show-menu? not)
+                          (reset! sub-menu nil))}
+          (if @show-menu? "Cancel" "+ Add Assertion")]
+         (when @show-menu?
+           [:div.assertion-menu-dropdown
+            ;; Sub-menu: choose unit type for provides/receives
+            (when-let [assertion-code @sub-menu]
+              [:div.sub-menu-options
+               [:button.menu-item.sub-menu-back
+                {:on-click #(reset! sub-menu nil)}
+                (str "\u2190 " (if (= assertion-code "provides") "Provides" "Receives"))]
+               [:button.menu-item
+                {:on-click #(do
+                             (state/toggle-assertion! assertion-code)
+                             (state/update-assertion-parameter! assertion-code :unit "monetary-unit")
+                             (auto-populate-assertion! assertion-code)
+                             (reset! sub-menu nil)
+                             (reset! show-menu? false))}
+                "cash"]
+               [:button.menu-item
+                {:on-click #(do
+                             (state/toggle-assertion! assertion-code)
+                             (state/update-assertion-parameter! assertion-code :unit "physical-unit")
+                             (auto-populate-assertion! assertion-code)
+                             (reset! sub-menu nil)
+                             (reset! show-menu? false))}
+                "physical units"]])
+
+            ;; Main menu: list available assertions
+            (when-not @sub-menu
+              (doall
+               (for [assertion all-assertions]
+                 ^{:key (:code assertion)}
+                 [:button.menu-item
+                  {:on-click (if (needs-unit-sub? (:code assertion))
+                               #(reset! sub-menu (:code assertion))
+                               #(do
+                                 (state/toggle-assertion! (:code assertion))
+                                 (auto-populate-assertion! (:code assertion))
+                                 (reset! show-menu? false)))
+                   :title (:description assertion)}
+                  (:label assertion)])))])]))))
 
 (defn sentence-builder
   "Main sentence builder component - builds assertions as natural language."
@@ -853,7 +878,6 @@
          [:span "On "]
          [inline-date-input :has-date :date (get-in selected [:has-date :date])]
          [:span ", SP "]
-         [remove-assertion-button :has-date]
 
          ;; Provides fragment
          (when (contains? selected :provides)
@@ -875,6 +899,12 @@
                     (contains? selected :receives)
                     (contains? selected :has-counterparty))
            [render-counterparty-fragment (:has-counterparty selected) "from"])
+
+         ;; Standalone counterparty (if neither provides nor receives yet)
+         (when (and (contains? selected :has-counterparty)
+                    (not (contains? selected :provides))
+                    (not (contains? selected :receives)))
+           [render-counterparty-fragment (:has-counterparty selected) "transacts with"])
 
          [:span "."]])
 
@@ -983,7 +1013,10 @@
         [:button.secondary
          {:on-click #(if is-construct?
                       (state/clear-je-fields!)
-                      (state/clear-selections!))}
+                      (do (state/clear-selections!)
+                          (state/toggle-assertion! :has-date)
+                          (when-let [date (get-in problem [:variables :date])]
+                            (state/update-assertion-parameter! :has-date :date date))))}
          "Clear"]
         ;; Cancel button only in simulation mode
         (when (state/simulation-mode?)
@@ -1410,22 +1443,84 @@
 
 ;; ==================== Tutorial Components ====================
 
+(defn- process-inline
+  "Process **bold** and *italic* inline markup, returning hiccup elements.
+   Uses re-seq with alternation: bold is matched first (greedy **),
+   then italic (*), then plain text (everything else)."
+  [text]
+  (if-not (re-find #"\*" text)
+    text
+    (let [tokens (re-seq #"\*\*([^*]+)\*\*|\*([^*]+)\*|([^*]+)" text)]
+      (into [:span]
+            (map-indexed
+             (fn [i [_ bold italic plain]]
+               (cond
+                 bold [:strong {:key i} bold]
+                 italic [:em {:key i} italic]
+                 plain [:span {:key i} plain]))
+             tokens)))))
+
 (defn- render-markdown
-  "Simple markdown-like rendering for tutorial content.
-   Handles **bold**, tables, and basic formatting."
+  "Markdown-like rendering for tutorial content.
+   Handles **bold**, *italic*, tables, lists, arrow conclusions,
+   ::assertions blocks, and ::journal blocks."
   [text]
   (if (str/blank? text)
     [:span]
-    (let [;; Split into paragraphs
-          paragraphs (str/split text #"\n\n+")]
+    (let [paragraphs (str/split text #"\n\n+")]
       [:div.markdown-content
        (for [[idx para] (map-indexed vector paragraphs)]
          ^{:key idx}
          (cond
+           ;; Assertion block (::assertions ... ::)
+           (str/starts-with? (str/trim para) "::assertions")
+           (let [body (-> (str/trim para)
+                          (str/replace #"^::assertions\n?" "")
+                          (str/replace #"\n?::$" ""))
+                 lines (str/split-lines body)
+                 items (for [line lines
+                             :when (not (str/blank? line))
+                             :let [match (re-find #"^([^:]+):\s*(.+)" line)]]
+                         {:name (str/trim (if match (nth match 1) line))
+                          :value (str/trim (if match (nth match 2) ""))})]
+             [:div.assertion-block {:key idx}
+              (for [[aidx item] (map-indexed vector items)]
+                ^{:key aidx}
+                [:div.assertion-item
+                 [:span.assertion-name (:name item)]
+                 [:span.assertion-value [process-inline (:value item)]]])])
+
+           ;; Journal entry block (::journal ... ::)
+           (str/starts-with? (str/trim para) "::journal")
+           (let [body (-> (str/trim para)
+                          (str/replace #"^::journal\n?" "")
+                          (str/replace #"\n?::$" ""))
+                 lines (str/split-lines body)
+                 entries (for [line lines
+                               :when (not (str/blank? line))
+                               :let [trimmed (str/trim line)
+                                     is-credit (str/starts-with? trimmed "CR")
+                                     cleaned (str/replace trimmed #"^(DR|CR)\s+" "")
+                                     match (re-find #"^(.+?)\s+\$([ -~,\d]+)$" cleaned)
+                                     account (str/trim (if match (nth match 1) cleaned))
+                                     amount (when match (nth match 2))]]
+                           {:credit? is-credit
+                            :account account
+                            :amount amount})]
+             [:div.journal-entry-block {:key idx}
+              [:div.je-header "Journal Entry"]
+              [:div.je-body
+               (for [[eidx entry] (map-indexed vector entries)]
+                 ^{:key eidx}
+                 [:div.je-line {:class (if (:credit? entry) "credit" "debit")}
+                  [:span.je-label (if (:credit? entry) "CR" "DR")]
+                  [:span.je-account (:account entry)]
+                  (when (:amount entry)
+                    [:span.je-amount (str "$" (:amount entry))])])]])
+
            ;; Table detection (starts with |)
            (str/starts-with? (str/trim para) "|")
            (let [lines (str/split-lines para)
-                 ;; Filter out separator lines (|---|---|)
                  data-lines (remove #(re-matches #"\|[-|\s]+\|" %) lines)
                  rows (for [line data-lines]
                         (-> line
@@ -1437,49 +1532,251 @@
                [:tr
                 (for [[cidx cell] (map-indexed vector (first rows))]
                   ^{:key cidx}
-                  [:th cell])]]
+                  [:th [process-inline cell]])]]
               [:tbody
                (for [[ridx row] (map-indexed vector (rest rows))]
                  ^{:key ridx}
                  [:tr
                   (for [[cidx cell] (map-indexed vector row)]
                     ^{:key cidx}
-                    [:td cell])])]])
+                    [:td [process-inline cell]])])]])
 
-           ;; List items (starts with - or *)
+           ;; Numbered list (starts with 1. 2. etc.)
+           (re-find #"^\d+\.\s" (str/trim para))
+           [:ol {:key idx}
+            (for [[lidx item] (map-indexed vector (str/split-lines para))]
+              ^{:key lidx}
+              [:li [process-inline (str/replace item #"^\d+\.\s+" "")]])]
+
+           ;; Bullet list (starts with - or *)
            (re-find #"^[\-\*]\s" (str/trim para))
            [:ul {:key idx}
             (for [[lidx item] (map-indexed vector (str/split-lines para))]
               ^{:key lidx}
-              [:li (-> item
-                       (str/replace #"^[\-\*]\s+" "")
-                       (str/replace #"\*\*([^*]+)\*\*" [:strong "$1"]))])]
+              [:li [process-inline (str/replace item #"^[\-\*]\s+" "")]])]
 
            ;; Arrow notation (→)
            (str/includes? para "→")
-           [:p.conclusion {:key idx}
-            (-> para
-                (str/replace #"\*\*([^*]+)\*\*"
-                             (fn [[_ content]] (str "BOLD_START" content "BOLD_END")))
-                (str/split #"(BOLD_START|BOLD_END)")
-                (->> (map-indexed
-                      (fn [i part]
-                        (if (even? i)
-                          [:span {:key i} part]
-                          [:strong {:key i} part])))))]
+           [:p.conclusion {:key idx} [process-inline para]]
 
-           ;; Regular paragraph with bold support
+           ;; Regular paragraph
            :else
-           [:p {:key idx}
-            (-> para
-                (str/replace #"\*\*([^*]+)\*\*"
-                             (fn [[_ content]] (str "BOLD_START" content "BOLD_END")))
-                (str/split #"(BOLD_START|BOLD_END)")
-                (->> (map-indexed
-                      (fn [i part]
-                        (if (even? i)
-                          [:span {:key i} part]
-                          [:strong {:key i} part])))))]))])))
+           [:p {:key idx} [process-inline para]]))])))
+
+
+;; ==================== Tutorial Quiz Flow Components ====================
+
+(defn- grade-quiz
+  "Grade quiz answers. Returns {:all-correct? :results :missed}
+   results is a vector of {:question :correct? :user-answer :correct-answer :explanation}
+   missed is a vector of the original question maps for retry."
+  [questions answers]
+  (let [results (mapv (fn [q]
+                        (let [user-idx (get answers (:id q))
+                              correct? (= user-idx (:correct q))]
+                          {:question (:question q)
+                           :correct? correct?
+                           :user-answer (when user-idx (nth (:choices q) user-idx))
+                           :correct-answer (nth (:choices q) (:correct q))
+                           :explanation (:explanation q)}))
+                      questions)
+        missed (filterv (fn [q] (not= (get answers (:id q)) (:correct q))) questions)]
+    {:all-correct? (empty? missed)
+     :results results
+     :missed missed}))
+
+(defn- grade-and-show-results!
+  "Grade answers, set results state, call API if all correct."
+  [level questions answers]
+  (let [{:keys [all-correct? results missed]} (grade-quiz questions answers)]
+    (state/set-quiz-results! results missed)
+    (when all-correct?
+      (api/complete-tutorial! level))))
+
+(defn tutorial-reader
+  "Paginated section reader for tutorial content."
+  [sections section-index on-prev on-next on-take-quiz review-only?]
+  (let [current-section (nth sections section-index nil)
+        total (count sections)
+        is-first? (= section-index 0)
+        is-last? (= section-index (dec total))]
+    [:div.tutorial-reader
+     [:div.tutorial-reader-header
+      [:span.section-indicator (str "Section " (inc section-index) " of " total)]]
+     [:div.tutorial-reader-content
+      [:h2.tutorial-section-heading (:heading current-section)]
+      [render-markdown (:content current-section)]]
+     [:div.tutorial-reader-footer
+      [:button.nav-btn.prev
+       {:disabled is-first?
+        :on-click on-prev}
+       "Previous"]
+      [:div.section-dots
+       (for [i (range total)]
+         ^{:key i}
+         [:span.section-dot
+          {:class (when (= i section-index) "active")
+           :on-click #(state/set-tutorial-quiz-section! i)}])]
+      (cond
+        ;; Review only: close button on last page
+        (and is-last? review-only?)
+        [:button.nav-btn.start
+         {:on-click #(state/close-tutorial-quiz!)}
+         "Close"]
+        ;; Last section: take quiz button
+        is-last?
+        [:button.nav-btn.start
+         {:on-click on-take-quiz}
+         "Take Quiz"]
+        ;; Otherwise: next button
+        :else
+        [:button.nav-btn.next
+         {:on-click on-next}
+         "Next"])]]))
+
+(defn quiz-component
+  "Renders MC quiz questions with radio buttons."
+  [questions answers on-answer on-submit retry?]
+  (let [all-answered? (every? #(contains? answers (:id %)) questions)]
+    [:div.quiz-container
+     [:h2.quiz-title (if retry? "Retry Missed Questions" "Tutorial Quiz")]
+     [:p.quiz-instruction (if retry?
+                            "Answer the questions you missed. Take your time!"
+                            "Answer all questions, then click Submit.")]
+     [:div.quiz-questions
+      (for [[idx q] (map-indexed vector questions)]
+        ^{:key (:id q)}
+        [:div.quiz-question
+         [:p.question-text (str (inc idx) ". " (:question q))]
+         [:div.choices
+          (for [[cidx choice] (map-indexed vector (:choices q))]
+            ^{:key cidx}
+            [:label.choice
+             {:class (when (= (get answers (:id q)) cidx) "selected")}
+             [:input {:type "radio"
+                      :name (name (:id q))
+                      :checked (= (get answers (:id q)) cidx)
+                      :on-change #(on-answer (:id q) cidx)}]
+             [:span.choice-text choice]])]])]
+     [:div.quiz-actions
+      [:button.quiz-submit-btn
+       {:disabled (not all-answered?)
+        :on-click on-submit}
+       "Submit Answers"]]]))
+
+(defn quiz-results-display
+  "Shows quiz results. If all correct: success. If some wrong: corrections + retry."
+  [results missed level on-continue on-retry]
+  (let [all-correct? (empty? missed)
+        correct-count (count (filter :correct? results))
+        total (count results)]
+    [:div.quiz-results
+     (if all-correct?
+       ;; All correct - success
+       [:div.quiz-success
+        [:h2 "Tutorial Complete!"]
+        [:p.success-message (str "You answered all " total " questions correctly.")]
+        [:button.quiz-continue-btn
+         {:on-click on-continue}
+         "Continue to Practice"]]
+       ;; Some wrong - show corrections
+       [:div.quiz-corrections
+        [:h2 "Review Your Answers"]
+        [:p.score-message (str "You got " correct-count " of " total " correct. Review the missed questions below:")]
+        [:div.correction-items
+         (for [result (filter #(not (:correct? %)) results)]
+           ^{:key (:question result)}
+           [:div.correction-item
+            [:p.correction-question (:question result)]
+            [:div.correction-answers
+             [:div.your-answer
+              [:span.answer-label "Your answer: "]
+              [:span.answer-text.incorrect (:user-answer result)]]
+             [:div.correct-answer
+              [:span.answer-label "Correct answer: "]
+              [:span.answer-text.correct (:correct-answer result)]]
+             [:p.explanation (:explanation result)]]])]
+        [:button.quiz-retry-btn
+         {:on-click on-retry}
+         "Try Again"]])]))
+
+(defn tutorial-quiz-flow
+  "Full-screen overlay orchestrating all tutorial-quiz phases."
+  []
+  (let [tq-state (state/tutorial-quiz-state)
+        level (:level tq-state)
+        phase (:phase tq-state)
+        section-idx (:section-index tq-state)
+        answers (:quiz-answers tq-state)
+        results (:quiz-results tq-state)
+        missed (:missed-questions tq-state)
+        retry? (:retry-round tq-state)
+        review-only? (:review-only? tq-state)
+        tutorial (tutorials/get-level-tutorial level)
+        sections (:sections tutorial)
+        ;; For retry, only show missed questions; otherwise show all
+        quiz-questions (if retry?
+                         missed
+                         (:quiz tutorial))]
+    [:div.tutorial-overlay
+     [:div.tutorial-modal.tutorial-quiz-modal
+      [:div.tutorial-header
+       [:h1 (:title tutorial)]
+       [:p.subtitle (:subtitle tutorial)]
+       [:button.tutorial-close-btn
+        {:on-click #(state/close-tutorial-quiz!)}
+        "X"]]
+
+      [:div.tutorial-body
+       (case phase
+         :reading
+         [tutorial-reader sections section-idx
+          #(state/set-tutorial-quiz-section! (dec section-idx))
+          #(state/set-tutorial-quiz-section! (inc section-idx))
+          #(state/advance-to-quiz!)
+          review-only?]
+
+         :quiz
+         [quiz-component quiz-questions answers
+          state/set-quiz-answer!
+          #(grade-and-show-results! level quiz-questions answers)
+          retry?]
+
+         :results
+         [quiz-results-display results missed level
+          ;; on-continue (all correct)
+          (fn []
+            (state/close-tutorial-quiz!))
+          ;; on-retry (some wrong)
+          (fn []
+            (state/start-retry-round!))]
+
+         ;; Default fallback
+         [:div "Unknown phase: " (str phase)])]]]))
+
+(defn tutorial-gate
+  "Gate overlay shown when tutorial hasn't been completed for this level."
+  [level]
+  (let [tutorial (tutorials/get-level-tutorial level)]
+    [:div.tutorial-gate
+     [:div.gate-content
+      [:h2 (str "Welcome to " (:title tutorial))]
+      [:p (:subtitle tutorial)]
+      [:p "Complete this tutorial to unlock practice problems at this level."]
+      [:button.gate-start-btn
+       {:on-click #(state/start-tutorial-quiz! level)}
+       "Start Tutorial"]
+      ;; If at least L0 completed, let them go back to a completed level
+      (when (pos? level)
+        [:p.gate-hint "Or switch to a level you've already completed."])]]))
+
+(defn tutorial-review-button
+  "Button to re-read a completed tutorial."
+  [level]
+  [:button.tutorial-review-btn
+   {:on-click #(state/start-tutorial-quiz! level :review-only? true)
+    :title "Review this level's tutorial"}
+   "Review Tutorial"])
 
 (defn stage-progress-indicator
   "Shows progress through stages and current stage status."
@@ -1747,9 +2044,16 @@
   (let [pending (state/pending-transaction)
         last-tx (state/last-completed-transaction)
         show-tutorial? (state/show-tutorial?)
-        show-statements? (state/show-statements?)]
+        show-statements? (state/show-statements?)
+        level (state/current-level)
+        tq-active? (state/tutorial-quiz-active?)
+        tutorial-done? (state/tutorial-completed? level)]
     [:div.simulation-container
-     ;; Tutorial modal overlay (when active)
+     ;; Tutorial quiz overlay (when active)
+     (when tq-active?
+       [tutorial-quiz-flow])
+
+     ;; Tutorial modal overlay (when active — legacy simulation tutorials)
      (when show-tutorial?
        [tutorial-modal])
 
@@ -1763,35 +2067,40 @@
       [stage-progress-indicator]
       [tutorial-trigger-button]]
 
-     [:div.simulation-top
-      [business-dashboard]
-      ;; When no pending transaction, show ledger directly below dashboard
-      (when-not pending
-        [:div.ledger-inline
-         ;; Show confirmation if just completed a transaction
-         [transaction-confirmation]
-         [:div.ledger-section
-          [:h3 "Transaction Ledger"]
-          [ledger-view]]])
-      [action-selection-panel]]
-     ;; When there's a pending transaction, show the three-column layout
-     [:div.simulation-main
-      (when pending
-        [:div.three-column-layout
-         [transaction-summary-panel]
-         [sentence-builder]
-         [feedback-panel]])]
-     [:div.simulation-actions
-      [:button.statements-btn
-       {:on-click #(do
-                     (api/fetch-financial-statements!)
-                     (state/set-show-statements! true))}
-       "View Financial Statements"]
-      [:button.reset-btn
-       {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
-                    (api/reset-simulation! nil)
-                    (state/reset-tutorial-state!))}
-       "Reset Business"]]]))
+     ;; Gate simulation content behind tutorial completion
+     (if tutorial-done?
+       [:<>
+        [:div.simulation-top
+         [business-dashboard]
+         ;; When no pending transaction, show ledger directly below dashboard
+         (when-not pending
+           [:div.ledger-inline
+            ;; Show confirmation if just completed a transaction
+            [transaction-confirmation]
+            [:div.ledger-section
+             [:h3 "Transaction Ledger"]
+             [ledger-view]]])
+         [action-selection-panel]]
+        ;; When there's a pending transaction, show the three-column layout
+        [:div.simulation-main
+         (when pending
+           [:div.three-column-layout
+            [transaction-summary-panel]
+            [sentence-builder]
+            [feedback-panel]])]
+        [:div.simulation-actions
+         [:button.statements-btn
+          {:on-click #(do
+                        (api/fetch-financial-statements!)
+                        (state/set-show-statements! true))}
+          "View Financial Statements"]
+         [:button.reset-btn
+          {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
+                       (api/reset-simulation! nil)
+                       (state/reset-tutorial-state!))}
+          "Reset Business"]]]
+       ;; Tutorial not completed — show gate
+       [tutorial-gate level])]))
 
 (defn mode-toggle
   "Toggle between practice and simulation modes."
@@ -1841,7 +2150,10 @@
 
 (defn practice-app-content []
   (let [problem (state/current-problem)
-        is-construct? (= (:problem-type problem) "construct")]
+        is-construct? (= (:problem-type problem) "construct")
+        level (state/current-level)
+        completed? (state/tutorial-completed? level)
+        tq-active? (state/tutorial-quiz-active?)]
     [:div.app-container
      [:header
       [:div.header-left
@@ -1854,11 +2166,20 @@
        [:button.logout-button
         {:on-click #(api/logout!)}
         "Sign Out"]]]
-     [:div {:class (if is-construct? "two-column-layout" "three-column-layout")}
-      [narrative-panel]
-      (when-not is-construct?
-        [sentence-builder])
-      [feedback-panel]]]))
+     ;; Tutorial quiz overlay (when active)
+     (when tq-active?
+       [tutorial-quiz-flow])
+     ;; Gate or content
+     (if completed?
+       [:div
+        [:div.practice-toolbar
+         [tutorial-review-button level]]
+        [:div {:class (if is-construct? "two-column-layout" "three-column-layout")}
+         [narrative-panel]
+         (when-not is-construct?
+           [sentence-builder])
+         [feedback-panel]]]
+       [tutorial-gate level])]))
 
 (defn main-app []
   (let [loading? (:loading? @state/app-state)

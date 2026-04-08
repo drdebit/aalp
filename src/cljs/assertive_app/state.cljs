@@ -30,6 +30,18 @@
     :je-credit-account nil
     :je-amount nil
 
+    ;; Tutorial quiz gating
+    :completed-tutorials #{}
+    :tutorial-quiz {:active? false
+                    :level nil
+                    :phase :reading  ;; :reading -> :quiz -> :results -> :retry (loops)
+                    :section-index 0
+                    :quiz-answers {}
+                    :quiz-results nil
+                    :missed-questions []
+                    :retry-round false
+                    :review-only? false}
+
     ;; App mode: :practice or :simulation
     :app-mode :practice
 
@@ -67,14 +79,15 @@
   (swap! app-state assoc :available-assertions assertions))
 
 (defn toggle-assertion! [assertion-code]
-  (swap! app-state update :selected-assertions
-         (fn [selected]
-           (if (contains? selected assertion-code)
-             (dissoc selected assertion-code)
-             (assoc selected assertion-code {})))))
+  (let [code (keyword assertion-code)]
+    (swap! app-state update :selected-assertions
+           (fn [selected]
+             (if (contains? selected code)
+               (dissoc selected code)
+               (assoc selected code {}))))))
 
 (defn update-assertion-parameter! [assertion-code param-key param-value]
-  (swap! app-state assoc-in [:selected-assertions assertion-code param-key] param-value))
+  (swap! app-state assoc-in [:selected-assertions (keyword assertion-code) param-key] param-value))
 
 (defn clear-selections! []
   (swap! app-state assoc :selected-assertions {}))
@@ -135,7 +148,8 @@
 (defn set-user!
   "Set user info after successful login. Updates all auth-related state."
   [user-data]
-  (let [unlocked (set (:unlocked-levels user-data [0]))]
+  (let [unlocked (set (:unlocked-levels user-data [0]))
+        completed (set (:completed-tutorials user-data []))]
     (swap! app-state assoc
            :user {:id (:user-id user-data)
                   :email (:email user-data)}
@@ -144,6 +158,7 @@
            :login-error nil
            :current-level (:current-level user-data 0)
            :unlocked-levels unlocked
+           :completed-tutorials completed
            :progress {:current-level (:current-level user-data 0)
                       :unlocked-levels (vec unlocked)
                       :level-stats (:level-stats user-data {})})))
@@ -172,12 +187,14 @@
    The server's current-level represents the user's 'home' level, but the UI
    level should persist until the user explicitly changes it."
   [progress-data]
-  (let [unlocked (set (:unlocked-levels progress-data [0]))]
+  (let [unlocked (set (:unlocked-levels progress-data [0]))
+        completed (set (:completed-tutorials progress-data []))]
     ;; Only update progress and unlocked-levels, never change current-level
     ;; User controls their level via the dropdown
     (swap! app-state assoc
            :progress progress-data
-           :unlocked-levels unlocked)))
+           :unlocked-levels unlocked
+           :completed-tutorials completed)))
 
 ;; ==================== App Mode ====================
 
@@ -449,3 +466,113 @@
 (defn clear-calculation-result! []
   "Clear the calculation result."
   (swap! app-state assoc-in [:calculation :result] nil))
+
+
+;; ==================== Tutorial Quiz Gating ====================
+;; State for the tutorial reading + quiz flow that gates level access
+
+(defn completed-tutorials []
+  "Returns set of completed tutorial level numbers."
+  (:completed-tutorials @app-state #{}))
+
+(defn tutorial-completed? [level]
+  "Check if a specific level's tutorial has been completed."
+  (contains? (:completed-tutorials @app-state #{}) level))
+
+(defn tutorial-quiz-state []
+  "Returns the current tutorial-quiz state map."
+  (:tutorial-quiz @app-state))
+
+(defn tutorial-quiz-active? []
+  "Returns true if the tutorial-quiz overlay is active."
+  (get-in @app-state [:tutorial-quiz :active?] false))
+
+(defn tutorial-quiz-phase []
+  "Returns the current phase: :reading, :quiz, :results, or :retry."
+  (get-in @app-state [:tutorial-quiz :phase] :reading))
+
+(defn tutorial-quiz-level []
+  "Returns the level of the active tutorial quiz."
+  (get-in @app-state [:tutorial-quiz :level]))
+
+(defn tutorial-quiz-section-index []
+  "Returns the current section index in the reader."
+  (get-in @app-state [:tutorial-quiz :section-index] 0))
+
+(defn tutorial-quiz-answers []
+  "Returns map of question-id -> selected choice index."
+  (get-in @app-state [:tutorial-quiz :quiz-answers] {}))
+
+(defn tutorial-quiz-results []
+  "Returns the quiz results: vector of {:question :correct? :user-answer :correct-answer :explanation}."
+  (get-in @app-state [:tutorial-quiz :quiz-results]))
+
+(defn tutorial-quiz-missed []
+  "Returns vector of missed question data for retry."
+  (get-in @app-state [:tutorial-quiz :missed-questions] []))
+
+(defn tutorial-quiz-retry? []
+  "Returns true if we're in a retry round."
+  (get-in @app-state [:tutorial-quiz :retry-round] false))
+
+(defn tutorial-quiz-review-only? []
+  "Returns true if the tutorial is open for review (no quiz required)."
+  (get-in @app-state [:tutorial-quiz :review-only?] false))
+
+(defn start-tutorial-quiz!
+  "Open the tutorial-quiz flow for a given level."
+  [level & {:keys [review-only?] :or {review-only? false}}]
+  (swap! app-state assoc :tutorial-quiz
+         {:active? true
+          :level level
+          :phase :reading
+          :section-index 0
+          :quiz-answers {}
+          :quiz-results nil
+          :missed-questions []
+          :retry-round false
+          :review-only? review-only?}))
+
+(defn set-tutorial-quiz-section! [idx]
+  "Set the current reading section index."
+  (swap! app-state assoc-in [:tutorial-quiz :section-index] idx))
+
+(defn advance-to-quiz!
+  "Move from reading phase to quiz phase."
+  []
+  (swap! app-state assoc-in [:tutorial-quiz :phase] :quiz)
+  (swap! app-state assoc-in [:tutorial-quiz :quiz-answers] {}))
+
+(defn set-quiz-answer! [question-id choice-idx]
+  "Record the user's answer for a quiz question."
+  (swap! app-state assoc-in [:tutorial-quiz :quiz-answers question-id] choice-idx))
+
+(defn set-quiz-results! [results missed]
+  "Set quiz results and missed questions. Moves to :results phase."
+  (swap! app-state assoc-in [:tutorial-quiz :quiz-results] results)
+  (swap! app-state assoc-in [:tutorial-quiz :missed-questions] missed)
+  (swap! app-state assoc-in [:tutorial-quiz :phase] :results))
+
+(defn start-retry-round! []
+  "Start a retry round with only the missed questions."
+  (swap! app-state assoc-in [:tutorial-quiz :phase] :quiz)
+  (swap! app-state assoc-in [:tutorial-quiz :quiz-answers] {})
+  (swap! app-state assoc-in [:tutorial-quiz :quiz-results] nil)
+  (swap! app-state assoc-in [:tutorial-quiz :retry-round] true))
+
+(defn mark-tutorial-completed-local! [level]
+  "Add a level to the local completed-tutorials set."
+  (swap! app-state update :completed-tutorials (fn [s] (conj (or s #{}) level))))
+
+(defn close-tutorial-quiz! []
+  "Close the tutorial-quiz overlay and reset its state."
+  (swap! app-state assoc :tutorial-quiz
+         {:active? false
+          :level nil
+          :phase :reading
+          :section-index 0
+          :quiz-answers {}
+          :quiz-results nil
+          :missed-questions []
+          :retry-round false
+          :review-only? false}))

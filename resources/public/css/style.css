@@ -2647,3 +2647,819 @@ header {
         min-width: 400px;
     }
 }
+
+
+/* ==================== Tutorial Quiz Gating System ==================== */
+
+/* Tutorial overlay - full screen */
+
+/* ================================================================
+   TUTORIAL & QUIZ SYSTEM — Editorial Ledger Design
+   ================================================================
+   Typography: Source Serif 4 (headings) + DM Sans (body) + JetBrains Mono (assertions)
+   Palette: Deep navy (#1a2332), warm parchment (#f9f6f0), copper accent (#b87333),
+            sage success (#4a7c59), slate (#64748b)
+   ================================================================ */
+
+/* ==================== Overlay & Modal Shell ==================== */
+
+.tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(26, 35, 50, 0.85);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    animation: overlay-appear 0.3s ease-out;
+}
+
+@keyframes overlay-appear {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.tutorial-quiz-modal {
+    max-width: 760px;
+    width: 100%;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    background: #f9f6f0;
+    border-radius: 4px;
+    box-shadow:
+        0 1px 0 rgba(0, 0, 0, 0.05),
+        0 25px 80px rgba(26, 35, 50, 0.4),
+        0 0 0 1px rgba(26, 35, 50, 0.08);
+    overflow: hidden;
+    animation: modal-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ==================== Modal Header ==================== */
+
+.tutorial-quiz-modal .tutorial-header {
+    background: #1a2332;
+    color: #f9f6f0;
+    padding: 28px 36px 24px;
+    position: relative;
+    border-bottom: 3px solid #b87333;
+}
+
+.tutorial-quiz-modal .tutorial-header h1 {
+    margin: 0 0 6px 0;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.35em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+}
+
+.tutorial-quiz-modal .tutorial-header .subtitle {
+    color: #94a3b8;
+    margin: 0;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.88em;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+}
+
+.tutorial-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #94a3b8;
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.tutorial-close-btn:hover {
+    background: rgba(248, 246, 240, 0.1);
+    color: #f9f6f0;
+    border-color: rgba(148, 163, 184, 0.5);
+}
+
+/* ==================== Modal Body ==================== */
+
+.tutorial-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.tutorial-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tutorial-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tutorial-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+/* ==================== Tutorial Reader ==================== */
+
+.tutorial-reader {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.tutorial-reader-header {
+    padding: 14px 36px;
+    background: #f4f0e8;
+    border-bottom: 1px solid #e8e2d6;
+}
+
+.section-indicator {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.75em;
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.tutorial-reader-content {
+    flex: 1;
+    padding: 32px 36px;
+    overflow-y: auto;
+    max-height: 50vh;
+}
+
+.tutorial-section-heading {
+    margin: 0 0 24px 0;
+    color: #1a2332;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.25em;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e8e2d6;
+}
+
+/* ==================== Markdown Content ==================== */
+
+.tutorial-reader-content .markdown-content {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.98em;
+    line-height: 1.75;
+    color: #374151;
+}
+
+.tutorial-reader-content .markdown-content p {
+    margin-bottom: 16px;
+}
+
+.tutorial-reader-content .markdown-content strong {
+    color: #1a2332;
+    font-weight: 600;
+}
+
+.tutorial-reader-content .conclusion {
+    background: #f0ebe0;
+    padding: 12px 18px;
+    border-radius: 3px;
+    border-left: 3px solid #b87333;
+    margin-bottom: 16px;
+    font-weight: 500;
+    color: #1a2332;
+}
+
+.tutorial-reader-content .markdown-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+}
+
+.tutorial-reader-content .markdown-content ol {
+    padding: 0 0 0 24px;
+    margin: 0 0 16px 0;
+}
+
+.tutorial-reader-content .markdown-content li {
+    padding: 4px 0;
+    line-height: 1.6;
+}
+
+.tutorial-reader-content .markdown-content ul li {
+    padding-left: 20px;
+    position: relative;
+}
+
+.tutorial-reader-content .markdown-content ul li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: #b87333;
+    font-weight: 600;
+}
+
+.tutorial-reader-content .markdown-content ol li::marker {
+    color: #b87333;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.9em;
+}
+
+/* ==================== Tutorial Tables ==================== */
+
+.tutorial-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.9em;
+}
+
+.tutorial-table th,
+.tutorial-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid #e8e2d6;
+}
+
+.tutorial-table th {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: #f4f0e8;
+    border-bottom: 2px solid #d4cdc0;
+}
+
+.tutorial-table td {
+    color: #374151;
+}
+
+.tutorial-table tr:last-child td {
+    border-bottom: none;
+}
+
+.tutorial-table td strong {
+    color: #1a2332;
+}
+
+/* ==================== Reader Footer / Navigation ==================== */
+
+.tutorial-reader-footer {
+    padding: 16px 36px;
+    border-top: 1px solid #e8e2d6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f4f0e8;
+}
+
+.tutorial-reader-footer .nav-btn {
+    padding: 9px 22px;
+    border: 1px solid #d4cdc0;
+    border-radius: 3px;
+    background: #f9f6f0;
+    cursor: pointer;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.88em;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.15s ease;
+    min-width: 110px;
+    text-align: center;
+}
+
+.tutorial-reader-footer .nav-btn:hover:not(:disabled) {
+    border-color: #b87333;
+    color: #b87333;
+    background: #faf7f2;
+}
+
+.tutorial-reader-footer .nav-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.tutorial-reader-footer .nav-btn.start {
+    background: #1a2332;
+    color: #f9f6f0;
+    border-color: #1a2332;
+    font-weight: 600;
+}
+
+.tutorial-reader-footer .nav-btn.start:hover {
+    background: #243044;
+}
+
+.tutorial-reader-footer .section-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.tutorial-reader-footer .section-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d4cdc0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tutorial-reader-footer .section-dot.active {
+    background: #b87333;
+    transform: scale(1.2);
+}
+
+.tutorial-reader-footer .section-dot:hover {
+    background: #94a3b8;
+}
+
+/* ==================== Quiz Component ==================== */
+
+.quiz-container {
+    padding: 32px 36px;
+}
+
+.quiz-title {
+    margin: 0 0 6px 0;
+    color: #1a2332;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.25em;
+    font-weight: 600;
+}
+
+.quiz-instruction {
+    color: #64748b;
+    margin: 0 0 28px 0;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.88em;
+    font-weight: 400;
+}
+
+.quiz-questions {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.quiz-question {
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 22px 24px;
+    border: 1px solid #e8e2d6;
+    transition: border-color 0.2s ease;
+}
+
+.quiz-question:hover {
+    border-color: #d4cdc0;
+}
+
+.question-text {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 600;
+    color: #1a2332;
+    margin: 0 0 16px 0;
+    font-size: 0.98em;
+    line-height: 1.55;
+}
+
+.choices {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.choice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 16px;
+    border: 1px solid #e8e2d6;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background: #faf9f6;
+}
+
+.choice:hover {
+    border-color: #b87333;
+    background: #fdf8f2;
+}
+
+.choice.selected {
+    border-color: #b87333;
+    background: #faf3e8;
+    box-shadow: inset 3px 0 0 #b87333;
+}
+
+.choice input[type="radio"] {
+    margin: 3px 0 0 0;
+    cursor: pointer;
+    accent-color: #b87333;
+}
+
+.choice-text {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.92em;
+    line-height: 1.5;
+    color: #374151;
+}
+
+.quiz-actions {
+    margin-top: 28px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.quiz-submit-btn {
+    padding: 11px 32px;
+    background: #1a2332;
+    color: #f9f6f0;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.92em;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+}
+
+.quiz-submit-btn:hover:not(:disabled) {
+    background: #243044;
+}
+
+.quiz-submit-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* ==================== Quiz Results ==================== */
+
+.quiz-results {
+    padding: 32px 36px;
+}
+
+/* Success state */
+.quiz-success {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.quiz-success h2 {
+    color: #4a7c59;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.success-message {
+    color: #64748b;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 1em;
+    margin: 0 0 28px 0;
+}
+
+.quiz-continue-btn {
+    padding: 12px 36px;
+    background: #4a7c59;
+    color: #f9f6f0;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+}
+
+.quiz-continue-btn:hover {
+    background: #3d6a4a;
+}
+
+/* Corrections state */
+.quiz-corrections h2 {
+    color: #b87333;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    margin: 0 0 6px 0;
+    font-size: 1.25em;
+    font-weight: 600;
+}
+
+.score-message {
+    color: #64748b;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    margin: 0 0 24px 0;
+    font-size: 0.92em;
+}
+
+.correction-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.correction-item {
+    background: #ffffff;
+    border: 1px solid #e8e2d6;
+    border-left: 3px solid #c0392b;
+    border-radius: 3px;
+    padding: 18px 20px;
+}
+
+.correction-question {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-weight: 600;
+    color: #1a2332;
+    margin: 0 0 14px 0;
+    line-height: 1.45;
+    font-size: 0.95em;
+}
+
+.correction-answers {
+    margin-bottom: 12px;
+}
+
+.your-answer, .correct-answer {
+    padding: 5px 0;
+    font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.answer-label {
+    font-weight: 500;
+    color: #64748b;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.answer-text.incorrect {
+    color: #c0392b;
+    font-weight: 600;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+}
+
+.answer-text.correct {
+    color: #4a7c59;
+    font-weight: 600;
+}
+
+.explanation {
+    margin: 10px 0 0 0;
+    padding: 12px 16px;
+    background: #f4f0e8;
+    border-radius: 3px;
+    color: #374151;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.9em;
+    line-height: 1.6;
+    border-left: 3px solid #b87333;
+}
+
+.quiz-retry-btn {
+    padding: 11px 28px;
+    background: #b87333;
+    color: #f9f6f0;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.92em;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+}
+
+.quiz-retry-btn:hover {
+    background: #a06329;
+}
+
+/* ==================== Tutorial Gate ==================== */
+
+.tutorial-gate {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    padding: 40px;
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 31px,
+            #e8e2d6 31px,
+            #e8e2d6 32px
+        );
+    background-position: 0 8px;
+}
+
+.gate-content {
+    text-align: center;
+    max-width: 480px;
+    background: #f9f6f0;
+    padding: 44px 40px;
+    border-radius: 4px;
+    border: 1px solid #e8e2d6;
+    box-shadow: 0 8px 32px rgba(26, 35, 50, 0.08);
+}
+
+.gate-content h2 {
+    color: #1a2332;
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    margin: 0 0 10px 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    border: none;
+    padding: 0;
+}
+
+.gate-content p {
+    color: #64748b;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    margin: 0 0 10px 0;
+    line-height: 1.55;
+    font-size: 0.92em;
+}
+
+.gate-start-btn {
+    margin-top: 24px;
+    padding: 12px 36px;
+    background: #1a2332;
+    color: #f9f6f0;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+}
+
+.gate-start-btn:hover {
+    background: #243044;
+}
+
+.gate-hint {
+    font-size: 0.82em !important;
+    color: #94a3b8 !important;
+    margin-top: 18px !important;
+}
+
+/* ==================== Tutorial Review Button ==================== */
+
+.practice-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 0 12px 0;
+}
+
+.tutorial-review-btn {
+    padding: 6px 14px;
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #d4cdc0;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.82em;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.15s ease;
+}
+
+.tutorial-review-btn:hover {
+    border-color: #b87333;
+    color: #b87333;
+}
+
+
+/* ==================== Assertion Blocks ==================== */
+
+.assertion-block {
+    background: #ffffff;
+    border: 1px solid #e8e2d6;
+    border-radius: 3px;
+    padding: 4px 20px;
+    margin: 16px 0;
+}
+
+.assertion-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid #f4f0e8;
+}
+
+.assertion-item:last-child {
+    border-bottom: none;
+}
+
+.assertion-name {
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #b87333;
+    min-width: 150px;
+    flex-shrink: 0;
+}
+
+.assertion-value {
+    color: #374151;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.93em;
+}
+
+/* ==================== Journal Entry Blocks ==================== */
+
+.journal-entry-block {
+    background: #ffffff;
+    border: 1px solid #e8e2d6;
+    border-radius: 3px;
+    margin: 16px 0;
+    overflow: hidden;
+}
+
+.je-header {
+    background: #1a2332;
+    padding: 7px 20px;
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.72em;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.je-body {
+    padding: 4px 0;
+}
+
+.je-line {
+    display: flex;
+    align-items: baseline;
+    padding: 6px 20px;
+    font-family: 'JetBrains Mono', 'Menlo', monospace;
+    font-size: 0.88em;
+}
+
+.je-line.credit {
+    padding-left: 48px;
+}
+
+.je-label {
+    color: #94a3b8;
+    font-size: 0.85em;
+    font-weight: 500;
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.je-account {
+    color: #1a2332;
+    font-weight: 500;
+    flex: 1;
+}
+
+.je-amount {
+    color: #374151;
+    margin-left: 20px;
+    text-align: right;
+    min-width: 60px;
+}

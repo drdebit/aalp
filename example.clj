@@ -132,7 +132,7 @@
      {:date "2025-03-01"
       :has-identifier "MachineMaintenance-001"
       :includes
-      {:provides
+      {:consumes 
        [{:has-quantity 4
          :is-denominated-in-unit {:is-denominated-in-time-unit :hour}}
         {:has-quantity 1
@@ -286,6 +286,114 @@
                :has-quantity 25}}})
 ;; :modifies and :fulfills serve as a kind of shorthand for the event that includes the transfer.
 ;; In this case I chose to include the details but theoretically I don't have to.
+
+;; =============================================================================
+;; REVISED PATTERNS (January 2026)
+;;
+;; The following examples demonstrate a refined approach to A/R and A/P that
+;; separates the legal obligation (requires) from the expectation of fulfillment
+;; (expects). This revision addresses the semantic awkwardness of nesting
+;; "expects" inside "requires" (which reads as "requires an expectation").
+;;
+;; Key insight: expects should anticipate an event that FULFILLS the requirement,
+;; not contain the requirement itself. This uses the existing fulfills pattern
+;; consistently.
+;;
+;; These patterns may differ from examples in assertive-accountingV2.org.
+;; The paper examples may be updated for consistency, or retained for simplicity.
+;; =============================================================================
+
+;; Credit Sale (A/R pattern - revised)
+;; The sale creates:
+;;   1. A legal obligation (requires) - the customer must pay
+;;   2. An expectation (expects) that the obligation will be fulfilled
+;; The expects references the required event via fulfills, not by containing it.
+(def credit-sale-example-revised
+  {:event
+   {:has-identifier "CreditSale-001"
+    :date "2025-03-01"
+    :is-asserted-by "SP"
+    :has-counterparty "Customer-B"
+    :provides {:is-denominated-in-unit
+               {:is-denominated-in-physical-unit {:printed-t-shirt "Design-001"}}
+               :has-quantity 10}
+    ;; The sale creates a legal obligation for future payment
+    :requires
+    {:event
+     {:has-identifier "CustomerPayment-001"
+      :date "2025-04-01" ;; due date
+      :receives {:has-quantity 250
+                 :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}}}
+    ;; Our assessment: we expect fulfillment with 95% confidence
+    :expects
+    {:has-confidence-level 0.95
+     :event {:fulfills "CustomerPayment-001"}}}}) ;; expects an event that FULFILLS the requirement
+
+;; When Customer-B actually pays:
+(def credit-sale-payment-example
+  {:event
+   {:has-identifier "Payment-from-CustomerB-001"
+    :date "2025-03-28"
+    :is-asserted-by "SP"
+    :has-counterparty "Customer-B"
+    :modifies {:fulfills "CustomerPayment-001"} ;; fulfills the requirement
+    :receives {:has-quantity 250
+               :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}}})
+
+;; Credit Purchase (A/P pattern - revised)
+;; The purchase creates:
+;;   1. A legal obligation (requires) - we must pay the vendor
+;;   2. An expectation (expects) that we will fulfill our obligation
+;; For A/P, the firm controls payment, so expects confidence is typically 100%.
+;; A confidence level < 100% on A/P is a RED FLAG for liquidity concerns.
+(def credit-purchase-example-revised
+  {:event
+   {:has-identifier "CreditPurchase-001"
+    :date "2025-03-05"
+    :is-asserted-by "SP"
+    :has-counterparty "Vendor-C"
+    :receives {:is-denominated-in-unit
+               {:is-denominated-in-physical-unit :unprinted-t-shirt}
+               :has-quantity 500}
+    ;; The purchase creates our obligation to pay
+    :requires
+    {:event
+     {:has-identifier "VendorPayment-001"
+      :date "2025-04-05" ;; due date
+      :provides {:has-quantity 1500
+                 :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}}}
+    ;; We control this payment - confidence should be 100%
+    ;; We also record when we plan to pay (before the due date)
+    :expects
+    {:has-confidence-level 1.0
+     :event {:fulfills "VendorPayment-001"
+             :date "2025-03-30"}}}}) ;; planned payment date
+
+;; Example: A/P with liquidity concerns (RED FLAG pattern)
+;; If expects confidence < 100% on our own obligation, something is wrong.
+(def credit-purchase-liquidity-concern-example
+  {:event
+   {:has-identifier "CreditPurchase-002"
+    :date "2025-03-10"
+    :is-asserted-by "SP"
+    :has-counterparty "Vendor-D"
+    :receives {:is-denominated-in-unit
+               {:is-denominated-in-physical-unit :printing-ink-cartridge}
+               :has-quantity 100}
+    :requires
+    {:event
+     {:has-identifier "VendorPayment-002"
+      :date "2025-04-10"
+      :provides {:has-quantity 200
+                 :is-denominated-in-unit {:is-denominated-in-monetary-unit :USD}}}}
+    ;; RED FLAG: Why don't we expect to meet our obligations?
+    :expects
+    {:has-confidence-level 0.70 ;; <-- This signals liquidity/solvency concerns
+     :event {:fulfills "VendorPayment-002"}}}})
+
+;; =============================================================================
+;; END REVISED PATTERNS
+;; =============================================================================
 
 ;; Recurring Sales Agreement
 (def sales-agreement

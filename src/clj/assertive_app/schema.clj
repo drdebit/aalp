@@ -32,6 +32,11 @@
     :db/cardinality :db.cardinality/one
     :db/doc "Last login timestamp"}
 
+   {:db/ident :user/completed-tutorials
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/many
+    :db/doc "Set of tutorial level numbers the user has completed (0-7)"}
+
    ;; ==================== Progress Entity ====================
    ;; One per user, tracks overall progress
    {:db/ident :progress/user

@@ -2,7 +2,7 @@
 # AALP Backend restart script
 # Kills any existing backend processes and starts fresh
 
-cd /home/accrue/accrue/aalp
+cd /home/mdeangelis/clojure/aalp
 
 echo "Stopping existing AALP backend..."
 
@@ -27,7 +27,7 @@ if lsof -i:3000 >/dev/null 2>&1; then
 fi
 
 # Use the same password as accrue-backend
-export DATOMIC_DB_PASSWORD='ms&MWh@!8@70'
+export DATOMIC_DB_PASSWORD='PnHJGWm4FlaajEa'
 
 echo "Starting AALP backend on port 3000..."
 exec clojure -M -m assertive-app.server

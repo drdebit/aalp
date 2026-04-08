@@ -12,6 +12,4 @@
         :asset-path "/js"
         :modules {:main {:init-fn assertive-app.core/init}}
         :devtools {:http-root "resources/public"
-                   :http-port 8081
-                   ;; WebSocket URL for remote access via nginx proxy (wss for HTTPS)
-                   :devtools-url "wss://arcweb01.rs.gsu.edu/aalp-ws/"}}}}
+                   :http-port 8081}}}}

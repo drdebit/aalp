@@ -6,6 +6,8 @@
 ;; Number of correct answers needed at a level to unlock the next level
 (def CORRECT_TO_UNLOCK 5)
 
+(declare get-completed-tutorials)
+
 (defn get-user-progress
   "Get user's current progress state.
    Returns {:current-level, :unlocked-levels, :level-stats}"
@@ -31,7 +33,8 @@
      :level-stats (into {} (for [[level correct total unlocked] level-stats]
                              [level {:correct-count correct
                                      :total-attempts total
-                                     :unlocked-next unlocked}]))}))
+                                     :unlocked-next unlocked}]))
+     :completed-tutorials (get-completed-tutorials user-id)}))
 
 (defn- find-level-progress
   "Find level-progress entity for user+level combination."
@@ -208,3 +211,21 @@
        :unlocked-next false
        :progress-toward-unlock 0
        :needs-for-unlock CORRECT_TO_UNLOCK})))
+
+;; ==================== Tutorial Completion ====================
+
+(defn get-completed-tutorials
+  "Get set of tutorial levels the user has completed."
+  [user-id]
+  (let [db (schema/db)]
+    (set (d/q '[:find [?level ...]
+                :in $ ?user
+                :where [?user :user/completed-tutorials ?level]]
+              db user-id))))
+
+(defn mark-tutorial-completed!
+  "Mark a tutorial level as completed for a user.
+   Idempotent — safe to call multiple times."
+  [user-id level]
+  @(d/transact (schema/get-conn)
+     [[:db/add user-id :user/completed-tutorials (long level)]]))

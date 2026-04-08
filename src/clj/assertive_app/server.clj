@@ -52,7 +52,8 @@
              :session-token (str (:user/session-token user))
              :current-level (:current-level prog)
              :unlocked-levels (:unlocked-levels prog)
-             :level-stats (:level-stats prog)}))
+             :level-stats (:level-stats prog)
+             :completed-tutorials (vec (:completed-tutorials prog))}))
         {:status 400 :body {:error "Valid email required"}})))
 
   (GET "/api/progress" request
@@ -67,7 +68,19 @@
           {:attempts (progress/get-attempt-history (:db/id user) :level level)}))
       {:status 401 :body {:error "Authentication required"}}))
 
-  ;; ==================== Assertions & Classification ====================
+  ;; ==================== Tutorial Completion ====================
+
+  (POST "/api/tutorial/complete" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [level (:level body)]
+        (if (and (integer? level) (<= 0 level 7))
+          (do
+            (progress/mark-tutorial-completed! (:db/id user) level)
+            (response/response {:success true :level level}))
+          {:status 400 :body {:error "Invalid level (must be 0-7)"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+    ;; ==================== Assertions & Classification ====================
 
   (GET "/api/assertions" [level]
     (let [student-level (if level (Integer/parseInt level) 0)

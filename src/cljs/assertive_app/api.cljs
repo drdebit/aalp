@@ -119,7 +119,8 @@
                     (swap! state/app-state assoc
                            :session-token token
                            :logged-in? true
-                           :current-level user-level)
+                           :current-level user-level
+                           :completed-tutorials (set (:completed-tutorials response [])))
                     (state/update-progress! response)
                     ;; Fetch assertions and problem at user's level
                     (fetch-assertions! user-level)
@@ -129,6 +130,23 @@
                         ;; Invalid session - clear it
                         (clear-session!)
                         (state/set-loading! false))})))
+
+;; ==================== Tutorial Completion ====================
+
+(defn complete-tutorial!
+  "POST to /api/tutorial/complete on quiz success.
+   Updates local state immediately, then persists to server."
+  [level]
+  (state/mark-tutorial-completed-local! level)
+  (POST (str api-base "/tutorial/complete")
+    {:params {:level level}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [_response]
+                (println "Tutorial" level "completion saved"))
+     :error-handler (silent-error-handler "Error saving tutorial completion:")}))
 
 ;; ==================== Data Fetching ====================
 
@@ -155,6 +173,10 @@
      :handler (fn [response]
                 (state/set-current-problem! response)
                 (state/clear-selections!)
+                ;; Pre-select has-date so the sentence is always visible
+                (state/toggle-assertion! :has-date)
+                (when-let [date (get-in response [:variables :date])]
+                  (state/update-assertion-parameter! :has-date :date date))
                 (state/clear-feedback!)
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to load problem"})}))
@@ -279,6 +301,10 @@
                    :variables (:variables response)
                    :action-type (:action-type response)})
                 (state/clear-selections!)
+                ;; Pre-select has-date so the sentence is always visible
+                (state/toggle-assertion! :has-date)
+                (when-let [date (get-in response [:variables :date])]
+                  (state/update-assertion-parameter! :has-date :date date))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to start action"
                                           :extract-body? true})})))

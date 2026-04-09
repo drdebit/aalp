@@ -12,7 +12,8 @@
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
             [assertive-app.engine :as engine]
-            [assertive-app.analytics :as analytics]))
+            [assertive-app.analytics :as analytics]
+            [clojure.walk :as walk]))
 
 (defn wrap-cors
   "Middleware to enable CORS for development"
@@ -98,13 +99,8 @@
 
   (POST "/api/classify" {body :body :as request}
     (let [selected-assertions-raw (:selected-assertions body)
-          ;; Recursively convert all keys to keywords (assertion codes and params)
-          keywordize-map (fn keywordize-map [m]
-                           (if (map? m)
-                             (into {} (map (fn [[k v]] [(keyword k) (keywordize-map v)]) m))
-                             m))
           selected-assertions (if (map? selected-assertions-raw)
-                                (keywordize-map selected-assertions-raw)
+                                (walk/keywordize-keys selected-assertions-raw)
                                 (set (map keyword selected-assertions-raw)))
           correct-classification (when-let [cc (:correct-classification body)]
                                    (keyword cc))

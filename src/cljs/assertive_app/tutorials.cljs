@@ -768,8 +768,10 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 
 (defn get-unlocked-actions [stage-num]
   ;; Return all actions for simulation — gating is now done by tutorial completion
-  #{:purchase-materials-cash :purchase-equipment-cash
-    :purchase-materials-credit :purchase-equipment-credit
+  ;; NOTE: keys must match simulation.clj's action keys exactly; a mismatch
+  ;; silently hides the action (this bit us: materials vs inventory).
+  #{:purchase-inventory-cash :purchase-equipment-cash
+    :purchase-inventory-credit :purchase-equipment-credit
     :pay-vendor
     :sell-tshirts-cash :sell-tshirts-credit
     :collect-receivable

@@ -52,3 +52,4 @@ missfont.log
 # Scripts with credentials
 start-backend.sh
 restart-backend.sh
+*.docx

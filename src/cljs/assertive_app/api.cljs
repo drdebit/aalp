@@ -5,7 +5,8 @@
             [assertive-app.tutorials :as tutorials]))
 
 ;; Forward declarations for functions used before definition
-(declare fetch-assertions! fetch-problem! fetch-ledger! derive-je!)
+(declare fetch-assertions! fetch-problem! fetch-ledger! derive-je!
+         fetch-guided-state! fetch-simulation-state! fetch-action-schemas!)
 
 ;; Detect if we're running under a subpath (e.g., /aalp/)
 ;; and adjust API base accordingly
@@ -89,9 +90,8 @@
                 (save-session! (:session-token response))
                 ;; Update state
                 (state/set-user! response)
-                ;; Fetch initial data
-                (fetch-assertions! (:current-level response 0))
-                (fetch-problem! (:current-level response 0))
+                ;; Enter the two-act arc (Guided Year -> simulation)
+                (fetch-guided-state!)
                 (state/set-loading! false))
      :error-handler (fn [error]
                       (state/set-login-error! "Login failed. Please check your email.")
@@ -122,14 +122,101 @@
                            :current-level user-level
                            :completed-tutorials (set (:completed-tutorials response [])))
                     (state/update-progress! response)
-                    ;; Fetch assertions and problem at user's level
-                    (fetch-assertions! user-level)
-                    (fetch-problem! user-level)
+                    ;; Enter the two-act arc (Guided Year -> simulation)
+                    (fetch-guided-state!)
                     (state/set-loading! false)))
        :error-handler (fn [_]
                         ;; Invalid session - clear it
                         (clear-session!)
                         (state/set-loading! false))})))
+
+;; ==================== The Guided Year ====================
+
+(defn fetch-guided-state!
+  "Entry point for the two-act arc. Loads the current Guided Year day
+   and routes: Year 1 -> guided view (narrative + sentence builder),
+   Year 2 -> the autonomous simulation, inheriting Year 1's state."
+  []
+  (GET (str api-base "/guided/state")
+    {:headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-guided-day! response)
+                (when-let [bs (:business-state response)]
+                  (state/set-business-state! bs))
+                (if (= "year2" (:phase response))
+                  (do
+                    (state/set-app-mode! :simulation)
+                    (fetch-simulation-state!)
+                    (fetch-action-schemas!)
+                    (fetch-ledger!)
+                    (fetch-assertions! (state/current-level)))
+                  (let [level (:level response 0)]
+                    (state/set-app-mode! :guided)
+                    (state/set-current-level! level)
+                    (fetch-assertions! level)
+                    (when (= "transaction" (:entry-type response))
+                      (state/set-current-problem!
+                        {:id (str "guided-day-" (:day response))
+                         :narrative (:narrative response)
+                         :variables (:variables response)
+                         :level level
+                         :problem-type "forward"
+                         :guided? true})
+                      (state/clear-selections!)
+                      ;; Pre-select has-date so the sentence is always visible
+                      (state/toggle-assertion! :has-date)
+                      (when-let [date (:date response)]
+                        (state/update-assertion-parameter! :has-date :date date))
+                      (state/clear-feedback!)))))
+     :error-handler (make-error-handler {:message "Failed to load your business year"})}))
+
+(defn submit-guided-answer!
+  "Record the student's assertions for the current scripted day.
+   Commits as asserted — the response confirms recording and carries
+   the derived JE, never a correct/incorrect verdict."
+  []
+  (state/set-loading! true)
+  (POST (str api-base "/guided/submit")
+    {:params {:selected-assertions (state/selected-assertions)}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-guided-result! response)
+                (state/set-derived-je! (:derived-je response))
+                (when-let [bs (:business-state response)]
+                  (state/set-business-state! bs))
+                (state/clear-selections!)
+                (state/set-loading! false))
+     :error-handler (make-error-handler {:message "Failed to record the transaction"})}))
+
+(defn submit-guided-gate!
+  "Resolve a corridor decision; the resulting transaction auto-enters."
+  [quantity]
+  (state/set-loading! true)
+  (POST (str api-base "/guided/gate")
+    {:params {:quantity quantity}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-guided-result! response)
+                (state/set-derived-je! (:derived-je response))
+                (when-let [bs (:business-state response)]
+                  (state/set-business-state! bs))
+                (state/set-loading! false))
+     :error-handler (make-error-handler {:message "Failed to record your decision"})}))
+
+(defn guided-continue!
+  "Advance from a recorded day to the next script entry."
+  []
+  (state/clear-guided-result!)
+  (state/set-derived-je! nil)
+  (fetch-guided-state!))
 
 ;; ==================== Tutorial Completion ====================
 
@@ -378,7 +465,9 @@
                 (state/set-current-problem! nil)
                 (state/clear-feedback!)
                 (state/clear-selections!)
-                (fetch-simulation-state!)
+                (state/clear-guided-result!)
+                ;; Resetting the business restarts the two-act arc at Year 1, Day 1
+                (fetch-guided-state!)
                 (when on-success (on-success))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to reset simulation"})}))

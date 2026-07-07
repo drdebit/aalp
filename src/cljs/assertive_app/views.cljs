@@ -1099,11 +1099,12 @@
           ;; For assertion modes: submit assertions
           ;; Use simulation-specific submit when in simulation mode
           [:button.primary
-           {:on-click #(if (state/simulation-mode?)
-                        (api/submit-simulation-answer!)
-                        (api/submit-answer!))
+           {:on-click #(cond
+                         (state/guided-mode?) (api/submit-guided-answer!)
+                         (state/simulation-mode?) (api/submit-simulation-answer!)
+                         :else (api/submit-answer!))
             :disabled (empty? (keys selected))}
-           "Submit Answer"])
+           (if (state/guided-mode?) "Record Transaction" "Submit Answer")])
         [:button.secondary
          {:on-click #(if is-construct?
                       (state/clear-je-fields!)
@@ -2498,10 +2499,149 @@
     [:div.user-header
      [:div.user-info
       [:span.user-email (:email user)]
-      [mode-toggle]]
+      [:span.year2-badge "Year 2 — Your company"]]
      [:button.logout-button
       {:on-click #(api/logout!)}
       "Sign Out"]]))
+
+;; ==================== The Guided Year (Year 1) ====================
+;; Scripted days recorded as-asserted (no verdicts — consequences surface
+;; at period close), corridor decisions auto-entered with their derived
+;; records. Replaces the practice/simulation mode toggle with a two-act
+;; arc: Year 1 guided, Year 2 the autonomous simulation.
+
+(defn guided-progress []
+  (let [day (state/guided-day)
+        total (max 1 (:total day 1))
+        n (:day day 1)]
+    [:div.guided-progress
+     [:span.guided-progress-label (str "Year 1 · Day " n " of " total)]
+     [:div.guided-progress-track
+      [:div.guided-progress-fill
+       {:style {:width (str (* 100 (/ (dec n) total)) "%")}}]]]))
+
+(defn guided-vitals []
+  (let [bs (state/business-state)]
+    (when bs
+      [:div.guided-vitals
+       [:span "Cash: " (format-currency (:cash bs))]
+       [:span "Materials: " (or (:raw-materials bs) 0)]
+       [:span "Finished: " (or (:finished-goods bs) 0)]])))
+
+(defn guided-status-panel
+  "Right column before recording: day context and business vitals.
+   Deliberately verdict-free — the record commits as asserted."
+  []
+  (let [day (state/guided-day)]
+    [:div.feedback-panel.guided-status
+     [:h3 (str "Day " (:day day))]
+     [guided-vitals]
+     [:p.guided-hint
+      "Record what happened using assertions. Your entry goes into the
+       ledger exactly as you record it — the journal entry it produces
+       appears once it's in the books."]]))
+
+(defn guided-result-panel
+  "After recording: neutral confirmation, the posted ledger line, and
+   the derived record (the dual-fluency artifact)."
+  []
+  (let [result (state/guided-result)
+        je (:journal-entry result)]
+    [:div.feedback-panel.guided-result
+     [:h3 (if (:auto-entered result) "Decision recorded" "Transaction recorded")]
+     (when (:auto-entered result)
+       [:p.guided-auto-narrative (:narrative result)])
+     (when (and (:debit je) (:credit je))
+       [:div.guided-ledger-line
+        [:h4 "Posted to your ledger"]
+        [:p.guided-je-pair "DR " (:debit je) " — CR " (:credit je)]])
+     [derived-je-panel]
+     [:button.primary.guided-continue-btn
+      {:on-click #(api/guided-continue!)}
+      "Continue →"]]))
+
+(defn guided-gate-view
+  "A corridor decision: bounded choice, transaction auto-enters."
+  []
+  (let [qty (r/atom nil)]
+    (fn []
+      (let [day (state/guided-day)
+            gate (:gate day)
+            bs (state/business-state)
+            q (or @qty (:min gate))
+            total (* q (:unit-price gate))]
+        [:div.guided-gate
+         [:h2 (str "Day " (:day day) " — A decision")]
+         [:p.gate-prompt (:prompt gate)]
+         [:div.gate-controls
+          [:label.gate-qty-label "How many? "
+           [:input.gate-qty-input
+            {:type "number"
+             :min (:min gate)
+             :max (:max gate)
+             :value q
+             :on-change #(let [v (js/parseInt (.. % -target -value))]
+                           (reset! qty (if (js/isNaN v) nil v)))}]]
+          [:div.gate-summary
+           [:span "Unit price: " (format-currency (:unit-price gate))]
+           [:span.gate-total "Total: " (format-currency total)]
+           (when bs
+             [:span "Cash on hand: " (format-currency (:cash bs))])]
+          [:button.primary.gate-buy-btn
+           {:on-click #(api/submit-guided-gate! q)
+            :disabled (or (< q (:min gate)) (> q (:max gate)))}
+           (str "Buy " q " from " (:vendor gate))]
+          [:p.gate-bounds-hint
+           (str "Between " (:min gate) " and " (:max gate) ".")]]]))))
+
+(defn guided-app-content []
+  (let [day (state/guided-day)
+        level (:level day 0)
+        completed? (state/tutorial-completed? level)
+        tq-active? (state/tutorial-quiz-active?)
+        result (state/guided-result)]
+    [:div.app-container.guided-mode
+     [:header
+      [:div.header-left
+       [:h1 "SP's T-Shirt Business"]]
+      [:div.user-header
+       [:div.user-info
+        [:span.user-email (:email (state/user))]
+        [guided-progress]]
+       [:button.logout-button
+        {:on-click #(api/logout!)}
+        "Sign Out"]]]
+     ;; Tutorial quiz overlay (when active)
+     (when tq-active?
+       [tutorial-quiz-flow])
+     (cond
+       ;; Level boundary: the new level's tutorial gates the next day
+       (not completed?)
+       [tutorial-gate level]
+
+       ;; A recording result is showing
+       result
+       (if (:auto-entered result)
+         [:div.guided-result-solo [guided-result-panel]]
+         [:div.two-column-layout
+          [narrative-panel]
+          [guided-result-panel]])
+
+       ;; Corridor decision
+       (= "gate" (:entry-type day))
+       [guided-gate-view]
+
+       ;; Scripted transaction to record
+       (= "transaction" (:entry-type day))
+       [:div.three-column-layout
+        [narrative-panel]
+        [sentence-builder]
+        [guided-status-panel]]
+
+       :else
+       [:div.loading-container
+        [:div.loading-spinner]
+        [:p "Loading your business year..."]])]))
 
 (defn simulation-app-content []
   [:div.app-container.simulation-mode
@@ -2559,10 +2699,18 @@
       (not logged-in?)
       [login-view]
 
-      ;; Show simulation mode
+      ;; Year 1: the Guided Year
+      (= mode :guided)
+      [guided-app-content]
+
+      ;; Year 2: the autonomous simulation
       (= mode :simulation)
       [simulation-app-content]
 
-      ;; Show practice mode (default)
+      ;; Mode not yet resolved — fetch-guided-state! routes to year1/year2
+      ;; after login. (Standalone practice mode is retired; the Guided
+      ;; Year replaced it. practice-app-content is kept for reference.)
       :else
-      [practice-app-content])))
+      [:div.loading-container
+       [:div.loading-spinner]
+       [:p "Loading your business year..."]])))

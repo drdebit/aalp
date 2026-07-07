@@ -55,6 +55,11 @@
     :db/cardinality :db.cardinality/many
     :db/doc "Set of unlocked level numbers"}
 
+   {:db/ident :progress/guided-position
+    :db/valueType :db.type/long
+    :db/cardinality :db.cardinality/one
+    :db/doc "Index into the Guided Year script (Year 1); >= script length means Year 2"}
+
    ;; ==================== Level Progress Entity ====================
    ;; Tracks correct count per user per level for unlock logic
    {:db/ident :level-progress/user

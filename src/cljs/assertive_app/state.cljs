@@ -213,6 +213,9 @@
 (defn practice-mode? []
   (= :practice (:app-mode @app-state)))
 
+(defn guided-mode? []
+  (= :guided (:app-mode @app-state)))
+
 ;; ==================== Business Simulation ====================
 
 (defn business-state []
@@ -492,6 +495,29 @@
 
 (defn set-je-highlight! [codes]
   (swap! app-state assoc-in [:je-derive :highlight] (set codes)))
+
+;; ==================== The Guided Year ====================
+;; Year 1 of the two-act arc: scripted days recorded as-asserted,
+;; corridor gates auto-entered. :guided-day is the current server
+;; payload; :guided-result the last submission (recorded/auto-entered).
+
+(defn guided-day []
+  (get-in @app-state [:guided :day]))
+
+(defn set-guided-day! [payload]
+  (swap! app-state assoc-in [:guided :day] payload))
+
+(defn guided-result []
+  (get-in @app-state [:guided :result]))
+
+(defn set-guided-result! [result]
+  (swap! app-state assoc-in [:guided :result] result))
+
+(defn clear-guided-result! []
+  (swap! app-state assoc-in [:guided :result] nil))
+
+(defn set-current-level! [level]
+  (swap! app-state assoc :current-level level))
 
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own

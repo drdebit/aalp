@@ -11,6 +11,7 @@
             [assertive-app.auth :as auth]
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
+            [assertive-app.guided :as guided]
             [assertive-app.engine :as engine]
             [assertive-app.schema :as schema]
             [assertive-engine.store.datomic :as engine-datomic]
@@ -279,8 +280,63 @@
 
   (POST "/api/simulation/reset" request
     (if-let [user (:user request)]
-      (let [result (simulation/reset-simulation! (:db/id user))]
-        (response/response result))
+      (let [user-id (:db/id user)
+            result (simulation/reset-simulation! user-id)]
+        ;; Resetting the business restarts the Guided Year too
+        (guided/set-position! user-id 0)
+        (response/response (assoc result :guided (guided/day-payload user-id))))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  ;; ==================== The Guided Year (Year 1) ====================
+
+  (GET "/api/guided/state" request
+    (if-let [user (:user request)]
+      (let [user-id (:db/id user)]
+        (response/response
+          (assoc (guided/day-payload user-id)
+                 :business-state (simulation/get-business-state user-id))))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/guided/submit" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [user-id (:db/id user)
+            payload (guided/day-payload user-id)]
+        (if (= "transaction" (:entry-type payload))
+          (let [selected-raw (:selected-assertions body)
+                keywordize-map (fn keywordize-map [m]
+                                 (if (map? m)
+                                   (into {} (map (fn [[k v]] [(keyword k) (keywordize-map v)]) m))
+                                   m))
+                selected (if (map? selected-raw)
+                           (keywordize-map selected-raw)
+                           (set (map keyword selected-raw)))
+                submission (guided/submit-transaction! user-id selected)
+                {:keys [entry correct? result]} (:assertive-app.guided/analytics submission)]
+            (progress/record-attempt!
+              {:user-id user-id
+               :problem-id (str "guided-day-" (:day entry))
+               :problem-type "guided"
+               :level (:level entry)
+               :template-level (:level entry)
+               :template-key (:template-key entry)
+               :selected-assertions selected-raw
+               :correct correct?
+               :feedback-status (name (get-in result [:feedback :status] :unknown))
+               :correct-classification (:correct-classification
+                                         (get classification/transaction-templates
+                                              (:template-key entry)))
+               :classification-result result})
+            (response/response (dissoc submission :assertive-app.guided/analytics)))
+          {:status 409 :body {:error "Current entry is not a transaction"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/guided/gate" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [user-id (:db/id user)
+            payload (guided/day-payload user-id)]
+        (if (= "gate" (:entry-type payload))
+          (response/response (guided/submit-gate! user-id (:quantity body)))
+          {:status 409 :body {:error "Current entry is not a gate"}}))
       {:status 401 :body {:error "Authentication required"}}))
 
   (POST "/api/simulation/advance-period" request

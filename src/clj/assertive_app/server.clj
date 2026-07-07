@@ -12,6 +12,7 @@
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
             [assertive-app.engine :as engine]
+            [assertive-app.je-derive :as je-derive]
             [assertive-app.analytics :as analytics]
             [clojure.walk :as walk]))
 
@@ -409,6 +410,18 @@
     (if-let [user (:user request)]
       (let [summary (engine/get-user-summary (str (:db/id user)))]
         (response/response (or summary {:error "Engine not available"})))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  ;; ---- Dual fluency: live JE derivation from assertions ----
+  ;; Faithful derivation (wrong assertions -> wrong JE, no comment);
+  ;; never references the correct classification, so it leaks nothing.
+
+  (POST "/api/derive-je" {body :body :as request}
+    (if-let [_user (:user request)]
+      (let [{:keys [selected-assertions variables]} body]
+        (response/response
+          (je-derive/derive-je (or selected-assertions {})
+                               (or variables {}))))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; ---- Student-composed reports (calculation assembly) ----

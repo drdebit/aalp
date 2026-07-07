@@ -3751,3 +3751,131 @@ header {
     align-self: center;
     padding: 0 10px;
 }
+
+/* ==================== Dual Fluency: Derived JE ==================== */
+
+.derived-je {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: #fdfefe;
+    border: 1px solid #d6eaf8;
+    border-radius: 8px;
+}
+
+.dj-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.dj-header h4 { margin: 0; color: #2c3e50; }
+
+.dj-explore-btn {
+    padding: 4px 12px;
+    border: 1px solid #3498db;
+    border-radius: 14px;
+    background: white;
+    color: #2980b9;
+    font-size: 0.85em;
+    cursor: pointer;
+}
+
+.dj-explore-btn.active {
+    background: #3498db;
+    color: white;
+}
+
+.dj-table { width: 100%; border-collapse: collapse; font-size: 0.92em; }
+
+.dj-line { cursor: pointer; }
+.dj-line:hover td { background: #eaf4fc; }
+.dj-line.open td { background: #eaf4fc; }
+
+.dj-line td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #f4f6f7;
+}
+
+.dj-drcr { font-weight: 700; color: #7f8c8d; width: 2.4em; }
+.dj-line.credit .dj-drcr { padding-left: 1.6em; }
+
+.dj-account { color: #2c3e50; font-weight: 600; }
+.dj-account.credit { padding-left: 1.6em; }
+
+.dj-entry-label {
+    margin-left: 8px;
+    font-size: 0.75em;
+    font-weight: 400;
+    color: #8e44ad;
+    border: 1px solid #d7bde2;
+    border-radius: 10px;
+    padding: 1px 8px;
+}
+
+.dj-amount { text-align: right; font-family: 'Courier New', monospace; }
+
+.dj-from { color: #95a5a6; font-size: 0.82em; font-family: 'Courier New', monospace; }
+
+.dj-rule td { background: #fef9e7; border-bottom: 1px solid #f4f6f7; }
+
+.dj-rule-text {
+    padding: 6px 10px;
+    font-size: 0.88em;
+    color: #7d6608;
+    font-style: italic;
+}
+
+.dj-placeholder td { color: #b03a2e; }
+.dj-placeholder .dj-account { font-weight: 700; letter-spacing: 0.15em; }
+.dj-prompt { font-size: 0.85em; font-style: italic; color: #b03a2e; }
+
+.dj-balance { margin: 8px 0 0; font-size: 0.88em; font-weight: 600; }
+.dj-balance.balanced { color: #1e8449; }
+.dj-balance.unbalanced { color: #b03a2e; }
+
+.dj-context { margin: 6px 0 0; font-size: 0.82em; color: #7f8c8d; }
+
+.dj-empty { color: #7f8c8d; font-style: italic; }
+
+.dj-not-reflected {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #fef5e7;
+    border: 1px dashed #f5b041;
+    border-radius: 6px;
+}
+
+.dj-not-reflected h5 {
+    margin: 0 0 6px;
+    color: #9c640c;
+    font-size: 0.82em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.dj-nr-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.dj-nr-chip {
+    flex-shrink: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+    color: #9c640c;
+    border: 1px solid #f5b041;
+    border-radius: 12px;
+    padding: 1px 10px;
+    background: white;
+}
+
+.dj-nr-text { font-size: 0.85em; color: #7e5109; }
+
+/* Assertion buttons highlighted from a clicked JE line */
+.assertion-button.je-highlight {
+    box-shadow: 0 0 0 3px #f5b041;
+    border-color: #f39c12;
+}

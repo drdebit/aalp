@@ -96,7 +96,10 @@
   (swap! app-state assoc :feedback feedback))
 
 (defn clear-feedback! []
-  (swap! app-state assoc :feedback nil))
+  (swap! app-state assoc
+         :feedback nil
+         ;; The derived JE accompanies feedback; clear them together.
+         :je-derive {:result nil :explore? false :highlight #{}}))
 
 (defn set-loading! [loading?]
   (swap! app-state assoc :loading? loading?))
@@ -467,6 +470,28 @@
   "Clear the calculation result."
   (swap! app-state assoc-in [:calculation :result] nil))
 
+
+;; ==================== Dual Fluency: Derived JE ====================
+;; The journal entry derived live from the student's own assertions,
+;; with per-line provenance. See DUAL-FLUENCY-DESIGN.md.
+
+(defn derived-je []
+  (get-in @app-state [:je-derive :result]))
+
+(defn set-derived-je! [result]
+  (swap! app-state assoc-in [:je-derive :result] result))
+
+(defn je-explore? []
+  (get-in @app-state [:je-derive :explore?] false))
+
+(defn set-je-explore! [b]
+  (swap! app-state assoc-in [:je-derive :explore?] b))
+
+(defn je-highlight []
+  (get-in @app-state [:je-derive :highlight] #{}))
+
+(defn set-je-highlight! [codes]
+  (swap! app-state assoc-in [:je-derive :highlight] (set codes)))
 
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own

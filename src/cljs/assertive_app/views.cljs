@@ -321,12 +321,17 @@
         current-params (get selected-assertions assertion-code)]
     [:div.assertion-item
      [:button.assertion-button
-      {:class (when selected? "selected")
+      {:class (str (when selected? "selected")
+                   (when (contains? (state/je-highlight) assertion-code)
+                     " je-highlight"))
        :on-click #(do
                     (state/toggle-assertion! assertion-code)
                     ;; After toggling ON, auto-populate if applicable
                     (when-not selected?  ; was not selected, now is
-                      (auto-populate-assertion! assertion-code)))
+                      (auto-populate-assertion! assertion-code))
+                    ;; Dual-fluency explore: re-derive the JE live
+                    (when (state/je-explore?)
+                      (api/derive-je-debounced!)))
        :title (:description assertion)}  ;; Show description on hover
       [:div.assertion-label (:label assertion)]]
 
@@ -977,6 +982,95 @@
       (when name
         (str "has-counterparty (" name ")")))))
 
+(declare format-currency)
+
+(defn derived-je-panel
+  "Dual fluency: the journal entry derived live from the student's own
+   assertions, rule by rule. Faithful (wrong assertions produce wrong
+   entries without comment), partial where underspecified (the missing
+   side is a prompt, not an error), and honest about what double-entry
+   cannot see (recorded -- but not reflected). Clicking a line reveals
+   the rulebook rule that produced it and highlights the producing
+   assertions."
+  []
+  (let [expanded (r/atom nil)]
+    (fn []
+      (when-let [d (state/derived-je)]
+        (let [{:keys [lines placeholders context not-reflected totals]} d]
+          [:div.derived-je
+           [:div.dj-header
+            [:h4 "What your assertions produce"]
+            [:button.dj-explore-btn
+             {:class (when (state/je-explore?) "active")
+              :title "Toggle assertions on and off and watch the entry change"
+              :on-click #(do (state/set-je-explore! (not (state/je-explore?)))
+                             (api/derive-je!))}
+             (if (state/je-explore?) "Exploring… toggle assertions" "Explore")]]
+
+           (if (and (empty? lines) (empty? placeholders))
+             [:p.dj-empty "No journal-entry lines yet -- nothing in SP's rulebook matches these assertions."]
+             [:table.dj-table
+              [:tbody
+               (doall
+                 (for [[i line] (map-indexed vector lines)]
+                   (let [open? (= @expanded i)]
+                     ^{:key (str "dj-" i)}
+                     [:<>
+                      [:tr.dj-line
+                       {:class (str (:side line) (when open? " open"))
+                        :on-click #(let [now (if open? nil i)]
+                                     (reset! expanded now)
+                                     (state/set-je-highlight!
+                                       (if now
+                                         (set (map keyword (:provenance line)))
+                                         #{})))}
+                       [:td.dj-drcr (if (= "debit" (:side line)) "DR" "CR")]
+                       [:td.dj-account {:class (:side line)}
+                        (:account line)
+                        (when-let [el (:entry-label line)]
+                          [:span.dj-entry-label el])]
+                       [:td.dj-amount (if-let [a (:amount line)]
+                                        (format-currency a)
+                                        "?")]
+                       [:td.dj-from "← " (clojure.string/join " + " (:provenance line))]]
+                      (when open?
+                        [:tr.dj-rule
+                         [:td {:colSpan 4}
+                          [:div.dj-rule-text (:rule-text line)]]])])))
+               (doall
+                 (for [[i p] (map-indexed vector placeholders)]
+                   ^{:key (str "dj-ph-" i)}
+                   [:tr.dj-line.dj-placeholder
+                    [:td.dj-drcr (if (= "debit" (:side p)) "DR" "CR")]
+                    [:td.dj-account "???"]
+                    [:td.dj-amount "?"]
+                    [:td.dj-prompt (:prompt p)]]))]])
+
+           (when (seq lines)
+             (let [{:keys [debits credits balanced?]} totals]
+               [:p.dj-balance {:class (if balanced? "balanced" "unbalanced")}
+                (if balanced?
+                  "✓ Balanced"
+                  (str "Debits " (format-currency debits)
+                       " vs credits " (format-currency credits)
+                       " -- not balanced yet"))]))
+
+           (when (seq context)
+             [:p.dj-context
+              "Context: "
+              (clojure.string/join "; "
+                (map #(str (:code %) " " (:role %)) context))])
+
+           (when (seq not-reflected)
+             [:div.dj-not-reflected
+              [:h5 "Recorded -- but not reflected"]
+              (doall
+                (for [nr not-reflected]
+                  ^{:key (:code nr)}
+                  [:div.dj-nr-item
+                   [:span.dj-nr-chip (:code nr)]
+                   [:span.dj-nr-text (:text nr)]]))])])))))
+
 (defn feedback-panel []
   (let [feedback (state/feedback)
         selected (state/selected-assertions)
@@ -1106,6 +1200,10 @@
               (for [hint hints]
                 ^{:key hint}
                 [:li hint])]]))
+
+        ;; Dual fluency: the entry derived from the student's own
+        ;; assertions, rule by rule, with explore mode
+        [derived-je-panel]
 
         [:div.actions
          [:button.primary

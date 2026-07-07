@@ -5,7 +5,7 @@
             [assertive-app.tutorials :as tutorials]))
 
 ;; Forward declarations for functions used before definition
-(declare fetch-assertions! fetch-problem! fetch-ledger!)
+(declare fetch-assertions! fetch-problem! fetch-ledger! derive-je!)
 
 ;; Detect if we're running under a subpath (e.g., /aalp/)
 ;; and adjust API base accordingly
@@ -204,6 +204,8 @@
        :keywords? true
        :handler (fn [response]
                   (state/set-feedback! (:feedback response))
+                  ;; Dual fluency: show the JE the student's assertions produce
+                  (derive-je!)
                   ;; Update progress if included in response
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))
@@ -322,6 +324,8 @@
      :keywords? true
      :handler (fn [response]
                 (state/set-feedback! (:feedback response))
+                ;; Dual fluency: show the JE the student's assertions produce
+                (derive-je!)
                 (state/update-simulation-after-classify! response)
                 ;; If correct, handle success and stage progression
                 (when (:correct? response)
@@ -459,6 +463,32 @@
      :error-handler (fn [error]
                       (on-result {:error (or (get-in error [:response :error])
                                              "Calculation failed")}))}))
+
+;; ==================== Dual Fluency: JE derivation ====================
+;; Derive the journal entry the student's own assertions produce --
+;; faithful, partial where underspecified, silent about correctness.
+
+(defn derive-je!
+  "Fetch the derived JE for the current selections."
+  []
+  (POST (str api-base "/derive-je")
+    {:params {:selected-assertions (state/selected-assertions)
+              :variables (:variables (state/current-problem))}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-derived-je! response))
+     :error-handler (silent-error-handler "JE derivation error:")}))
+
+(def ^:private derive-je-timer (atom nil))
+
+(defn derive-je-debounced!
+  "Debounced derivation for explore mode (recompute as students toggle)."
+  []
+  (when-let [t @derive-je-timer] (js/clearTimeout t))
+  (reset! derive-je-timer (js/setTimeout derive-je! 250)))
 
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own

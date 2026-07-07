@@ -1,9 +1,13 @@
 # Report Builder — Design
 
 *Decided 2026-07-07 (author + Claude Fable 5). Backend shipped in
-`c8f6d54` (aalp) and `bb07657` (assertive-engine). Frontend not yet
-built. This document records the decided design; see
-SENTENCE-BUILDER-DESIGN.md Phase 4 and the TAR Round 2
+`c8f6d54` (aalp) and `bb07657` (assertive-engine). Frontend v1 shipped
+2026-07-07 (builder panel, exemplar presets, DSL mirror, preview,
+record flow, My Reports with input click-through, L3 gating; CLJS
+compiles clean, release build produced — browser verification pending
+a Datomic-backed deployment). Still deferred: direct DSL editing,
+instructor hidden-test grading, L3 tutorial content introducing the
+builder. See SENTENCE-BUILDER-DESIGN.md Phase 4 and the TAR Round 2
 platform-design-notes for the underlying pedagogy.*
 
 ## What it is

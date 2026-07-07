@@ -459,3 +459,91 @@
      :error-handler (fn [error]
                       (on-result {:error (or (get-in error [:response :error])
                                              "Calculation failed")}))}))
+
+;; ==================== Report Builder ====================
+;; Students compose collects/includes/excludes reports over their own
+;; engine events. Preview freely; record deliberately.
+
+(defn composition->spec
+  "Convert the builder's composition state into the wire spec.
+   Sets become vectors (JSON has no sets); empty groups are omitted."
+  [{:keys [include-types exclude-types unit-filter date-from date-to]}]
+  {:includes (cond-> {}
+               (seq include-types) (assoc :assertion-types (mapv name include-types))
+               unit-filter         (assoc :receives-unit unit-filter)
+               (seq date-from)     (assoc :date-from date-from)
+               (seq date-to)       (assoc :date-to date-to))
+   :excludes (when (seq exclude-types)
+               {:any-assertion-types (mapv name exclude-types)})})
+
+(defn rb-preview!
+  "Preview the current composition against the student's own events."
+  []
+  (let [comp* (state/rb-composition)]
+    (state/set-rb-previewing! true)
+    (POST (str api-base "/engine/compose/preview")
+      {:params {:spec (composition->spec comp*)
+                :aggregate-type (:aggregate-type comp*)
+                :op (:op comp*)}
+       :format :json
+       :headers (auth-headers)
+       :response-format :json
+       :keywords? true
+       :handler (fn [response]
+                  (state/set-rb-preview! response))
+       :error-handler (fn [error]
+                        (state/set-rb-previewing! false)
+                        (state/set-error! "Report preview failed")
+                        (println "Report preview error:" error))})))
+
+(defn fetch-my-reports!
+  "Fetch the student's recorded report events. Derived reports are the
+   only events carrying a collects assertion, so type=collects selects
+   exactly them."
+  []
+  (GET (str api-base "/engine/events")
+    {:params {:type "collects"}
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-rb-my-reports! (:events response)))
+     :error-handler (silent-error-handler "Error fetching reports:")}))
+
+(defn rb-record!
+  "Record the current composition as a first-class event in the
+   student's ledger. This is the deliberate act; confirmation happens
+   in the UI before calling."
+  []
+  (let [comp* (state/rb-composition)
+        report-name (not-empty (:report-name comp*))]
+    (state/set-loading! true)
+    (POST (str api-base "/engine/compose/record")
+      {:params (cond-> {:spec (composition->spec comp*)
+                        :aggregate-type (:aggregate-type comp*)
+                        :op (:op comp*)
+                        :category (:category comp*)
+                        :basis (:basis comp*)}
+                 (not-empty (:allowed-by comp*)) (assoc :allowed-by (:allowed-by comp*))
+                 report-name (assoc :event-id report-name))
+       :format :json
+       :headers (auth-headers)
+       :response-format :json
+       :keywords? true
+       :handler (fn [response]
+                  (state/set-rb-recorded! response)
+                  (fetch-my-reports!)
+                  (state/set-loading! false))
+       :error-handler (make-error-handler {:message "Failed to record report"
+                                           :extract-body? true})})))
+
+(defn fetch-rb-input-event!
+  "Fetch one input event for the expanded-report click-through view."
+  [event-id]
+  (GET (str api-base "/engine/event/" event-id)
+    {:headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-rb-input-event-detail! (:event response)))
+     :error-handler (silent-error-handler "Error fetching input event:")}))

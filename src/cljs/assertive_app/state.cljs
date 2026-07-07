@@ -468,6 +468,115 @@
   (swap! app-state assoc-in [:calculation :result] nil))
 
 
+;; ==================== Report Builder ====================
+;; Students compose collects/includes/excludes reports over their own
+;; engine-recorded events. Free preview, deliberate record.
+;; See REPORT-BUILDER-DESIGN.md.
+
+(def rb-default-composition
+  {:include-types #{}
+   :exclude-types #{}
+   :unit-filter nil          ;; nil | "monetary" | "physical" (applies to receives)
+   :date-from nil
+   :date-to nil
+   :op "sum"
+   :aggregate-type "receives"
+   :allowed-by ""
+   :basis "declared"
+   :category "revenue"
+   :report-name ""})
+
+(defn report-builder []
+  (get @app-state :report-builder {}))
+
+(defn show-report-builder? []
+  (get-in @app-state [:report-builder :show?] false))
+
+(defn set-show-report-builder! [show?]
+  (swap! app-state assoc-in [:report-builder :show?] show?))
+
+(defn rb-composition []
+  (get-in @app-state [:report-builder :composition] rb-default-composition))
+
+(defn rb-clear!
+  "Reset the builder to a blank composition."
+  []
+  (swap! app-state update :report-builder assoc
+         :composition rb-default-composition
+         :preview nil
+         :recorded nil
+         :active-exemplar nil))
+
+(defn rb-toggle-type!
+  "Toggle an assertion type in the include or exclude set.
+   group is :include-types or :exclude-types."
+  [group atype]
+  (swap! app-state update-in [:report-builder :composition]
+         (fn [comp*]
+           (let [comp* (or comp* rb-default-composition)
+                 s (get comp* group #{})]
+             (assoc comp* group
+                    (if (contains? s atype) (disj s atype) (conj s atype))))))
+  ;; Any edit to the composition invalidates the current preview
+  (swap! app-state update :report-builder assoc :preview nil :recorded nil))
+
+(defn rb-set-field!
+  "Set a scalar composition field (op, aggregate-type, dates, etc.)."
+  [field value]
+  (swap! app-state update-in [:report-builder :composition]
+         (fn [comp*] (assoc (or comp* rb-default-composition) field value)))
+  (when-not (= field :report-name)
+    (swap! app-state update :report-builder assoc :preview nil :recorded nil)))
+
+(defn rb-load-composition!
+  "Load a full composition (exemplar preset or copy)."
+  [composition exemplar-key]
+  (swap! app-state update :report-builder assoc
+         :composition (merge rb-default-composition composition)
+         :preview nil
+         :recorded nil
+         :active-exemplar exemplar-key))
+
+(defn rb-active-exemplar []
+  (get-in @app-state [:report-builder :active-exemplar]))
+
+(defn rb-preview []
+  (get-in @app-state [:report-builder :preview]))
+
+(defn set-rb-preview! [preview]
+  (swap! app-state update :report-builder assoc
+         :preview preview :previewing? false))
+
+(defn rb-previewing? []
+  (get-in @app-state [:report-builder :previewing?] false))
+
+(defn set-rb-previewing! [b]
+  (swap! app-state assoc-in [:report-builder :previewing?] b))
+
+(defn rb-recorded []
+  (get-in @app-state [:report-builder :recorded]))
+
+(defn set-rb-recorded! [r]
+  (swap! app-state assoc-in [:report-builder :recorded] r))
+
+(defn rb-my-reports []
+  (get-in @app-state [:report-builder :my-reports] []))
+
+(defn set-rb-my-reports! [reports]
+  (swap! app-state assoc-in [:report-builder :my-reports] reports))
+
+(defn rb-expanded-report []
+  (get-in @app-state [:report-builder :expanded-report]))
+
+(defn set-rb-expanded-report! [event-id]
+  (swap! app-state assoc-in [:report-builder :expanded-report] event-id))
+
+(defn rb-input-event-detail []
+  (get-in @app-state [:report-builder :input-event-detail]))
+
+(defn set-rb-input-event-detail! [detail]
+  (swap! app-state assoc-in [:report-builder :input-event-detail] detail))
+
 ;; ==================== Tutorial Quiz Gating ====================
 ;; State for the tutorial reading + quiz flow that gates level access
 

@@ -3463,3 +3463,291 @@ header {
     text-align: right;
     min-width: 60px;
 }
+
+/* ==================== Report Builder ==================== */
+/* Students compose reports over their own events. Chips echo the
+   assertion-button idiom; the panel reuses the statements overlay. */
+
+.report-builder {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 860px;
+    max-height: 88vh;
+    overflow-y: auto;
+    margin: 0 auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.rb-header {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.rb-header h2 { margin: 0; color: #2c3e50; }
+
+.rb-tagline { margin: 4px 0 0; color: #7f8c8d; font-style: italic; }
+
+.rb-exemplars {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.rb-exemplars-label { color: #7f8c8d; font-size: 0.9em; }
+
+.rb-exemplar-card {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 14px;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+
+.rb-exemplar-card:hover { border-color: #3498db; }
+
+.rb-exemplar-card.active {
+    border-color: #3498db;
+    background: #eaf4fc;
+}
+
+.rb-exemplar-auth {
+    font-size: 0.75em;
+    color: #7f8c8d;
+    font-family: 'Courier New', monospace;
+}
+
+.rb-exemplar-card.blank { color: #7f8c8d; }
+
+.rb-composer { padding: 14px 0; }
+
+.rb-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 1.02em;
+    color: #2c3e50;
+}
+
+.rb-line-label { color: #2c3e50; }
+
+.rb-line select, .rb-line input[type="date"] {
+    padding: 4px 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.95em;
+}
+
+.rb-chip {
+    padding: 4px 12px;
+    border: 1px solid #bdc3c7;
+    border-radius: 16px;
+    background: #f8f9fa;
+    color: #2c3e50;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.rb-chip:hover { border-color: #3498db; }
+
+.rb-chip.active {
+    background-color: #3498db;
+    border-color: #2980b9;
+    color: white;
+}
+
+.rb-chip.exclude.active {
+    background-color: #e74c3c;
+    border-color: #c0392b;
+}
+
+.rb-dsl-section { margin: 8px 0 14px; }
+
+.rb-dsl-label {
+    display: block;
+    font-size: 0.8em;
+    color: #7f8c8d;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+}
+
+.rb-dsl {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 0;
+}
+
+.rb-preview { padding: 10px 0; border-top: 1px solid #ecf0f1; }
+
+.rb-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+}
+
+.rb-preview-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #3498db;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rb-preview-btn:hover { background: #2980b9; }
+.rb-preview-btn:disabled { background: #95a5a6; cursor: wait; }
+
+.rb-preview-result { font-weight: 600; color: #2c3e50; }
+
+.rb-events-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+    margin-top: 6px;
+}
+
+.rb-events-table th {
+    text-align: left;
+    color: #7f8c8d;
+    border-bottom: 1px solid #ecf0f1;
+    padding: 4px 8px;
+}
+
+.rb-events-table td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #f4f6f7;
+}
+
+.rb-event-id { font-family: 'Courier New', monospace; font-size: 0.9em; }
+
+.rb-empty { color: #7f8c8d; font-style: italic; }
+
+.rb-record {
+    padding: 12px 0;
+    border-top: 1px solid #ecf0f1;
+}
+
+.rb-record-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 10px;
+    font-size: 0.92em;
+    color: #2c3e50;
+}
+
+.rb-record-fields input, .rb-record-fields select {
+    margin-left: 4px;
+    padding: 4px 8px;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+}
+
+.rb-record-btn {
+    padding: 10px 22px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #27ae60, #219a52);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.rb-record-btn:hover { box-shadow: 0 4px 8px rgba(39, 174, 96, 0.4); }
+.rb-record-btn:disabled { background: #95a5a6; cursor: not-allowed; box-shadow: none; }
+
+.rb-recorded-confirm {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #eafaf1;
+    border: 1px solid #27ae60;
+    border-radius: 8px;
+    color: #1e8449;
+}
+
+.rb-recorded-note { margin: 6px 0 0; font-size: 0.9em; color: #27ae60; }
+
+.rb-my-reports { padding-top: 12px; border-top: 1px solid #ecf0f1; }
+
+.rb-my-reports h4 { margin: 0 0 8px; color: #2c3e50; }
+
+.rb-report-entry { border: 1px solid #ecf0f1; border-radius: 8px; margin-bottom: 6px; }
+
+.rb-report-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.rb-report-row:hover { background: #f8f9fa; }
+
+.rb-report-toggle { color: #7f8c8d; width: 1em; }
+
+.rb-report-id { font-family: 'Courier New', monospace; font-weight: 600; color: #2c3e50; flex: 1; }
+
+.rb-report-date { color: #7f8c8d; font-size: 0.9em; }
+
+.rb-report-detail { padding: 4px 12px 12px; }
+
+.rb-detail-label { font-size: 0.85em; color: #7f8c8d; margin: 8px 0 4px; }
+
+.rb-detail-json {
+    background: #f8f9fa;
+    border: 1px solid #ecf0f1;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.8em;
+    max-height: 240px;
+    overflow: auto;
+    margin: 0;
+}
+
+.rb-target-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+
+.rb-target-chip {
+    padding: 3px 10px;
+    border: 1px solid #3498db;
+    border-radius: 14px;
+    background: white;
+    color: #2980b9;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82em;
+    cursor: pointer;
+}
+
+.rb-target-chip:hover { background: #eaf4fc; }
+
+.rb-open-btn { background: linear-gradient(135deg, #8e44ad, #7d3c98); }
+.rb-open-btn:hover {
+    background: linear-gradient(135deg, #7d3c98, #8e44ad);
+    box-shadow: 0 4px 8px rgba(142, 68, 173, 0.4);
+}
+
+.rb-locked {
+    color: #95a5a6;
+    font-size: 0.9em;
+    align-self: center;
+    padding: 0 10px;
+}

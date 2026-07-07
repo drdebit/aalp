@@ -1918,6 +1918,255 @@
    [:td.account-name account]
    [:td.account-balance (format-currency balance)]])
 
+;; ==================== Report Builder ====================
+;; Students compose reports over their own recorded events.
+;; Sentence-builder surface + read-only DSL mirror; free preview,
+;; deliberate record. See REPORT-BUILDER-DESIGN.md.
+
+(def rb-assertion-types
+  [:provides :receives :consumes :creates :requires :expects :allows])
+
+(def rb-exemplars
+  {:accrual
+   {:label "Accrual revenue"
+    :authority "ASC-606"
+    :blurb "Revenue when you provide the goods — even if the cash comes later. Forward-looking assertions are excluded."
+    :composition {:include-types #{:provides :receives}
+                  :exclude-types #{:requires :expects :allows}
+                  :unit-filter "monetary"
+                  :op "sum" :aggregate-type "receives"
+                  :allowed-by "ASC-606" :basis "accrual" :category "revenue"
+                  :report-name ""}}
+   :cash
+   {:label "Cash revenue"
+    :authority "IRC-451"
+    :blurb "Revenue when the cash arrives. Same events, different walk."
+    :composition {:include-types #{:receives}
+                  :exclude-types #{:requires :expects}
+                  :unit-filter "monetary"
+                  :op "sum" :aggregate-type "receives"
+                  :allowed-by "IRC-451" :basis "cash-received" :category "revenue"
+                  :report-name ""}}})
+
+(defn rb-chip
+  "A toggleable assertion-type chip."
+  [group atype]
+  (let [selected? (contains? (get (state/rb-composition) group #{}) atype)]
+    [:button.rb-chip
+     {:class (str (when selected? "active ")
+                  (when (= group :exclude-types) "exclude"))
+      :on-click #(state/rb-toggle-type! group atype)}
+     (name atype)]))
+
+(defn rb-dsl-mirror
+  "Read-only pipe-DSL rendering of the current composition.
+   Students read the query language before they ever write it."
+  []
+  (let [{:keys [include-types exclude-types unit-filter
+                date-from date-to op aggregate-type]} (state/rb-composition)
+        line (fn [& parts] (apply str parts))]
+    [:pre.rb-dsl
+     (str "events\n"
+          (when (seq include-types)
+            (line " |> filter(" (clojure.string/join ", " (map name include-types)) ")\n"))
+          (when (or unit-filter (seq date-from) (seq date-to))
+            (line " |> where("
+                  (clojure.string/join ", "
+                    (cond-> []
+                      unit-filter (conj (str "receives in " unit-filter))
+                      (seq date-from) (conj (str "from " date-from))
+                      (seq date-to) (conj (str "to " date-to))))
+                  ")\n"))
+          (when (seq exclude-types)
+            (line " |> exclude(" (clojure.string/join ", " (map name exclude-types)) ")\n"))
+          (line " |> " op "(" aggregate-type ")"))]))
+
+(defn rb-preview-panel
+  "Preview result + matched events (the pattern's extension)."
+  []
+  (let [preview (state/rb-preview)
+        previewing? (state/rb-previewing?)]
+    [:div.rb-preview
+     [:div.rb-preview-header
+      [:button.rb-preview-btn
+       {:on-click #(api/rb-preview!)
+        :disabled previewing?}
+       (if previewing? "Previewing..." "Preview")]
+      (when preview
+        [:span.rb-preview-result
+         (if-let [result (:result preview)]
+           (str "Result: " (format-currency (:value result))
+                "  (" (:count preview) " event"
+                (when (not= 1 (:count preview)) "s") ")")
+           (str "Result: — (" (:count preview 0) " events matched)"))])]
+     (when (and preview (seq (:events preview)))
+       [:table.rb-events-table
+        [:thead [:tr [:th "Date"] [:th "Event"] [:th "Assertions"]]]
+        [:tbody
+         (for [ev (:events preview)]
+           ^{:key (:event-id ev)}
+           [:tr
+            [:td (:date ev)]
+            [:td.rb-event-id (:event-id ev)]
+            [:td (clojure.string/join ", " (:assertion-types ev))]])]])
+     (when (and preview (zero? (:count preview 0)))
+       [:p.rb-empty "No events match this pattern yet. Loosen the filters, or go record some business."])]))
+
+(defn rb-record-controls
+  "Deliberate recording: naming, authority, basis, and the confirm."
+  []
+  (let [comp* (state/rb-composition)
+        preview (state/rb-preview)
+        recorded (state/rb-recorded)]
+    [:div.rb-record
+     [:div.rb-record-fields
+      [:label "Report name "
+       [:input {:type "text" :placeholder "(optional)"
+                :value (:report-name comp*)
+                :on-change #(state/rb-set-field! :report-name (-> % .-target .-value))}]]
+      [:label "Under authority "
+       [:input {:type "text" :placeholder "e.g. ASC-606"
+                :value (:allowed-by comp*)
+                :on-change #(state/rb-set-field! :allowed-by (-> % .-target .-value))}]]
+      [:label "Basis "
+       [:select {:value (:basis comp*)
+                 :on-change #(state/rb-set-field! :basis (-> % .-target .-value))}
+        (for [b ["accrual" "cash-received" "earned" "estimation" "declared"]]
+          ^{:key b} [:option {:value b} b])]]]
+     [:button.rb-record-btn
+      {:disabled (nil? preview)
+       :title (when (nil? preview) "Preview first — know what you're recording")
+       :on-click #(when (js/confirm
+                          "Recording makes this report part of your permanent record, with your name on it as the asserter. Record it?")
+                    (api/rb-record!))}
+      "Record this report"]
+     (when recorded
+       [:div.rb-recorded-confirm
+        [:strong "Recorded: "] (:event-id recorded)
+        (when-let [r (:result recorded)]
+          (str " — " (format-currency (:value r))
+               " from " (count (:input-ids recorded)) " events"))
+        [:p.rb-recorded-note
+         "Your report is now an event in your record — with its selection logic, its result, and your name attached. Find it under My Reports."]])]))
+
+(defn rb-my-reports
+  "Recorded reports as expandable ledger events, with click-through to
+   the input events each report used."
+  []
+  (let [reports (state/rb-my-reports)
+        expanded (state/rb-expanded-report)
+        detail (state/rb-input-event-detail)]
+    [:div.rb-my-reports
+     [:h4 "My Reports"]
+     (if (seq reports)
+       [:div
+        (for [rep reports]
+          (let [id (:event-id rep)
+                open? (= expanded id)]
+            ^{:key id}
+            [:div.rb-report-entry
+             [:div.rb-report-row
+              {:on-click #(do (state/set-rb-expanded-report! (when-not open? id))
+                              (state/set-rb-input-event-detail! nil))}
+              [:span.rb-report-toggle (if open? "▾" "▸")]
+              [:span.rb-report-id id]
+              [:span.rb-report-date (:date rep)]]
+             (when open?
+               [:div.rb-report-detail
+                [:p.rb-detail-label "The report's own assertions (selection logic travels with the result):"]
+                [:pre.rb-detail-json
+                 (.stringify js/JSON (clj->js (:aalp-assertions rep)) nil 2)]
+                (when (seq (:targets rep))
+                  [:div
+                   [:p.rb-detail-label "Built from these events (click one):"]
+                   [:div.rb-target-chips
+                    (for [t (:targets rep)]
+                      ^{:key t}
+                      [:button.rb-target-chip
+                       {:on-click #(api/fetch-rb-input-event! t)}
+                       t])]
+                   (when detail
+                     [:pre.rb-detail-json
+                      (.stringify js/JSON (clj->js detail) nil 2)])])])]))]
+       [:p.rb-empty "No recorded reports yet. Compose one above — preview until it says what you mean, then record it."])]))
+
+(defn report-builder-panel
+  "The Report Builder overlay: exemplars, sentence-style composer,
+   DSL mirror, preview, record, and My Reports."
+  []
+  (let [comp* (state/rb-composition)]
+    [:div.report-builder
+     [:div.rb-header
+      [:h2 "Report Builder"]
+      [:p.rb-tagline "Your events are recorded. How you report them is up to you."]
+      [:button.close-statements
+       {:on-click #(state/set-show-report-builder! false)}
+       "×"]]
+
+     ;; Stage 1: exemplars
+     [:div.rb-exemplars
+      [:span.rb-exemplars-label "Start from a standard: "
+      (for [[k {:keys [label authority blurb composition]}] rb-exemplars]
+        ^{:key k}
+        [:button.rb-exemplar-card
+         {:class (when (= k (state/rb-active-exemplar)) "active")
+          :title blurb
+          :on-click #(do (state/rb-load-composition! composition k)
+                         (api/rb-preview!))}
+         [:strong label] [:span.rb-exemplar-auth authority]])
+      [:button.rb-exemplar-card.blank
+       {:on-click #(state/rb-clear!)}
+       "Blank"]]]
+
+     ;; Stage 2/3: the sentence-style composer
+     [:div.rb-composer
+      [:div.rb-line
+       [:span.rb-line-label "Collect events where I "]
+       (for [t rb-assertion-types]
+         ^{:key (str "inc-" (name t))} [rb-chip :include-types t])]
+      [:div.rb-line
+       [:span.rb-line-label "received in "]
+       [:select {:value (or (:unit-filter comp*) "")
+                 :on-change #(state/rb-set-field! :unit-filter
+                                                  (not-empty (-> % .-target .-value)))}
+        [:option {:value ""} "any units"]
+        [:option {:value "monetary"} "money"]
+        [:option {:value "physical"} "physical units"]]
+       [:span.rb-line-label " between "]
+       [:input {:type "date" :value (or (:date-from comp*) "")
+                :on-change #(state/rb-set-field! :date-from
+                                                 (not-empty (-> % .-target .-value)))}]
+       [:span.rb-line-label " and "]
+       [:input {:type "date" :value (or (:date-to comp*) "")
+                :on-change #(state/rb-set-field! :date-to
+                                                 (not-empty (-> % .-target .-value)))}]]
+      [:div.rb-line
+       [:span.rb-line-label "excluding events with "]
+       (for [t rb-assertion-types]
+         ^{:key (str "exc-" (name t))} [rb-chip :exclude-types t])]
+      [:div.rb-line
+       [:span.rb-line-label "then "]
+       [:select {:value (:op comp*)
+                 :on-change #(state/rb-set-field! :op (-> % .-target .-value))}
+        [:option {:value "sum"} "sum"]
+        [:option {:value "count"} "count"]
+        [:option {:value "avg"} "average"]]
+       [:span.rb-line-label " the "]
+       [:select {:value (:aggregate-type comp*)
+                 :on-change #(state/rb-set-field! :aggregate-type (-> % .-target .-value))}
+        (for [t ["receives" "provides" "consumes" "creates"]]
+          ^{:key t} [:option {:value t} t])]
+       [:span.rb-line-label " amounts"]]]
+
+     ;; The DSL mirror: same composition, read as a query
+     [:div.rb-dsl-section
+      [:span.rb-dsl-label "as a query:"]
+      [rb-dsl-mirror]]
+
+     [rb-preview-panel]
+     [rb-record-controls]
+     [rb-my-reports]]))
+
 (defn financial-statements-panel
   "Display the generated financial statements."
   []
@@ -2062,6 +2311,11 @@
        [:div.statements-overlay
         [financial-statements-panel]])
 
+     ;; Report Builder overlay (when active)
+     (when (state/show-report-builder?)
+       [:div.statements-overlay
+        [report-builder-panel]])
+
      ;; Stage progress bar at top
      [:div.stage-progress-bar
       [stage-progress-indicator]
@@ -2094,6 +2348,17 @@
                         (api/fetch-financial-statements!)
                         (state/set-show-statements! true))}
           "View Financial Statements"]
+         (if (>= level 3)
+           [:button.statements-btn.rb-open-btn
+            {:title (str "You have " (count (state/ledger))
+                         " events. What was your revenue?")
+             :on-click #(do
+                          (api/fetch-my-reports!)
+                          (state/set-show-report-builder! true))}
+            "Report Builder"]
+           [:span.rb-locked
+            {:title "Reach Level 3 (sales) — then your ledger has revenue worth reporting."}
+            "🔒 Report Builder unlocks at Level 3"])
          [:button.reset-btn
           {:on-click #(when (js/confirm "Reset your business? This will clear all progress.")
                        (api/reset-simulation! nil)

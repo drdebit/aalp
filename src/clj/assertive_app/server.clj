@@ -225,7 +225,10 @@
 
             (if correct?
               ;; Complete the transaction and update state
-              (let [journal-entry (first (get-in result [:classification :journal-entry]))
+              ;; classify-transaction nests the amount-augmented classification
+              ;; under :feedback; the old top-level lookup returned nil and
+              ;; ledger entries silently lost their journal entries.
+              (let [journal-entry (first (get-in result [:feedback :classification :journal-entry]))
                     completion (simulation/complete-transaction! user-id pending journal-entry)
                     user-level (or (:current-level (progress/get-user-progress user-id)) 0)
                     new-available (simulation/available-actions user-level (:business-state completion))]

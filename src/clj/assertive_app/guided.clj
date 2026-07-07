@@ -205,7 +205,9 @@
                  selected-assertions
                  :correct-classification (:correct-classification template))
         correct? (= :correct (get-in result [:feedback :status]))
-        student-je (or (first (get-in result [:classification :journal-entry]))
+        ;; The (amount-augmented) classification lives under :feedback —
+        ;; this is the JE the student's OWN assertions produce, right or wrong.
+        student-je (or (first (get-in result [:feedback :classification :journal-entry]))
                        {:debit "Unclassified" :credit "Unclassified"})
         persisted (persist-entry! user-id entry vars selected-assertions student-je
                                   {:correct? correct?

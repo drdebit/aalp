@@ -418,7 +418,12 @@
 
     ;; New inventory effects (using inventory map)
     :add-inventory-item
-    (let [item-type (keyword (:inventory-type variables))
+    ;; Prefer :physical-item (canonical hyphenated key, e.g. "blank-tshirts").
+    ;; Classification templates use :inventory-type as a display label with
+    ;; spaces ("blank t-shirts"); keywordizing that produces an EDN keyword
+    ;; that pr-str cannot round-trip, corrupting the business-state blob.
+    (let [item-type (keyword (or (:physical-item variables)
+                                 (:inventory-type variables)))
           qty (:quantity variables)]
       (update-in state [:inventory item-type] (fnil + 0) qty))
 

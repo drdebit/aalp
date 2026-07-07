@@ -411,6 +411,28 @@
         (response/response (or summary {:error "Engine not available"})))
       {:status 401 :body {:error "Authentication required"}}))
 
+  ;; ---- Student-composed reports (calculation assembly) ----
+
+  (POST "/api/engine/compose/preview" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [{:keys [spec aggregate-type op]} body
+            result (engine/preview-composition (str (:db/id user)) spec
+                                               {:aggregate-type aggregate-type
+                                                :op op})]
+        (if result
+          (response/response result)
+          {:status 503 :body {:error "Engine not available"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/engine/compose/record" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [{:keys [spec] :as opts} body
+            result (engine/record-composition! (str (:db/id user)) opts spec)]
+        (if result
+          (response/response result)
+          {:status 503 :body {:error "Engine not available"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
   ;; CORS preflight
   (OPTIONS "*" []
     (response/response {:status "ok"}))

@@ -6,6 +6,7 @@
             [assertive-engine.store.protocol :as store]
             [assertive-engine.store.memory :as mem]
             [assertive-engine.compute.collects :as collects]
+            [assertive-engine.compute.derive :as derive]
             [clojure.tools.logging :as log]))
 
 ;; ---------------------------------------------------------------------------
@@ -123,6 +124,85 @@
                       :total (get-in cash-rev [:result :value])}
        :accrual-revenue {:count (:count accrual-rev)
                          :total (get-in accrual-rev [:result :value])}})))
+
+;; ---------------------------------------------------------------------------
+;; Student-composed reports (calculation assembly)
+;;
+;; Pedagogical core of "reporting downstream from recording": students
+;; compose collects/includes/excludes specs over their OWN recorded
+;; events, preview the result freely, and then RECORD the composition --
+;; at which point the report becomes a first-class event in their ledger
+;; carrying its own selection logic, result, authority, and asserter.
+;; ---------------------------------------------------------------------------
+
+(declare format-event-for-response)
+
+(def ^:private allowed-pattern-keys
+  #{:assertion-types :any-assertion-types :counterparty
+    :date-from :date-to :provides-unit :receives-unit})
+
+(def ^:private allowed-categories #{:revenue :expense :gain :loss :distribution})
+(def ^:private allowed-bases
+  #{:cash-received :cash-paid :cost-of-goods :service-value :earned
+    :systematic-allocation :estimation :time-based :accrual :declared})
+(def ^:private allowed-ops #{:sum :count :avg})
+(def ^:private allowed-aggregate-types
+  #{:provides :receives :consumes :creates})
+
+(defn- coerce-pattern
+  "Whitelist and coerce a JSON-shaped pattern into engine form.
+   Only declarative keys survive; nothing executable can arrive over
+   the wire."
+  [p]
+  (when (map? p)
+    (cond-> (select-keys p allowed-pattern-keys)
+      (:assertion-types p)     (update :assertion-types #(set (map keyword %)))
+      (:any-assertion-types p) (update :any-assertion-types #(set (map keyword %)))
+      (:provides-unit p)       (update :provides-unit keyword)
+      (:receives-unit p)       (update :receives-unit keyword))))
+
+(defn sanitize-composition-spec
+  "Coerce a student's composition into an engine collects-spec, scoped
+   to the student's own events (asserted-by is forced, not trusted)."
+  [user-id {:keys [includes excludes]}]
+  (cond-> {:includes (assoc (or (coerce-pattern includes) {})
+                            :asserted-by (str user-id))}
+    (coerce-pattern excludes) (assoc :excludes (coerce-pattern excludes))))
+
+(defn- coerce-enum [v allowed fallback]
+  (let [k (keyword v)]
+    (if (contains? allowed k) k fallback)))
+
+(defn preview-composition
+  "Execute a student's composition without recording it. Free iteration
+   is deliberate: refining a report against counterexamples is the
+   lesson. Returns {:result Q :count N :events [...]} or nil."
+  [user-id spec {:keys [aggregate-type op]}]
+  (with-engine s
+    (let [clean (sanitize-composition-spec user-id spec)
+          atype (coerce-enum aggregate-type allowed-aggregate-types :receives)
+          op*   (coerce-enum op allowed-ops :sum)
+          agg   (collects/collect-and-aggregate s clean atype op*)]
+      {:result (:result agg)
+       :count  (:count agg)
+       :events (mapv format-event-for-response (:events agg))})))
+
+(defn record-composition!
+  "Derive-and-record a student's composition as a first-class event in
+   their ledger. Returns {:event-id :result :count :input-ids} or nil."
+  [user-id {:keys [event-id date allowed-by category basis aggregate-type op]} spec]
+  (with-engine s
+    (derive/derive-and-record! s
+      {:event-id       (or event-id
+                           (str "Report-" user-id "-" (java.util.UUID/randomUUID)))
+       :date           (or date (str (java.time.LocalDate/now)))
+       :asserted-by    (str user-id)
+       :allowed-by     allowed-by
+       :collects-spec  (sanitize-composition-spec user-id spec)
+       :aggregate-type (coerce-enum aggregate-type allowed-aggregate-types :receives)
+       :op             (coerce-enum op allowed-ops :sum)
+       :category       (coerce-enum category allowed-categories :revenue)
+       :basis          (coerce-enum basis allowed-bases :declared)})))
 
 ;; ---------------------------------------------------------------------------
 ;; Response formatting

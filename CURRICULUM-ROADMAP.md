@@ -122,13 +122,25 @@ Deliberately deferred from summer: anything below.
   narratives and tabulated reports (structured source = controllable,
   checkable generation). Student-side, via the school AI portal (see
   below): feedback grounded in the student's own ledger.
-- **Accrue coordination.** Accrue 3.0 plans 2101 material and
-  JE-style problems; AALP owns the recording environment and the
-  simulation. Proposed division of labor: Accrue = spaced assessment
-  bank and topic coverage; AALP = the environment where records are
-  made, queried, and reported; shared topic taxonomy and, later, a
-  shared gradebook feed. Decide before both apps build overlapping
-  2101 content.
+- **Accrue coordination (position settled 2026-07-08).** The durable
+  division is *item bank vs. environment*, not MC vs. assertions:
+  Accrue delivers, sequences, and measures discrete items at scale;
+  AALP runs the persistent world where records are made, queried, and
+  reported. Neither absorbs the other (environments are bad at drill;
+  item banks can't carry consequence or transfer).
+  - *Pilot term:* zero runtime coupling. Accrue's 2101 content defers
+    JE-construction items (or presents them assertion-mediated) so the
+    two apps do not embody contradictory pedagogies for the pilot
+    cohort — this is also a study-validity requirement.
+  - *Year 2:* Accrue gains an assertion-response item type whose
+    grader is AALP's assertion-distance service (derive-je +
+    distance endpoints) — MC persists only where free-response
+    grading is the bottleneck, and the distance metric removes the
+    bottleneck. Accrue keeps delivery, spacing, coverage, and
+    psychometrics; the assertion representation and its graders
+    become shared infrastructure.
+  - *Later:* shared analytics feed (AALP per-assertion difficulty +
+    Accrue per-topic mastery) behind one instructor guidance view.
 
 ## Long-term (year 2+)
 

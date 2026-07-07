@@ -31,15 +31,57 @@ Three structural consequences drive the pipeline:
    reports, and — because the record is structured — AI feedback can be
    grounded in the student's own ledger rather than free-floating.
 
-## Pilot: ACCT 2101, Fall 2026 (decided)
+## The Guided Year architecture (decided 2026-07-08)
 
-**Design: assertions-first, view-only journal entries.** Students
-operate the simulation and record events in assertions from day one.
-Journal entries appear only as *derived artifacts* — the dual-fluency
-panel and the auto-derived ledger — that students read but do not
-construct. Debits and credits are introduced explicitly as a summary
-of the record students already keep. JE-construction problems stay
-off for the pilot cohort.
+Practice and Simulation merge into **one two-act arc**, replacing the
+mode toggle. Everything a student does accumulates in one persistent
+record — their own database.
+
+**Year 1 (guided).** A scripted, instructor-authored business year,
+delivered as narrative transactions the student records in assertions
+(assertions-first; journal entries are view-only derived artifacts
+throughout). *Errors persist*: transactions commit as asserted, the
+dual-fluency panel gives immediate visibility without blocking, and
+consequences surface at period closes (the statement diff traces every
+discrepancy to its originating event — error archaeology). Level
+advancement keys on rolling accuracy rather than retry-until-correct.
+(Fallback dial if weaker students flounder: a supervised
+retry-until-correct lane early in each level, errors-persist lane
+after.) The script is punctuated by **corridor decisions** — bounded
+choice gates ("blank shirts are $3.00 each; how many?") whose
+resulting transactions are **entered automatically**, each shown with
+its derived record. Decisions stay about deciding; recording practice
+lives in the scripted transactions; auto-entries add view-only JE
+exposure. Two or three corridors in round one; the script's coherence
+(ascending dates, sane balances, inventory sufficient for later sales)
+is guaranteed by authorship, and comparability across students is
+preserved because divergence is bounded.
+
+**Year 2 (autonomous).** Opens with the student reviewing Year 1's
+financial statements — the statements-discovery exercise (build Year
+1's income statement in the Report Builder) IS the bridge between the
+years. Then: "Year 1, you kept the books. Year 2, you run the
+company." The simulation inherits Year 1's closing state (capital,
+equipment, inventory, customers), so autonomous play starts rich, and
+the walk-your-record capstone gets a two-act arc.
+
+**Scheduling is a parameter, not a design.** The guided year is built
+as a schedule-independent artifact — a sequence of scripted days, each
+with transactions and/or a gate — so the same artifact runs compressed
+or semester-long.
+
+## Pilot staging: Fall 2026 compressed → Spring 2027 semester-long
+
+- **Fall 2026 (feasibility pilot):** the whole two-act exercise
+  compressed into ~2 weeks late in the course, assigned as a bounded
+  "complete the simulation + post-questions" credit assignment. Moves
+  the content deadline from August to ~November; bounded IRB scope;
+  produces the first cohort dataset, usability findings, and the
+  hardening pass for the app.
+- **Spring 2027 (effectiveness study):** semester-long progression
+  with daily transactions or choices — the version consistent with the
+  Accrue philosophy of frequent engagement — assigned as a full
+  syllabus component, run as the A/B effectiveness study.
 
 **Instrumentation is the study.** Classification diffs (missing/extra
 assertions per attempt), per-assertion difficulty, attempt counts, and
@@ -47,19 +89,27 @@ level progression are already recorded. Add time-on-task and the
 outcome instruments below.
 
 **Critical path: IRB.** Consent flow, anonymization plan, and outcome
-measures must be settled before week 1. Primary outcome candidate:
-**transfer** — performance on *novel* transaction types not drilled in
-class (the framework's distinctive claim). Secondaries: adjusting-entry
-performance (traditionally the hardest topic; assertions should show
-the largest gap), retention, and assertion-fluency measures.
+measures settled before the fall assignment window. Primary outcome
+(spring study): **transfer** — performance on *novel* transaction
+types not drilled in class. Secondaries: adjusting-entry performance,
+retention, assertion-fluency measures. Fall pilot outcomes: usability,
+completion, instrumentation validation.
 
 ## Summer work plan (near-term; each item: pedagogy → build)
 
-1. **Pilot mode configuration.** Assertions-first sequencing: hide
-   construct-mode problems; L0–L4 progression tuned for the 2101
-   syllabus; dual-fluency panel as the JE-viewing surface.
-   *Build: small (config/gating). Content: L3+ tutorial material —
-   the larger share of the work.*
+1. **The Guided Year (replaces "pilot mode configuration").**
+   Merge practice into the persistent record: scripted-day sequencing
+   over the existing template machinery; committed-as-asserted
+   persistence through the simulation ledger path; narrative as the
+   primary transaction display (the structured detail list retires —
+   it pre-parses the transaction for the student); corridor-decision
+   gates with unit-price × quantity as the prototype (show the total
+   at the decision step; auto-enter the resulting transactions with
+   derived records visible); Year 2 unlock inheriting Year 1 state;
+   rolling-accuracy advancement; L0/L1 auto-fill scaffolding review.
+   *Build: moderate (flow rewiring over existing machinery). Content:
+   authoring the scripted year — the largest single item on this
+   plan and the binding constraint.*
 2. **Minimal-pair problem mode.** Present paired narratives differing
    by exactly one assertion ("what changed, and which JE line does it
    move?"). Contrasting cases build expert discrimination; the

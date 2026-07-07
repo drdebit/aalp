@@ -377,6 +377,14 @@
   (str "datomic:sql://aalp?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
        (get-db-password)))
 
+(def engine-db-uri
+  "URI for the assertive-engine's own database on the same transactor.
+   Dedicated database (aalp-engine) so student-recorded reports and
+   decomposed events persist across backend restarts, kept separate
+   from the engine's benchmark database."
+  (str "datomic:sql://aalp-engine?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
+       (get-db-password)))
+
 (defn init-db!
   "Create database and transact schema if needed. Returns connection."
   []

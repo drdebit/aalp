@@ -12,6 +12,8 @@
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
             [assertive-app.engine :as engine]
+            [assertive-app.schema :as schema]
+            [assertive-engine.store.datomic :as engine-datomic]
             [assertive-app.je-derive :as je-derive]
             [assertive-app.analytics :as analytics]
             [clojure.walk :as walk]))
@@ -462,11 +464,30 @@
       wrap-json-response
       wrap-cors))
 
+(defn- init-engine!
+  "Initialize the assertive-engine store. Datomic-backed (its own
+   aalp-engine database on the shared transactor) when
+   DATOMIC_DB_PASSWORD is set, so student-recorded reports and
+   decomposed events survive restarts. Falls back to in-memory (dev,
+   or on any failure) -- the teaching flow never depends on it."
+  []
+  (if (System/getenv "DATOMIC_DB_PASSWORD")
+    (try
+      (engine/init! (engine-datomic/create-datomic-store schema/engine-db-uri))
+      (println "Engine store: Datomic (persistent, aalp-engine)")
+      (catch Exception e
+        (println "Engine Datomic store failed; falling back to in-memory:"
+                 (.getMessage e))
+        (engine/init!)))
+    (do
+      (println "Engine store: in-memory (DATOMIC_DB_PASSWORD not set)")
+      (engine/init!))))
+
 (defn start-server
   "Start the development server on port 3000"
   [& [port]]
   (let [port (or port 3000)]
-    (engine/init!)
+    (init-engine!)
     (jetty/run-jetty app {:port port :join? false})
     (println (str "Server started on http://localhost:" port))))
 

@@ -2608,6 +2608,11 @@
        [:div.user-info
         [:span.user-email (:email (state/user))]
         [guided-progress]]
+       [:button.reset-btn
+        {:on-click #(when (js/confirm "Restart Year 1 from Day 1? This clears your business and ledger.")
+                      (api/reset-simulation! nil)
+                      (state/reset-tutorial-state!))}
+        "Restart Year"]
        [:button.logout-button
         {:on-click #(api/logout!)}
         "Sign Out"]]]

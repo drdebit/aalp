@@ -519,6 +519,42 @@
 (defn set-current-level! [level]
   (swap! app-state assoc :current-level level))
 
+;; ==================== Tutorial practice drill ====================
+;; The sandbox between tutorial and ledger: after the reading + quiz,
+;; students drill unledgered practice problems WITH complete feedback,
+;; and must pass a round to unlock Year 1 recording at that level.
+;; (In the books, errors persist; here, mistakes are free.)
+
+(def DRILL-ROUND-SIZE 5)
+(def DRILL-PASS-COUNT 4)
+
+(defn drill-state []
+  (:drill @app-state))
+
+(defn drill-active? []
+  (boolean (get-in @app-state [:drill :active?])))
+
+(defn start-drill! [level]
+  (swap! app-state assoc :drill
+         {:active? true :level level :attempted 0 :correct 0 :round 1}))
+
+(defn record-drill-result! [correct?]
+  (swap! app-state update :drill
+         (fn [d]
+           (when d
+             (-> d
+                 (update :attempted inc)
+                 (update :correct (if correct? inc identity)))))))
+
+(defn reset-drill-round! []
+  (swap! app-state update :drill
+         (fn [d]
+           (when d
+             (-> d (assoc :attempted 0 :correct 0) (update :round inc))))))
+
+(defn end-drill! []
+  (swap! app-state assoc :drill nil))
+
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own
 ;; engine-recorded events. Free preview, deliberate record.

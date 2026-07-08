@@ -293,6 +293,11 @@
                   (state/set-feedback! (:feedback response))
                   ;; Dual fluency: show the JE the student's assertions produce
                   (derive-je!)
+                  ;; Tutorial drill: count this attempt toward the round
+                  (when (state/drill-active?)
+                    (let [status (get-in response [:feedback :status])]
+                      (state/record-drill-result!
+                        (contains? #{"correct" :correct} status))))
                   ;; Update progress if included in response
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))

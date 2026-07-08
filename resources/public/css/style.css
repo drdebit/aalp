@@ -4019,3 +4019,39 @@ header {
     font-size: 0.85em;
     margin: 0;
 }
+
+/* ==================== Tutorial practice drill ==================== */
+
+.drill-header {
+    max-width: 900px;
+    margin: 16px auto 8px;
+    padding: 14px 20px;
+    background: #fef9e7;
+    border: 1px solid #f7dc6f;
+    border-radius: 8px;
+}
+
+.drill-header h2 {
+    margin: 0 0 6px;
+    color: #7d6608;
+    font-size: 1.15em;
+}
+
+.drill-sandbox-note {
+    margin: 0 0 8px;
+    color: #7d6608;
+    line-height: 1.5;
+}
+
+.drill-progress {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.drill-pass-btn {
+    background: #27ae60;
+}
+
+.drill-retry-btn {
+    background: #e67e22;
+}

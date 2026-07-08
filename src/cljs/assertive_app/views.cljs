@@ -1071,6 +1071,41 @@
                    [:span.dj-nr-chip (:code nr)]
                    [:span.dj-nr-text (:text nr)]]))])])))))
 
+(defn drill-next-controls
+  "Round-aware next controls for the tutorial practice drill. Passing a
+   round (or reaching the pass count early) completes the tutorial and
+   unlocks Year 1 recording; an unreachable round offers a fresh one."
+  []
+  (let [{:keys [attempted correct level]} (state/drill-state)
+        remaining (- state/DRILL-ROUND-SIZE attempted)
+        passed? (>= correct state/DRILL-PASS-COUNT)
+        unreachable? (< (+ correct remaining) state/DRILL-PASS-COUNT)]
+    (cond
+      passed?
+      [:button.primary.drill-pass-btn
+       {:on-click #(do
+                     (api/complete-tutorial! level)
+                     (state/end-drill!)
+                     (state/clear-feedback!)
+                     (state/set-current-problem! nil)
+                     (api/fetch-guided-state!))}
+       "You're ready — start recording Year 1 →"]
+
+      unreachable?
+      [:button.primary.drill-retry-btn
+       {:on-click #(do
+                     (state/reset-drill-round!)
+                     (state/clear-feedback!)
+                     (api/fetch-problem! (state/current-level)))}
+       (str "Not quite (" correct " of " attempted ") — try a fresh round")]
+
+      :else
+      [:button.primary
+       {:on-click #(do
+                     (state/clear-feedback!)
+                     (api/fetch-problem! (state/current-level)))}
+       "Next Practice Problem"])))
+
 (defn feedback-panel []
   (let [feedback (state/feedback)
         selected (state/selected-assertions)
@@ -1100,11 +1135,16 @@
           ;; Use simulation-specific submit when in simulation mode
           [:button.primary
            {:on-click #(cond
+                         ;; Drill problems are unledgered practice — full
+                         ;; feedback path, even inside the guided arc
+                         (state/drill-active?) (api/submit-answer!)
                          (state/guided-mode?) (api/submit-guided-answer!)
                          (state/simulation-mode?) (api/submit-simulation-answer!)
                          :else (api/submit-answer!))
             :disabled (empty? (keys selected))}
-           (if (state/guided-mode?) "Record Transaction" "Submit Answer")])
+           (if (and (state/guided-mode?) (not (state/drill-active?)))
+             "Record Transaction"
+             "Submit Answer")])
         [:button.secondary
          {:on-click #(if is-construct?
                       (state/clear-je-fields!)
@@ -1207,12 +1247,14 @@
         [derived-je-panel]
 
         [:div.actions
-         [:button.primary
-          {:on-click #(do
-                        (api/fetch-problem! (state/current-level))
-                        (state/clear-feedback!)
-                        (when is-construct? (state/clear-je-fields!)))}
-          "Next Problem"]]]
+         (if (state/drill-active?)
+           [drill-next-controls]
+           [:button.primary
+            {:on-click #(do
+                          (api/fetch-problem! (state/current-level))
+                          (state/clear-feedback!)
+                          (when is-construct? (state/clear-je-fields!)))}
+            "Next Problem"])]]
 
        :else
        [:div.instructions
@@ -1685,12 +1727,12 @@
      :missed missed}))
 
 (defn- grade-and-show-results!
-  "Grade answers, set results state, call API if all correct."
-  [level questions answers]
-  (let [{:keys [all-correct? results missed]} (grade-quiz questions answers)]
-    (state/set-quiz-results! results missed)
-    (when all-correct?
-      (api/complete-tutorial! level))))
+  "Grade answers and set results state. Tutorial completion is NOT
+   granted here anymore — passing the quiz admits the student to the
+   practice drill, and passing a drill round completes the tutorial."
+  [_level questions answers]
+  (let [{:keys [results missed]} (grade-quiz questions answers)]
+    (state/set-quiz-results! results missed)))
 
 (defn tutorial-reader
   "Paginated section reader for tutorial content."
@@ -1843,9 +1885,19 @@
 
          :results
          [quiz-results-display results missed level
-          ;; on-continue (all correct)
+          ;; on-continue (all correct): in Year 1, into the practice
+          ;; drill — unledgered problems with complete feedback; passing
+          ;; a round unlocks recording. Elsewhere (Year 2 level gates,
+          ;; review), quiz success completes the tutorial directly.
           (fn []
-            (state/close-tutorial-quiz!))
+            (state/close-tutorial-quiz!)
+            (when-not review-only?
+              (if (state/guided-mode?)
+                (do
+                  (state/start-drill! level)
+                  (state/clear-feedback!)
+                  (api/fetch-problem! level))
+                (api/complete-tutorial! level))))
           ;; on-retry (some wrong)
           (fn []
             (state/start-retry-round!))]
@@ -1861,7 +1913,7 @@
      [:div.gate-content
       [:h2 (str "Welcome to " (:title tutorial))]
       [:p (:subtitle tutorial)]
-      [:p "Complete this tutorial to unlock practice problems at this level."]
+      [:p "Learn the assertions, pass a short practice round (mistakes there are free), and start recording in your books."]
       [:button.gate-start-btn
        {:on-click #(state/start-tutorial-quiz! level)}
        "Start Tutorial"]
@@ -2620,6 +2672,25 @@
      (when tq-active?
        [tutorial-quiz-flow])
      (cond
+       ;; Practice drill: unledgered problems with complete feedback,
+       ;; between the tutorial quiz and Year 1 recording
+       (state/drill-active?)
+       (let [{:keys [attempted correct round]} (state/drill-state)]
+         [:div.drill-container
+          [:div.drill-header
+           [:h2 (str "Practice round " round)]
+           [:p.drill-sandbox-note
+            (str "These practice transactions don't go into your books — "
+                 "mistakes here are free. Get "
+                 state/DRILL-PASS-COUNT " of " state/DRILL-ROUND-SIZE
+                 " right to start recording.")]
+           [:div.drill-progress
+            (str "This round: " correct " correct of " attempted " attempted")]]
+          [:div.three-column-layout
+           [narrative-panel]
+           [sentence-builder]
+           [feedback-panel]]])
+
        ;; Level boundary: the new level's tutorial gates the next day
        (not completed?)
        [tutorial-gate level]

@@ -1076,10 +1076,10 @@
    round (or reaching the pass count early) completes the tutorial and
    unlocks Year 1 recording; an unreachable round offers a fresh one."
   []
-  (let [{:keys [attempted correct level]} (state/drill-state)
-        remaining (- state/DRILL-ROUND-SIZE attempted)
-        passed? (>= correct state/DRILL-PASS-COUNT)
-        unreachable? (< (+ correct remaining) state/DRILL-PASS-COUNT)]
+  (let [{:keys [attempted correct level round-size pass-count]} (state/drill-state)
+        remaining (- round-size attempted)
+        passed? (>= correct pass-count)
+        unreachable? (< (+ correct remaining) pass-count)]
     (cond
       passed?
       [:button.primary.drill-pass-btn
@@ -1894,7 +1894,7 @@
             (when-not review-only?
               (if (state/guided-mode?)
                 (do
-                  (state/start-drill! level)
+                  (state/start-drill! level (tutorials/drill-config level))
                   (state/clear-feedback!)
                   (api/fetch-problem! level))
                 (api/complete-tutorial! level))))
@@ -2675,17 +2675,18 @@
        ;; Practice drill: unledgered problems with complete feedback,
        ;; between the tutorial quiz and Year 1 recording
        (state/drill-active?)
-       (let [{:keys [attempted correct round]} (state/drill-state)]
+       (let [{:keys [attempted correct round round-size pass-count]} (state/drill-state)]
          [:div.drill-container
           [:div.drill-header
            [:h2 (str "Practice round " round)]
            [:p.drill-sandbox-note
             (str "These practice transactions don't go into your books — "
                  "mistakes here are free. Get "
-                 state/DRILL-PASS-COUNT " of " state/DRILL-ROUND-SIZE
+                 pass-count " of " round-size
                  " right to start recording.")]
            [:div.drill-progress
-            (str "This round: " correct " correct of " attempted " attempted")]]
+            (str "This round: " correct " correct of " attempted " attempted")]
+           [tutorial-review-button level]]
           [:div.three-column-layout
            [narrative-panel]
            [sentence-builder]

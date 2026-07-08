@@ -525,18 +525,19 @@
 ;; and must pass a round to unlock Year 1 recording at that level.
 ;; (In the books, errors persist; here, mistakes are free.)
 
-(def DRILL-ROUND-SIZE 5)
-(def DRILL-PASS-COUNT 4)
-
 (defn drill-state []
   (:drill @app-state))
 
 (defn drill-active? []
   (boolean (get-in @app-state [:drill :active?])))
 
-(defn start-drill! [level]
+(defn start-drill!
+  "Start a drill with a per-level config {:round-size N :pass-count M}
+   (see tutorials/drill-config)."
+  [level {:keys [round-size pass-count]}]
   (swap! app-state assoc :drill
-         {:active? true :level level :attempted 0 :correct 0 :round 1}))
+         {:active? true :level level :attempted 0 :correct 0 :round 1
+          :round-size round-size :pass-count pass-count}))
 
 (defn record-drill-result! [correct?]
   (swap! app-state update :drill

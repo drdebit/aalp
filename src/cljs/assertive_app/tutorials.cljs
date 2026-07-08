@@ -26,60 +26,141 @@
    {:title "Level 0: Cash Transactions"
     :subtitle "Learn the basics of recording business exchanges"
     :sections
-    [{:heading "Welcome to Assertive Accounting!"
-      :content "You're learning to record business transactions using **assertions** — logical statements about what happened in each transaction.
+    [{:heading "Your Story: You Run a T-Shirt Company"
+      :content "Welcome! In this course, **you** run SP's T-Shirt Company. You'll buy a printer, stock up on blank shirts and ink, print designs, and sell them.
 
-This is different from memorizing journal entries. Instead, you'll learn to identify what's true about each transaction, and the journal entry will follow logically from those truths."}
+Every business keeps a record of what happens — every purchase, every sale. That record is called the company's **books**, and keeping it accurately is what accounting *is*.
 
-     {:heading "The Core Exchange Assertions"
-      :content "Every exchange transaction has three key properties:
+Your job in Year 1 is to be the company's bookkeeper: things will happen in the business, and you will record them.
 
-**1. has-counterparty** — There's another party to the exchange (a vendor, customer, etc.)
+Don't worry if you've never done anything like this. We'll go one small step at a time, and you'll get plenty of practice — with full feedback — before anything counts."}
 
-**2. provides** — What your company gives up in the exchange
+     {:heading "Recording = Describing What Happened"
+      :content "Here's the whole idea of this course in one sentence:
 
-**3. receives** — What your company gets in the exchange
+**To record a transaction, you describe what happened — in a structured way.**
 
-Each involves either **monetary units** (cash) or **physical units** (equipment, inventory, services).
+Think about how you'd tell a friend about buying a coffee this morning:
 
-Every transaction also includes **has-date** — it always matters *when* something happened. We'll leave this implicit in our examples, but it's always required.
+*\"This morning I paid $5 at Campus Coffee and got a latte.\"*
 
-Note: Internal operations like production do NOT have a counterparty — we'll cover those in Level 2."}
+That one sentence contains four facts:
+- **When** it happened (this morning)
+- **Who** the other party was (Campus Coffee)
+- **What you gave** ($5)
+- **What you got** (a latte)
 
-     {:heading "Cash Purchase Example"
-      :content "When your company buys something for cash:
+That's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."}
 
-**Example: Buying blank t-shirts for $500**
+     {:heading "Meet the Four Assertions"
+      :content "At this level you only need **four** assertions. Here they are, using the coffee example:
+
+**has-date** — *when* did it happen?
+(This morning. In business: the transaction date.)
+
+**has-counterparty** — *who* was the other party?
+(Campus Coffee. In business: the vendor you buy from, or the customer you sell to.)
+
+**provides** — *what did your company give up?*
+(The $5. \"Provides\" always describes what goes OUT of your company.)
+
+**receives** — *what did your company get?*
+(The latte. \"Receives\" always describes what comes IN to your company.)
 
 ::assertions
-has-counterparty: T-Shirt Supplier
-provides: $500 (monetary-unit)
-receives: Blank t-shirts (physical-unit)
+has-date: this morning
+has-counterparty: Campus Coffee
+provides: $5 (money going out)
+receives: 1 latte (a thing coming in)
 ::
 
-**The Pattern:**
-- What you **receive** gets **debited** (it's coming IN)
-- What you **provide** gets **credited** (it's going OUT)
+Every cash purchase you record at this level uses exactly these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?"}
+
+     {:heading "Two Kinds of Stuff: Money and Things"
+      :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:
+
+**monetary-unit** — money. Dollars. Cash.
+
+**physical-unit** — things. Blank t-shirts, ink cartridges, a t-shirt printer.
+
+In a cash purchase, the pattern is always the same:
+- Your company **provides** money (monetary-unit)
+- Your company **receives** things (physical-unit)
+
+You'll also enter *how much*: the dollar amount for the money, and the quantity (how many) for the things. Both numbers are right there in the transaction description — you never have to guess."}
+
+     {:heading "Worked Example, Step by Step"
+      :content "Let's record one together. Suppose you see this transaction:
+
+*\"On January 8, you purchase 50 blank t-shirts from TextileDirect for $150 cash.\"*
+
+Here is exactly what you'd do, click by click:
+
+**Step 1.** Read the sentence slowly. Find the four facts: the date (January 8), the other party (TextileDirect), what went out ($150), what came in (50 blank t-shirts).
+
+**Step 2.** **Has Date** is usually already selected with the date filled in — just check that it matches.
+
+**Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.
+
+**Step 4.** Click **Receives**. Choose **physical-unit** (things came in), pick the item (blank t-shirts), and enter the quantity: 50.
+
+**Step 5.** Click **Has Counterparty** and enter who: TextileDirect.
+
+**Step 6.** Read your sentence back at the top of the panel — it should retell the story. Then click **Submit**.
+
+::assertions
+has-date: January 8
+has-counterparty: TextileDirect
+provides: $150 (monetary-unit)
+receives: 50 blank t-shirts (physical-unit)
+::
+
+That's the entire skill at this level. Every problem is this same pattern with different details."}
+
+     {:heading "Where the Journal Entry Comes From"
+      :content "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.
+
+The translation rule is simple:
+
+- What you **receive** is **debited** — it came IN
+- What you **provide** is **credited** — it went OUT
+
+So for the t-shirt purchase:
 
 ::journal
-DR Raw Materials Inventory $500
-CR Cash $500
+DR Raw Materials Inventory $150
+CR Cash $150
 ::
 
-Buying equipment works the same way. For example, purchasing a t-shirt printer for $3,000 gives you DR Equipment, CR Cash."}
+Read it as: \"t-shirts came in ($150 worth), cash went out ($150).\" Buying equipment works exactly the same way — a $3,000 printer gives DR Equipment, CR Cash.
 
-     {:heading "How Practice Works"
-      :content "You'll see a transaction narrative and need to select the correct assertions:
+Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see the rule that built it. Over the semester, this is how debits and credits start to feel obvious instead of memorized."}
 
-1. Read the narrative carefully
-2. Select the assertions that describe what happened
-3. Fill in the parameters (what type of unit, etc.)
-4. Submit and see if you got it right
+     {:heading "Practice First — Mistakes Are Free"
+      :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
 
-After completing this tutorial quiz, you'll be able to practice cash purchase problems."}]
+Practice problems are a sandbox: they do **not** go into your company's books, and you get complete feedback on every answer — what you got right, what you missed, and why. Get enough right and you'll unlock the real thing: recording Year 1 of your company's books.
+
+Two things to remember once you ARE keeping the books:
+
+1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong — errors sit in the records until someone finds them. (You'll do that finding yourself, later, at year-end.)
+
+2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this — including during practice. Using it is smart, not cheating."}]
 
     :quiz
-    [{:id :l0-q1
+    [{:id :l0-q0a
+      :question "You pay $5 at Campus Coffee and get a latte. In assertion terms, what did you RECEIVE?"
+      :choices ["The latte" "The $5" "Campus Coffee" "The morning"]
+      :correct 0
+      :explanation "**Receives** is what comes IN to you — the latte. The $5 went OUT (that's **provides**), Campus Coffee is the **counterparty**, and the morning is the **date**."}
+
+     {:id :l0-q0b
+      :question "Which assertion answers the question: 'WHO was the other party in this transaction?'"
+      :choices ["has-date" "provides" "has-counterparty" "receives"]
+      :correct 2
+      :explanation "**Has-counterparty** names the other party — the vendor you buy from or the customer you sell to. The four questions: when? (has-date) who? (has-counterparty) what went out? (provides) what came in? (receives)"}
+
+     {:id :l0-q1
       :question "When SP buys blank t-shirts for $500 cash, which assertion describes what SP gives up?"
       :choices ["receives (monetary-unit)" "provides (monetary-unit)" "requires (monetary-unit)" "expects (monetary-unit)"]
       :correct 1
@@ -107,83 +188,150 @@ After completing this tutorial quiz, you'll be able to practice cash purchase pr
    {:title "Level 1: Credit Transactions"
     :subtitle "Obligations, expectations, and the time dimension"
     :sections
-    [{:heading "Adding the Time Dimension"
-      :content "In Level 0, everything happened immediately — you gave cash, you got the asset. But most business transactions involve **credit** — payment or delivery happens later.
+    [{:heading "Buying Now, Paying Later"
+      :content "In Level 0, everything happened at once: you handed over cash, you got your stuff, done. But think about how life actually works:
 
-This introduces two new assertions that capture the time dimension:
+*You order a pizza online. The pizza arrives now — your card gets charged at the end of the month.*
 
-**requires** — Creates a legal obligation to do something in the future
+The pizza place gave you something today and trusts you to pay later. Businesses do this constantly — it's called buying **on credit** (or \"on account\").
 
-**expects** — Expresses confidence that something will happen in the future
+Here's the recording puzzle: on the day the ink cartridges arrive, what actually happened? You RECEIVED cartridges... but you didn't provide anything yet. No money moved!
 
-These assertions aren't interchangeable — which ones apply depends on *who controls* the future action."}
+Something did happen, though — something real that must be recorded: **you now owe money**. A promise to pay was created. Level 1 is about recording promises."}
 
-     {:heading "Credit Purchases: The 'Requires' Assertion"
-      :content "When SP buys on credit, SP receives the asset now but owes payment later:
+     {:heading "New Assertion: 'Requires' (a Promise Someone Must Keep)"
+      :content "**requires** — records an obligation: someone MUST do something in the future.
 
-**Example: Buy ink cartridges on 30-day credit**
-- has-counterparty: Ink Supplier
-- receives: Ink cartridges (physical-unit)
-- requires: SP must provide $100 cash by the due date
+When SP buys ink cartridges on 30-day credit for $100, here's the full description of what happened that day:
 
-Notice what's **missing**: no **provides** (SP hasn't given anything yet) and no **expects**. Why no expects? Because SP controls its own payments — there's no uncertainty about *whether* SP will pay. The legal obligation (**requires**) is sufficient.
+::assertions
+has-date: the purchase date
+has-counterparty: InkMasters
+receives: 50 ink cartridges (physical-unit)
+requires: SP must provide $100 (monetary-unit) by the due date
+::
 
-→ **Journal Entry:** DR Raw Materials Inventory, CR Accounts Payable
+Compare that to a cash purchase, and notice **what changed**:
 
-**The rule:** `requires` creates a **liability** — SP owes something in the future."}
+- **provides is GONE** — SP hasn't given anything yet. Nothing went out today. Don't select it!
+- **requires is NEW** — it records the promise: money must go out later, by a due date.
 
-     {:heading "Credit Sales: Requires + Expects"
-      :content "Credit sales are more complex because they introduce an element of uncertainty:
+When you select **requires** in the platform, you'll fill in what must be provided (money), how much ($100), and by when (the due date). All three are in the transaction description.
 
-**Example: Sell 10 printed t-shirts on 30-day credit**
-- has-counterparty: Customer
-- provides: 10 printed t-shirts (physical-unit)
-- requires: Customer must pay $250 by the due date
-- expects: SP is 92% confident the customer will pay
+The journal entry follows the same in/out logic as before, with one new account:
 
-Why **two** temporal assertions?
+::journal
+DR Raw Materials Inventory $100
+CR Accounts Payable $100
+::
 
-**requires** — The legal obligation exists regardless. The customer is contractually obligated to pay.
+Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
 
-**expects** — But *will* they actually pay? SP assesses collection probability. This confidence level informs bad debt estimates later.
+     {:heading "One Question to Rule Them All: Do We Also Need 'Expects'?"
+      :content "There's a second future-looking assertion:
 
-**Mapping to the Journal Entry:**
+**expects** — records a belief about the future, with a confidence level: how sure are we this will actually happen?
 
-Assertive accounting records what happened: SP provided goods and is owed payment. Double-entry maps this to specific accounts:
-- **provides** physical goods + **requires** payment from counterparty → **Revenue** is recognized
-- **requires** creates the receivable → **Accounts Receivable** is debited
-- Cost of goods provided → **COGS** is recognized
+So when do you need it? Ask one question:
 
-→ **Journal Entry:** DR Accounts Receivable $250, CR Revenue $250
-Plus: DR Cost of Goods Sold, CR Finished Goods Inventory
+**\"Who controls whether the promise gets kept?\"**
 
-Revenue isn't a separate assertion — it emerges from the pattern. When SP provides goods in exchange for a payment obligation, double-entry calls that revenue."}
+*Case 1: SP promises to pay InkMasters.* Who controls whether SP pays? **SP does.** There's nothing uncertain to assess about your own choices — you know you'll pay your bills. So: **requires only, no expects.**
 
-     {:heading "Deferred Revenue and Prepaid Expenses"
-      :content "Two more credit patterns round out the picture:
+*Case 2: a customer promises to pay SP.* Who controls that? **The customer** — not you. Will they actually pay? Probably... but not certainly. That's a genuine uncertainty about someone ELSE, so SP records **requires** (the promise exists) AND **expects** (how confident SP is — say, 92%).
 
-**Deferred Revenue** — Customer pays SP in advance:
-- receives: Cash (monetary-unit)
-- requires: SP must deliver goods/services by the due date
-- No **expects** — SP controls its own delivery
-→ DR Cash, CR Deferred Revenue (Liability)
+Memorize the question, not a list of cases. Every credit transaction at this level is solved by asking: who controls whether the promise gets kept? **Your own promise → requires only. Someone else's promise to you → requires + expects.**"}
 
-**Prepaid Expense** — SP pays vendor in advance:
-- provides: Cash (monetary-unit)
-- expects: SP will receive services (with confidence level)
-- No **requires** — The focus is on SP's expectation of future benefit
-→ DR Prepaid Expense (Asset), CR Cash
+     {:heading "Selling on Credit: The Other Chair"
+      :content "Now flip the pizza situation around: this time, **SP is the pizza place.** A customer takes SP's t-shirts today and promises to pay later.
 
-**The Pattern of Requires vs. Expects:**
+**Example: SP sells 10 printed t-shirts to CampusBoutique on 30-day credit for $250.**
 
-| Situation | Who Owes? | Who Controls? | Assertion |
+Walk through the four questions plus the new one:
+
+- When? The sale date. (**has-date**)
+- Who? CampusBoutique. (**has-counterparty**)
+- What went out? 10 printed t-shirts. (**provides** — yes, provides! SP gave up real shirts today.)
+- What came in? *Nothing yet* — no receives.
+- Any promise? Yes: the customer must pay $250 by the due date. (**requires**)
+
+And now the control question: who controls whether THIS promise gets kept? **The customer.** So SP also records:
+
+- How confident is SP of actually getting paid? (**expects**, with a confidence level — say 92%)
+
+::assertions
+has-date: the sale date
+has-counterparty: CampusBoutique
+provides: 10 printed t-shirts (physical-unit)
+requires: customer must provide $250 (monetary-unit) by the due date
+expects: 92% confident of receiving that $250
+::
+
+The confidence number isn't busywork — at year-end it feeds directly into estimating how much of what customers owe will actually arrive (accountants call this *bad debt*). You're doing real accounting judgment when you set it.
+
+**The journal entry:** a promise from a customer is money SP is owed — accountants call that an **asset** named **Accounts Receivable**. And giving up goods in exchange for a payment promise? Double-entry calls that **Revenue**:
+
+::journal
+DR Accounts Receivable $250
+CR Revenue $250
+::
+
+Notice something important: \"revenue\" was never one of your assertions. You just described what happened — goods out, payment promised — and *revenue is the name double-entry gives that pattern*. Categories come from patterns of facts. That's the deepest idea in this course, arriving quietly."}
+
+     {:heading "Paying in Advance (Both Directions)"
+      :content "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same control question.
+
+**A customer pays SP in advance** (say, a $500 deposit for a big custom order):
+
+- receives: $500 cash — money came IN today
+- requires: SP must deliver the shirts by the promised date
+- Control question: who controls delivery? **SP does** → no expects
+
+::journal
+DR Cash $500
+CR Deferred Revenue $500
+::
+
+That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP owes the customer shirts. An unearned advance is a **liability** (accountants call it *Deferred Revenue*). It flips to real revenue when SP delivers.
+
+**SP pays a vendor in advance** (say, $600 for a year of insurance):
+
+- provides: $600 cash — money went OUT today
+- expects: SP will receive coverage over the coming year (with confidence)
+- Control question: who controls delivering the coverage? **The vendor** → expects, not requires
+
+::journal
+DR Prepaid Expense $600
+CR Cash $600
+::
+
+SP paid but hasn't USED anything yet — the right to future coverage is something SP owns: an **asset** (*Prepaid Expense*).
+
+**The whole level in one table:**
+
+| Situation | Whose promise? | Who controls it? | Assertions |
 |-----------|-----------|---------------|-----------|
-| Credit purchase | SP owes vendor | SP controls | **requires** only |
-| Credit sale | Customer owes SP | Customer controls | **requires** + **expects** |
-| Deferred revenue | SP owes customer | SP controls | **requires** only |
-| Prepaid expense | Vendor owes SP | Vendor controls | **expects** only |
+| Credit purchase | SP owes vendor | SP | **requires** only |
+| Credit sale | Customer owes SP | Customer | **requires** + **expects** |
+| Customer pays in advance | SP owes delivery | SP | **requires** only |
+| SP pays in advance | Vendor owes service | Vendor | **expects** |
 
-When the party who owes *controls* the fulfillment, `requires` alone suffices. When *someone else* controls fulfillment, `expects` adds a confidence assessment."}]
+One question solves all four rows: **who controls whether the promise gets kept?** Your own promise → requires. Someone else's → expects (plus requires when there's a legal obligation, as in a credit sale)."}
+
+     {:heading "How to Approach Every Level 1 Problem"
+      :content "A recipe you can follow every single time:
+
+**Step 1.** Read the narrative. Ask: did money move TODAY? Did goods move TODAY? Record only what actually moved: **provides** for out, **receives** for in. If it didn't move today, don't select it.
+
+**Step 2.** Ask: was a promise made about the FUTURE? If yes, select **requires** and fill in what must be provided, how much, and by when — it's all in the narrative.
+
+**Step 3.** Ask the control question: is the promise SP's to keep, or someone else's? Someone else's → add **expects** with your confidence level.
+
+**Step 4.** Date and counterparty, same as always.
+
+**Step 5.** Read your sentence back — does it retell the story? Submit, then study the derived journal entry panel: click each line and see which of your assertions produced it.
+
+If you get stuck during practice, the **Review Tutorial** button brings you back here. Mistakes in practice cost nothing — that's what it's for."}]
 
     :quiz
     [{:id :l1-q1
@@ -711,6 +859,21 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
       :explanation "In a sale, revenue emerges from the exchange: providing goods for payment. In an adjusting entry (depreciation, accruals), there's **no exchange** — you must explicitly assert what's being recognized and how. That's what **reports** is for."}]}})
 
 ;; ==================== Accessors ====================
+
+;; ==================== Practice drill configuration ====================
+;; The mastery bar between a level's tutorial and Year 1 recording.
+;; Raised from 4-of-5 for the GSU 2101 pilot population: more reps
+;; before anything counts, at ~1-2 minutes per problem.
+
+(def ^:private default-drill-config
+  {:round-size 10 :pass-count 8})
+
+(def ^:private drill-configs
+  "Per-level overrides of the drill mastery bar."
+  {})
+
+(defn drill-config [level]
+  (merge default-drill-config (get drill-configs level)))
 
 (defn get-level-tutorial
   "Returns tutorial data for the specified level (0-7)."

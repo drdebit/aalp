@@ -43,11 +43,14 @@ delivered as narrative transactions the student records in assertions
 throughout). *Errors persist*: transactions commit as asserted, the
 dual-fluency panel gives immediate visibility without blocking, and
 consequences surface at period closes (the statement diff traces every
-discrepancy to its originating event — error archaeology). Level
-advancement keys on rolling accuracy rather than retry-until-correct.
-(Fallback dial if weaker students flounder: a supervised
-retry-until-correct lane early in each level, errors-persist lane
-after.) The script is punctuated by **corridor decisions** — bounded
+discrepancy to its originating event — error archaeology). Each level
+opens with a **tutorial + practice drill** (decided 2026-07-08):
+instruction, a comprehension quiz, then a round of *unledgered*
+practice problems with complete feedback — pass 4 of 5 to unlock
+recording at that level. The drill is the mastery gate; the ledger
+stays errors-persist. The sandbox/books distinction is itself taught:
+mistakes in practice are free, mistakes in your books follow you to
+period close. The script is punctuated by **corridor decisions** — bounded
 choice gates ("blank shirts are $3.00 each; how many?") whose
 resulting transactions are **entered automatically**, each shown with
 its derived record. Decisions stay about deciding; recording practice

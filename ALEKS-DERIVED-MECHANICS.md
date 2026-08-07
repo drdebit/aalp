@@ -257,16 +257,24 @@ Near-term (small, pre-pilot candidates):
 2. **Streak early-pass** (§4) — shipped 2026-08-07. `:streak-pass 5`
    in drill-config; a dead-by-ratio round stays alive while a streak
    remains reachable.
+3. **On-demand worked example** (§7, second pass) — shipped
+   2026-08-07 with ALEKS's forfeit semantics.
+4. **Stuck detection** (§8, second pass) — shipped 2026-08-07;
+   consecutive misses deep-link to the teaching section.
+5. **Time-on-task** (§9, second pass) — shipped 2026-08-07; raw
+   `:attempt/seconds-elapsed` on every attempt path.
 
 With roadmap item 5:
 
-3. **Assertion-family mastery map** (§2) — aggregation endpoint +
+6. **Assertion-family mastery map** (§2) — aggregation endpoint +
    visual; shared with item 6's instructor heatmap.
 
 Spring 2027:
 
-4. **Retention re-checks at period close** (§5).
-5. **Deadline-vs-gate validation** (§6), if dated scheduling ships.
+7. **Retention re-checks at period close** (§5).
+8. **Learned-vs-retained states on the mastery map** (second pass) —
+   built with the re-checks.
+9. **Deadline-vs-gate validation** (§6), if dated scheduling ships.
 
 Rejected: adaptive Initial Knowledge Check (§1); ready-to-learn
 sequence choice in Year 1 (§3); mastery revocation that relocks

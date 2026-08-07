@@ -1,5 +1,11 @@
 # ALEKS-Derived Pedagogy — Planned Work for AALP
 
+> **Resolved 2026-08-07:** the evaluation this handoff asked for is done —
+> verdicts and design sketches live in `ALEKS-DERIVED-MECHANICS.md`, with a
+> summary section in `CURRICULUM-ROADMAP.md`. Retained for context (ALEKS
+> account details, the disposable class still to archive). Note one stale
+> fact below: the drill bar is now 8-of-10 (d192d00), not 4-of-5.
+
 *Written 2026-08-07 from the Accrue side (Matt + Claude), as a handoff for a
 fresh session working in this repo. The ALEKS exploration happened in August
 2026 while designing Accrue's adaptive learning; the conclusion was that most

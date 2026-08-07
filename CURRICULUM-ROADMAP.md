@@ -152,6 +152,32 @@ completion, instrumentation validation.
 
 Deliberately deferred from summer: anything below.
 
+## ALEKS-derived mechanics (evaluated 2026-08-07)
+
+ALEKS's mechanics were mined from an instructor account and evaluated
+against the Guided Year; full verdicts and design sketches in
+`ALEKS-DERIVED-MECHANICS.md`. Outcome:
+
+- **Near-term (small):** drill *test-out* (challenge the practice
+  round directly; the drill is already the mastery instrument, so
+  placement needs no new one) and *streak early-pass* (keep the
+  8-of-10 bar, also pass on 5 consecutive correct — cleaner signal,
+  faster exit for fluent students, decided explicitly over wholesale
+  streak mastery).
+- **With item 5:** an *assertion-family mastery map* — the Pie
+  resliced by assertion family and filled from the distance metric's
+  attempt data; the student-facing twin of item 6's instructor
+  heatmap.
+- **Spring 2027:** *retention re-checks* at period close (unledgered
+  drill rounds sampling completed levels; outcomes dim the mastery map
+  and feed item 6's targeting — never relock recording) and
+  *deadline-vs-gate validation* if dated scheduling ships.
+- **Rejected:** adaptive initial knowledge check (assertion vocabulary
+  is novel to every entrant — nothing to place); ready-to-learn
+  sequence choice in Year 1 (the script's linearity is load-bearing;
+  Year 2 prerequisites and item 6 already embody the principle);
+  mastery revocation that blocks progress (fights errors-persist).
+
 ## Medium-term (spring / year 2)
 
 - **Perspective flip.** The same transaction recorded as SP and as

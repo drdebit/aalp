@@ -98,6 +98,23 @@
   [assertions]
   (swap! app-state assoc :selected-assertions (or assertions {})))
 
+;; ==================== Time-on-task ====================
+;; Every attempt carries raw serve-to-submit seconds (instrumentation
+;; for the pilot study). The stamp is set whenever a problem, guided
+;; day, or pending simulation transaction is put in front of the
+;; student, and reset on each submission so retry attempts measure
+;; from the previous feedback, not the original serve.
+
+(defn stamp-problem-served! []
+  (swap! app-state assoc :problem-served-at (js/Date.now)))
+
+(defn seconds-since-served
+  "Raw seconds since the current problem was served (nil if unstamped).
+   Deliberately uncapped — idle-time outliers are filtered at analysis."
+  []
+  (when-let [t (:problem-served-at @app-state)]
+    (/ (- (js/Date.now) t) 1000)))
+
 (defn set-feedback! [feedback]
   (swap! app-state assoc :feedback feedback))
 

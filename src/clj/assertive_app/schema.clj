@@ -203,6 +203,11 @@
     :db/index true
     :db/doc "How the student entered the tutorial drill this attempt belongs to: :tutorial (after the reading + quiz) or :test-out (challenged the drill directly). Absent for non-drill attempts."}
 
+   {:db/ident :attempt/seconds-elapsed
+    :db/valueType :db.type/double
+    :db/cardinality :db.cardinality/one
+    :db/doc "Raw seconds from the problem being served client-side to submission. Deliberately uncapped — idle-time outliers are filtered at analysis, never at capture."}
+
    ;; ==================== Business State Entity ====================
    ;; Tracks current simulation state per user
    {:db/ident :business-state/user

@@ -155,6 +155,7 @@
                     (fetch-assertions! (state/current-level)))
                   (let [level (:level response 0)]
                     (state/set-app-mode! :guided)
+                    (state/stamp-problem-served!)
                     (state/set-current-level! level)
                     (fetch-assertions! level)
                     (when (= "transaction" (:entry-type response))
@@ -180,7 +181,9 @@
   []
   (state/set-loading! true)
   (POST (str api-base "/guided/submit")
-    {:params {:selected-assertions (state/selected-assertions)}
+    {:params {:selected-assertions (state/selected-assertions)
+              ;; Time-on-task: raw serve-to-submit seconds
+              :seconds-elapsed (state/seconds-since-served)}
      :format :json
      :headers (auth-headers)
      :response-format :json
@@ -266,6 +269,7 @@
                 (when-let [date (get-in response [:variables :date])]
                   (state/update-assertion-parameter! :has-date :date date))
                 (state/clear-feedback!)
+                (state/stamp-problem-served!)
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to load problem"})}))
 
@@ -285,7 +289,9 @@
                         :problem-type (or (:problem-type problem) "forward")
                         :level (:level problem 0)
                         :template-level (:template-level problem)  ; Template's actual difficulty
-                        :template-key (:template problem)}
+                        :template-key (:template problem)
+                        ;; Time-on-task: raw serve-to-submit seconds
+                        :seconds-elapsed (state/seconds-since-served)}
                  ;; Drill provenance: lets analytics separate test-out
                  ;; entrants from post-tutorial drillers
                  (state/drill-active?)
@@ -333,7 +339,9 @@
                        ;; Include metadata for progress tracking
                        :problem-id (:id problem)
                        :level (:level problem 0)
-                       :template-key (:template problem)})
+                       :template-key (:template problem)
+                       ;; Time-on-task: raw serve-to-submit seconds
+                       :seconds-elapsed (state/seconds-since-served)})
        :format :json
        :headers (auth-headers)
        :response-format :json
@@ -364,7 +372,8 @@
                     {:narrative (:narrative pending)
                      :id (:problem-id pending)
                      :template (:template-key pending)
-                     :correct-assertions (:correct-assertions pending)}))
+                     :correct-assertions (:correct-assertions pending)})
+                  (state/stamp-problem-served!))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to fetch simulation state"})}))
 
@@ -411,6 +420,7 @@
                 (state/toggle-assertion! :has-date)
                 (when-let [date (get-in response [:variables :date])]
                   (state/update-assertion-parameter! :has-date :date date))
+                (state/stamp-problem-served!)
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to start action"
                                           :extract-body? true})})))
@@ -421,13 +431,19 @@
   []
   (state/set-loading! true)
   (POST (str api-base "/simulation/classify")
-    {:params {:selected-assertions (state/selected-assertions)}
+    {:params {:selected-assertions (state/selected-assertions)
+              ;; Time-on-task: raw serve-to-submit seconds
+              :seconds-elapsed (state/seconds-since-served)}
      :format :json
      :headers (auth-headers)
      :response-format :json
      :keywords? true
      :handler (fn [response]
                 (state/set-feedback! (:feedback response))
+                ;; Retry-until-correct: the next attempt on this same
+                ;; transaction measures from this feedback, not the
+                ;; original serve
+                (state/stamp-problem-served!)
                 ;; Dual fluency: show the JE the student's assertions produce
                 (derive-je!)
                 (state/update-simulation-after-classify! response)
@@ -603,7 +619,9 @@
       {:params {:problem-id (:id problem)
                 :level (:level problem 0)
                 :template-key (:template problem)
-                :drill-entry (name (:entry-path (state/drill-state) :tutorial))}
+                :drill-entry (name (:entry-path (state/drill-state) :tutorial))
+                ;; Time-on-task: how long they worked before asking
+                :seconds-elapsed (state/seconds-since-served)}
        :format :json
        :headers (auth-headers)
        :response-format :json

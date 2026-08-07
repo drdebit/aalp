@@ -223,10 +223,20 @@ Recorded as decisions, no build yet: **learned vs. retained** — ALEKS
 treats "learned in learning mode" and "retained through a knowledge
 check" as different evidence; when the mastery map (§2) and retention
 re-checks (§5) ship in spring, map slices must distinguish
-drill-passed from recheck-survived. **Time-on-task** — ALEKS leans on
-it for instructor reports; already on the roadmap's instrumentation
-list, pilot-relevant. Considered and not taken: nudge/messaging
-system, gradebook integration, QuickTables-style fluency drills.
+drill-passed from recheck-survived. Considered and not taken:
+nudge/messaging system, gradebook integration, QuickTables-style
+fluency drills.
+
+**9. Time-on-task (shipped 2026-08-07).** ALEKS leans on it for
+instructor reports; the roadmap already called it the missing
+instrumentation. Every attempt now carries
+`:attempt/seconds-elapsed` — raw serve-to-submit seconds, stamped
+client-side when a problem, guided day, or pending simulation
+transaction is put in front of the student, reset on each submission
+so retry attempts measure from the previous feedback. Values are
+deliberately uncapped: idle-time outliers are filtered at analysis,
+never at capture. Worked-example views also carry it (how long the
+student worked before asking).
 
 ## Already aligned (no action)
 

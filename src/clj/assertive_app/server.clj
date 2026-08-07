@@ -126,7 +126,8 @@
                                   :feedback-status (name (get-in result [:feedback :status] :indeterminate))
                                   :correct-classification correct-classification
                                   :classification-result result
-                                  :drill-entry (:drill-entry body)})]
+                                  :drill-entry (:drill-entry body)
+                                  :seconds-elapsed (:seconds-elapsed body)})]
           (response/response (assoc result :progress updated-progress)))
         ;; Response without progress for unauthenticated users
         (response/response result))))
@@ -145,7 +146,8 @@
            :template-key (:template-key body)
            :correct false
            :feedback-status "explained"
-           :drill-entry (:drill-entry body)})
+           :drill-entry (:drill-entry body)
+           :seconds-elapsed (:seconds-elapsed body)})
         (response/response {:recorded true}))
       (response/response {:recorded false})))
 
@@ -180,7 +182,8 @@
                                   :je-credit (:credit-account body)
                                   :je-amount (:amount body)
                                   :correct correct?
-                                  :feedback-status (name (:status validation :indeterminate))})]
+                                  :feedback-status (name (:status validation :indeterminate))
+                                  :seconds-elapsed (:seconds-elapsed body)})]
           (response/response {:validation validation :progress updated-progress}))
         ;; Response without progress for unauthenticated users
         (response/response {:validation validation}))))
@@ -262,7 +265,8 @@
                    :correct true
                    :feedback-status "correct"
                    :correct-classification correct-classification
-                   :classification-result result})
+                   :classification-result result
+                   :seconds-elapsed (:seconds-elapsed body)})
                 (response/response
                   {:feedback (:feedback result)
                    :classification (:classification result)
@@ -285,7 +289,8 @@
                    :correct false
                    :feedback-status "incorrect"
                    :correct-classification correct-classification
-                   :classification-result result})
+                   :classification-result result
+                   :seconds-elapsed (:seconds-elapsed body)})
                 (response/response
                   {:feedback (:feedback result)
                    :classification (:classification result)
@@ -347,7 +352,8 @@
                :correct-classification (:correct-classification
                                          (get classification/transaction-templates
                                               (:template-key entry)))
-               :classification-result result})
+               :classification-result result
+               :seconds-elapsed (:seconds-elapsed body)})
             (response/response (dissoc submission :assertive-app.guided/analytics)))
           {:status 409 :body {:error "Current entry is not a transaction"}}))
       {:status 401 :body {:error "Authentication required"}}))

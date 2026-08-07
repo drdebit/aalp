@@ -116,13 +116,14 @@
    - :correct-classification - keyword, expected classification
    - :classification-result - map from classify-transaction (:closest, :exact-matches)
    - :drill-entry - :tutorial or :test-out when the attempt is a tutorial-drill problem
+   - :seconds-elapsed - raw serve-to-submit seconds (uncapped; outliers handled at analysis)
 
    Progress is only counted toward level unlock when template-level >= level.
    This ensures students only advance by completing problems at their current level,
    not by answering easier review problems."
   [{:keys [user-id problem-id problem-type level template-level template-key
            selected-assertions je-debit je-credit je-amount
-           correct feedback-status drill-entry
+           correct feedback-status drill-entry seconds-elapsed
            correct-classification classification-result]}]
   (let [now (java.util.Date.)
         ;; Extract classification diff from the result
@@ -183,7 +184,11 @@
                      ;; Tutorial drill provenance: distinguishes test-out
                      ;; entrants from post-tutorial drillers
                      drill-entry
-                     (assoc :attempt/drill-entry (keyword drill-entry)))]
+                     (assoc :attempt/drill-entry (keyword drill-entry))
+
+                     ;; Time-on-task: raw serve-to-submit seconds
+                     (number? seconds-elapsed)
+                     (assoc :attempt/seconds-elapsed (double seconds-elapsed)))]
 
     ;; Record the attempt
     @(d/transact (schema/get-conn) [attempt-tx])

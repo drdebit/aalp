@@ -170,8 +170,11 @@ against the Guided Year; full verdicts and design sketches in
   heatmap.
 - **Spring 2027:** *retention re-checks* at period close (unledgered
   drill rounds sampling completed levels; outcomes dim the mastery map
-  and feed item 6's targeting — never relock recording) and
-  *deadline-vs-gate validation* if dated scheduling ships.
+  and feed item 6's targeting — never relock recording), the
+  *learned-vs-retained distinction* on the mastery map (drill-passed
+  vs. recheck-survived as different visual states — decided 2026-08-07,
+  built with the re-checks), and *deadline-vs-gate validation* if dated
+  scheduling ships.
 - **Rejected:** adaptive initial knowledge check (assertion vocabulary
   is novel to every entrant — nothing to place); ready-to-learn
   sequence choice in Year 1 (the script's linearity is load-bearing;

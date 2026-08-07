@@ -196,9 +196,13 @@ button), and wrong answers costing nothing but progress toward the bar
 
 Near-term (small, pre-pilot candidates):
 
-1. **Drill test-out** (§1) — views-only flow change; log usage.
-2. **Streak early-pass** (§4) — `:streak-pass 5` in drill-config plus
-   one condition.
+1. **Drill test-out** (§1) — shipped 2026-08-07. Guided-mode gate
+   offers "skip to the practice round"; a dead round routes to the
+   reading (fresh round as alternative); entry path recorded per
+   attempt as `:attempt/drill-entry` for the pilot analytics.
+2. **Streak early-pass** (§4) — shipped 2026-08-07. `:streak-pass 5`
+   in drill-config; a dead-by-ratio round stays alive while a streak
+   remains reachable.
 
 With roadmap item 5:
 

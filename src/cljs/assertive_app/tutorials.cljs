@@ -864,9 +864,13 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 ;; The mastery bar between a level's tutorial and Year 1 recording.
 ;; Raised from 4-of-5 for the GSU 2101 pilot population: more reps
 ;; before anything counts, at ~1-2 minutes per problem.
+;; :streak-pass is the ALEKS-derived early exit (ALEKS-DERIVED-MECHANICS.md
+;; §4): streak-pass consecutive correct passes the round immediately — in a
+;; free-response answer space a streak can't be lucked into, so fluent
+;; students exit in streak-pass problems instead of a minimum of pass-count.
 
 (def ^:private default-drill-config
-  {:round-size 10 :pass-count 8})
+  {:round-size 10 :pass-count 8 :streak-pass 5})
 
 (def ^:private drill-configs
   "Per-level overrides of the drill mastery bar."

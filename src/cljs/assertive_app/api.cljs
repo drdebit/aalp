@@ -277,14 +277,19 @@
   (let [problem (state/current-problem)
         correct-classification (:correct-classification problem)]
     (POST (str api-base "/classify")
-      {:params {:selected-assertions (state/selected-assertions)
-                :correct-classification correct-classification
-                ;; Include metadata for progress tracking
-                :problem-id (:id problem)
-                :problem-type (or (:problem-type problem) "forward")
-                :level (:level problem 0)
-                :template-level (:template-level problem)  ; Template's actual difficulty
-                :template-key (:template problem)}
+      {:params (cond-> {:selected-assertions (state/selected-assertions)
+                        :correct-classification correct-classification
+                        ;; Include metadata for progress tracking
+                        :problem-id (:id problem)
+                        :problem-type (or (:problem-type problem) "forward")
+                        :level (:level problem 0)
+                        :template-level (:template-level problem)  ; Template's actual difficulty
+                        :template-key (:template problem)}
+                 ;; Drill provenance: lets analytics separate test-out
+                 ;; entrants from post-tutorial drillers
+                 (state/drill-active?)
+                 (assoc :drill-entry
+                        (name (:entry-path (state/drill-state) :tutorial))))
        :format :json
        :headers (auth-headers)
        :response-format :json

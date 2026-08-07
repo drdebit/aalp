@@ -115,13 +115,14 @@
    - :je-debit, :je-credit, :je-amount - for construct mode
    - :correct-classification - keyword, expected classification
    - :classification-result - map from classify-transaction (:closest, :exact-matches)
+   - :drill-entry - :tutorial or :test-out when the attempt is a tutorial-drill problem
 
    Progress is only counted toward level unlock when template-level >= level.
    This ensures students only advance by completing problems at their current level,
    not by answering easier review problems."
   [{:keys [user-id problem-id problem-type level template-level template-key
            selected-assertions je-debit je-credit je-amount
-           correct feedback-status
+           correct feedback-status drill-entry
            correct-classification classification-result]}]
   (let [now (java.util.Date.)
         ;; Extract classification diff from the result
@@ -177,7 +178,12 @@
 
                      ;; Option A: full diff as EDN for batch analytics
                      closest
-                     (assoc :attempt/classification-diff (pr-str closest)))]
+                     (assoc :attempt/classification-diff (pr-str closest))
+
+                     ;; Tutorial drill provenance: distinguishes test-out
+                     ;; entrants from post-tutorial drillers
+                     drill-entry
+                     (assoc :attempt/drill-entry (keyword drill-entry)))]
 
     ;; Record the attempt
     @(d/transact (schema/get-conn) [attempt-tx])

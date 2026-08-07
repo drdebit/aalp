@@ -532,12 +532,16 @@
   (boolean (get-in @app-state [:drill :active?])))
 
 (defn start-drill!
-  "Start a drill with a per-level config {:round-size N :pass-count M}
-   (see tutorials/drill-config)."
-  [level {:keys [round-size pass-count]}]
+  "Start a drill with a per-level config {:round-size N :pass-count M
+   :streak-pass S} (see tutorials/drill-config). :entry-path records how
+   the student got here — :tutorial (after the reading + quiz) or
+   :test-out (challenged the drill directly from the level gate)."
+  [level {:keys [round-size pass-count streak-pass]}
+   & {:keys [entry-path] :or {entry-path :tutorial}}]
   (swap! app-state assoc :drill
-         {:active? true :level level :attempted 0 :correct 0 :round 1
-          :round-size round-size :pass-count pass-count}))
+         {:active? true :level level :attempted 0 :correct 0 :streak 0 :round 1
+          :round-size round-size :pass-count pass-count :streak-pass streak-pass
+          :entry-path entry-path}))
 
 (defn record-drill-result! [correct?]
   (swap! app-state update :drill
@@ -545,13 +549,14 @@
            (when d
              (-> d
                  (update :attempted inc)
-                 (update :correct (if correct? inc identity)))))))
+                 (update :correct (if correct? inc identity))
+                 (update :streak (if correct? inc (constantly 0))))))))
 
 (defn reset-drill-round! []
   (swap! app-state update :drill
          (fn [d]
            (when d
-             (-> d (assoc :attempted 0 :correct 0) (update :round inc))))))
+             (-> d (assoc :attempted 0 :correct 0 :streak 0) (update :round inc))))))
 
 (defn end-drill! []
   (swap! app-state assoc :drill nil))

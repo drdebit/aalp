@@ -1073,13 +1073,20 @@
 
 (defn drill-next-controls
   "Round-aware next controls for the tutorial practice drill. Passing a
-   round (or reaching the pass count early) completes the tutorial and
-   unlocks Year 1 recording; an unreachable round offers a fresh one."
+   round — by ratio (pass-count of round-size, reachable early) or by
+   streak (streak-pass consecutive correct) — completes the tutorial and
+   unlocks Year 1 recording. A dead round (neither bar still reachable)
+   offers a fresh one; test-out entrants are routed to the tutorial
+   reading instead, with the fresh round as the alternative."
   []
-  (let [{:keys [attempted correct level round-size pass-count]} (state/drill-state)
+  (let [{:keys [attempted correct level round-size pass-count
+                streak streak-pass entry-path]} (state/drill-state)
         remaining (- round-size attempted)
-        passed? (>= correct pass-count)
-        unreachable? (< (+ correct remaining) pass-count)]
+        streak-passed? (and streak-pass (>= streak streak-pass))
+        passed? (or (>= correct pass-count) streak-passed?)
+        streak-reachable? (and streak-pass (>= (+ streak remaining) streak-pass))
+        unreachable? (and (< (+ correct remaining) pass-count)
+                          (not streak-reachable?))]
     (cond
       passed?
       [:button.primary.drill-pass-btn
@@ -1089,15 +1096,32 @@
                      (state/clear-feedback!)
                      (state/set-current-problem! nil)
                      (api/fetch-guided-state!))}
-       "You're ready — start recording Year 1 →"]
+       (if (and streak-passed? (< correct pass-count))
+         (str streak-pass " in a row — start recording Year 1 →")
+         "You're ready — start recording Year 1 →")]
 
       unreachable?
-      [:button.primary.drill-retry-btn
-       {:on-click #(do
-                     (state/reset-drill-round!)
-                     (state/clear-feedback!)
-                     (api/fetch-problem! (state/current-level)))}
-       (str "Not quite (" correct " of " attempted ") — try a fresh round")]
+      (if (= entry-path :test-out)
+        [:div.drill-testout-fail
+         [:button.primary.drill-retry-btn
+          {:on-click #(do
+                        (state/end-drill!)
+                        (state/clear-feedback!)
+                        (state/set-current-problem! nil)
+                        (state/start-tutorial-quiz! level))}
+          (str "Not quite (" correct " of " attempted ") — read the tutorial")]
+         [:button.secondary
+          {:on-click #(do
+                        (state/reset-drill-round!)
+                        (state/clear-feedback!)
+                        (api/fetch-problem! (state/current-level)))}
+          "Try another round instead"]]
+        [:button.primary.drill-retry-btn
+         {:on-click #(do
+                       (state/reset-drill-round!)
+                       (state/clear-feedback!)
+                       (api/fetch-problem! (state/current-level)))}
+         (str "Not quite (" correct " of " attempted ") — try a fresh round")])
 
       :else
       [:button.primary
@@ -1917,6 +1941,19 @@
       [:button.gate-start-btn
        {:on-click #(state/start-tutorial-quiz! level)}
        "Start Tutorial"]
+      ;; ALEKS-derived test-out (ALEKS-DERIVED-MECHANICS.md §1): the drill
+      ;; is already the mastery instrument, so placement needs no new one —
+      ;; challenge the practice round directly; the same bar applies, and a
+      ;; dead round routes back into the reading. Guided mode only: that's
+      ;; where the drill flow lives.
+      (when (state/guided-mode?)
+        [:button.gate-testout-btn
+         {:on-click #(do
+                       (state/start-drill! level (tutorials/drill-config level)
+                                           :entry-path :test-out)
+                       (state/clear-feedback!)
+                       (api/fetch-problem! level))}
+         "Think you already know this? Skip to the practice round"])
       ;; If at least L0 completed, let them go back to a completed level
       (when (pos? level)
         [:p.gate-hint "Or switch to a level you've already completed."])]]))
@@ -2675,7 +2712,8 @@
        ;; Practice drill: unledgered problems with complete feedback,
        ;; between the tutorial quiz and Year 1 recording
        (state/drill-active?)
-       (let [{:keys [attempted correct round round-size pass-count]} (state/drill-state)]
+       (let [{:keys [attempted correct round round-size pass-count
+                     streak streak-pass]} (state/drill-state)]
          [:div.drill-container
           [:div.drill-header
            [:h2 (str "Practice round " round)]
@@ -2683,9 +2721,13 @@
             (str "These practice transactions don't go into your books — "
                  "mistakes here are free. Get "
                  pass-count " of " round-size
-                 " right to start recording.")]
+                 (if streak-pass
+                   (str " right — or " streak-pass " in a row — to start recording.")
+                   " right to start recording."))]
            [:div.drill-progress
-            (str "This round: " correct " correct of " attempted " attempted")]
+            (str "This round: " correct " correct of " attempted " attempted"
+                 (when (and streak-pass (>= streak 2))
+                   (str " · " streak " in a row")))]
            [tutorial-review-button level]]
           [:div.three-column-layout
            [narrative-panel]

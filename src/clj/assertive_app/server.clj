@@ -125,7 +125,8 @@
                                   :correct correct?
                                   :feedback-status (name (get-in result [:feedback :status] :indeterminate))
                                   :correct-classification correct-classification
-                                  :classification-result result})]
+                                  :classification-result result
+                                  :drill-entry (:drill-entry body)})]
           (response/response (assoc result :progress updated-progress)))
         ;; Response without progress for unauthenticated users
         (response/response result))))

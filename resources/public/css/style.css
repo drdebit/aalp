@@ -3341,6 +3341,33 @@ header {
     margin-top: 18px !important;
 }
 
+/* Test-out: challenge the drill directly from the level gate */
+.gate-testout-btn {
+    display: block;
+    margin: 12px auto 0;
+    padding: 8px 20px;
+    background: transparent;
+    color: #1a2332;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.gate-testout-btn:hover {
+    border-color: #1a2332;
+    background: #f1f5f9;
+}
+
+/* Failed test-out round: read-the-tutorial primary + fresh-round alternative */
+.drill-testout-fail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* ==================== Tutorial Review Button ==================== */
 
 .practice-toolbar {

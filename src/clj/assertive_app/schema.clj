@@ -197,6 +197,12 @@
     :db/cardinality :db.cardinality/one
     :db/doc "EDN map of full classification diff for batch analytics"}
 
+   {:db/ident :attempt/drill-entry
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "How the student entered the tutorial drill this attempt belongs to: :tutorial (after the reading + quiz) or :test-out (challenged the drill directly). Absent for non-drill attempts."}
+
    ;; ==================== Business State Entity ====================
    ;; Tracks current simulation state per user
    {:db/ident :business-state/user

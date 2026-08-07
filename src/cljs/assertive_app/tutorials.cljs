@@ -879,6 +879,28 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 (defn drill-config [level]
   (merge default-drill-config (get drill-configs level)))
 
+;; ==================== Stuck detection ====================
+;; After consecutive drill misses, the nudge deep-links to the tutorial
+;; section that teaches the assertion the student keeps omitting
+;; (ALEKS-DERIVED-MECHANICS.md, stuck detection). Indexes reference each
+;; level's :sections vector — keep in sync when sections are reordered.
+
+(def ^:private stuck-sections
+  {0 {:provides 2 :receives 2 :has-counterparty 2 :has-date 2 :default 2}
+   1 {:requires 1 :expects 2 :default 5}
+   2 {:consumes 1 :creates 1 :is-allowed-by 1 :default 1}})
+
+(defn stuck-section
+  "Where to send a stuck student: the section teaching the given missed
+   assertion at this level. Returns {:index n :heading s}, or nil when
+   the level has no tutorial."
+  [level assertion]
+  (when-let [sections (get-in level-tutorials [level :sections])]
+    (let [m (get stuck-sections level {})
+          idx (min (get m assertion (get m :default 0))
+                   (dec (count sections)))]
+      {:index idx :heading (:heading (nth sections idx))})))
+
 (defn get-level-tutorial
   "Returns tutorial data for the specified level (0-7)."
   [level]

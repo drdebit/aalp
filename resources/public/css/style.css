@@ -3368,6 +3368,42 @@ header {
     gap: 8px;
 }
 
+/* Worked example: canonical assertions + derived JE, problem forfeited */
+.worked-example-banner {
+    background: #eef6f1;
+    border: 1px solid #b7dcc5;
+    border-radius: 4px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+
+.worked-example-banner h3 {
+    margin: 0 0 6px;
+    color: #1e6b43;
+}
+
+.worked-example-banner p {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 0.92em;
+}
+
+/* Stuck detection: consecutive misses -> targeted tutorial re-read */
+.drill-stuck-nudge {
+    background: #fdf6e3;
+    border: 1px solid #e8d8a8;
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+}
+
+.drill-stuck-nudge p {
+    margin: 0 0 8px;
+    line-height: 1.5;
+    font-size: 0.92em;
+    color: #7d6608;
+}
+
 /* ==================== Tutorial Review Button ==================== */
 
 .practice-toolbar {

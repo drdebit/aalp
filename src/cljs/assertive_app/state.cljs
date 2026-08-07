@@ -92,6 +92,12 @@
 (defn clear-selections! []
   (swap! app-state assoc :selected-assertions {}))
 
+(defn set-selected-assertions!
+  "Replace the whole selection map (used by the drill's worked example
+   to fill the sentence builder with the canonical assertions)."
+  [assertions]
+  (swap! app-state assoc :selected-assertions (or assertions {})))
+
 (defn set-feedback! [feedback]
   (swap! app-state assoc :feedback feedback))
 
@@ -540,23 +546,47 @@
    & {:keys [entry-path] :or {entry-path :tutorial}}]
   (swap! app-state assoc :drill
          {:active? true :level level :attempted 0 :correct 0 :streak 0 :round 1
+          :miss-streak 0 :miss-assertions {} :worked-example? false
           :round-size round-size :pass-count pass-count :streak-pass streak-pass
           :entry-path entry-path}))
 
-(defn record-drill-result! [correct?]
+(defn record-drill-result!
+  "Count an answered drill problem. missing-assertions (a seq of assertion
+   keywords the student omitted, on a miss) feeds stuck detection."
+  [correct? & [missing-assertions]]
   (swap! app-state update :drill
          (fn [d]
            (when d
              (-> d
                  (update :attempted inc)
                  (update :correct (if correct? inc identity))
-                 (update :streak (if correct? inc (constantly 0))))))))
+                 (update :streak (if correct? inc (constantly 0)))
+                 (update :miss-streak (if correct? (constantly 0) inc))
+                 (update :miss-assertions
+                         (fn [freqs]
+                           (if correct?
+                             freqs
+                             (reduce (fn [m a] (update m a (fnil inc 0)))
+                                     freqs missing-assertions)))))))))
 
 (defn reset-drill-round! []
   (swap! app-state update :drill
          (fn [d]
            (when d
-             (-> d (assoc :attempted 0 :correct 0 :streak 0) (update :round inc))))))
+             (-> d
+                 (assoc :attempted 0 :correct 0 :streak 0
+                        :miss-streak 0 :miss-assertions {} :worked-example? false)
+                 (update :round inc))))))
+
+(defn set-drill-worked-example!
+  "Mark the current drill problem as explained (worked example shown).
+   An explained problem is forfeited: it can't be submitted and doesn't
+   count toward the round — the ALEKS Explanation semantics."
+  [shown?]
+  (swap! app-state assoc-in [:drill :worked-example?] shown?))
+
+(defn drill-worked-example? []
+  (boolean (get-in @app-state [:drill :worked-example?])))
 
 (defn end-drill! []
   (swap! app-state assoc :drill nil))
@@ -722,13 +752,14 @@
   (get-in @app-state [:tutorial-quiz :review-only?] false))
 
 (defn start-tutorial-quiz!
-  "Open the tutorial-quiz flow for a given level."
-  [level & {:keys [review-only?] :or {review-only? false}}]
+  "Open the tutorial-quiz flow for a given level. :section opens the
+   reading at a specific section (stuck-detection deep link)."
+  [level & {:keys [review-only? section] :or {review-only? false section 0}}]
   (swap! app-state assoc :tutorial-quiz
          {:active? true
           :level level
           :phase :reading
-          :section-index 0
+          :section-index section
           :quiz-answers {}
           :quiz-results nil
           :missed-questions []

@@ -103,7 +103,7 @@
    Required keys:
    - :user-id - Datomic entity id of the user
    - :problem-id - UUID string from generate-problem
-   - :problem-type - \"forward\", \"reverse\", or \"construct\"
+   - :problem-type - \"forward\", \"reverse\", \"construct\", or \"worked-example\"
    - :level - integer level (0, 1, 2) - student's current level
    - :correct - boolean
    - :feedback-status - \"correct\", \"incorrect\", or \"indeterminate\"
@@ -191,8 +191,10 @@
     ;; Only count progress if template is at or above student's current level
     ;; This prevents advancement by answering easier review problems
     ;; If template-level not provided (legacy), count all progress
-    (let [counts-for-progress? (or (nil? template-level)
-                                   (>= template-level level))]
+    ;; Worked-example views are logged as attempts but are never progress
+    (let [counts-for-progress? (and (not= (keyword problem-type) :worked-example)
+                                    (or (nil? template-level)
+                                        (>= template-level level)))]
       (when counts-for-progress?
         ;; Update level progress
         (update-level-progress! user-id level correct)

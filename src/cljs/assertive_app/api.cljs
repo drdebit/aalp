@@ -1,6 +1,7 @@
 (ns assertive-app.api
   "API client for backend communication."
   (:require [ajax.core :refer [GET POST]]
+            [clojure.set :as set]
             [assertive-app.state :as state]
             [assertive-app.tutorials :as tutorials]))
 
@@ -298,11 +299,17 @@
                   (state/set-feedback! (:feedback response))
                   ;; Dual fluency: show the JE the student's assertions produce
                   (derive-je!)
-                  ;; Tutorial drill: count this attempt toward the round
+                  ;; Tutorial drill: count this attempt toward the round.
+                  ;; On a miss, the omitted assertions (diffed client-side
+                  ;; against the problem's answer key) feed stuck detection.
                   (when (state/drill-active?)
-                    (let [status (get-in response [:feedback :status])]
-                      (state/record-drill-result!
-                        (contains? #{"correct" :correct} status))))
+                    (let [status (get-in response [:feedback :status])
+                          correct? (contains? #{"correct" :correct} status)
+                          missing (when-not correct?
+                                    (set/difference
+                                      (set (keys (:correct-assertions problem)))
+                                      (set (keys (state/selected-assertions)))))]
+                      (state/record-drill-result! correct? missing)))
                   ;; Update progress if included in response
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))
@@ -580,6 +587,29 @@
      :handler (fn [response]
                 (state/set-derived-je! response))
      :error-handler (silent-error-handler "JE derivation error:")}))
+
+(defn show-worked-example!
+  "ALEKS-style worked example for the current drill problem: fill the
+   sentence builder with the canonical assertions, derive their JE with
+   per-line provenance, and forfeit the problem — it can no longer be
+   submitted and won't count toward the round. Viewing is logged
+   server-side (never as progress) for the pilot analytics."
+  []
+  (let [problem (state/current-problem)]
+    (state/set-selected-assertions! (:correct-assertions problem))
+    (state/set-drill-worked-example! true)
+    (derive-je!)
+    (POST (str api-base "/worked-example-viewed")
+      {:params {:problem-id (:id problem)
+                :level (:level problem 0)
+                :template-key (:template problem)
+                :drill-entry (name (:entry-path (state/drill-state) :tutorial))}
+       :format :json
+       :headers (auth-headers)
+       :response-format :json
+       :keywords? true
+       :handler (fn [_response] nil)
+       :error-handler (silent-error-handler "Error logging worked example:")})))
 
 (def ^:private derive-je-timer (atom nil))
 

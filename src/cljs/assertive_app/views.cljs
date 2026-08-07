@@ -1071,6 +1071,27 @@
                    [:span.dj-nr-chip (:code nr)]
                    [:span.dj-nr-text (:text nr)]]))])])))))
 
+(defn drill-stuck-nudge
+  "Stuck detection: after consecutive misses, point at the tutorial
+   section that teaches the assertion the student keeps omitting."
+  []
+  (let [{:keys [level miss-streak miss-assertions]} (state/drill-state)]
+    (when (and miss-streak (>= miss-streak 2))
+      (let [[assertion _] (first (sort-by (comp - val) miss-assertions))
+            target (tutorials/stuck-section level assertion)]
+        [:div.drill-stuck-nudge
+         [:p (if assertion
+               (str "That's " miss-streak " in a row — and it keeps coming down to "
+                    (name assertion) ". Mistakes here are free; a quick re-read might help.")
+               (str "That's " miss-streak " in a row. Mistakes here are free; a quick re-read might help."))]
+         [:button.secondary
+          {:on-click #(state/start-tutorial-quiz! level
+                                                  :review-only? true
+                                                  :section (:index target 0))}
+          (if target
+            (str "Review: " (:heading target))
+            "Review the tutorial")]]))))
+
 (defn drill-next-controls
   "Round-aware next controls for the tutorial practice drill. Passing a
    round — by ratio (pass-count of round-size, reachable early) or by
@@ -1130,12 +1151,35 @@
                      (api/fetch-problem! (state/current-level)))}
        "Next Practice Problem"])))
 
+(defn worked-example-panel
+  "The ALEKS Explanation semantics, adapted: the sentence builder now
+   holds the canonical assertions, and this panel shows the JE they
+   derive. The problem is forfeited — the only way forward is a fresh
+   one, at no cost to the round."
+  []
+  [:div.worked-example
+   [:div.worked-example-banner
+    [:h3 "Worked example"]
+    [:p "The sentence builder now shows the full set of assertions for this transaction, and below is the journal entry they produce — click a line to see the rule behind it. This problem won't count toward your round, and neither does looking."]]
+   [derived-je-panel]
+   [:div.actions
+    [:button.primary
+     {:on-click #(do
+                   (state/set-drill-worked-example! false)
+                   (state/clear-selections!)
+                   (state/toggle-assertion! :has-date)
+                   (state/clear-feedback!)
+                   (api/fetch-problem! (state/current-level)))}
+     "Try a fresh problem"]]])
+
 (defn feedback-panel []
   (let [feedback (state/feedback)
         selected (state/selected-assertions)
         problem (state/current-problem)
         is-reverse? (= (:problem-type problem) "reverse")
         is-construct? (= (:problem-type problem) "construct")
+        worked-example? (and (state/drill-active?)
+                             (state/drill-worked-example?))
         je (state/get-constructed-je)]
     [:div.column.feedback-panel
      [:h2 "Feedback"]
@@ -1144,8 +1188,13 @@
      (when is-construct?
        [je-constructor problem :disabled? (some? feedback)])
 
+     ;; Worked example (drill only): canonical assertions + derived JE,
+     ;; problem forfeited
+     (when worked-example?
+       [worked-example-panel])
+
      ;; Show Submit/Clear/Cancel buttons before feedback is received
-     (when (nil? feedback)
+     (when (and (nil? feedback) (not worked-example?))
        [:div.actions
         (if is-construct?
           ;; For construct mode: submit JE
@@ -1177,6 +1226,12 @@
                           (when-let [date (get-in problem [:variables :date])]
                             (state/update-assertion-parameter! :has-date :date date))))}
          "Clear"]
+        ;; ALEKS-style explanation, drill only: see the worked recording
+        ;; at the cost of this problem not counting toward the round
+        (when (and (state/drill-active?) (not is-construct?))
+          [:button.secondary.worked-example-btn
+           {:on-click #(api/show-worked-example!)}
+           "Show me a worked example"])
         ;; Cancel button only in simulation mode
         (when (state/simulation-mode?)
           [:button.cancel-btn
@@ -1185,7 +1240,7 @@
 
      (cond
        ;; Show current selection status
-       (and (nil? feedback) (seq selected))
+       (and (nil? feedback) (not worked-example?) (seq selected))
        [:div.status
         [:p "Assertions selected: " (count (keys selected))]]
 
@@ -1269,6 +1324,9 @@
         ;; Dual fluency: the entry derived from the student's own
         ;; assertions, rule by rule, with explore mode
         [derived-je-panel]
+
+        (when (state/drill-active?)
+          [drill-stuck-nudge])
 
         [:div.actions
          (if (state/drill-active?)

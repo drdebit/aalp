@@ -184,6 +184,50 @@ gate up to N's level is passable by then at the configured drill bar;
 warn the instructor at setup time when pacing is infeasible, don't
 discover it mid-term.
 
+## Second pass (2026-08-07, verified in ALEKS student view)
+
+A second look at ALEKS with the Guided Year in mind surfaced two more
+mechanics, both adopted. The Explanation behavior was verified live in
+the student view of the disposable class:
+
+- Every learning-mode problem offers **Explanation** pre-answer, one
+  click, no confirmation.
+- It shows the worked solution **for that exact instance**, ending with
+  the literal answer.
+- Viewing **forfeits the instance**: Check is replaced by "More
+  Practice"; the only way forward is a fresh instance.
+- **No penalty**: the topic progress meter is untouched (and it is
+  indeed 5 segments — 5-to-mastery confirmed).
+
+**7. On-demand worked example (shipped 2026-08-07).** The drill gains
+"Show me a worked example": the sentence builder fills with the
+canonical assertions, the dual-fluency panel derives their JE with
+per-line provenance (the existing rulebook UI *is* the explanation),
+and the problem is forfeited — submit disappears, "Try a fresh
+problem" replaces it, and no drill counter moves. ALEKS's forfeit rule
+kept intact: help is always available and never punished, but a helped
+problem is never evidence of mastery. Views are logged as
+`:attempt/problem-type :worked-example` / `:feedback-status :explained`
+(never counted as progress) so the pilot analytics can see who leans
+on explanations and where.
+
+**8. Stuck detection (shipped 2026-08-07).** ALEKS routes a student to
+the explanation after repeated misses; AALP can aim better. After two
+consecutive drill misses, a nudge names the assertion the student
+keeps omitting (diffed client-side against the problem's answer key,
+accumulated per round) and deep-links to the tutorial section that
+teaches it (`stuck-sections` map in tutorials.cljs — keep in sync if
+sections are reordered).
+
+Recorded as decisions, no build yet: **learned vs. retained** — ALEKS
+treats "learned in learning mode" and "retained through a knowledge
+check" as different evidence; when the mastery map (§2) and retention
+re-checks (§5) ship in spring, map slices must distinguish
+drill-passed from recheck-survived. **Time-on-task** — ALEKS leans on
+it for instructor reports; already on the roadmap's instrumentation
+list, pilot-relevant. Considered and not taken: nudge/messaging
+system, gradebook integration, QuickTables-style fluency drills.
+
 ## Already aligned (no action)
 
 Two ALEKS properties the platform already has, worth recording so they

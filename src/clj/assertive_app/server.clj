@@ -131,6 +131,24 @@
         ;; Response without progress for unauthenticated users
         (response/response result))))
 
+  (POST "/api/worked-example-viewed" {body :body :as request}
+    ;; The drill's ALEKS-style explanation: viewing forfeits the problem
+    ;; client-side; here we only log it (analytics, never progress —
+    ;; record-attempt! skips progress counting for this problem-type).
+    (if-let [user (:user request)]
+      (do
+        (progress/record-attempt!
+          {:user-id (:db/id user)
+           :problem-id (:problem-id body)
+           :problem-type "worked-example"
+           :level (or (:level body) 0)
+           :template-key (:template-key body)
+           :correct false
+           :feedback-status "explained"
+           :drill-entry (:drill-entry body)})
+        (response/response {:recorded true}))
+      (response/response {:recorded false})))
+
   (POST "/api/generate-problem" {body :body}
     (let [level (:level body 0)
           problem-type (keyword (get body :problem-type "forward"))

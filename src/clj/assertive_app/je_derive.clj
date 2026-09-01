@@ -13,7 +13,8 @@
    The derivation is faithful, not corrective: wrong assertions produce
    wrong (or partial) journal entries without comment. Partial entries
    render missing sides as prompts, not errors."
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [assertive-engine.model.quantity :as q]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -103,6 +104,14 @@
     :amount :monetary
     :text "SP's rulebook: printed shirts are ready to sell, so they are Finished Goods Inventory."}
 
+   ;; -------- Labour received ------------------------------------------
+   {:id :wage-expense
+    :when {:assertion :receives
+           :params {:unit #{"effort" "effort-unit"}}}
+    :line {:side :debit :account "Wage Expense"}
+    :amount :monetary
+    :text "SP received effort -- someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What SP owes or paid for it is the money side of the same exchange."}
+
    ;; -------- Goods provided: revenue needs a counterparty ------------
    {:id :revenue
     :when {:assertion :provides
@@ -191,47 +200,68 @@
 ;; Amount resolution
 ;; ---------------------------------------------------------------------------
 
+(defn params->quantity
+  "AALP's flat assertion params -> an assertive-engine quantity.
+
+   The engine's quantity, {:value N :unit {:unit-type K :unit U}}, is the
+   substrate. Denomination travels WITH the value, so nothing downstream
+   can mistake seven t-shirts for seven dollars: they are no longer both
+   just the number 7. This is the translation seam -- assertions in,
+   engine quantities out; account labels come later and only for display."
+  [{:keys [unit physical-item quantity]}]
+  (when-let [v (num-or-nil quantity)]
+    (case (some-> unit name)
+      "monetary-unit"      (q/monetary v)
+      "physical-unit"      (q/physical v (keyword (or physical-item "unspecified")))
+      ("time-unit" "time") (q/time-qty v)
+      ("effort-unit" "effort") (q/effort v)
+      nil)))
+
+(defn monetary-quantity?
+  "Is this engine quantity denominated in money? A journal-entry line is
+   measured in currency, so only such a quantity may price one."
+  [qty]
+  (= :monetary (get-in qty [:unit :unit-type])))
+
 (defn monetary?
-  "Is this assertion's selected params denominated in money? A journal
-   entry line is measured in currency, so ONLY a monetary-unit flow may
-   supply an amount. `20 blank t-shirts` and `$250` are both just
-   numbers -- this predicate is the only thing standing between them."
+  "Is this assertion's selection denominated in money?"
   [params]
-  (let [u (:unit params)]
-    (= "monetary-unit" (when u (name u)))))
+  (monetary-quantity? (params->quantity params)))
 
 (defn- monetary-amount
-  "The dollar amount among the student's selections: the :quantity of a
-   monetary-unit flow, else the problem's :amount variable.
+  "The monetary quantity among the student's selections, else the
+   problem's :amount variable lifted into one.
 
    Order matters only when several flows are monetary; it follows the
    money the entry is measured by -- cash that actually moved
    (receives / provides) before an amount merely owed or expected."
   [selections variables]
   (or (some (fn [code]
-              (let [p (get selections code)]
-                (when (monetary? p) (num-or-nil (:quantity p)))))
+              (let [qty (params->quantity (get selections code))]
+                (when (monetary-quantity? qty) qty)))
             [:receives :provides :requires :expects])
-      (num-or-nil (:amount variables))))
+      (when-let [v (num-or-nil (:amount variables))] (q/monetary v))))
 
 (defn- resolve-amount
-  "Resolve one line's amount. Returns {:amount n|nil :unresolved? bool}.
+  "Resolve one line's amount as an engine quantity.
+   Returns {:quantity q|nil :unresolved? bool}.
 
-   :flow uses the matched assertion's own quantity, but ONLY when that
-   assertion is itself monetary -- otherwise it falls back to the
+   :flow uses the matched assertion's own quantity, but only when that
+   quantity is itself monetary -- otherwise it falls back to the
    transaction's monetary amount rather than spending a physical count.
    :unknown means the assertions genuinely do not carry this figure
    (a cost that lives in other events); it stays nil and is marked
    unresolved so nothing downstream invents a number for it."
   [amount-kind matched-code selections variables]
   (case amount-kind
-    :flow     (let [p (get selections matched-code)
-                    own (when (monetary? p) (num-or-nil (:quantity p)))]
-                {:amount (or own (monetary-amount selections variables))
+    :flow     (let [own (params->quantity (get selections matched-code))]
+                {:quantity (if (monetary-quantity? own)
+                             own
+                             (monetary-amount selections variables))
                  :unresolved? false})
-    :monetary {:amount (monetary-amount selections variables) :unresolved? false}
-    :unknown  {:amount nil :unresolved? true}
-    {:amount nil :unresolved? true}))
+    :monetary {:quantity (monetary-amount selections variables) :unresolved? false}
+    :unknown  {:quantity nil :unresolved? true}
+    {:quantity nil :unresolved? true}))
 
 ;; ---------------------------------------------------------------------------
 ;; Derivation
@@ -262,16 +292,25 @@
                             (assoc rule :matched matched :context-used used)))))
                     rulebook)
         lines (mapv (fn [{:keys [line amount matched context-used id text entry-label]}]
-                      (let [{:keys [amount unresolved?]}
-                            (resolve-amount amount matched selections variables)]
+                      (let [{:keys [quantity unresolved?]}
+                            (resolve-amount amount matched selections variables)
+                            prov (vec (distinct (cons matched context-used)))]
                         {:side (:side line)
                          :account (:account line)
-                         :amount amount
-                         ;; Every posted amount is money by construction
-                         ;; (resolve-amount admits no other denomination).
-                         :amount-unit (when amount :monetary)
+                         ;; The typed quantity is the real value; :amount is
+                         ;; its scalar projection, kept for the wire and the
+                         ;; ledger. Every posted amount is money by
+                         ;; construction -- resolve-amount admits no other
+                         ;; denomination.
+                         :quantity quantity
+                         :amount (:value quantity)
+                         :amount-unit (get-in quantity [:unit :unit-type])
                          :unresolved? unresolved?
-                         :provenance (vec (distinct (cons matched context-used)))
+                         :provenance prov
+                         ;; Drill-down payload: the assertions themselves,
+                         ;; so a student opening this line finds assertions
+                         ;; underneath and nothing else.
+                         :assertions (select-keys selections prov)
                          :rule-id id
                          :rule-text text
                          :entry-label entry-label}))
@@ -347,11 +386,12 @@
     :covered?      bool}    ;; did the rulebook produce any line at all?"
   ([selections] (derive-entry selections {}))
   ([selections variables]
-   (let [d (derive-je selections variables)]
+   (let [d    (derive-je selections variables)
+         sel  (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
+         qty  (monetary-amount sel variables)]
      {:lines         (:lines d)
-      :amount        (monetary-amount
-                       (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
-                       variables)
+      :quantity      qty
+      :amount        (:value qty)
       :balanced?     (get-in d [:totals :balanced?])
       :fully-priced? (get-in d [:totals :fully-priced?])
       :unresolved    (:unresolved d)

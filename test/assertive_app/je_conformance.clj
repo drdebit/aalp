@@ -64,13 +64,32 @@
                    (= :has-date a)          (assoc :date "2026-01-15")
                    (= :has-counterparty a)  (assoc :party "Acme Co")))]))))
 
+(def account-aliases
+  "Account names are a TRANSLATION of assertions into the double-entry
+   vocabulary -- a label chosen at report time, not data. The same
+   underlying position may be labelled \"Equipment\" or
+   \"Equipment (Fixed Asset)\" with no difference to what was asserted,
+   and a student could rename it in a report without changing a thing.
+
+   So conformance compares canonical labels: a naming difference is not
+   a disagreement about the entry. It IS worth knowing about, though --
+   two labels for one position would open two ledger accounts -- so the
+   aliases are listed explicitly here rather than normalised away by
+   fuzzy matching."
+  {"Equipment"                "Equipment (Fixed Asset)"
+   "Wages Expense"            "Wage Expense"
+   "Finished Goods"           "Finished Goods Inventory"
+   "Raw Materials"            "Raw Materials Inventory"})
+
+(defn canonical-account [a] (get account-aliases a a))
+
 (defn- template-accounts [class-key]
   (let [je (get-in c/classifications [class-key :journal-entry])
         je (cond (map? je) [je] (sequential? je) (filter map? je) :else [])]
-    (set (remove nil? (mapcat (juxt :debit :credit) je)))))
+    (set (map canonical-account (remove nil? (mapcat (juxt :debit :credit) je))))))
 
 (defn- derived-accounts [entry]
-  (set (map :account (:lines entry))))
+  (set (map (comp canonical-account :account) (:lines entry))))
 
 (defn check
   "Conformance result for one classification."

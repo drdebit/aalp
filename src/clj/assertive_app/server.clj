@@ -17,7 +17,8 @@
             [assertive-engine.store.datomic :as engine-datomic]
             [assertive-app.je-derive :as je-derive]
             [assertive-app.analytics :as analytics]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [assertive-app.chain :as chain]))
 
 (defn wrap-cors
   "Middleware to enable CORS for development"
@@ -515,11 +516,15 @@
             ;; recorded -- the same basis the ledger uses -- so the live
             ;; panel and the posted entry can never disagree.
             context (try (simulation/derivation-context-for (:db/id user))
-                         (catch Exception _ {:item-kinds simulation/item-kinds}))]
+                         (catch Exception _ {:item-kinds simulation/item-kinds}))
+            sel     (or selected-assertions {})]
         (response/response
-          (je-derive/derive-je (or selected-assertions {})
-                               (or variables {})
-                               context)))
+          (assoc (je-derive/derive-je sel (or variables {}) context)
+                 ;; A sibling to the derivation, never folded into it:
+                 ;; the entry stays a faithful reading of the assertions,
+                 ;; while this says whether the record can bear them.
+                 ;; You can only provide what you have.
+                 :unsupported (chain/unsupported-provision sel (:events context)))))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; ---- Student-composed reports (calculation assembly) ----

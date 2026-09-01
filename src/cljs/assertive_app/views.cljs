@@ -1019,8 +1019,15 @@
   (let [expanded (r/atom nil)]
     (fn []
       (when-let [d (state/derived-je)]
-        (let [{:keys [lines placeholders context not-reflected totals]} d]
+        (let [{:keys [lines placeholders context not-reflected totals unsupported]} d]
           [:div.derived-je
+           ;; You can only provide what you have. Said before the entry,
+           ;; because no journal entry is the right answer to giving away
+           ;; something SP does not hold.
+           (when unsupported
+             [:div.dj-unsupported
+              [:span.dj-unsupported-mark "!"]
+              [:span.dj-unsupported-text (:message unsupported)]])
            [:div.dj-header
             [:h4 "What your assertions produce"]
             [:button.dj-explore-btn

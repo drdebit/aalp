@@ -4155,3 +4155,14 @@ header {
   background: #fdf6e3; border-left: 3px solid #d8c48a;
   padding: .35rem .5rem; border-radius: 2px;
 }
+
+/* ---- "You can only provide what you have" --------------------------- */
+.dj-unsupported {
+  display: flex; gap: .5rem; align-items: flex-start;
+  margin: 0 0 .6rem; padding: .5rem .6rem;
+  background: #fdecea; border-left: 3px solid #d9534f; border-radius: 2px;
+}
+.dj-unsupported-mark {
+  font-weight: 700; color: #b5342f; line-height: 1.2;
+}
+.dj-unsupported-text { font-size: .82rem; color: #7d2b27; }

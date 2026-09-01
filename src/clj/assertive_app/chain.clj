@@ -171,3 +171,71 @@
   ([events item] (inventory-account events item nil))
   ([events item item-kinds]
    (some-> (inventory-position events item item-kinds) position-accounts)))
+
+;; ---------------------------------------------------------------------------
+;; What SP actually has
+;; ---------------------------------------------------------------------------
+
+(defn on-hand
+  "Net units of each item the record leaves SP holding.
+
+     + received from a counterparty
+     + created by a transformation
+     - consumed by a transformation
+     - provided to a counterparty
+
+   -> {item units}. An item nothing has happened to is simply absent,
+   which is not the same as zero and reads differently to a student."
+  [events]
+  (reduce (fn [acc assertions]
+            (reduce (fn [acc [assertion-key sign]]
+                      (if-let [{:keys [item units]} (physical (get assertions assertion-key))]
+                        (update acc item (fnil + 0) (* sign (or units 0)))
+                        acc))
+                    acc
+                    {:receives 1 :creates 1 :consumes -1 :provides -1}))
+          {} events))
+
+(defn- monetary-qty [params]
+  (when (= "monetary-unit" (some-> (:unit params) name))
+    (let [q (:quantity params)]
+      (cond (number? q) q
+            (string? q) (try (Double/parseDouble (str/trim q)) (catch Exception _ nil))
+            :else nil))))
+
+(defn cash-on-hand
+  "Money in less money out, across the record."
+  [events]
+  (reduce (fn [total assertions]
+            (+ total
+               (or (monetary-qty (:receives assertions)) 0)
+               (- (or (monetary-qty (:provides assertions)) 0))))
+          0 events))
+
+(defn unsupported-provision
+  "Can SP provide what this event says it provides?
+
+   You can only provide what you have. That constraint is on the PRESENT
+   tense only: `provides` is a claim about now, and the record either
+   bears it out or it does not. Nested under `expects` or `allows` --
+   which in the flat form means `requires`, `expects`, `allows` -- the
+   same flow is a claim about the future and constrains nothing. SP may
+   promise to deliver shirts it has not made yet; it may not hand over
+   shirts it does not have.
+
+   Returns nil when the record supports the event, otherwise a map
+   describing what is missing, ready to be shown to the student."
+  [selections events]
+  (when-let [{:keys [item units]} (physical (:provides selections))]
+    (let [available (get (on-hand events) item 0)
+          wanted    (or units 0)]
+      (when (> wanted available)
+        {:item item
+         :requested wanted
+         :available available
+         :message
+         (if (<= available 0)
+           (str "You have no " item " to provide. Nothing in your record "
+                "shows SP acquiring or producing any.")
+           (str "You have " (if (== available (long available)) (long available) available)
+                " " item " on hand, but this event provides " wanted "."))}))))

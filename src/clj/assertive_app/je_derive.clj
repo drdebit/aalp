@@ -15,7 +15,8 @@
    render missing sides as prompts, not errors."
   (:require [clojure.string :as str]
             [assertive-engine.model.quantity :as q]
-            [assertive-app.cost-basis :as cost]))
+            [assertive-app.cost-basis :as cost]
+            [assertive-app.chain :as chain]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -81,29 +82,17 @@
     :amount :flow
     :text "Money going out decreases Cash. Assets decrease with credits."}
 
-   ;; -------- Goods received: the account depends on WHAT the thing is
-   ;; (SP's rulebook: raw materials vs equipment vs finished goods) ----
-   {:id :raw-materials-in
-    :when {:assertion :receives
-           :params {:unit "physical-unit"
-                    :physical-item #{"blank-tshirts" "ink-cartridges"}}}
-    :line {:side :debit :account "Raw Materials Inventory"}
+   ;; -------- Goods received: the account is the item's POSITION -------
+   ;; Not three rules keyed on which item it is. One rule that asks where
+   ;; the thing sits in the chain of what SP has recorded: an input, a
+   ;; thing between stages, a thing ready to sell, capital held for use.
+   ;; Raw materials and work in process are readings of the record, so
+   ;; they are resolved here rather than asserted by the student.
+   {:id :goods-in
+    :when {:assertion :receives :params {:unit "physical-unit"}}
+    :line {:side :debit :account :position}
     :amount :monetary
-    :text "SP's rulebook: blank shirts and ink are inputs to production, so they are Raw Materials Inventory -- an asset, recorded at what SP gave (or owes) for them."}
-
-   {:id :equipment-in
-    :when {:assertion :receives
-           :params {:unit "physical-unit" :physical-item "t-shirt-printer"}}
-    :line {:side :debit :account "Equipment (Fixed Asset)"}
-    :amount :monetary
-    :text "SP's rulebook: the printer is used for years, not sold to customers, so it is Equipment -- a long-term asset."}
-
-   {:id :finished-goods-in
-    :when {:assertion :receives
-           :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
-    :line {:side :debit :account "Finished Goods Inventory"}
-    :amount :monetary
-    :text "SP's rulebook: printed shirts are ready to sell, so they are Finished Goods Inventory."}
+    :text :position}
 
    ;; -------- Labour received ------------------------------------------
    {:id :wage-expense
@@ -172,19 +161,29 @@
    ;; -------- Production -----------------------------------------------
    {:id :production-out
     :when {:assertion :consumes :params {:unit "physical-unit"}}
-    :line {:side :credit :account "Raw Materials Inventory"}
+    :line {:side :credit :account :position}
     :amount :input-cost
     :text "Production used up raw materials; the asset decreases at cost."}
 
    {:id :production-in
     :when {:assertion :creates :params {:unit "physical-unit"}}
-    :line {:side :debit :account "Finished Goods Inventory"}
+    :line {:side :debit :account :position}
     :amount :input-cost
     :text "Production created finished goods; the asset increases at the cost of what went in."}])
 
 ;; ---------------------------------------------------------------------------
 ;; Recorded-but-not-reflected explanations
 ;; ---------------------------------------------------------------------------
+
+(def position-texts
+  "Why the item landed in this account. The position is read off the
+   chain (and SP's catalogue of what kind of thing each item is), so the
+   explanation names the reasoning rather than the item."
+  {:raw-materials      "SP's rulebook: this is an input -- something bought to be used up in production, not sold as it is. Inputs are Raw Materials Inventory, an asset, carried at what SP gave (or owes) for them."
+   :work-in-process    "This item was created by one transformation and consumed by another: it is caught between stages. Nobody asserted that -- it is true because of what the record shows happened next, and it would stop being true if nothing further consumed it."
+   :finished-goods     "SP's rulebook: this is ready to sell as it stands, so it is Finished Goods Inventory -- an asset held for sale."
+   :equipment-or-other "SP's rulebook: this is used for years rather than sold to customers, so it is Equipment -- a long-term asset."
+   :service            "A service consumed rather than a thing held: it is a cost of the period, not an asset."})
 
 (def not-reflected-texts
   {:expects "Recorded -- but not reflected. Double-entry has no place for a probability-weighted expectation. The assertion stays in the record; the journal entry cannot see it."
@@ -288,6 +287,35 @@
 ;; Derivation
 ;; ---------------------------------------------------------------------------
 
+(defn- resolve-position
+  "The position of the item named by the matched assertion, read from the
+   chain the student has recorded (including the event being booked) plus
+   SP's catalogue of what kind of thing each item is."
+  [matched-code selections context]
+  (let [item (get-in selections [matched-code :physical-item])
+        ;; The event being booked is part of its own chain: the materials
+        ;; it consumes are being consumed now, which is what makes them
+        ;; inputs rather than merely things once bought.
+        events (concat (:events context) [selections])]
+    (chain/inventory-position events item (:item-kinds context))))
+
+(defn- resolve-line-account
+  "An :account of :position is resolved from the chain; anything else is
+   the literal label the rule names."
+  [account matched-code selections context]
+  (if (= :position account)
+    (or (some-> (resolve-position matched-code selections context)
+                chain/position-accounts)
+        "Unclassified Asset")
+    account))
+
+(defn- resolve-line-text
+  [text matched-code selections context]
+  (if (= :position text)
+    (or (some-> (resolve-position matched-code selections context) position-texts)
+        "This item has no recorded position yet.")
+    text))
+
 (defn derive-je
   "Derive a journal entry from the student's selected assertions.
 
@@ -322,7 +350,7 @@
                             (resolve-amount amount matched selections variables context)
                             prov (vec (distinct (cons matched context-used)))]
                         {:side (:side line)
-                         :account (:account line)
+                         :account (resolve-line-account (:account line) matched selections context)
                          ;; The typed quantity is the real value; :amount is
                          ;; its scalar projection, kept for the wire and the
                          ;; ledger. Every posted amount is money by
@@ -339,7 +367,7 @@
                          ;; underneath and nothing else.
                          :assertions (select-keys selections prov)
                          :rule-id id
-                         :rule-text text
+                         :rule-text (resolve-line-text text matched selections context)
                          :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))

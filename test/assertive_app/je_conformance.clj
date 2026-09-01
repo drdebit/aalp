@@ -19,6 +19,12 @@
             [assertive-app.je-derive :as jd]
             [clojure.string :as str]))
 
+(def item-kinds
+  "SP's catalogue: what KIND of thing each item is. Firm policy, not a
+   student assertion -- the positions raw materials / work in process /
+   finished goods are resolved from this plus the chain, never booked."
+  (into {} (map (fn [[k v]] [k (:category v)])) c/physical-items))
+
 (def ^:private sample-qty
   "Representative quantities. The monetary and physical figures are
    deliberately DIFFERENT so that any rule spending a physical count as
@@ -95,7 +101,7 @@
   "Conformance result for one classification."
   [class-key]
   (let [sel   (canonical-selection class-key)
-        entry (jd/derive-entry sel {})
+        entry (jd/derive-entry sel {} {:item-kinds item-kinds})
         tmpl  (template-accounts class-key)
         drv   (derived-accounts entry)
         extra  (remove tmpl drv)

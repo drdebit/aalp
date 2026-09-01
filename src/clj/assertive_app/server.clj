@@ -242,10 +242,10 @@
                 ;; actually recorded. A sale's own assertions never carry
                 ;; what the goods cost; the events that acquired or
                 ;; produced them do.
-                cost-basis (simulation/cost-basis-for user-id)
+                context (simulation/derivation-context-for user-id)
                 result (classification/classify-transaction selected-assertions
                                                            :correct-classification correct-classification
-                                                           :context {:cost-basis cost-basis})
+                                                           :context context)
                 correct? (= :correct (get-in result [:feedback :status]))]
 
             ;; Increment attempts
@@ -514,12 +514,12 @@
             ;; Cost lines are priced from what this student has already
             ;; recorded -- the same basis the ledger uses -- so the live
             ;; panel and the posted entry can never disagree.
-            cost-basis (try (simulation/cost-basis-for (:db/id user))
-                            (catch Exception _ nil))]
+            context (try (simulation/derivation-context-for (:db/id user))
+                         (catch Exception _ {:item-kinds simulation/item-kinds}))]
         (response/response
           (je-derive/derive-je (or selected-assertions {})
                                (or variables {})
-                               {:cost-basis cost-basis})))
+                               context)))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; ---- Student-composed reports (calculation assembly) ----

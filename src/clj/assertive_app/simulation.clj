@@ -1036,15 +1036,24 @@
           (update credit-account (fnil - 0M) (bigdec amount)))
       balances)))
 
-(defn cost-basis-for
-  "What the student's own recorded events establish about what goods
-   cost. Every ledger entry stores its assertions, so this is a query
-   over the record rather than a lookup in a price list: acquisitions
-   set a unit cost, production carries it forward. A sale of goods the
-   student never recorded acquiring yields no cost -- which is the
-   point, since a usable ledger should not contain such a sale."
+(def item-kinds
+  "SP's catalogue: what KIND of thing each item is. Firm policy, declared
+   once, never asserted by a student."
+  (into {} (map (fn [[k v]] [k (:category v)])) classification/physical-items))
+
+(defn derivation-context-for
+  "Everything the derivation needs to read positions and costs off this
+   student's own record: the events themselves, the firm's catalogue, and
+   the cost basis those events establish.
+
+   Raw materials / work in process / finished goods are resolved from
+   this, at the moment the question is asked -- which is why they are not
+   in the assertions and why the same item can answer differently later."
   [user-id]
-  (cost/cost-basis (map :assertions (get-ledger user-id))))
+  (let [events (map :assertions (get-ledger user-id))]
+    {:events     events
+     :item-kinds item-kinds
+     :cost-basis (cost/cost-basis events)}))
 
 (defn- process-ledger-entries
   "Process all ledger entries and compute account balances.

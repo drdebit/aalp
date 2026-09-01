@@ -985,8 +985,12 @@
    "Reporting Expense" {:type :expense :statement :income-statement :normal :debit}
    "Organization Costs" {:type :expense :statement :income-statement :normal :debit}})
 
+(defn- parse-num-safe [s]
+  (try (Double/parseDouble (str/replace (str/trim s) "," "")) (catch Exception _ nil)))
+
 (defn- parse-amount
-  "Extract numeric amount from account string like 'Cash $1,000'."
+  "Extract numeric amount from account string like 'Cash $1,000'.
+   LEGACY ONLY -- see entry-amount."
   [account-str]
   (if-let [match (re-find #"\$([0-9,]+(?:\.[0-9]+)?)" account-str)]
     (-> (second match)
@@ -1001,18 +1005,30 @@
       (str/replace #"\s*\$[0-9,]+(?:\.[0-9]+)?\s*$" "")
       str/trim))
 
+(defn- entry-amount
+  "The entry's amount as a number.
+
+   Prefers the numeric :amount written by the derivation. Falls back to
+   scraping a \"$\" out of the account string ONLY for ledger rows
+   written before amounts were stored as numbers -- that scrape is the
+   legacy path and must never become the primary one again: it is how a
+   display string ended up deciding the balance sheet."
+  [entry]
+  (let [a (:amount entry)]
+    (cond
+      (number? a) (double a)
+      (string? a) (or (parse-num-safe a) 0)
+      :else       (let [d (parse-amount (str (:debit entry)))
+                        c (parse-amount (str (:credit entry)))]
+                    (if (pos? d) d c)))))
+
 (defn- process-journal-entry
   "Process a single journal entry and update account balances.
-   Journal entry format: {:debit 'Account $amount' :credit 'Account $amount'}"
+   Entry: {:debit \"Account\" :credit \"Account\" :amount N}"
   [balances entry]
-  (let [debit-str (:debit entry)
-        credit-str (:credit entry)
-        debit-account (extract-account-name debit-str)
-        credit-account (extract-account-name credit-str)
-        ;; Try to get amount from debit first, then credit
-        amount (let [d-amt (parse-amount debit-str)
-                     c-amt (parse-amount credit-str)]
-                 (if (pos? d-amt) d-amt c-amt))]
+  (let [debit-account (extract-account-name (:debit entry))
+        credit-account (extract-account-name (:credit entry))
+        amount (entry-amount entry)]
     (if (pos? amount)
       (-> balances
           (update debit-account (fnil + 0M) (bigdec amount))

@@ -2007,19 +2007,23 @@
         [:receives :provides :requires :expects]))
 
 (defn augment-journal-entry
-  "Add the transaction's dollar amount to each journal entry line.
+  "Attach the transaction's amount to each journal entry line as a
+   NUMBER, alongside the account names.
 
-   Appends nothing when no selected assertion is denominated in monetary
-   units (e.g. a pure production event): showing no amount is better than
-   showing a physical count with a dollar sign in front of it."
+   The amount used to be concatenated into the account strings
+   (\"Cash $3000\") and parsed back out downstream to compute balances.
+   That round trip made a formatting decision load-bearing for the
+   financial statements, and is how a physical count once reached the
+   books as dollars. Account name and amount are separate values now;
+   formatting happens only in the view.
+
+   :amount is nil when no selected assertion is denominated in money
+   (a pure production event, say). nil means 'the assertions do not
+   price this' -- downstream must render it as unknown and must not
+   invent a figure."
   [journal-entry assertions-map]
-  (if-let [qty (monetary-quantity assertions-map)]
-    (mapv (fn [entry]
-            (assoc entry
-                   :debit (str (:debit entry) " $" qty)
-                   :credit (str (:credit entry) " $" qty)))
-          journal-entry)
-    journal-entry))
+  (let [amt (monetary-quantity assertions-map)]
+    (mapv #(assoc % :amount amt) journal-entry)))
 
 (defn classify-transaction
   "Match student-selected assertions to classification rules.

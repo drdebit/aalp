@@ -191,24 +191,47 @@
 ;; Amount resolution
 ;; ---------------------------------------------------------------------------
 
+(defn monetary?
+  "Is this assertion's selected params denominated in money? A journal
+   entry line is measured in currency, so ONLY a monetary-unit flow may
+   supply an amount. `20 blank t-shirts` and `$250` are both just
+   numbers -- this predicate is the only thing standing between them."
+  [params]
+  (let [u (:unit params)]
+    (= "monetary-unit" (when u (name u)))))
+
 (defn- monetary-amount
-  "Find the dollar amount among the student's selections: the :quantity
-   parameter of any monetary-unit flow, else the problem's :amount."
+  "The dollar amount among the student's selections: the :quantity of a
+   monetary-unit flow, else the problem's :amount variable.
+
+   Order matters only when several flows are monetary; it follows the
+   money the entry is measured by -- cash that actually moved
+   (receives / provides) before an amount merely owed or expected."
   [selections variables]
   (or (some (fn [code]
               (let [p (get selections code)]
-                (when (= (:unit p) "monetary-unit")
-                  (num-or-nil (:quantity p)))))
-            [:receives :provides :requires])
+                (when (monetary? p) (num-or-nil (:quantity p)))))
+            [:receives :provides :requires :expects])
       (num-or-nil (:amount variables))))
 
-(defn- resolve-amount [amount-kind matched-code selections variables]
+(defn- resolve-amount
+  "Resolve one line's amount. Returns {:amount n|nil :unresolved? bool}.
+
+   :flow uses the matched assertion's own quantity, but ONLY when that
+   assertion is itself monetary -- otherwise it falls back to the
+   transaction's monetary amount rather than spending a physical count.
+   :unknown means the assertions genuinely do not carry this figure
+   (a cost that lives in other events); it stays nil and is marked
+   unresolved so nothing downstream invents a number for it."
+  [amount-kind matched-code selections variables]
   (case amount-kind
-    :flow     (or (num-or-nil (get-in selections [matched-code :quantity]))
-                  (monetary-amount selections variables))
-    :monetary (monetary-amount selections variables)
-    :unknown  nil
-    nil))
+    :flow     (let [p (get selections matched-code)
+                    own (when (monetary? p) (num-or-nil (:quantity p)))]
+                {:amount (or own (monetary-amount selections variables))
+                 :unresolved? false})
+    :monetary {:amount (monetary-amount selections variables) :unresolved? false}
+    :unknown  {:amount nil :unresolved? true}
+    {:amount nil :unresolved? true}))
 
 ;; ---------------------------------------------------------------------------
 ;; Derivation
@@ -239,13 +262,19 @@
                             (assoc rule :matched matched :context-used used)))))
                     rulebook)
         lines (mapv (fn [{:keys [line amount matched context-used id text entry-label]}]
-                      {:side (:side line)
-                       :account (:account line)
-                       :amount (resolve-amount amount matched selections variables)
-                       :provenance (vec (distinct (cons matched context-used)))
-                       :rule-id id
-                       :rule-text text
-                       :entry-label entry-label})
+                      (let [{:keys [amount unresolved?]}
+                            (resolve-amount amount matched selections variables)]
+                        {:side (:side line)
+                         :account (:account line)
+                         :amount amount
+                         ;; Every posted amount is money by construction
+                         ;; (resolve-amount admits no other denomination).
+                         :amount-unit (when amount :monetary)
+                         :unresolved? unresolved?
+                         :provenance (vec (distinct (cons matched context-used)))
+                         :rule-id id
+                         :rule-text text
+                         :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))
         ;; Context assertions that shaped lines (or always-context ones)
@@ -278,8 +307,52 @@
      :placeholders placeholders
      :context context
      :not-reflected not-reflected
+     ;; Lines the assertions do not price. Never invent a figure for
+     ;; these -- surfacing them IS the lesson (the cost of goods sold
+     ;; lives in the production events, not in this exchange).
+     :unresolved (vec (keep (fn [l] (when (:unresolved? l)
+                                      {:account (:account l) :side (:side l)
+                                       :rule-id (:rule-id l)}))
+                            lines))
      :totals {:debits debits
               :credits credits
               :balanced? (and (pos? (+ debits credits))
                               (== debits credits)
-                              (empty? placeholders))}}))
+                              (empty? placeholders))
+              :fully-priced? (and (pos? (+ debits credits))
+                                  (== debits credits)
+                                  (empty? placeholders)
+                                  (not-any? :unresolved? lines))}}))
+
+;; ---------------------------------------------------------------------------
+;; The canonical entry -- one shape, used by feedback, ledger and statements
+;; ---------------------------------------------------------------------------
+
+(defn derive-entry
+  "The journal entry for a set of assertions, in the one shape the rest
+   of the system stores and renders.
+
+   This is the single authority for BOTH which lines exist and what they
+   are worth. Nothing downstream may re-derive an amount, and nothing
+   may parse one back out of a display string -- that round trip is what
+   let a physical count be banked as dollars.
+
+   {:lines [{:side :debit :account s :amount n|nil :amount-unit :monetary|nil
+             :unresolved? bool :provenance [codes] :rule-id kw :rule-text s
+             :entry-label s|nil}]
+    :amount        n|nil    ;; the transaction's monetary amount
+    :balanced?     bool
+    :fully-priced? bool     ;; balanced AND every line carries an amount
+    :unresolved    [...]
+    :covered?      bool}    ;; did the rulebook produce any line at all?"
+  ([selections] (derive-entry selections {}))
+  ([selections variables]
+   (let [d (derive-je selections variables)]
+     {:lines         (:lines d)
+      :amount        (monetary-amount
+                       (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
+                       variables)
+      :balanced?     (get-in d [:totals :balanced?])
+      :fully-priced? (get-in d [:totals :fully-priced?])
+      :unresolved    (:unresolved d)
+      :covered?      (boolean (seq (:lines d)))})))

@@ -6,6 +6,29 @@
             [assertive-app.api :as api]
             [assertive-app.tutorials :as tutorials]))
 
+;; ==================== Journal-entry amount rendering ====================
+;; The amount is a NUMBER on the entry, never part of the account string.
+;; nil means the assertions do not price this line -- render it as
+;; unknown rather than inventing a figure (the cost of goods sold lives
+;; in the production events, not in the exchange being recorded).
+
+(defn je-amount-str
+  [amount]
+  (cond
+    (number? amount) (str "$" (.toLocaleString amount "en-US"
+                                               #js {:minimumFractionDigits 2
+                                                    :maximumFractionDigits 2}))
+    (string? amount) (str "$" amount)
+    :else            "—"))
+
+(defn je-amount
+  "Amount cell for one journal-entry line."
+  [amount]
+  [:span.je-amount {:class (when (nil? amount) "je-amount-unknown")
+                    :title (when (nil? amount)
+                             "The selected assertions do not carry this amount.")}
+   (je-amount-str amount)])
+
 ;; ==================== Authentication Components ====================
 
 (defn login-view []
@@ -217,8 +240,8 @@
            (for [entry (:journal-entry problem)]
              ^{:key (str (:debit entry) "-" (:credit entry))}
              [:div.entry
-              [:div.debit [:strong "DR: "] (:debit entry)]
-              [:div.credit [:strong "CR: "] (:credit entry)]])]]
+              [:div.debit [:strong "DR: "] (:debit entry) " " [je-amount (:amount entry)]]
+              [:div.credit [:strong "CR: "] (:credit entry) " " [je-amount (:amount entry)]]])]]
 
          is-construct?
          ;; Construct problem: Show narrative only (JE constructor moved to feedback panel)
@@ -1277,12 +1300,14 @@
                       [:div.entry
                        [:div.entry-line
                         [:span.debit "DR: " (:debit entry)]
+                        [je-amount (:amount entry)]
                         (when debit-linkage
                           [:span.linkage " ← " (format-linkage debit-linkage)])
                         (when counterparty-str
                           [:span.linkage ", " counterparty-str])]
                        [:div.entry-line
                         [:span.credit "CR: " (:credit entry)]
+                        [je-amount (:amount entry)]
                         (when credit-linkage
                           [:span.linkage " ← " (format-linkage credit-linkage)])
                         (when counterparty-str
@@ -1298,9 +1323,11 @@
                       ^{:key (str "correct-" (:debit entry) "-" (:credit entry))}
                       [:div.entry
                        [:div.entry-line
-                        [:span.debit "DR: " (:debit entry)]]
+                        [:span.debit "DR: " (:debit entry)]
+                        [je-amount (:amount entry)]]
                        [:div.entry-line
-                        [:span.credit "CR: " (:credit entry)]]])])))
+                        [:span.credit "CR: " (:credit entry)]
+                        [je-amount (:amount entry)]]])])))
 
              (when-let [note (:note classification)]
                [:p.note note])]))
@@ -1576,8 +1603,8 @@
      [:td.ledger-date (:date entry)]
      [:td.ledger-desc (subs (:narrative entry) 0 (min 60 (count (:narrative entry))))
       (when (> (count (:narrative entry)) 60) "...")]
-     [:td.ledger-debit (:debit je)]
-     [:td.ledger-credit (:credit je)]
+     [:td.ledger-debit (:debit je) " " (je-amount-str (:amount je))]
+     [:td.ledger-credit (:credit je) " " (je-amount-str (:amount je))]
      [:td.ledger-amount (format-currency (:amount (:variables entry)))]]))
 
 (defn ledger-view

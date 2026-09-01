@@ -1978,23 +1978,48 @@
                                                     " should be "
                                                     (format-param-value param-key param-value))))))))))
 
+(defn- monetary-quantity
+  "The transaction's dollar amount: the :quantity of whichever selected
+   assertion is denominated in monetary units.
+
+   Only a monetary-unit flow carries a dollar figure. A physical quantity
+   (20 cartridges, 1 printer) is a count, not an amount, so taking the
+   first quantity found regardless of unit printed nonsense like
+   \"Cash $1\" for a $3,000 printer. Mirrors je-derive/monetary-amount,
+   which resolves the same way for the 'what your assertions produce'
+   panel -- the two must agree or students see conflicting numbers.
+
+   Order matters only when several flows are monetary; it follows the
+   money the entry is measured by: cash actually moved (receives /
+   provides) before an amount merely owed or expected."
+  [assertions-map]
+  (some (fn [code]
+          (let [p (get assertions-map code)
+                unit (:unit p)]
+            (when (= "monetary-unit" (when unit (name unit)))
+              (let [q (:quantity p)]
+                (cond
+                  (number? q) q
+                  (string? q) (try (let [n (Double/parseDouble (clojure.string/trim q))]
+                                     (if (== n (long n)) (long n) n))
+                                   (catch Exception _ nil))
+                  :else nil)))))
+        [:receives :provides :requires :expects]))
+
 (defn augment-journal-entry
-  "Add quantity information to journal entry if available."
+  "Add the transaction's dollar amount to each journal entry line.
+
+   Appends nothing when no selected assertion is denominated in monetary
+   units (e.g. a pure production event): showing no amount is better than
+   showing a physical count with a dollar sign in front of it."
   [journal-entry assertions-map]
-  (let [;; Try to find a quantity from expects/receives (for credit sales)
-        expects-qty (get-in assertions-map [:expects :quantity])
-        requires-qty (get-in assertions-map [:requires :quantity])
-        receives-qty (get-in assertions-map [:receives :quantity])
-        provides-qty (get-in assertions-map [:provides :quantity])
-        ;; Use the first quantity we find
-        qty (or expects-qty requires-qty receives-qty provides-qty)]
-    (if qty
-      (mapv (fn [entry]
-              (assoc entry
-                     :debit (str (:debit entry) " $" qty)
-                     :credit (str (:credit entry) " $" qty)))
-            journal-entry)
-      journal-entry)))
+  (if-let [qty (monetary-quantity assertions-map)]
+    (mapv (fn [entry]
+            (assoc entry
+                   :debit (str (:debit entry) " $" qty)
+                   :credit (str (:credit entry) " $" qty)))
+          journal-entry)
+    journal-entry))
 
 (defn classify-transaction
   "Match student-selected assertions to classification rules.

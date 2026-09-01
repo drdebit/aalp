@@ -14,7 +14,8 @@
    wrong (or partial) journal entries without comment. Partial entries
    render missing sides as prompts, not errors."
   (:require [clojure.string :as str]
-            [assertive-engine.model.quantity :as q]))
+            [assertive-engine.model.quantity :as q]
+            [assertive-app.cost-basis :as cost]))
 
 ;; ---------------------------------------------------------------------------
 ;; Helpers
@@ -127,7 +128,7 @@
            :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
     :context {:all-of [{:assertion :has-counterparty}]}
     :line {:side :debit :account "Cost of Goods Sold"}
-    :amount :unknown
+    :amount :cost-basis
     :entry-label "Cost Recognition"
     :text "The shirts SP gave up had a cost. That cost leaves inventory and becomes an expense -- at cost, which the assertions about THIS exchange do not carry. (It lives in the production events.)"}
 
@@ -136,7 +137,7 @@
            :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
     :context {:all-of [{:assertion :has-counterparty}]}
     :line {:side :credit :account "Finished Goods Inventory"}
-    :amount :unknown
+    :amount :cost-basis
     :entry-label "Cost Recognition"
     :text "The finished goods asset decreases by the same cost."}
 
@@ -171,14 +172,14 @@
    ;; -------- Production -----------------------------------------------
    {:id :production-out
     :when {:assertion :consumes :params {:unit "physical-unit"}}
-    :line {:side :credit :account "Raw Materials"}
-    :amount :unknown
+    :line {:side :credit :account "Raw Materials Inventory"}
+    :amount :input-cost
     :text "Production used up raw materials; the asset decreases at cost."}
 
    {:id :production-in
     :when {:assertion :creates :params {:unit "physical-unit"}}
-    :line {:side :debit :account "Finished Goods"}
-    :amount :unknown
+    :line {:side :debit :account "Finished Goods Inventory"}
+    :amount :input-cost
     :text "Production created finished goods; the asset increases at the cost of what went in."}])
 
 ;; ---------------------------------------------------------------------------
@@ -252,16 +253,36 @@
    :unknown means the assertions genuinely do not carry this figure
    (a cost that lives in other events); it stays nil and is marked
    unresolved so nothing downstream invents a number for it."
-  [amount-kind matched-code selections variables]
-  (case amount-kind
-    :flow     (let [own (params->quantity (get selections matched-code))]
-                {:quantity (if (monetary-quantity? own)
-                             own
-                             (monetary-amount selections variables))
-                 :unresolved? false})
-    :monetary {:quantity (monetary-amount selections variables) :unresolved? false}
-    :unknown  {:quantity nil :unresolved? true}
-    {:quantity nil :unresolved? true}))
+  ([amount-kind matched-code selections variables]
+   (resolve-amount amount-kind matched-code selections variables nil))
+  ([amount-kind matched-code selections variables context]
+   (let [basis (:cost-basis context)
+         priced (fn [item units reason]
+                  (if-let [c (cost/cost-of basis item units)]
+                    {:quantity (q/monetary c) :unresolved? false}
+                    {:quantity nil :unresolved? true :unresolved-reason reason}))]
+     (case amount-kind
+       :flow     (let [own (params->quantity (get selections matched-code))]
+                   {:quantity (if (monetary-quantity? own)
+                                own
+                                (monetary-amount selections variables))
+                    :unresolved? false})
+       :monetary {:quantity (monetary-amount selections variables) :unresolved? false}
+
+       ;; What the goods COST -- not what they sold for. Recovered from
+       ;; the events that acquired or produced them (see cost-basis).
+       :cost-basis (let [p (get selections matched-code)]
+                     (priced (:physical-item p) (:quantity p)
+                             "These goods have no recorded cost yet -- nothing in the ledger records acquiring or producing them."))
+
+       ;; A transformation is worth what went into it.
+       :input-cost (let [p (get selections :consumes)]
+                     (priced (:physical-item p) (:quantity p)
+                             "The consumed materials have no recorded cost yet -- nothing in the ledger records acquiring them."))
+
+       :unknown  {:quantity nil :unresolved? true
+                  :unresolved-reason "The assertions of this event do not carry this figure."}
+       {:quantity nil :unresolved? true}))))
 
 ;; ---------------------------------------------------------------------------
 ;; Derivation
@@ -282,8 +303,13 @@
     :not-reflected [{:code kw :text s}]
     :totals        {:debits n :credits n :balanced? bool}}
 
+   context: optional {:cost-basis {item {:unit-cost n}}} -- what prior
+   events establish the goods cost. Supplying it lets the cost lines be
+   priced from the record; omitting it leaves them honestly unpriced.
+
    Faithful derivation: no reference to any 'correct' classification."
-  [selections variables]
+  ([selections variables] (derive-je selections variables nil))
+  ([selections variables context]
   (let [selections (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
         fired (keep (fn [rule]
                       (when-let [matched (assertion-matches? selections (:when rule))]
@@ -292,8 +318,8 @@
                             (assoc rule :matched matched :context-used used)))))
                     rulebook)
         lines (mapv (fn [{:keys [line amount matched context-used id text entry-label]}]
-                      (let [{:keys [quantity unresolved?]}
-                            (resolve-amount amount matched selections variables)
+                      (let [{:keys [quantity unresolved? unresolved-reason]}
+                            (resolve-amount amount matched selections variables context)
                             prov (vec (distinct (cons matched context-used)))]
                         {:side (:side line)
                          :account (:account line)
@@ -306,6 +332,7 @@
                          :amount (:value quantity)
                          :amount-unit (get-in quantity [:unit :unit-type])
                          :unresolved? unresolved?
+                         :unresolved-reason unresolved-reason
                          :provenance prov
                          ;; Drill-down payload: the assertions themselves,
                          ;; so a student opening this line finds assertions
@@ -351,7 +378,8 @@
      ;; lives in the production events, not in this exchange).
      :unresolved (vec (keep (fn [l] (when (:unresolved? l)
                                       {:account (:account l) :side (:side l)
-                                       :rule-id (:rule-id l)}))
+                                       :rule-id (:rule-id l)
+                                       :reason (:unresolved-reason l)}))
                             lines))
      :totals {:debits debits
               :credits credits
@@ -361,7 +389,7 @@
               :fully-priced? (and (pos? (+ debits credits))
                                   (== debits credits)
                                   (empty? placeholders)
-                                  (not-any? :unresolved? lines))}}))
+                                  (not-any? :unresolved? lines))}})))
 
 ;; ---------------------------------------------------------------------------
 ;; The canonical entry -- one shape, used by feedback, ledger and statements
@@ -384,9 +412,10 @@
     :fully-priced? bool     ;; balanced AND every line carries an amount
     :unresolved    [...]
     :covered?      bool}    ;; did the rulebook produce any line at all?"
-  ([selections] (derive-entry selections {}))
-  ([selections variables]
-   (let [d    (derive-je selections variables)
+  ([selections] (derive-entry selections {} nil))
+  ([selections variables] (derive-entry selections variables nil))
+  ([selections variables context]
+   (let [d    (derive-je selections variables context)
          sel  (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
          qty  (monetary-amount sel variables)]
      {:lines         (:lines d)

@@ -238,8 +238,14 @@
                                       (set (map keyword selected-assertions-raw)))
                 ;; Classify using correct classification from pending tx
                 correct-classification (:correct-classification pending)
+                ;; Price the cost lines from what this student has
+                ;; actually recorded. A sale's own assertions never carry
+                ;; what the goods cost; the events that acquired or
+                ;; produced them do.
+                cost-basis (simulation/cost-basis-for user-id)
                 result (classification/classify-transaction selected-assertions
-                                                           :correct-classification correct-classification)
+                                                           :correct-classification correct-classification
+                                                           :context {:cost-basis cost-basis})
                 correct? (= :correct (get-in result [:feedback :status]))]
 
             ;; Increment attempts
@@ -503,11 +509,17 @@
   ;; never references the correct classification, so it leaks nothing.
 
   (POST "/api/derive-je" {body :body :as request}
-    (if-let [_user (:user request)]
-      (let [{:keys [selected-assertions variables]} body]
+    (if-let [user (:user request)]
+      (let [{:keys [selected-assertions variables]} body
+            ;; Cost lines are priced from what this student has already
+            ;; recorded -- the same basis the ledger uses -- so the live
+            ;; panel and the posted entry can never disagree.
+            cost-basis (try (simulation/cost-basis-for (:db/id user))
+                            (catch Exception _ nil))]
         (response/response
           (je-derive/derive-je (or selected-assertions {})
-                               (or variables {}))))
+                               (or variables {})
+                               {:cost-basis cost-basis})))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; ---- Student-composed reports (calculation assembly) ----

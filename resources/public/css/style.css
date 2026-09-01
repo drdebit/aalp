@@ -4135,3 +4135,23 @@ header {
   font-style: italic;
   cursor: help;
 }
+
+/* ---- Drill-down: assertions underneath a journal-entry line ---------- */
+.dj-assertions { margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed #d5dbe1; }
+.dj-assertions h6 {
+  margin: 0 0 .35rem; font-size: .72rem; letter-spacing: .04em;
+  text-transform: uppercase; color: #7a8590; font-weight: 700;
+}
+.dj-assertion { display: flex; gap: .5rem; align-items: baseline; padding: .12rem 0; }
+.dj-assertion-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .78rem; background: #eef2f6; color: #24405c;
+  padding: .05rem .35rem; border-radius: 3px;
+}
+.dj-assertion-params { font-size: .78rem; color: #55606b; }
+.dj-unpriced { color: #9aa4ae; font-style: italic; cursor: help; }
+.dj-unpriced-note {
+  margin-top: .45rem; font-size: .78rem; color: #7a6a3a;
+  background: #fdf6e3; border-left: 3px solid #d8c48a;
+  padding: .35rem .5rem; border-radius: 2px;
+}

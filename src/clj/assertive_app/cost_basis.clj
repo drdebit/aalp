@@ -1,0 +1,116 @@
+(ns assertive-app.cost-basis
+  "What did the goods cost? Answered from the events already recorded.
+
+   A sale's own assertions say what was provided, what was received and
+   from whom. They do NOT say what the goods cost -- that figure was
+   established earlier, when the goods were acquired or produced. In the
+   assertive model this is not a missing field to be guessed at but a
+   query over prior events: collects/includes the acquisitions, reports
+   a unit cost. The ledger already stores each event's assertions, so
+   the cost is recoverable without inventing anything.
+
+   Two ways an item comes to have a cost:
+
+     acquired  receives <n physical>  +  provides/requires <m monetary>
+               -> unit cost m/n
+
+     produced  consumes <inputs>  ->  creates <n physical>
+               -> unit cost (total cost of the inputs) / n, where each
+                  input is valued at ITS unit cost -- cost flows forward
+                  through the events that transformed it
+
+   Cost-flow assumption: weighted average across everything recorded to
+   date. That is a policy choice, not a fact, which is why it lives in
+   one named place. FIFO would collect the same events and report a
+   different figure; in this model both are expressible and could
+   coexist as competing reports over the same record.
+
+   Returns nil rather than a number when the record does not support an
+   answer. A sale of goods never acquired or produced is not priced at
+   zero -- it is unpriced, and that is a thing for the student to see."
+  (:require [clojure.string :as str]))
+
+(defn- num-or-nil [v]
+  (cond (number? v) v
+        (string? v) (try (Double/parseDouble (str/trim v)) (catch Exception _ nil))
+        :else nil))
+
+(defn- monetary-qty [params]
+  (when (= "monetary-unit" (some-> (:unit params) name))
+    (num-or-nil (:quantity params))))
+
+(defn- physical [params]
+  (when (= "physical-unit" (some-> (:unit params) name))
+    (when-let [n (num-or-nil (:quantity params))]
+      {:item (some-> (:physical-item params) name) :units n})))
+
+(defn acquisition
+  "If these assertions record acquiring physical goods for money -- paid
+   now (provides) or owed (requires) -- return {:item :units :cost}."
+  [assertions]
+  (let [{:keys [item units]} (physical (:receives assertions))
+        cost (or (monetary-qty (:provides assertions))
+                 (monetary-qty (:requires assertions)))]
+    (when (and item units cost (pos? units))
+      {:item item :units units :cost cost})))
+
+(defn production
+  "If these assertions record a transformation -- consuming inputs to
+   create something -- return {:item :units :inputs [{:item :units}]}.
+   The output's cost is the cost of its inputs, so it can only be valued
+   once those inputs have one."
+  [assertions]
+  (let [out (physical (:creates assertions))
+        in  (physical (:consumes assertions))]
+    (when (and out (pos? (:units out)))
+      {:item (:item out) :units (:units out)
+       :inputs (if in [in] [])})))
+
+(defn- accumulate [basis {:keys [item units cost]}]
+  (-> basis
+      (update-in [item :units] (fnil + 0) units)
+      (update-in [item :cost] (fnil + 0) cost)))
+
+(defn- unit-cost [basis item]
+  (let [{:keys [units cost]} (get basis item)]
+    (when (and units cost (pos? units)) (/ (double cost) units))))
+
+(defn cost-basis
+  "Weighted-average unit cost per item, from a chronological seq of prior
+   events' assertion maps.
+
+   Acquisitions establish cost directly. Production carries it forward:
+   the created goods are valued at the cost of what was consumed, so a
+   printed t-shirt costs what the blank shirt cost. Production whose
+   inputs are not yet valued contributes nothing rather than a zero.
+
+   -> {item {:units n :cost n :unit-cost n}}"
+  [prior-events]
+  (let [basis (reduce (fn [basis assertions]
+                        (if-let [a (acquisition assertions)]
+                          (accumulate basis a)
+                          (if-let [p (production assertions)]
+                            (let [in-cost (reduce
+                                            (fn [tot {:keys [item units]}]
+                                              (if-let [uc (unit-cost basis item)]
+                                                (+ tot (* uc units))
+                                                (reduced nil)))
+                                            0 (:inputs p))]
+                              (if in-cost
+                                (accumulate basis {:item (:item p) :units (:units p)
+                                                   :cost in-cost})
+                                basis))
+                            basis)))
+                      {} prior-events)]
+    (into {} (for [[item v] basis
+                   :let [uc (unit-cost basis item)]
+                   :when uc]
+               [item (assoc v :unit-cost uc)]))))
+
+(defn cost-of
+  "Cost of `units` of `item` under this basis, or nil when the record
+   does not price it."
+  [basis item units]
+  (when-let [uc (get-in basis [(some-> item name) :unit-cost])]
+    (when-let [n (num-or-nil units)]
+      (* uc n))))

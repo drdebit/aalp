@@ -14,7 +14,8 @@
             [assertive-app.classification :as classification]
             [assertive-app.engine :as engine]
             [clojure.edn :as edn]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [assertive-app.cost-basis :as cost]))
 
 ;; ==================== Configuration ====================
 
@@ -1034,6 +1035,16 @@
           (update debit-account (fnil + 0M) (bigdec amount))
           (update credit-account (fnil - 0M) (bigdec amount)))
       balances)))
+
+(defn cost-basis-for
+  "What the student's own recorded events establish about what goods
+   cost. Every ledger entry stores its assertions, so this is a query
+   over the record rather than a lookup in a price list: acquisitions
+   set a unit cost, production carries it forward. A sale of goods the
+   student never recorded acquiring yields no cost -- which is the
+   point, since a usable ledger should not contain such a sale."
+  [user-id]
+  (cost/cost-basis (map :assertions (get-ledger user-id))))
 
 (defn- process-ledger-entries
   "Process all ledger entries and compute account balances.

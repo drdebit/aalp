@@ -1979,72 +1979,41 @@
                                                     " should be "
                                                     (format-param-value param-key param-value))))))))))
 
-(defn- monetary-quantity
-  "The transaction's dollar amount: the :quantity of whichever selected
-   assertion is denominated in monetary units.
-
-   Only a monetary-unit flow carries a dollar figure. A physical quantity
-   (20 cartridges, 1 printer) is a count, not an amount, so taking the
-   first quantity found regardless of unit printed nonsense like
-   \"Cash $1\" for a $3,000 printer. Mirrors je-derive/monetary-amount,
-   which resolves the same way for the 'what your assertions produce'
-   panel -- the two must agree or students see conflicting numbers.
-
-   Order matters only when several flows are monetary; it follows the
-   money the entry is measured by: cash actually moved (receives /
-   provides) before an amount merely owed or expected."
-  [assertions-map]
-  (some (fn [code]
-          (let [p (get assertions-map code)
-                unit (:unit p)]
-            (when (= "monetary-unit" (when unit (name unit)))
-              (let [q (:quantity p)]
-                (cond
-                  (number? q) q
-                  (string? q) (try (let [n (Double/parseDouble (clojure.string/trim q))]
-                                     (if (== n (long n)) (long n) n))
-                                   (catch Exception _ nil))
-                  :else nil)))))
-        [:receives :provides :requires :expects]))
-
 (defn augment-journal-entry
-  "Attach the transaction's amount to each journal entry line as a
-   NUMBER, alongside the account names.
+  "Attach each journal entry line's amount, taken from the derivation.
 
-   The amount used to be concatenated into the account strings
-   (\"Cash $3000\") and parsed back out downstream to compute balances.
-   That round trip made a formatting decision load-bearing for the
-   financial statements, and is how a physical count once reached the
-   books as dollars. Account name and amount are separate values now;
-   formatting happens only in the view.
+   The template names the accounts; the rulebook decides what each line
+   is worth. A line is priced by the rule that produced it, so a sale's
+   Cost Recognition pair carries the COST of the goods -- recovered from
+   the events that acquired or produced them -- and not the price they
+   sold for.
 
-   :amount is nil when no selected assertion is denominated in money
-   (a pure production event, say). nil means 'the assertions do not
-   price this' -- downstream must render it as unknown and must not
-   invent a figure."
-  [journal-entry assertions-map]
-  (let [amt (monetary-quantity assertions-map)
-        ;; The rulebook is the authority on which lines the assertions
-        ;; actually price. A Cost Recognition pair is NOT priced by a
-        ;; sale's assertions -- the cost lives in the production events --
-        ;; so stamping the sales price on it would teach the wrong thing
-        ;; and post a wrong number to inventory.
-        unresolved (set (map :account
-                             (:unresolved (je-derive/derive-entry assertions-map {}))))
-        unpriced? (fn [entry]
-                    (let [accts (remove nil? [(:debit entry) (:credit entry)])]
-                      (and (seq accts) (every? unresolved accts))))]
-    (mapv (fn [entry]
-            (assoc entry :amount (when-not (unpriced? entry) amt)))
-          journal-entry)))
+   Falls back to the transaction's monetary amount only for template
+   lines the rulebook does not yet derive (the L4-L7 build-out queue),
+   so partial coverage degrades to the old behaviour rather than to a
+   blank. nil means the record does not price this line; downstream must
+   render it as unknown and must never invent a figure."
+  ([journal-entry assertions-map] (augment-journal-entry journal-entry assertions-map nil))
+  ([journal-entry assertions-map context]
+   (let [derived  (je-derive/derive-entry assertions-map {} context)
+         by-acct  (into {} (map (juxt :account identity)) (:lines derived))
+         fallback (:amount derived)]
+     (mapv (fn [entry]
+             (let [d (or (get by-acct (:debit entry))
+                         (get by-acct (:credit entry)))]
+               (assoc entry :amount (if d (:amount d) fallback))))
+           journal-entry))))
 
 (defn classify-transaction
   "Match student-selected assertions to classification rules.
    student-assertions can be either:
    - A set of keywords (old format): #{:provides :receives}
    - A map with parameters (new format): {:provides {:unit 'physical-unit'} :receives {:unit 'monetary-unit'}}
-   correct-classification (optional): The expected correct classification for this problem"
-  [student-assertions & {:keys [correct-classification]}]
+   correct-classification (optional): The expected correct classification for this problem
+   context (optional): {:cost-basis ...} -- what prior recorded events
+     establish the goods cost, so cost lines can be priced from the
+     student's own ledger rather than left unpriced."
+  [student-assertions & {:keys [correct-classification context]}]
   (let [;; Convert to map format if it's a set
         assertions-map (if (set? student-assertions)
                          (into {} (map (fn [k] [k {}]) student-assertions))
@@ -2164,7 +2133,7 @@
                          status (if is-correct-match :correct :incorrect)
                          ;; Augment journal entry with quantities from student's parameters
                          augmented-classification (update classification :journal-entry
-                                                          augment-journal-entry assertions-map)]
+                                                          augment-journal-entry assertions-map context)]
                      {:status status
                       :message (if is-correct-match
                                  (str "Correct! This is: " (:description classification))
@@ -2198,7 +2167,7 @@
                          param-hints (format-hints hint-data)
                          ;; Augment closest classification with quantities for JE display
                          augmented-closest (update closest-classification :journal-entry
-                                                   augment-journal-entry assertions-map)
+                                                   augment-journal-entry assertions-map context)
                          ;; Build narrative hints similar to exact-match style
                          narrative-hints (if (and correct-classification
                                                   (not= (:type closest) correct-classification))

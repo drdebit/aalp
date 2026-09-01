@@ -1052,14 +1052,34 @@
                         (:account line)
                         (when-let [el (:entry-label line)]
                           [:span.dj-entry-label el])]
-                       [:td.dj-amount (if-let [a (:amount line)]
-                                        (format-currency a)
-                                        "?")]
+                       [:td.dj-amount {:class (when (:unresolved? line) "dj-unpriced")
+                                       :title (:unresolved-reason line)}
+                        (if-let [a (:amount line)]
+                          (format-currency a)
+                          "—")]
                        [:td.dj-from "← " (clojure.string/join " + " (:provenance line))]]
                       (when open?
                         [:tr.dj-rule
                          [:td {:colSpan 4}
-                          [:div.dj-rule-text (:rule-text line)]]])])))
+                          [:div.dj-rule-text (:rule-text line)]
+                          ;; Drill-down: underneath a journal-entry line
+                          ;; there are assertions and nothing else. This
+                          ;; is the record; the line above is a reading
+                          ;; of it.
+                          (when-let [as (seq (:assertions line))]
+                            [:div.dj-assertions
+                             [:h6 "Underneath this line"]
+                             (doall
+                               (for [[code params] as]
+                                 ^{:key (str "dja-" i "-" code)}
+                                 [:div.dj-assertion
+                                  [:code.dj-assertion-code (name code)]
+                                  (when (seq params)
+                                    [:span.dj-assertion-params
+                                     (clojure.string/join ", "
+                                       (map (fn [[k v]] (str (name k) " " v)) params))])]))])
+                          (when (:unresolved-reason line)
+                            [:div.dj-unpriced-note (:unresolved-reason line)])]])])))
                (doall
                  (for [[i p] (map-indexed vector placeholders)]
                    ^{:key (str "dj-ph-" i)}

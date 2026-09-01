@@ -524,7 +524,7 @@
                  ;; the entry stays a faithful reading of the assertions,
                  ;; while this says whether the record can bear them.
                  ;; You can only provide what you have.
-                 :unsupported (chain/unsupported-provision sel (:events context)))))
+                 :unsupported (chain/unsupported sel (:events context)))))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; ---- Student-composed reports (calculation assembly) ----

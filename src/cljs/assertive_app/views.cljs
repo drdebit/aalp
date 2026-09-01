@@ -1024,10 +1024,14 @@
            ;; You can only provide what you have. Said before the entry,
            ;; because no journal entry is the right answer to giving away
            ;; something SP does not hold.
-           (when unsupported
+           (when (seq unsupported)
              [:div.dj-unsupported
-              [:span.dj-unsupported-mark "!"]
-              [:span.dj-unsupported-text (:message unsupported)]])
+              (doall
+                (for [[i u] (map-indexed vector unsupported)]
+                  ^{:key (str "unsup-" i)}
+                  [:div.dj-unsupported-row
+                   [:span.dj-unsupported-mark "!"]
+                   [:span.dj-unsupported-text (:message u)]]))])
            [:div.dj-header
             [:h4 "What your assertions produce"]
             [:button.dj-explore-btn

@@ -4166,3 +4166,5 @@ header {
   font-weight: 700; color: #b5342f; line-height: 1.2;
 }
 .dj-unsupported-text { font-size: .82rem; color: #7d2b27; }
+.dj-unsupported-row { display: flex; gap: .5rem; align-items: flex-start; }
+.dj-unsupported-row + .dj-unsupported-row { margin-top: .35rem; }

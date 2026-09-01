@@ -212,30 +212,115 @@
                (- (or (monetary-qty (:provides assertions)) 0))))
           0 events))
 
-(defn unsupported-provision
-  "Can SP provide what this event says it provides?
+(defn capabilities
+  "The transformations the record says SP can perform, and what each one
+   rests on.
 
-   You can only provide what you have. That constraint is on the PRESENT
-   tense only: `provides` is a claim about now, and the record either
-   bears it out or it does not. Nested under `expects` or `allows` --
-   which in the flat form means `requires`, `expects`, `allows` -- the
-   same flow is a claim about the future and constrains nothing. SP may
-   promise to deliver shirts it has not made yet; it may not hand over
-   shirts it does not have.
+   A capability is asserted, not configured: an event that receives a
+   thing and states what that thing allows -- turns blanks into printed
+   shirts -- is what makes production possible afterwards.
 
-   Returns nil when the record supports the event, otherwise a map
-   describing what is missing, ready to be shown to the student."
+   -> [{:enabler item :consumes item :creates item}]"
+  [events]
+  (vec (keep (fn [assertions]
+               (let [{:keys [consumes-item creates-item]} (:allows assertions)
+                     enabler (:item (physical (:receives assertions)))]
+                 (when (and consumes-item creates-item)
+                   {:enabler  enabler
+                    :consumes (name consumes-item)
+                    :creates  (name creates-item)})))
+             events)))
+
+(defn- fmt [n] (if (and (number? n) (== n (long n))) (long n) n))
+
+(defn- provision-problem
+  "You can only provide what you have. Present tense only: nested under
+   `expects` or `allows` the same flow is about the future and
+   constrains nothing."
   [selections events]
   (when-let [{:keys [item units]} (physical (:provides selections))]
     (let [available (get (on-hand events) item 0)
           wanted    (or units 0)]
       (when (> wanted available)
-        {:item item
-         :requested wanted
-         :available available
+        {:kind :cannot-provide
+         :item item :requested wanted :available available
          :message
          (if (<= available 0)
            (str "You have no " item " to provide. Nothing in your record "
                 "shows SP acquiring or producing any.")
-           (str "You have " (if (== available (long available)) (long available) available)
-                " " item " on hand, but this event provides " wanted "."))}))))
+           (str "You have " (fmt available) " " item " on hand, but this "
+                "event provides " (fmt wanted) "."))}))))
+
+(defn- consumption-problem
+  "Consuming is taking too: production cannot use up what SP does not
+   hold."
+  [selections events]
+  (when-let [{:keys [item units]} (physical (:consumes selections))]
+    (let [available (get (on-hand events) item 0)
+          wanted    (or units 0)]
+      (when (> wanted available)
+        {:kind :cannot-consume
+         :item item :requested wanted :available available
+         :message
+         (if (<= available 0)
+           (str "You have no " item " to use. Production consumes materials "
+                "SP has acquired; nothing in your record shows any.")
+           (str "You have " (fmt available) " " item " on hand, but this "
+                "event consumes " (fmt wanted) "."))}))))
+
+(defn- capability-problem
+  "A transformation needs something that makes it possible.
+
+   This is the question the record answers with `allows`: SP bought a
+   printer AND said what it does. Buying it alone leaves the record
+   silent about whether anything can be turned into anything -- which is
+   exactly the gap a student should meet, and fill themselves, rather
+   than be told about in advance."
+  [selections events]
+  (let [in  (physical (:consumes selections))
+        out (physical (:creates selections))]
+    (when (and in out)
+      (let [caps  (capabilities events)
+            held  (on-hand events)
+            match (first (filter #(and (= (:consumes %) (:item in))
+                                       (= (:creates %) (:item out)))
+                                 caps))]
+        (cond
+          (nil? match)
+          {:kind :no-capability
+           :consumes (:item in) :creates (:item out)
+           :message
+           (if (seq caps)
+             (str "Nothing in your record says SP can turn " (:item in) " into "
+                  (:item out) ". What SP can do: "
+                  (str/join "; " (map #(str (:consumes %) " into " (:creates %)) caps))
+                  ".")
+             (str "Nothing in your record says SP can turn " (:item in) " into "
+                  (:item out) ". What did SP acquire that makes this possible, "
+                  "and what did you say it allows?"))}
+
+          ;; The capability was asserted, but SP no longer holds the thing
+          ;; it rested on -- sold, or consumed by something else.
+          (and (:enabler match) (<= (get held (:enabler match) 0) 0))
+          {:kind :capability-not-held
+           :enabler (:enabler match)
+           :message (str "SP no longer holds the " (:enabler match)
+                         " that made this possible.")})))))
+
+(defn unsupported
+  "Everything the record cannot bear about this event.
+
+   Kept apart from the journal-entry derivation on purpose: that stays a
+   faithful reading of whatever the student asserted, wrong or right,
+   while this says whether the record supports the assertions at all.
+
+   -> [] when the record bears the event out."
+  [selections events]
+  (vec (keep #(% selections events)
+             [provision-problem consumption-problem capability-problem])))
+
+(defn unsupported-provision
+  "Back-compat single-problem view: the first thing the record cannot
+   bear, or nil."
+  [selections events]
+  (first (unsupported selections events)))

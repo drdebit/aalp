@@ -46,6 +46,9 @@
      :provided  provided to a counterparty
      :enables   named as what allowed a transformation, or acquired in an
                 event asserting that it allows future ones
+     :consumable / :producible
+                named by an `allows` as what some capability turns into
+                what -- a declared position, before anything has happened
 
    -> {item #{roles}}"
   [events]
@@ -67,11 +70,21 @@
                         (update acc (name cap) (fnil conj #{}) :enables)
                         acc)
                   ;; The same fact stated forward, at acquisition: this
-                  ;; event asserts the thing it receives allows future
-                  ;; events.
-                  acc (if-let [{:keys [item]} (and (contains? assertions :allows)
-                                                   (physical (:receives assertions)))]
+                  ;; event asserts that what it receives turns one thing
+                  ;; into another. The thing received is productive; the
+                  ;; thing it consumes is an input; the thing it creates
+                  ;; is an output -- three positions from one assertion,
+                  ;; which is why the pair is worth asking for and the
+                  ;; full recipe is not.
+                  allows (:allows assertions)
+                  acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
                         (update acc item (fnil conj #{}) :enables)
+                        acc)
+                  acc (if-let [i (:consumes-item allows)]
+                        (update acc (name i) (fnil conj #{}) :consumable)
+                        acc)
+                  acc (if-let [i (:creates-item allows)]
+                        (update acc (name i) (fnil conj #{}) :producible)
                         acc)]
               acc))
           {} events))
@@ -127,6 +140,13 @@
        ;; Produced by a transformation, or bought and sold on untouched.
        (:created roles)                                :finished-goods
        (and (:acquired roles) (:provided roles))       :finished-goods
+
+       ;; Declared by some capability's `allows`, before anything has
+       ;; actually happened to it. Weaker than evidence of a real
+       ;; transformation, stronger than a catalogue: a student SAID this
+       ;; is what the printer turns into what.
+       (:producible roles)                             :finished-goods
+       (:consumable roles)                             :raw-materials
 
        ;; Nothing yet asserted about what this thing DOES. SP may keep a
        ;; catalogue to save the student saying so every time, but it is a

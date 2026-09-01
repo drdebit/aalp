@@ -133,6 +133,17 @@
      {:value (name item-key)
       :label (str (:label item-def) " (" (:description item-def) ")")})))
 
+(defn all-physical-item-options
+  "Every physical item, for assertions that name a thing without a
+   direction -- what a capability turns into what, say, where the item is
+   neither provided nor received but transformed."
+  [& {:keys [max-level] :or {max-level 99}}]
+  (vec
+   (for [[item-key item-def] physical-items
+         :when (<= (:unlock-level item-def) max-level)]
+     {:value (name item-key)
+      :label (str (:label item-def) " (" (:description item-def) ")")})))
+
 (defn get-physical-item-account
   "Get the account for a physical item, considering whether providing or receiving."
   [item-key assertion-type]
@@ -187,6 +198,8 @@
                                                   (physical-item-options :receives :max-level level)
                                                   :derives-from-physical-items-equipment
                                                   (equipment-options :max-level level)
+                                                  :derives-from-physical-items
+                                                  (all-physical-item-options :max-level level)
                                                   ;; Default: keep as-is
                                                   (:options param-spec))))
                                        param-spec)])))
@@ -586,9 +599,44 @@
 
     {:code :allows
      :label "Allows"
-     :description "Enables or permits future events to occur"
-     :level 1
-     :domain :forward-looking}]
+     :description "What acquiring this thing makes possible: the transformation it enables"
+     :level 2
+     :domain :forward-looking
+     :parameterized true
+     ;; Shape B, deliberately. The research model states the full recipe
+     ;; here -- consumption rates per unit created, a capacity limit, the
+     ;; maintenance it obliges -- and that is the right shape once cost
+     ;; and capacity are the question. It is the wrong shape for a
+     ;; student meeting capital for the first time, where the entry it
+     ;; produces is a debit to Equipment and a credit to Cash.
+     ;;
+     ;; Assertive accounting asks for the useful degree of granularity,
+     ;; not the maximum. The useful degree here is the pair: what goes
+     ;; in, what comes out. That is enough for the thing to read as
+     ;; productive -- which is what capital MEANS -- and enough to tell a
+     ;; student they cannot produce without it. Rates and restrictions
+     ;; are a later assertion on the same event, not a bigger one now.
+     :sentence {:fragment "which allows SP to turn"
+                :pattern [:consumes-item :creates-item]
+                :joiner " into "
+                :section-break true
+                :section-label "This makes possible:"
+                :position :modifier}
+     :structure {:allows
+                 {:event
+                  {:includes
+                   {:consumes {:is-denominated-in-unit
+                               {:is-denominated-in-physical-unit :consumes-item}}
+                    :creates  {:is-denominated-in-unit
+                               {:is-denominated-in-physical-unit :creates-item}}}}}}
+     :parameters {:consumes-item {:type :dropdown
+                                  :label "turns"
+                                  :options :derives-from-physical-items
+                                  :help "What this thing takes in"}
+                  :creates-item {:type :dropdown
+                                 :label "into"
+                                 :options :derives-from-physical-items
+                                 :help "What it produces"}}}]
 
    :transformation
    [;; Input assertions - each captures a specific type of resource consumed

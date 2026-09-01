@@ -2046,11 +2046,25 @@
    (let [derived  (je-derive/derive-entry assertions-map {} context)
          by-acct  (into {} (map (juxt :account identity)) (:lines derived))
          fallback (:amount derived)]
-     (mapv (fn [entry]
-             (let [d (or (get by-acct (:debit entry))
-                         (get by-acct (:credit entry)))]
-               (assoc entry :amount (if d (:amount d) fallback))))
-           journal-entry))))
+     (if (and (sequential? journal-entry) (every? map? journal-entry))
+       (mapv (fn [entry]
+               (let [d (or (get by-acct (:debit entry))
+                           (get by-acct (:credit entry)))]
+                 (assoc entry :amount (if d (:amount d) fallback))))
+             journal-entry)
+       ;; :journal-entry :derived -- the classification declines to name a
+       ;; template and defers to the rulebook, which is where all of this
+       ;; is headed. Pair the derived sides into the conventional
+       ;; debit/credit rows the UI and the ledger expect.
+       (let [debits  (filterv #(= :debit  (:side %)) (:lines derived))
+             credits (filterv #(= :credit (:side %)) (:lines derived))]
+         (mapv (fn [d c]
+                 {:debit  (:account d)
+                  :credit (:account c)
+                  :amount (or (:amount d) (:amount c))})
+               (concat debits (repeat nil))
+               (take (max (count debits) (count credits))
+                     (concat credits (repeat nil)))))))))
 
 (defn classify-transaction
   "Match student-selected assertions to classification rules.
@@ -2070,6 +2084,16 @@
 
         has-any-parameters? (some (fn [[_ params]] (seq params)) assertions-map)
 
+        ;; Assertions any event may carry without changing what it IS.
+        ;; A date does not distinguish a purchase from a production run;
+        ;; every event has one, and the sentence builder fills it in
+        ;; before the student types anything. Treating it as an "extra"
+        ;; disqualified 21 of the 45 classifications for any student who
+        ;; left the date where the UI put it -- which is all of them.
+        ;; A classification that genuinely objects to a date can still
+        ;; say so: :prohibited is checked separately and still wins.
+        universal-context #{:has-date}
+
         exact-matches (for [[class-key {:keys [required prohibited optional required-parameters requires-missing-parameters]}] classifications
                             :when (and
                                    ;; All required assertions present
@@ -2078,7 +2102,8 @@
                                    (empty? (clojure.set/intersection assertion-keys prohibited))
                                    ;; No extra assertions beyond required+optional
                                    (clojure.set/subset? assertion-keys
-                                                       (clojure.set/union required (or optional #{})))
+                                                       (clojure.set/union required (or optional #{})
+                                                                          universal-context))
                                    ;; If requires-missing-parameters, check that NO parameters are specified
                                    (or (not requires-missing-parameters)
                                        (not has-any-parameters?))
@@ -2094,7 +2119,8 @@
         all-distances (when (empty? exact-matches)
                         (for [[class-key {:keys [required prohibited optional required-parameters]}] classifications]
                           (let [optional-set (or optional #{})
-                                allowed-set (clojure.set/union required optional-set)
+                                allowed-set (clojure.set/union required optional-set
+                                                               universal-context)
                                 missing (clojure.set/difference required assertion-keys)
                                 extra-prohibited (clojure.set/intersection assertion-keys prohibited)
                                 extra-unrequired (clojure.set/difference assertion-keys allowed-set)

@@ -1387,8 +1387,8 @@
    ;; Simpler classifications using generic assertions (for backward compatibility)
    :production-raw-to-wip
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "raw-materials"}
-                          :creates {:unit "work-in-process"}}
+    :required-parameters {:consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Production: Raw materials → Work in Process"
     :journal-entry [{:debit "Work in Process" :credit "Raw Materials"}]
@@ -1399,8 +1399,8 @@
 
    :production-wip-to-finished
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "work-in-process"}
-                          :creates {:unit "finished-goods"}}
+    :required-parameters {:consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Production: Work in Process → Finished Goods"
     :journal-entry [{:debit "Finished Goods" :credit "Work in Process"}]
@@ -1411,8 +1411,8 @@
 
    :production-direct
    {:required #{:consumes :creates :is-allowed-by}
-    :required-parameters {:consumes {:unit "raw-materials"}
-                          :creates {:unit "finished-goods"}
+    :required-parameters {:consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}
                           :is-allowed-by {:capacity "t-shirt-printer"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
@@ -1424,8 +1424,8 @@
 
    :production-with-labor
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "effort"}
-                          :creates {:unit "work-in-process"}}
+    :required-parameters {:consumes {:unit "effort-unit"}
+                          :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Labor applied to production"
     :journal-entry [{:debit "Work in Process" :credit "Wages Payable"}]
@@ -1436,7 +1436,7 @@
 
    :service-delivery
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "effort"}
+    :required-parameters {:consumes {:unit "effort-unit"}
                           :creates {:unit "service-output"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Service creation through effort"
@@ -1448,7 +1448,7 @@
 
    :design-creation
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "effort"}
+    :required-parameters {:consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Creating intellectual property/designs"
@@ -1460,8 +1460,8 @@
 
    :supplies-consumption
    {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "supplies"}
-                          :creates {:unit "work-in-process"}}
+    :required-parameters {:consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Supplies consumed in production"
     :journal-entry [{:debit "Work in Process" :credit "Supplies"}]
@@ -1516,7 +1516,7 @@
    :employment-under-law
    {:required #{:provides :receives :has-counterparty :is-allowed-by :is-required-by}
     :required-parameters {:provides {:unit "monetary-unit"}
-                          :receives {:unit "effort"}
+                          :receives {:unit "effort-unit"}
                           :is-allowed-by {:framework "employment-law"}
                           :is-required-by {:framework "employment-law"}}
     :prohibited #{}
@@ -1529,7 +1529,7 @@
 
    :copyright-protected-creation
    {:required #{:consumes :creates :is-protected-by}
-    :required-parameters {:consumes {:unit "effort"}
+    :required-parameters {:consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "copyright"}}
     :prohibited #{:has-counterparty}
@@ -1542,7 +1542,7 @@
 
    :trademark-protected-brand
    {:required #{:consumes :creates :is-protected-by}
-    :required-parameters {:consumes {:unit "effort"}
+    :required-parameters {:consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "trademark"}}
     :prohibited #{:has-counterparty}
@@ -2443,8 +2443,8 @@ The printed t-shirts are now finished goods ready for sale."
    :production-raw-to-wip
    {:narrative-template "On {date}, SP takes {quantity} {raw-material} from inventory and begins the printing process. The blank shirts are now in production but not yet complete."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "raw-materials"}
-                          :creates {:unit "work-in-process"}}
+                          :consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :correct-classification :production-raw-to-wip
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
@@ -2454,8 +2454,8 @@ The printed t-shirts are now finished goods ready for sale."
    :production-wip-to-finished
    {:narrative-template "On {date}, SP completes the printing and packaging of {quantity} t-shirts. The shirts are now ready for sale."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "work-in-process"}
-                          :creates {:unit "finished-goods"}}
+                          :consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :correct-classification :production-wip-to-finished
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
@@ -2466,8 +2466,8 @@ The printed t-shirts are now finished goods ready for sale."
 
 This production is allowed by having the t-shirt printer you purchased earlier."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "raw-materials"}
-                          :creates {:unit "finished-goods"}
+                          :consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}
                           :is-allowed-by {:capacity "t-shirt-printer"}}
     :correct-classification :production-direct
     :level 2
@@ -2478,8 +2478,8 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :production-labor
    {:narrative-template "On {date}, SP's production staff spends {hours} hours operating the printing equipment, applying their labor to the manufacturing process."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort"}
-                          :creates {:unit "work-in-process"}}
+                          :consumes {:unit "effort-unit"}
+                          :creates {:unit "physical-unit"}}
     :correct-classification :production-with-labor
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
@@ -2488,8 +2488,8 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :supplies-used
    {:narrative-template "On {date}, SP uses {supplies} during the printing process. These supplies are consumed to produce the printed shirts."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "supplies"}
-                          :creates {:unit "work-in-process"}}
+                          :consumes {:unit "physical-unit"}
+                          :creates {:unit "physical-unit"}}
     :correct-classification :supplies-consumption
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
@@ -2498,7 +2498,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :design-creation
    {:narrative-template "On {date}, SP's designer spends {hours} hours creating a new {design-type} for the upcoming product line."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort"}
+                          :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}}
     :correct-classification :design-creation
     :level 2
@@ -2509,7 +2509,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :service-creation
    {:narrative-template "On {date}, SP's team spends {hours} hours providing {service} to fulfill a customer order."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort"}
+                          :consumes {:unit "effort-unit"}
                           :creates {:unit "service-output"}}
     :correct-classification :service-delivery
     :level 2
@@ -2552,7 +2552,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    {:narrative-template "On {date}, SP hires {employee} as a {position}, agreeing to pay ${wage}/hour. This employment relationship is governed by federal and state employment laws including minimum wage requirements."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
-                          :receives {:unit "effort"}
+                          :receives {:unit "effort-unit"}
                           :has-counterparty {:name :employee}
                           :is-allowed-by {:framework "employment-law"}
                           :is-required-by {:framework "employment-law"}}
@@ -2566,7 +2566,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :copyright-design
    {:narrative-template "On {date}, SP's designer spends {hours} hours creating an original {design-type}. As an original creative work, this design is automatically protected by copyright law."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort"}
+                          :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "copyright"}}
     :correct-classification :copyright-protected-creation
@@ -2578,7 +2578,7 @@ This production is allowed by having the t-shirt printer you purchased earlier."
    :trademark-brand
    {:narrative-template "On {date}, SP develops a distinctive {brand-element} for the company. SP registers this as a trademark to protect the brand identity in commerce."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort"}
+                          :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "trademark"}}
     :correct-classification :trademark-protected-brand

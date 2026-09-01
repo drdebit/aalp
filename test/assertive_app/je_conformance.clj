@@ -65,8 +65,19 @@
                      unit (:unit params)]
                  (cond-> params
                    (= "monetary-unit" unit) (assoc :quantity (:monetary sample-qty))
-                   (= "physical-unit" unit) (-> (assoc :quantity (:physical sample-qty))
-                                                (update :physical-item #(or % item)))
+                   ;; A transformation must take one thing and make
+                   ;; another. Handing consumes and creates the SAME item
+                   ;; would describe a thing that turns into itself, which
+                   ;; the position resolver reads (correctly) as work in
+                   ;; process -- an artefact of the generator, not of the
+                   ;; rulebook. So inputs and outputs get distinct items.
+                   (= "physical-unit" unit)
+                   (-> (assoc :quantity (:physical sample-qty))
+                       (update :physical-item
+                               #(or % (case a
+                                        :consumes "blank-tshirts"
+                                        :creates  "printed-tshirts"
+                                        item))))
                    (= :has-date a)          (assoc :date "2026-01-15")
                    (= :has-counterparty a)  (assoc :party "Acme Co")))]))))
 

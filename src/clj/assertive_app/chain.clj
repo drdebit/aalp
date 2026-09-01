@@ -44,25 +44,45 @@
      :consumed  consumed by a transformation
      :created   created by a transformation
      :provided  provided to a counterparty
+     :enables   named as what allowed a transformation, or acquired in an
+                event asserting that it allows future ones
 
    -> {item #{roles}}"
   [events]
   (reduce (fn [acc assertions]
-            (reduce (fn [acc [assertion-key role]]
-                      (if-let [{:keys [item]} (physical (get assertions assertion-key))]
-                        (update acc item (fnil conj #{}) role)
-                        acc))
-                    acc
-                    {:receives :acquired
-                     :consumes :consumed
-                     :creates  :created
-                     :provides :provided}))
+            (let [acc (reduce (fn [acc [assertion-key role]]
+                                (if-let [{:keys [item]} (physical (get assertions assertion-key))]
+                                  (update acc item (fnil conj #{}) role)
+                                  acc))
+                              acc
+                              {:receives :acquired
+                               :consumes :consumed
+                               :creates  :created
+                               :provides :provided})
+                  ;; A transformation naming what allowed it: the thing
+                  ;; named is productive. This is the assertion that makes
+                  ;; a printer capital -- it turns blanks into printed
+                  ;; shirts without being used up in doing so.
+                  acc (if-let [cap (get-in assertions [:is-allowed-by :capacity])]
+                        (update acc (name cap) (fnil conj #{}) :enables)
+                        acc)
+                  ;; The same fact stated forward, at acquisition: this
+                  ;; event asserts the thing it receives allows future
+                  ;; events.
+                  acc (if-let [{:keys [item]} (and (contains? assertions :allows)
+                                                   (physical (:receives assertions)))]
+                        (update acc item (fnil conj #{}) :enables)
+                        acc)]
+              acc))
           {} events))
 
 (def ^:private kind->position
+  "SP's catalogue, used ONLY as a convenience fallback -- see
+   inventory-position. Nothing here is a fact the assertions could not
+   state for themselves."
   {:raw-material  :raw-materials
    :finished-good :finished-goods
-   :equipment     :equipment-or-other
+   :equipment     :capital
    :service       :service})
 
 (defn inventory-position
@@ -90,29 +110,40 @@
          roles (get (item-roles events) item)
          kind  (get kind->position (get item-kinds (keyword item)))]
      (cond
-       ;; The emergent case: created by one transformation and consumed
-       ;; by another. Nothing declares this and nothing can -- it is only
-       ;; true because of what came after.
-       (and (:created roles) (:consumed roles))  :work-in-process
+       ;; Productive: the record shows this thing enabling transformations.
+       ;; It is not consumed by them -- it is what makes them possible.
+       ;; That is the whole content of "capital", and it is asserted, not
+       ;; declared: a printer is capital because SP recorded it turning
+       ;; blank shirts into printed ones.
+       (and (:enables roles) (not (:consumed roles)))  :capital
 
-       ;; Otherwise the firm's classification of the thing stands.
-       kind                                      kind
+       ;; Between stages: created by one transformation and consumed by
+       ;; another. Only later events can make this true.
+       (and (:created roles) (:consumed roles))        :work-in-process
 
-       ;; No catalogue entry: read what we can from the chain alone.
-       (:created roles)                          :finished-goods
-       (and (:acquired roles) (:consumed roles)) :raw-materials
-       (and (:acquired roles) (:provided roles)) :finished-goods
-       (:acquired roles)                         :equipment-or-other
-       :else                                     nil))))
+       ;; Consumed by a transformation -- an input, whatever it is called.
+       (:consumed roles)                               :raw-materials
+
+       ;; Produced by a transformation, or bought and sold on untouched.
+       (:created roles)                                :finished-goods
+       (and (:acquired roles) (:provided roles))       :finished-goods
+
+       ;; Nothing yet asserted about what this thing DOES. SP may keep a
+       ;; catalogue to save the student saying so every time, but it is a
+       ;; convenience standing in for an assertion, not a separate kind of
+       ;; truth -- and it loses to anything the record actually says.
+       kind                                            kind
+
+       :else                                           nil))))
 
 (def position-accounts
   "The double-entry label for each position. A translation, and only
    that: renaming these changes nothing about what was asserted."
-  {:raw-materials       "Raw Materials Inventory"
-   :work-in-process     "Work in Process"
-   :finished-goods      "Finished Goods Inventory"
-   :equipment-or-other  "Equipment (Fixed Asset)"
-   :service             "Service Cost"})
+  {:raw-materials   "Raw Materials Inventory"
+   :work-in-process "Work in Process"
+   :finished-goods  "Finished Goods Inventory"
+   :capital         "Equipment (Fixed Asset)"
+   :service         "Service Cost"})
 
 (defn inventory-account
   "The account an item's movements hit, given the chain and the firm's

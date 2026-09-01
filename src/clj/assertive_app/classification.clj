@@ -1,7 +1,8 @@
 (ns assertive-app.classification
   "Core classification engine for matching assertions to transaction types."
   (:require [clojure.set]
-            [clojure.string]))
+            [clojure.string]
+            [assertive-app.je-derive :as je-derive]))
 
 ;; Helper function to create assertion code -> label lookup
 (defn- assertion-code-to-label
@@ -2022,8 +2023,20 @@
    price this' -- downstream must render it as unknown and must not
    invent a figure."
   [journal-entry assertions-map]
-  (let [amt (monetary-quantity assertions-map)]
-    (mapv #(assoc % :amount amt) journal-entry)))
+  (let [amt (monetary-quantity assertions-map)
+        ;; The rulebook is the authority on which lines the assertions
+        ;; actually price. A Cost Recognition pair is NOT priced by a
+        ;; sale's assertions -- the cost lives in the production events --
+        ;; so stamping the sales price on it would teach the wrong thing
+        ;; and post a wrong number to inventory.
+        unresolved (set (map :account
+                             (:unresolved (je-derive/derive-entry assertions-map {}))))
+        unpriced? (fn [entry]
+                    (let [accts (remove nil? [(:debit entry) (:credit entry)])]
+                      (and (seq accts) (every? unresolved accts))))]
+    (mapv (fn [entry]
+            (assoc entry :amount (when-not (unpriced? entry) amt)))
+          journal-entry)))
 
 (defn classify-transaction
   "Match student-selected assertions to classification rules.

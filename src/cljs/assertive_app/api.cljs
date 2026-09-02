@@ -595,7 +595,12 @@
   []
   (POST (str api-base "/derive-je")
     {:params {:selected-assertions (state/selected-assertions)
-              :variables (:variables (state/current-problem))}
+              :variables (:variables (state/current-problem))
+              ;; What the student established earlier in the walkthrough.
+              ;; Sent rather than stored: the walkthrough teaches, and a
+              ;; student working through it twice should not accumulate
+              ;; two printers in their books.
+              :prior-events (state/walkthrough-events)}
      :format :json
      :headers (auth-headers)
      :response-format :json

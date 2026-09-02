@@ -511,12 +511,20 @@
 
   (POST "/api/derive-je" {body :body :as request}
     (if-let [user (:user request)]
-      (let [{:keys [selected-assertions variables]} body
+      (let [{:keys [selected-assertions variables prior-events]} body
             ;; Cost lines are priced from what this student has already
             ;; recorded -- the same basis the ledger uses -- so the live
             ;; panel and the posted entry can never disagree.
             context (try (simulation/derivation-context-for (:db/id user))
                          (catch Exception _ {:item-kinds simulation/item-kinds}))
+            ;; Events the client established earlier in a walkthrough.
+            ;; They are not in the ledger and should not be -- the
+            ;; walkthrough teaches rather than records -- but a later
+            ;; episode cannot be classified without the earlier ones.
+            ;; wrap-json-body already keywordizes keys, so these
+            ;; arrive in the shape the derivation expects.
+            walked  (vec (or prior-events []))
+            context (update context :events #(concat (or % []) walked))
             sel     (or selected-assertions {})]
         (response/response
           (assoc (je-derive/derive-je sel (or variables {}) context)

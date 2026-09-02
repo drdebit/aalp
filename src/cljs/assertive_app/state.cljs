@@ -104,7 +104,24 @@
    (swap! app-state assoc :selected-assertions {})))
 
 (defn end-walkthrough! []
-  (swap! app-state dissoc :walkthrough))
+  (swap! app-state dissoc :walkthrough :walkthrough-events))
+
+(defn walkthrough-events
+  "The events the student has completed earlier in the walkthrough.
+
+   Episodes build on each other -- blank shirts are inventory because of
+   what was said about the printer two episodes ago -- so the derivation
+   needs the chain. The walkthrough is teaching, not recording, so these
+   are carried here and sent with each derivation rather than written to
+   the student's books."
+  []
+  (vec (:walkthrough-events @app-state)))
+
+(defn remember-walkthrough-event!
+  "Keep the assertions just completed, so later episodes can see them."
+  [assertions]
+  (when (seq assertions)
+    (swap! app-state update :walkthrough-events (fnil conj []) assertions)))
 
 (defn advance-step! [step-count episode-count]
   (swap! app-state update :walkthrough

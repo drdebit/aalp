@@ -1006,11 +1006,18 @@
                        ;; between steps would throw away the entry the
                        ;; student is assembling, so it happens only when
                        ;; the episode changes.
-                       (let [ep-before episode]
+                       (let [ep-before episode
+                             built     (state/selected-assertions)]
                          (state/advance-step! (episodes/step-count episode)
                                               (episodes/episode-count))
                          (when (not= ep-before (:episode (state/walkthrough)))
-                           (state/clear-selections!))))}
+                           ;; The episode just finished becomes part of the
+                           ;; chain the next one is read against: blank
+                           ;; shirts are inventory because of what was said
+                           ;; about the printer an episode ago.
+                           (state/remember-walkthrough-event! built)
+                           (state/clear-selections!)
+                           (api/derive-je!)))}
          ;; One label for one action. It used to say "Continue" on steps
          ;; without a closing line and "Next" on steps with one, which
          ;; made the same button look like two different controls.

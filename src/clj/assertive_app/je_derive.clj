@@ -241,6 +241,11 @@
       "physical-unit"      (q/physical v (keyword (or physical-item "unspecified")))
       ("time-unit" "time") (q/time-qty v)
       ("effort-unit" "effort") (q/effort v)
+      ;; A claim on the business: countable, additive, commensurable
+      ;; between holders -- and deliberately NOT monetary, so it can
+      ;; never price a journal-entry line. Units are recorded; what they
+      ;; are worth is a different question with a different answer.
+      ("ownership-units" "ownership-unit") (q/quantity v :claim :ownership-unit)
       nil)))
 
 (defn monetary-quantity?
@@ -454,12 +459,25 @@
                                {:code code :role role}))
                            context-roles))
         context-codes (set (map :code context))
+        claim? (fn [code]
+                 (= :claim (get-in (params->quantity (get selections code)) [:unit :unit-type])))
         not-reflected (vec (keep (fn [code]
                                    (when-not (or (line-producing code)
                                                  (context-codes code))
                                      {:code code
-                                      :text (get not-reflected-texts code
-                                                 "Recorded -- but no rule in SP's rulebook produces a journal-entry line from this assertion.")}))
+                                      :text (cond
+                                              ;; A claim on the business is countable and
+                                              ;; recorded, and double-entry has no line for
+                                              ;; it. Who owns the business, and how much of
+                                              ;; it, is not something a journal entry can
+                                              ;; say -- the ownership schedule is computed
+                                              ;; from the record instead.
+                                              (claim? code)
+                                              "Recorded -- but not reflected. Double-entry has no line for who owns the business. The units are in the record, and the ownership schedule is worked out from them; the journal entry cannot say it."
+
+                                              :else
+                                              (get not-reflected-texts code
+                                                   "Recorded -- but no rule in SP's rulebook produces a journal-entry line from this assertion."))}))
                                  (keys selections)))
         sum-side (fn [side]
                    (reduce + 0 (keep #(when (= side (:side %)) (:amount %)) lines)))

@@ -17,8 +17,8 @@ they belong later, as another way of looking at events already recorded.
 
 | # | episode | new assertions | what appears |
 |---|---------|----------------|--------------|
-| 1 | SP puts money in | `has-date`, `receives`, `has-counterparty` | Cash, Owner's Capital |
-| 2 | SP buys a printer | `provides`, `allows` | Equipment |
+| 1 | the business is funded | `has-date`, `receives`, `provides`, `has-counterparty` | Cash, Owner's Capital |
+| 2 | SP buys a printer | `allows` | Equipment |
 | 3 | SP buys shirts and ink | — none — | Raw Materials Inventory |
 | 4 | SP prints shirts | `consumes`, `creates`, `is-allowed-by` | Finished Goods |
 | 5 | SP sells shirts | — none — | Revenue, Cost of Goods Sold |
@@ -31,30 +31,56 @@ arranged differently.
 
 ---
 
-## Episode 1 — SP puts money in
+## Episode 1 — the business is funded
 
-**1.** SP wants to start printing t-shirts. Before anything else, SP needs
-money to work with. Today SP puts $10,000 of their own savings into the
-business.
+Two things have to land before the first assertion, because the rest of
+the course leans on them.
 
-**2.** *Every event starts with when it happened.*
+**1.** *SP the person and SP's T-Shirts the business are two different
+things. The business has its own money, owes its own debts, and keeps its
+own books. That separation is the reason any of this works: if they were
+the same, "SP puts money in" would just be SP moving money between
+pockets.*
+
+**2.** *And here is the part to hold on to: **you are keeping the
+business's books.** Every assertion you make is the business saying what
+happened to it. When the business receives $10,000, that is money
+arriving — even though the person who handed it over is $10,000 poorer.*
+
+**3.** Today the business is funded. SP puts in $20,000 and, in return,
+receives a stake in the business.
+
+**4.** *Every event starts with when it happened.*
 → set the date
 *Good. That's an assertion — a plain statement about the world. It's true,
 but on its own it doesn't say much.*
 
-**3.** *The business received $10,000. Say so.*
-→ add `receives` → money → 10000
+**5.** *The business received $20,000. Say so.*
+→ add `receives` → money → 20000
 *Two lines appeared at once. Cash on the debit side — money arriving is a
 debit. And Owner's Capital on the credit side.*
-*Why that second one? Money came in and nothing went out with it. SP gave
-up no goods and took on no debt. What's left is a claim by whoever put the
-money in. That's what equity is — not a kind of transaction, but the part
-left over.*
+*Why that second one? Money came in and nothing went out with it. The
+business gave up no goods and took on no debt. What is left is a claim by
+whoever put the money in. That is what equity is — not a kind of
+transaction, but the part left over.*
 
-**4.** *One more thing worth recording: who.*
+**6.** *The business didn't get that money for nothing. SP received 200
+ownership units in return. Say that too.*
+→ add `provides` → ownership units → 200
+*Now look carefully. **Nothing changed.** The entry is the same.*
+
+**7.** *Scroll down to "Recorded — but not reflected".*
+*There they are. Double-entry has no line for who owns the business. The
+200 units are in the record, and later we will work out percentages from
+them — but the journal entry cannot say it.*
+*This is worth noticing early: the record holds more than the entry shows.*
+
+**8.** *One more: who.*
 → add `has-counterparty` → SP
-*Notice the entry didn't change. Counterparty doesn't get a line of its
-own — it tells you which account fits, without ever appearing on one.*
+*The entry didn't change again. Counterparty doesn't get a line of its own
+— it tells you which account fits, without ever appearing on one.*
+*Later, when a second person invests, this is what keeps the two of them
+apart.*
 
 ---
 
@@ -127,3 +153,30 @@ in episode 3.
 student has never asserted and cannot assert. Then the cost side, priced
 from episode 4, which is where "what did they cost" becomes a question
 with an answer already in the record.
+
+
+---
+
+## A note on ownership units, and what is still unresolved
+
+The paper's equity issuance provides `ownership-percentage`. Units are
+used here instead, because a percentage is not a quantity: it does not
+add, and a holder's percentage changes when somebody ELSE is issued
+units, without that holder asserting anything. That is the same property
+that made work in process a position rather than an assertion. Assert the
+units; report the ratio, at a date.
+
+This also makes the LLC / corporation difference a matter of which unit
+is issued rather than a different structure, and extends to further
+members for free: each issuance is an event with its own counterparty and
+count.
+
+What it does NOT settle is whether `provides` is the right verb. Every
+other use of `provides` means the business gave up something it had. The
+business did not have 200 ownership units lying around and hand them
+over — it brought them into existence by issuing them. Economically this
+is closer to creating a claim against itself than to an exchange, which
+is why "nothing went out, so the credit is the residual" is the honest
+derivation even in a transaction that looks like a swap.
+
+Equity may want a verb the vocabulary does not yet have. Left open.

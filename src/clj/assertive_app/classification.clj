@@ -101,11 +101,21 @@
 ;; Single source of truth for unit type dropdown options used across assertions
 
 (def unit-type-options
-  "Standard unit type options for provides/receives/requires/expects assertions."
+  "Standard unit type options for provides/receives/requires/expects assertions.
+
+   `ownership-units` counts a claim on the business rather than a thing
+   the business holds. It is a real denomination: 200 units is a
+   quantity, it adds, and two holders' units are commensurable. A
+   PERCENTAGE is not -- it is a ratio whose denominator moves every time
+   anyone else is issued units, so a holder's percentage changes without
+   that holder asserting anything. Percentage is a position, computed at
+   a date, in the same way work in process is. Assert the units; report
+   the ratio."
   [{:value "monetary-unit" :label "Cash/Money"}
    {:value "physical-unit" :label "Physical Units"}
    {:value "time-unit" :label "Time"}
-   {:value "effort-unit" :label "Effort/Labor"}])
+   {:value "effort-unit" :label "Effort/Labor"}
+   {:value "ownership-units" :label "Ownership Units (shares/membership)"}])
 
 ;; Derived helpers for simulation
 (def purchasable-inventory-items
@@ -1689,7 +1699,7 @@
    :owner-investment
    {:required #{:has-date :receives :provides :has-counterparty}
     :required-parameters {:receives {:unit "monetary-unit"}
-                          :provides {:unit "ownership-interest"}}
+                          :provides {:unit "ownership-units"}}
     :prohibited #{:requires :expects :consumes :creates}
     :description "Owner contributes capital to business"
     :journal-entry [{:debit "Cash" :credit "Owner's Capital"}]
@@ -1701,7 +1711,7 @@
    :stock-issuance
    {:required #{:has-date :receives :provides :has-counterparty}
     :required-parameters {:receives {:unit "monetary-unit"}
-                          :provides {:unit "stock-shares"}}
+                          :provides {:unit "ownership-units"}}
     :prohibited #{:requires :expects :consumes :creates}
     :description "Corporation issues stock for cash"
     :journal-entry [{:debit "Cash" :credit "Common Stock"}]
@@ -2853,7 +2863,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, {owner} invests ${amount} cash into SP in exchange for a {percent}% ownership interest in the company."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
-                          :provides {:unit "ownership-interest"}
+                          :provides {:unit "ownership-units"}
                           :has-counterparty {:name :owner}}
     :correct-classification :owner-investment
     :level 6
@@ -2866,7 +2876,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, SP Corporation issues {shares} shares of common stock to {investor} for ${amount} cash. The stock has a par value of ${par-value} per share."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
-                          :provides {:unit "stock-shares"}
+                          :provides {:unit "ownership-units"}
                           :has-counterparty {:name :investor}}
     :correct-classification :stock-issuance
     :level 6

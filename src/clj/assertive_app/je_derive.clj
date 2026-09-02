@@ -31,6 +31,21 @@
     (string? v) (parse-num v)
     :else nil))
 
+(defn as-flows
+  "A flow assertion's value as a sequence.
+
+   A transformation consumes more than one thing: printing a shirt takes
+   a blank shirt AND ink. The research model writes `consumes` as a list
+   for exactly this reason, and a single map is just the one-element
+   case. Normalising here means every rule downstream fires once per
+   thing consumed rather than once per assertion, which is what makes a
+   multi-input production entry come out with a credit per input."
+  [v]
+  (cond (nil? v) []
+        (sequential? v) (vec v)
+        (map? v) [v]
+        :else []))
+
 (defn- params-match?
   "Do the selected params for an assertion satisfy the rule's param
    pattern? Pattern values may be a string (equality) or a set (any-of)."
@@ -168,7 +183,7 @@
    {:id :production-in
     :when {:assertion :creates :params {:unit "physical-unit"}}
     :line {:side :debit :account :position}
-    :amount :input-cost
+    :amount :total-input-cost
     :text "Production created finished goods; the asset increases at the cost of what went in."}])
 
 ;; ---------------------------------------------------------------------------
@@ -252,16 +267,16 @@
    :unknown means the assertions genuinely do not carry this figure
    (a cost that lives in other events); it stays nil and is marked
    unresolved so nothing downstream invents a number for it."
-  ([amount-kind matched-code selections variables]
-   (resolve-amount amount-kind matched-code selections variables nil))
-  ([amount-kind matched-code selections variables context]
+  ([amount-kind matched-code matched-params selections variables]
+   (resolve-amount amount-kind matched-code matched-params selections variables nil))
+  ([amount-kind matched-code matched-params selections variables context]
    (let [basis (:cost-basis context)
          priced (fn [item units reason]
                   (if-let [c (cost/cost-of basis item units)]
                     {:quantity (q/monetary c) :unresolved? false}
                     {:quantity nil :unresolved? true :unresolved-reason reason}))]
      (case amount-kind
-       :flow     (let [own (params->quantity (get selections matched-code))]
+       :flow     (let [own (params->quantity matched-params)]
                    {:quantity (if (monetary-quantity? own)
                                 own
                                 (monetary-amount selections variables))
@@ -270,14 +285,24 @@
 
        ;; What the goods COST -- not what they sold for. Recovered from
        ;; the events that acquired or produced them (see cost-basis).
-       :cost-basis (let [p (get selections matched-code)]
+       :cost-basis (let [p matched-params]
                      (priced (:physical-item p) (:quantity p)
                              "These goods have no recorded cost yet -- nothing in the ledger records acquiring or producing them."))
 
-       ;; A transformation is worth what went into it.
-       :input-cost (let [p (get selections :consumes)]
+       ;; A transformation is worth what went into it. For a consumed
+       ;; line that is this input's own cost; for the created line it is
+       ;; the total of everything consumed, since the output is worth the
+       ;; sum of what made it.
+       :input-cost (let [p matched-params]
                      (priced (:physical-item p) (:quantity p)
                              "The consumed materials have no recorded cost yet -- nothing in the ledger records acquiring them."))
+       :total-input-cost
+       (let [inputs (as-flows (:consumes selections))
+             costs  (map #(cost/cost-of basis (:physical-item %) (:quantity %)) inputs)]
+         (if (and (seq costs) (every? some? costs))
+           {:quantity (q/monetary (reduce + costs)) :unresolved? false}
+           {:quantity nil :unresolved? true
+            :unresolved-reason "The materials consumed have no recorded cost yet -- nothing in the ledger records acquiring them."}))
 
        :unknown  {:quantity nil :unresolved? true
                   :unresolved-reason "The assertions of this event do not carry this figure."}
@@ -288,31 +313,31 @@
 ;; ---------------------------------------------------------------------------
 
 (defn- resolve-position
-  "The position of the item named by the matched assertion, read from the
-   chain the student has recorded (including the event being booked) plus
-   SP's catalogue of what kind of thing each item is."
-  [matched-code selections context]
-  (let [item (get-in selections [matched-code :physical-item])
+  "The position of the item this line is about, read from the chain the
+   student has recorded (including the event being booked) plus SP's
+   catalogue of what kind of thing each item is."
+  [flow context]
+  (let [item (:physical-item flow)
         ;; The event being booked is part of its own chain: the materials
         ;; it consumes are being consumed now, which is what makes them
         ;; inputs rather than merely things once bought.
-        events (concat (:events context) [selections])]
+        events (concat (:events context) [(:current context)])]
     (chain/inventory-position events item (:item-kinds context))))
 
 (defn- resolve-line-account
   "An :account of :position is resolved from the chain; anything else is
    the literal label the rule names."
-  [account matched-code selections context]
+  [account flow context]
   (if (= :position account)
-    (or (some-> (resolve-position matched-code selections context)
+    (or (some-> (resolve-position flow context)
                 chain/position-accounts)
         "Unclassified Asset")
     account))
 
 (defn- resolve-line-text
-  [text matched-code selections context]
+  [text flow context]
   (if (= :position text)
-    (or (some-> (resolve-position matched-code selections context) position-texts)
+    (or (some-> (resolve-position flow context) position-texts)
         "This item has no recorded position yet.")
     text))
 
@@ -339,18 +364,28 @@
   ([selections variables] (derive-je selections variables nil))
   ([selections variables context]
   (let [selections (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
-        fired (keep (fn [rule]
-                      (when-let [matched (assertion-matches? selections (:when rule))]
-                        (let [{:keys [ok? used]} (context-satisfied? selections (or (:context rule) {}))]
-                          (when ok?
-                            (assoc rule :matched matched :context-used used)))))
-                    rulebook)
-        lines (mapv (fn [{:keys [line amount matched context-used id text entry-label]}]
+        context (assoc context :current selections)
+        ;; One firing per matching FLOW, not per assertion: consuming a
+        ;; blank shirt and an ink cartridge is two things consumed, and
+        ;; the entry needs a line for each.
+        fired (mapcat (fn [rule]
+                        (let [{:keys [assertion params]} (:when rule)
+                              flows (as-flows (get selections assertion))
+                              hits  (filterv #(params-match? % (or params {})) flows)
+                              {:keys [ok? used]} (context-satisfied? selections (or (:context rule) {}))]
+                          (when (and ok? (seq hits))
+                            (mapv (fn [flow]
+                                    (assoc rule :matched assertion
+                                                :matched-params flow
+                                                :context-used used))
+                                  hits))))
+                      rulebook)
+        lines (mapv (fn [{:keys [line amount matched matched-params context-used id text entry-label]}]
                       (let [{:keys [quantity unresolved? unresolved-reason]}
-                            (resolve-amount amount matched selections variables context)
+                            (resolve-amount amount matched matched-params selections variables context)
                             prov (vec (distinct (cons matched context-used)))]
                         {:side (:side line)
-                         :account (resolve-line-account (:account line) matched selections context)
+                         :account (resolve-line-account (:account line) matched-params context)
                          ;; The typed quantity is the real value; :amount is
                          ;; its scalar projection, kept for the wire and the
                          ;; ledger. Every posted amount is money by
@@ -367,7 +402,7 @@
                          ;; underneath and nothing else.
                          :assertions (select-keys selections prov)
                          :rule-id id
-                         :rule-text (resolve-line-text text matched selections context)
+                         :rule-text (resolve-line-text text matched-params context)
                          :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))

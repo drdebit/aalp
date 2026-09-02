@@ -44,11 +44,18 @@
     (when-let [n (num-or-nil (:quantity params))]
       {:item (some-> (:physical-item params) name) :units n})))
 
+(defn- physicals
+  "Every physical flow under an assertion. A transformation consumes more
+   than one thing -- a blank shirt AND ink -- so a flow assertion may
+   hold a list; a single map is the one-element case."
+  [v]
+  (keep physical (cond (nil? v) [] (sequential? v) v :else [v])))
+
 (defn acquisition
   "If these assertions record acquiring physical goods for money -- paid
    now (provides) or owed (requires) -- return {:item :units :cost}."
   [assertions]
-  (let [{:keys [item units]} (physical (:receives assertions))
+  (let [{:keys [item units]} (first (physicals (:receives assertions)))
         cost (or (monetary-qty (:provides assertions))
                  (monetary-qty (:requires assertions)))]
     (when (and item units cost (pos? units))
@@ -60,11 +67,10 @@
    The output's cost is the cost of its inputs, so it can only be valued
    once those inputs have one."
   [assertions]
-  (let [out (physical (:creates assertions))
-        in  (physical (:consumes assertions))]
+  (let [out (first (physicals (:creates assertions)))
+        in  (vec (physicals (:consumes assertions)))]
     (when (and out (pos? (:units out)))
-      {:item (:item out) :units (:units out)
-       :inputs (if in [in] [])})))
+      {:item (:item out) :units (:units out) :inputs in})))
 
 (defn- accumulate [basis {:keys [item units cost]}]
   (-> basis

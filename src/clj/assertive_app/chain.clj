@@ -37,6 +37,13 @@
                                        (catch Exception _ nil))
                       :else nil))})))
 
+(defn- physicals
+  "Every physical flow under an assertion. A transformation consumes more
+   than one thing -- a blank shirt AND ink -- so a flow assertion may
+   hold a list; a single map is the one-element case."
+  [v]
+  (keep physical (cond (nil? v) [] (sequential? v) v :else [v])))
+
 (defn item-roles
   "What the chain says about each item, as a set of roles.
 
@@ -54,9 +61,10 @@
   [events]
   (reduce (fn [acc assertions]
             (let [acc (reduce (fn [acc [assertion-key role]]
-                                (if-let [{:keys [item]} (physical (get assertions assertion-key))]
-                                  (update acc item (fnil conj #{}) role)
-                                  acc))
+                                (reduce (fn [acc {:keys [item]}]
+                                          (update acc item (fnil conj #{}) role))
+                                        acc
+                                        (physicals (get assertions assertion-key))))
                               acc
                               {:receives :acquired
                                :consumes :consumed
@@ -255,10 +263,11 @@
   "Consuming is taking too: production cannot use up what SP does not
    hold."
   [selections events]
-  (when-let [{:keys [item units]} (physical (:consumes selections))]
-    (let [available (get (on-hand events) item 0)
-          wanted    (or units 0)]
-      (when (> wanted available)
+  (let [hand (on-hand events)]
+    (some (fn [{:keys [item units]}]
+      (let [available (get hand item 0)
+            wanted    (or units 0)]
+        (when (> wanted available)
         {:kind :cannot-consume
          :item item :requested wanted :available available
          :message
@@ -266,7 +275,8 @@
            (str "You have no " item " to use. Production consumes materials "
                 "SP has acquired; nothing in your record shows any.")
            (str "You have " (fmt available) " " item " on hand, but this "
-                "event consumes " (fmt wanted) "."))}))))
+                "event consumes " (fmt wanted) "."))})))
+      (physicals (:consumes selections)))))
 
 (defn- capability-problem
   "A transformation needs something that makes it possible.
@@ -277,8 +287,8 @@
    exactly the gap a student should meet, and fill themselves, rather
    than be told about in advance."
   [selections events]
-  (let [in  (physical (:consumes selections))
-        out (physical (:creates selections))]
+  (let [in  (first (physicals (:consumes selections)))
+        out (first (physicals (:creates selections)))]
     (when (and in out)
       (let [caps  (capabilities events)
             held  (on-hand events)

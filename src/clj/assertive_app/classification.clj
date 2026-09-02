@@ -756,7 +756,7 @@
      :parameters {:unit {:type :dropdown
                          :label "What is consumed"
                          :options [{:value "raw-materials" :label "Raw Materials"}
-                                   {:value "supplies" :label "Supplies"}
+                                   {:value "supplies" :label "Raw Materials Inventory"}
                                    {:value "effort" :label "Effort/Labor"}]}
                   :quantity {:type :number
                              :label "Quantity"
@@ -1139,26 +1139,26 @@
       :expense ["Cost of Goods Sold" "Expense"]}
 
    2 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Work in Process" "Equipment" "Prepaid Expense"]
+              "Finished Goods Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable"]
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
 
    3 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Work in Process" "Equipment" "Prepaid Expense"]
+              "Finished Goods Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
 
    4 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Work in Process" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
+              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Tax Expense" "Compliance Expense"
                 "Reporting Expense" "Organization Costs"]}
 
    5 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Work in Process" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
               "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
@@ -1169,7 +1169,7 @@
                 "Tax Expense" "Compliance Expense" "Reporting Expense"]}
 
    6 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Work in Process" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
               "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
@@ -1181,7 +1181,7 @@
                 "Tax Expense" "Compliance Expense" "Reporting Expense"]}
 
    7 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
-              "Raw Materials Inventory" "Finished Goods Inventory" "Work in Process"
+              "Raw Materials Inventory" "Finished Goods Inventory" "Finished Goods Inventory"
               "Equipment" "Prepaid Expense" "Prepaid Insurance" "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
@@ -1385,30 +1385,6 @@
     :level 2}
 
    ;; Simpler classifications using generic assertions (for backward compatibility)
-   :production-raw-to-wip
-   {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "physical-unit"}
-                          :creates {:unit "physical-unit"}}
-    :prohibited #{:has-counterparty :provides :receives}
-    :description "Production: Raw materials → Work in Process"
-    :journal-entry [{:debit "Work in Process" :credit "Raw Materials"}]
-    :note "Internal transformation - no counterparty involved. Raw materials are consumed to create partially completed goods."
-    :examples ["SP moves blank t-shirts into production"
-               "SP begins printing process on inventory"]
-    :level 2}
-
-   :production-wip-to-finished
-   {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "physical-unit"}
-                          :creates {:unit "physical-unit"}}
-    :prohibited #{:has-counterparty :provides :receives}
-    :description "Production: Work in Process → Finished Goods"
-    :journal-entry [{:debit "Finished Goods" :credit "Work in Process"}]
-    :note "Completing production - WIP becomes saleable finished goods."
-    :examples ["SP completes printing and packaging of t-shirts"
-               "SP transfers completed shirts to finished goods inventory"]
-    :level 2}
-
    :production-direct
    {:required #{:consumes :creates :is-allowed-by}
     :required-parameters {:consumes {:unit "physical-unit"}
@@ -1428,7 +1404,7 @@
                           :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Labor applied to production"
-    :journal-entry [{:debit "Work in Process" :credit "Wages Payable"}]
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Wages Payable"}]
     :note "Recording labor effort consumed in production process."
     :examples ["SP's workers spend time printing t-shirts"
                "Production staff applies effort to manufacturing"]
@@ -1464,7 +1440,7 @@
                           :creates {:unit "physical-unit"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Supplies consumed in production"
-    :journal-entry [{:debit "Work in Process" :credit "Supplies"}]
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
     :note "Indirect materials (ink, packaging) consumed during production."
     :examples ["SP uses ink to print designs on t-shirts"
                "SP consumes packaging materials"]
@@ -1475,7 +1451,7 @@
    {:required #{:consumes :creates}
     :prohibited #{:has-counterparty}
     :description "Internal transformation (consume inputs, create outputs)"
-    :journal-entry [{:debit "Work in Process" :credit "Raw Materials"}]
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials"}]
     :examples ["SP consumes blank t-shirt and ink to create printed t-shirt"]
     :level 2}
 
@@ -1917,11 +1893,24 @@
           [code linkage])))
 
 (defn parameters-match?
-  "Check if student parameters match required parameters for an assertion."
+  "Check if student parameters match required parameters for an assertion.
+
+   A flow assertion may hold several flows: printing a shirt consumes a
+   blank shirt AND ink, and the research model writes `consumes` as a
+   list for exactly that reason. A requirement is satisfied when ANY of
+   the flows meets it -- the classification asks whether the event
+   consumes physical goods, not whether every single thing consumed is
+   the same kind. The derivation fires per flow, so each still gets its
+   own line."
   [student-params required-params]
-  (every? (fn [[param-key param-value]]
-            (= (get student-params param-key) param-value))
-          required-params))
+  (let [flows (cond (nil? student-params)        [{}]
+                    (sequential? student-params) student-params
+                    :else                        [student-params])
+        matches? (fn [params]
+                   (every? (fn [[param-key param-value]]
+                             (= (get params param-key) param-value))
+                           required-params))]
+    (boolean (some matches? flows))))
 
 (defn generate-dynamic-hints
   "Generate dynamic hints by comparing student assertions to a classification pattern.

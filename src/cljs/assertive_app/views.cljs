@@ -960,7 +960,10 @@
                                               (episodes/episode-count))
                          (when (not= ep-before (:episode (state/walkthrough)))
                            (state/clear-selections!))))}
-         (cond last? "Finish" (:then st) "Next" :else "Continue")]
+         ;; One label for one action. It used to say "Continue" on steps
+         ;; without a closing line and "Next" on steps with one, which
+         ;; made the same button look like two different controls.
+         (if last? "Finish" "Next")]
         [:button.wt-leave {:on-click #(state/end-walkthrough!)} "Leave the walkthrough"]]])))
 
 (defn sentence-builder

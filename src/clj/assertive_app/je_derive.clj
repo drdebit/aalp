@@ -385,7 +385,10 @@
   (if (= :position account)
     (or (some-> (resolve-position flow context)
                 chain/position-accounts)
-        "Unclassified Asset")
+        ;; Not an account. The record has not said what this thing is,
+        ;; and naming it something plausible would paper over exactly the
+        ;; gap the student needs to see.
+        "(not yet classified)")
     account))
 
 (defn- resolve-line-text

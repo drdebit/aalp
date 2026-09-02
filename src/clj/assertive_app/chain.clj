@@ -250,6 +250,26 @@
            (str "You have " (fmt available) " " item " on hand, but this "
                 "event provides " (fmt wanted) "."))}))))
 
+(defn- cash-problem
+  "You can only provide what you have, and money is a thing you have.
+
+   Only asked of a record that contains events. An empty record does not
+   say SP is broke -- it says nothing, and a practice problem standing on
+   its own has no business being told the firm cannot afford it."
+  [selections events]
+  (when (seq events)
+    (when-let [wanted (monetary-qty (:provides selections))]
+      (let [available (cash-on-hand events)]
+        (when (> wanted available)
+          {:kind :cannot-pay
+           :requested wanted :available available
+           :message
+           (if (<= available 0)
+             (str "SP has no cash to provide. Nothing in your record shows money "
+                  "coming in -- where would the " (fmt wanted) " come from?")
+             (str "SP has " (fmt available) " on record, but this event provides "
+                  (fmt wanted) "."))})))))
+
 (defn- consumption-problem
   "Consuming is taking too: production cannot use up what SP does not
    hold."
@@ -318,7 +338,7 @@
    -> [] when the record bears the event out."
   [selections events]
   (vec (keep #(% selections events)
-             [provision-problem consumption-problem capability-problem])))
+             [provision-problem cash-problem consumption-problem capability-problem])))
 
 (defn unsupported-provision
   "Back-compat single-problem view: the first thing the record cannot

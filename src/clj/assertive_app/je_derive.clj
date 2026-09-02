@@ -97,6 +97,17 @@
     :amount :flow
     :text "Money going out decreases Cash. Assets decrease with credits."}
 
+   ;; -------- Money in with nothing going out: the residual ----------
+   {:id :owner-capital
+    :when {:assertion :receives :params {:unit "monetary-unit"}}
+    :context {:none-of [{:assertion :provides :params {:unit "physical-unit"}}
+                        {:assertion :requires}
+                        {:assertion :modifies}
+                        {:assertion :consumes}]}
+    :line {:side :credit :account "Owner's Capital"}
+    :amount :monetary
+    :text "Money came in and nothing went out with it. SP gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by whoever put the money in, against whatever the business has -- and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes."}
+
    ;; -------- Goods received: the account is the item's POSITION -------
    ;; Not three rules keyed on which item it is. One rule that asks where
    ;; the thing sits in the chain of what SP has recorded: an input, a

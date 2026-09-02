@@ -2912,6 +2912,16 @@
      (when tq-active?
        [tutorial-quiz-flow])
      (cond
+       ;; The walkthrough takes over while it is running. It teaches; the
+       ;; drill still certifies, so this is a path through the same
+       ;; machinery rather than a replacement for it.
+       (state/walkthrough-active?)
+       [:div.walkthrough-container
+        [walkthrough-panel]
+        [:div.two-column-layout
+         [sentence-builder]
+         [feedback-panel]]]
+
        ;; Practice drill: unledgered problems with complete feedback,
        ;; between the tutorial quiz and Year 1 recording
        (state/drill-active?)
@@ -2939,7 +2949,9 @@
 
        ;; Level boundary: the new level's tutorial gates the next day
        (not completed?)
-       [tutorial-gate level]
+       [:div
+        [tutorial-gate level]
+        [:div.practice-toolbar [walkthrough-start-button]]]
 
        ;; A recording result is showing
        result
@@ -2997,10 +3009,8 @@
      ;; Gate or content
      (if completed?
        [:div
-        [walkthrough-panel]
         [:div.practice-toolbar
-         [tutorial-review-button level]
-         [walkthrough-start-button]]
+         [tutorial-review-button level]]
         [:div {:class (if is-construct? "two-column-layout" "three-column-layout")}
          [narrative-panel]
          (when-not is-construct?

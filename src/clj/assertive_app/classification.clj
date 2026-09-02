@@ -2,7 +2,8 @@
   "Core classification engine for matching assertions to transaction types."
   (:require [clojure.set]
             [clojure.string]
-            [assertive-app.je-derive :as je-derive]))
+            [assertive-app.je-derive :as je-derive]
+            [assertive-app.chain :as chain]))
 
 ;; Helper function to create assertion code -> label lookup
 (defn- assertion-code-to-label
@@ -1212,10 +1213,19 @@
   "Template for cash exchange transactions (simultaneous exchange, no future obligation).
    entity-provides and entity-receives can be :cash or :goods/:services
    physical-item specifies the specific item (e.g., 'blank-tshirts', 't-shirt-printer')"
-  [description journal-entry & {:keys [provides-unit provides-item receives-unit physical-item note examples level]
-                                 :or {level 0}}]
-  (let [base {:required #{:has-date :provides :receives :has-counterparty}
-              :prohibited #{:requires :expects :allows}  ;; Cash exchanges don't involve capability recognition
+  [description journal-entry & {:keys [provides-unit provides-item receives-unit physical-item
+                                       note examples level requires-position permits also-required]
+                                 :or {level 0, permits #{}, also-required #{}}}]
+  (let [base {:required (clojure.set/union #{:has-date :provides :receives :has-counterparty}
+                                           also-required)
+              ;; A cash exchange settles now, so it carries no obligation
+              ;; or expectation -- but it may well say what the thing
+              ;; acquired is FOR. That is not a future event; it is what
+              ;; makes a printer equipment rather than stock to resell,
+              ;; and without it the record does not say which. Callers
+              ;; that need it pass :permits #{:allows}.
+              :prohibited (clojure.set/difference #{:requires :expects :allows} permits)
+              :optional permits
               :description description
               :journal-entry journal-entry
               :level level}
@@ -1228,6 +1238,7 @@
                                         (when physical-item {:physical-item physical-item}))}))]
     (cond-> base
       (seq params) (assoc :required-parameters params)
+      requires-position (assoc :requires-position requires-position)
       note (assoc :note note)
       examples (assoc :examples examples))))
 
@@ -1282,6 +1293,10 @@
      [{:debit "Raw Materials Inventory" :credit "Cash"}]
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
+     ;; What makes this inventory is that SP holds a capacity which
+     ;; consumes the thing. That fact lives in earlier events, not here --
+     ;; classification is a property of the paragraph, not the sentence.
+     :requires-position {:receives :raw-materials}
      ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
      ;; The account mapping will determine Raw Materials Inventory from the physical-item
      :examples ["SP purchases blank t-shirts for cash"
@@ -1294,7 +1309,15 @@
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
      :physical-item "t-shirt-printer"
-     :examples ["SP purchases t-shirt printer for $3,000 cash"])
+     ;; What makes this equipment is that SP said what the printer is
+     ;; for. A printer bought by a machine reseller is inventory, and it
+     ;; is the same printer -- only the record separates them.
+     ;; Required, not optional: without it the record does not say this
+     ;; is equipment, and we should not pretend otherwise.
+     :permits #{:allows}
+     :also-required #{:allows}
+     :requires-position {:receives :capital}
+     :examples ["SP purchases t-shirt printer for $3,000 cash, and says it turns blank shirts into printed ones"])
 
    :inventory-purchase-on-credit
    {:required #{:has-date :receives :has-counterparty :requires}
@@ -1892,6 +1915,27 @@
               :when linkage]
           [code linkage])))
 
+(defn position-requirement-met?
+  "Does the item named by this assertion occupy the required position?
+
+   A classification can depend on more than the event in front of you. An
+   acquisition is an equipment purchase because the thing acquired turns
+   out to be productive, and it is an inventory purchase because the
+   thing acquired is an input to something SP can do -- neither of which
+   the acquisition itself says. The record says it, across events.
+
+   This is the point at which classification stops being a property of a
+   sentence and becomes a property of the paragraph."
+  [assertions-map requirement context]
+  (let [events (concat (:events context) [assertions-map])]
+    (every? (fn [[assertion-code wanted]]
+              (let [flows (let [v (get assertions-map assertion-code)]
+                            (cond (nil? v) [] (sequential? v) v :else [v]))]
+                (some (fn [flow]
+                        (= wanted (chain/inventory-position events (:physical-item flow))))
+                      flows)))
+            requirement)))
+
 (defn parameters-match?
   "Check if student parameters match required parameters for an assertion.
 
@@ -2083,7 +2127,8 @@
         ;; say so: :prohibited is checked separately and still wins.
         universal-context #{:has-date}
 
-        exact-matches (for [[class-key {:keys [required prohibited optional required-parameters requires-missing-parameters]}] classifications
+        exact-matches (for [[class-key {:keys [required prohibited optional required-parameters
+                                              requires-missing-parameters requires-position]}] classifications
                             :when (and
                                    ;; All required assertions present
                                    (clojure.set/subset? required assertion-keys)
@@ -2096,6 +2141,11 @@
                                    ;; If requires-missing-parameters, check that NO parameters are specified
                                    (or (not requires-missing-parameters)
                                        (not has-any-parameters?))
+                                   ;; The record must also put the thing in
+                                   ;; the position this classification is
+                                   ;; about -- see position-requirement-met?
+                                   (or (nil? requires-position)
+                                       (position-requirement-met? assertions-map requires-position context))
                                    ;; Check parameters match if required-parameters specified
                                    (or (nil? required-parameters)
                                        (every? (fn [[assertion-code required-params]]
@@ -2150,6 +2200,12 @@
                                                        1))
                                                    0)]
                             {:type class-key
+                             :position-unmet (boolean
+                                               (and (get-in classifications [class-key :requires-position])
+                                                    (not (position-requirement-met?
+                                                           assertions-map
+                                                           (get-in classifications [class-key :requires-position])
+                                                           context))))
                              :distance distance
                              :missing missing
                              :extra-prohibited extra-prohibited
@@ -2171,7 +2227,54 @@
                                        #(get-in classifications [(:type %) :level] 0)
                                        ;; Tiebreaker 4: Prefer more prohibitions (stricter rules, negative for desc)
                                        #(- (count (get-in classifications [(:type %) :prohibited]))))
-                                  all-distances)))]
+                                  all-distances)))
+
+        ;; Every classification still within reach, and exactly what each
+        ;; would require. You cannot put a transaction in an account until
+        ;; you have said what the thing is: when several classifications
+        ;; are close, the honest answer is not to guess the nearest one
+        ;; but to show what distinguishes them and let the student assert
+        ;; the difference. This is the GAAP requirement made explicit --
+        ;; here is what "inventory" demands of your record, here is what
+        ;; "equipment" demands, now say which you mean.
+        candidates (when (seq all-distances)
+                     (let [ranked (sort-by :distance all-distances)
+                           best   (:distance (first ranked))]
+                       (->> ranked
+                            ;; near misses only: one or two assertions away
+                            (filter #(<= (:distance %) (+ best 2)))
+                            (take 4)
+                            (mapv (fn [{:keys [type missing extra-prohibited extra-unrequired
+                                               param-mismatches position-unmet]}]
+                                    (let [wanted (get-in classifications [type :requires-position])]
+                                      (cond->
+                                        {:type type
+                                         :description (get-in classifications [type :description])
+                                         :level (get-in classifications [type :level])
+                                         :to-add (vec (sort missing))
+                                         :to-remove (vec (sort (clojure.set/union extra-prohibited
+                                                                                  extra-unrequired)))
+                                         :parameters-to-fix param-mismatches}
+                                        ;; The assertions can all be present and the
+                                        ;; classification still be out of reach, because
+                                        ;; what the thing IS has not been established.
+                                        ;; This is the case a student cannot wave away:
+                                        ;; you do not get to call it inventory, you have
+                                        ;; to have said what makes it inventory.
+                                        position-unmet
+                                        (assoc :position-needed
+                                               (into {} (for [[code pos] wanted]
+                                                          [code pos]))
+                                               :position-message
+                                               (str "Your assertions fit, but nothing in your record makes "
+                                                    "this "
+                                                    (case (first (vals wanted))
+                                                      :capital "a productive asset -- say what it allows SP to do"
+                                                      :raw-materials "an input -- SP needs a capacity that consumes it, or an expectation of selling it"
+                                                      :finished-goods "something ready to sell"
+                                                      :work-in-process "something between stages"
+                                                      (str (name (first (vals wanted)))))
+                                                    ".")))))))))]
 
     ;; Build assertion linkages for all assertions
     (let [linkages (build-assertion-linkages assertions-map)
@@ -2211,6 +2314,8 @@
                                                  {:type correct-classification
                                                   :description (:description correct-class)
                                                   :journal-entry (:journal-entry correct-class)}))
+                      ;; What each nearby classification would require.
+                      :candidates candidates
                       :hints (when (not is-correct-match)
                                (let [matched-desc (:description classification)
                                      correct-desc (get-in classifications [correct-classification :description])]
@@ -2249,11 +2354,22 @@
                                                {:type correct-classification
                                                 :description correct-desc
                                                 :journal-entry (:journal-entry correct-class)})
+                      ;; What each nearby classification would require.
+                      ;; The point is not to hand over the nearest guess
+                      ;; but to show what separates the options, so the
+                      ;; student asserts the difference rather than
+                      ;; asserting the conclusion.
+                      :candidates candidates
                       :hints all-hints})
 
                    :else
                    {:status :indeterminate
-                    :message "Unable to classify with current assertions. Try reviewing the transaction."})})))
+                    :message (if (seq candidates)
+                               (str "These assertions do not yet say what this is. "
+                                    "Several classifications are within reach -- "
+                                    "add what distinguishes the one you mean.")
+                               "Unable to classify with current assertions. Try reviewing the transaction.")
+                    :candidates candidates})})))
 
 ;; Problem generation - using research assertions
 (def transaction-templates

@@ -108,11 +108,26 @@
 (defn- derived-accounts [entry]
   (set (map (comp canonical-account :account) (:lines entry))))
 
+(def prior-chain
+  "The paragraph a sentence arrives in.
+
+   Classification is not always a property of the event in front of you:
+   blank shirts are an input because SP holds a printer that consumes
+   them, and that fact lives in an earlier event. Checking a
+   classification against a single synthesised event would ask it to be
+   self-sufficient in a way the model deliberately is not, so every check
+   runs against a business that has already said what it can do."
+  [{:has-date {:date "2026-01-02"}
+    :provides {:unit "monetary-unit" :quantity 3000}
+    :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
+    :has-counterparty {:name "EquipmentDirect"}
+    :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}}])
+
 (defn check
   "Conformance result for one classification."
   [class-key]
   (let [sel   (canonical-selection class-key)
-        entry (jd/derive-entry sel {} {:item-kinds item-kinds})
+        entry (jd/derive-entry sel {} {:item-kinds item-kinds :events prior-chain})
         tmpl  (template-accounts class-key)
         drv   (derived-accounts entry)
         extra  (remove tmpl drv)

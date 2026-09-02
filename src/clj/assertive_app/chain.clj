@@ -107,60 +107,51 @@
    :service       :service})
 
 (defn inventory-position
-  "The position an item occupies.
+  "The position an item occupies, read only from the record.
 
-   Two sources, and the distinction matters:
+   What a thing IS cannot be looked up. It is not a fact about the thing:
+   a t-shirt printer bought by a machine reseller is inventory, and the
+   printer is identical either way. Only what SP asserted about it
+   distinguishes the two, so only the record is consulted.
 
-     the firm's own policy -- what KIND of thing this is (a blank shirt
-     is an input, a printer is capital). That is SP's rulebook, declared
-     in the item catalogue, stable, and not something a student asserts.
+     :capital          enables a transformation, not consumed by it
+     :work-in-process  created by one transformation, consumed by another
+     :raw-materials    consumed by a transformation, or named as an input
+                       by a capability SP holds
+     :finished-goods   created by one, named as an output, or bought and
+                       sold on untouched
 
-     the chain -- what has actually HAPPENED to it. This is what makes a
-     position move: a printed shirt is a finished good until some later
-     event consumes it, at which point it was in process all along.
-
-   The chain wins where it speaks, because it is evidence; the catalogue
-   supplies the baseline for items nothing has happened to yet, so a
-   purchase can be posted the day it is made. nil when neither says.
-
-     :raw-materials  :work-in-process  :finished-goods
-     :equipment-or-other  :service"
-  ([events item] (inventory-position events item nil))
-  ([events item item-kinds]
+   nil means the record UNDERSPECIFIES it -- the thing was acquired and
+   nothing says what for. That is not a failure to look something up; it
+   is the honest answer, and it is where the student has work to do. To
+   place a transaction in an account you must first say what the thing
+   is, and nil is the system declining to say it for you."
+  ;; The three-arity form takes a catalogue and ignores it, so callers
+  ;; need not all change at once.
+  ([events item _ignored-catalogue] (inventory-position events item))
+  ([events item]
    (let [item  (some-> item name)
-         roles (get (item-roles events) item)
-         kind  (get kind->position (get item-kinds (keyword item)))]
+         roles (get (item-roles events) item)]
      (cond
-       ;; Productive: the record shows this thing enabling transformations.
-       ;; It is not consumed by them -- it is what makes them possible.
-       ;; That is the whole content of "capital", and it is asserted, not
-       ;; declared: a printer is capital because SP recorded it turning
-       ;; blank shirts into printed ones.
+       ;; Productive: the record shows this thing enabling transformations
+       ;; without being consumed by them. That is what capital means, and
+       ;; SP had to say it.
        (and (:enables roles) (not (:consumed roles)))  :capital
 
-       ;; Between stages: created by one transformation and consumed by
+       ;; Between stages: created by one transformation, consumed by
        ;; another. Only later events can make this true.
        (and (:created roles) (:consumed roles))        :work-in-process
 
-       ;; Consumed by a transformation -- an input, whatever it is called.
        (:consumed roles)                               :raw-materials
 
-       ;; Produced by a transformation, or bought and sold on untouched.
        (:created roles)                                :finished-goods
        (and (:acquired roles) (:provided roles))       :finished-goods
 
-       ;; Declared by some capability's `allows`, before anything has
-       ;; actually happened to it. Weaker than evidence of a real
-       ;; transformation, stronger than a catalogue: a student SAID this
-       ;; is what the printer turns into what.
+       ;; Named by a capability as what it turns into what: the student
+       ;; said the printer consumes blanks, so blanks are inputs before
+       ;; any production has run.
        (:producible roles)                             :finished-goods
        (:consumable roles)                             :raw-materials
-
-       ;; Nothing yet asserted about what this thing DOES. SP may keep a
-       ;; catalogue to save the student saying so every time, but it is a
-       ;; convenience standing in for an assertion, not a separate kind of
-       ;; truth -- and it loses to anything the record actually says.
-       kind                                            kind
 
        :else                                           nil))))
 

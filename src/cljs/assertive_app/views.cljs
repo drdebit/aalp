@@ -590,6 +590,57 @@
       [inline-date-input :requires :due-date (:due-date params)]
       [remove-assertion-button :requires]]]))
 
+(defn- assertion-param-options
+  "The dropdown options the server resolved for this assertion parameter.
+   The item list lives in one place -- physical-items on the backend -- and
+   arrives already resolved, so nothing here needs its own copy of it."
+  [assertion-code param-key]
+  (->> (state/available-assertions)
+       (mapcat val)
+       (filter #(= (keyword (:code %)) (keyword assertion-code)))
+       first
+       :parameters
+       param-key
+       :options))
+
+(defn- item-select
+  "A dropdown for an assertion that names a thing without providing or
+   receiving it."
+  [assertion-code param-key value]
+  [:select.inline-select
+   {:value (or value "")
+    :on-change #(state/update-assertion-parameter! assertion-code param-key
+                                                   (.. % -target -value))}
+   [:option {:value ""} "item"]
+   (for [opt (assertion-param-options assertion-code param-key)]
+     ^{:key (str (name assertion-code) "-" (name param-key) "-" (:value opt))}
+     [:option {:value (:value opt)} (:label opt)])])
+
+(defn- render-allows-section
+  "What acquiring this thing makes possible.
+
+   This is the assertion that decides whether a printer is equipment or
+   stock to resell, and it is the one the next episode's inventory
+   depends on -- so the pair it names has to be sayable, not merely
+   present."
+  [params]
+  [sentence-section :capability "This makes possible:"
+   [:div.allows-content
+    [:span "which allows SP to turn "]
+    [item-select :allows :consumes-item (:consumes-item params)]
+    [:span " into "]
+    [item-select :allows :creates-item (:creates-item params)]
+    [remove-assertion-button :allows]]])
+
+(defn- render-is-allowed-by-section
+  "What made this event possible -- the capability it rests on."
+  [params]
+  [sentence-section :capability "This is:"
+   [:div.allowed-by-content
+    [:span "enabled by "]
+    [item-select :is-allowed-by :capacity (:capacity params)]
+    [remove-assertion-button :is-allowed-by]]])
+
 (defn- render-expects-section
   "Render the 'expects' confidence section with context.
    Context-aware: shows customer context for credit sales, vendor context for prepaid expenses."
@@ -1038,6 +1089,14 @@
       (when (contains? selected :expects)
         [render-expects-section (:expects selected) counterparty-name
          customer-profiles vendor-profiles is-prepaid?])
+
+      ;; What this acquisition makes possible
+      (when (contains? selected :allows)
+        [render-allows-section (:allows selected)])
+
+      ;; What made this event possible
+      (when (contains? selected :is-allowed-by)
+        [render-is-allowed-by-section (:is-allowed-by selected)])
 
       ;; Reports section (recognition)
       (when (contains? selected :reports)

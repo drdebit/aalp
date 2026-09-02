@@ -4222,3 +4222,4 @@ header {
 }
 .walkthrough-entry { background:#fff; border:1px solid #dfe5ea; border-radius:4px; padding:.85rem 1rem; }
 .walkthrough-entry h2 { font-size:1rem; margin:0 0 .6rem; color:#24405c; }
+.allows-content, .allowed-by-content { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem; }

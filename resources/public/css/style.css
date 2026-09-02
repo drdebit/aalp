@@ -4168,3 +4168,17 @@ header {
 .dj-unsupported-text { font-size: .82rem; color: #7d2b27; }
 .dj-unsupported-row { display: flex; gap: .5rem; align-items: flex-start; }
 .dj-unsupported-row + .dj-unsupported-row { margin-top: .35rem; }
+
+/* ---- Why this account, when the reason was given earlier ------------- */
+.dj-established { margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed #d5dbe1; }
+.dj-established h6 {
+  margin: 0 0 .35rem; font-size: .72rem; letter-spacing: .04em;
+  text-transform: uppercase; color: #7a8590; font-weight: 700;
+}
+.dj-established-row { display: flex; gap: .5rem; align-items: baseline; padding: .12rem 0; }
+.dj-established-date {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .74rem; color: #24405c; background: #eef2f6;
+  padding: .05rem .3rem; border-radius: 3px; white-space: nowrap;
+}
+.dj-established-text { font-size: .8rem; color: #55606b; }

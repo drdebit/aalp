@@ -325,3 +325,64 @@
    bear, or nil."
   [selections events]
   (first (unsupported selections events)))
+
+;; ---------------------------------------------------------------------------
+;; Why a thing is what it is
+;; ---------------------------------------------------------------------------
+
+(defn item-role-events
+  "Which events gave each item each of its roles.
+
+   item-roles answers WHAT the record says about a thing; this answers
+   WHERE it says it. The difference matters because the answer is usually
+   somewhere else: blank shirts are an input because of something said
+   when the printer was bought, and a student looking at the purchase of
+   the shirts has no way to see that.
+
+   -> {item {role [event ...]}}"
+  [events]
+  (reduce
+    (fn [acc assertions]
+      (let [add (fn [acc item role]
+                  (update-in acc [item role] (fnil conj []) assertions))
+            acc (reduce (fn [acc [assertion-key role]]
+                          (reduce (fn [acc {:keys [item]}] (add acc item role))
+                                  acc (physicals (get assertions assertion-key))))
+                        acc
+                        {:receives :acquired :consumes :consumed
+                         :creates  :created  :provides :provided})
+            acc (if-let [cap (get-in assertions [:is-allowed-by :capacity])]
+                  (add acc (name cap) :enables) acc)
+            allows (:allows assertions)
+            acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
+                  (add acc item :enables) acc)
+            acc (if-let [i (:consumes-item allows)] (add acc (name i) :consumable) acc)
+            acc (if-let [i (:creates-item allows)]  (add acc (name i) :producible) acc)]
+        acc))
+    {} events))
+
+(def ^:private position-justified-by
+  "Which roles account for each position, so the explanation names the
+   thing that actually decided it rather than everything on file."
+  {:capital          [:enables]
+   :work-in-process  [:created :consumed]
+   :raw-materials    [:consumed :consumable]
+   :finished-goods   [:created :producible :provided :acquired]})
+
+(defn position-basis
+  "The position an item occupies, and the events that established it.
+
+   -> {:position kw
+       :because [{:role kw :event <assertions>} ...]}
+
+   Returns nil where the record does not determine a position -- there is
+   nothing to explain, which is itself the thing to say."
+  [events item]
+  (when-let [pos (inventory-position events item)]
+    (let [by-role (get (item-role-events events) (some-> item name))]
+      {:position pos
+       :because (vec (for [role (get position-justified-by pos)
+                           :let [evs (get by-role role)]
+                           :when (seq evs)
+                           ev evs]
+                       {:role role :event ev}))})))

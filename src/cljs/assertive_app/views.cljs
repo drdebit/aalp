@@ -1089,6 +1089,26 @@
                                     [:span.dj-assertion-params
                                      (clojure.string/join ", "
                                        (map (fn [[k v]] (str (name k) " " v)) params))])]))])
+                          ;; Why this account, when the reason was given
+                          ;; in an earlier event. Without this the
+                          ;; drill-down stops at the edge of the event and
+                          ;; the student cannot see what actually decided
+                          ;; the account.
+                          (when-let [es (seq (:established-by line))]
+                            [:div.dj-established
+                             [:h6 "Decided earlier"]
+                             (doall
+                               (for [[ei e] (map-indexed vector es)]
+                                 ^{:key (str "dje-" i "-" ei)}
+                                 [:div.dj-established-row
+                                  (when (:date e) [:span.dj-established-date (:date e)])
+                                  [:span.dj-established-text
+                                   (let [a (:assertions e)]
+                                     (if-let [al (:allows a)]
+                                       (str "you said this turns "
+                                            (:consumes-item al) " into " (:creates-item al))
+                                       (str "recorded as " (clojure.string/join ", "
+                                                             (map name (keys a))))))]]))])
                           (when (:unresolved-reason line)
                             [:div.dj-unpriced-note (:unresolved-reason line)])]])])))
                (doall

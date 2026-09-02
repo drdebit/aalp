@@ -324,6 +324,33 @@
         events (concat (:events context) [(:current context)])]
     (chain/inventory-position events item (:item-kinds context))))
 
+(defn- established-elsewhere
+  "The EARLIER events that made this item what it is.
+
+   A student looking at the purchase of blank shirts sees only that
+   shirts were received; the reason those shirts are an input was given
+   when the printer was bought. Without this, the drill-down promise --
+   assertions underneath, and nothing else -- holds inside an event and
+   quietly fails across the chain, which is where the interesting part
+   of the record lives.
+
+   The event being booked is excluded: its assertions are already on
+   display."
+  [flow context]
+  (let [item    (:physical-item flow)
+        current (:current context)
+        events  (concat (:events context) [current])]
+    (when-let [{:keys [because]} (chain/position-basis events item)]
+      (->> because
+           (remove #(= current (:event %)))
+           (mapv (fn [{:keys [role event]}]
+                   {:role role
+                    :date (get-in event [:has-date :date])
+                    :assertions (select-keys event [:allows :is-allowed-by :receives
+                                                    :consumes :creates :provides])}))
+           (take 2)
+           vec))))
+
 (defn- resolve-line-account
   "An :account of :position is resolved from the chain; anything else is
    the literal label the rule names."
@@ -403,6 +430,10 @@
                          :assertions (select-keys selections prov)
                          :rule-id id
                          :rule-text (resolve-line-text text matched-params context)
+                         ;; Why this account, when the reason is not in
+                         ;; this event.
+                         :established-by (when (= :position (:account line))
+                                           (seq (established-elsewhere matched-params context)))
                          :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))

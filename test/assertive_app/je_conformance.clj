@@ -93,10 +93,10 @@
    two labels for one position would open two ledger accounts -- so the
    aliases are listed explicitly here rather than normalised away by
    fuzzy matching."
-  {"Equipment"                "Equipment (Fixed Asset)"
-   "Wages Expense"            "Wage Expense"
-   "Finished Goods"           "Finished Goods Inventory"
-   "Raw Materials"            "Raw Materials Inventory"})
+  ;; Finished Goods / Raw Materials were aliased here until the templates
+  ;; were canonicalised. That was real drift, not a rename, and it is gone.
+  {"Equipment"     "Equipment (Fixed Asset)"
+   "Wages Expense" "Wage Expense"})
 
 (defn canonical-account [a] (get account-aliases a a))
 

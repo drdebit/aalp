@@ -755,7 +755,7 @@
                   :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "What is consumed"
-                         :options [{:value "raw-materials" :label "Raw Materials"}
+                         :options [{:value "raw-materials" :label "Raw Materials Inventory"}
                                    {:value "supplies" :label "Raw Materials Inventory"}
                                    {:value "effort" :label "Effort/Labor"}]}
                   :quantity {:type :number
@@ -777,7 +777,7 @@
                   :is-denominated-in-unit :unit-structure}}
      :parameters {:unit {:type :dropdown
                          :label "What is created"
-                         :options [{:value "finished-goods" :label "Finished Goods"}
+                         :options [{:value "finished-goods" :label "Finished Goods Inventory"}
                                    {:value "service-output" :label "Service/Deliverable"}
                                    {:value "intellectual-property" :label "Design/IP"}]}
                   :quantity {:type :number
@@ -1392,7 +1392,7 @@
                           :is-allowed-by {:capacity "t-shirt-printer"}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
-    :journal-entry [{:debit "Finished Goods" :credit "Raw Materials"}]
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
     :note "Production uses equipment purchased earlier. This connects back to your equipment purchase!"
     :examples ["SP uses t-shirt printer to convert blank shirts to printed shirts"
                "SP uses equipment to transform raw materials into finished goods"]
@@ -1451,7 +1451,7 @@
    {:required #{:consumes :creates}
     :prohibited #{:has-counterparty}
     :description "Internal transformation (consume inputs, create outputs)"
-    :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials"}]
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
     :examples ["SP consumes blank t-shirt and ink to create printed t-shirt"]
     :level 2}
 

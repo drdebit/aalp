@@ -4182,3 +4182,41 @@ header {
   padding: .05rem .3rem; border-radius: 3px; white-space: nowrap;
 }
 .dj-established-text { font-size: .8rem; color: #55606b; }
+
+/* ---- The walkthrough: one step at a time ---------------------------- */
+.walkthrough {
+  background: #fff; border: 1px solid #dfe5ea; border-left: 4px solid #24405c;
+  border-radius: 4px; padding: .85rem 1rem; margin-bottom: 1rem;
+}
+.wt-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: .5rem; font-size: .74rem; letter-spacing: .03em;
+}
+.wt-episode { font-weight: 700; color: #24405c; text-transform: uppercase; }
+.wt-progress { color: #9aa4ae; }
+.wt-say  { margin: 0 0 .5rem; font-size: .96rem; line-height: 1.5; color: #22303c; }
+.wt-todo {
+  margin: 0 0 .5rem; font-size: .82rem; color: #7d6a2b;
+  background: #fdf6e3; border-left: 3px solid #d8c48a;
+  padding: .35rem .5rem; border-radius: 2px;
+}
+.wt-then {
+  margin: 0 0 .6rem; font-size: .9rem; line-height: 1.5; color: #33505f;
+  background: #eef5f9; border-left: 3px solid #7fa8c4;
+  padding: .45rem .6rem; border-radius: 2px;
+}
+.wt-actions { display: flex; gap: .5rem; align-items: center; }
+.wt-next {
+  background: #24405c; color: #fff; border: 0; border-radius: 3px;
+  padding: .4rem .9rem; font-weight: 600; cursor: pointer;
+}
+.wt-next:disabled { background: #c3ccd4; cursor: not-allowed; }
+.wt-leave {
+  background: none; border: 0; color: #8a949d; font-size: .8rem;
+  cursor: pointer; text-decoration: underline;
+}
+.wt-start {
+  background: #24405c; color: #fff; border: 0; border-radius: 3px;
+  padding: .35rem .8rem; font-size: .82rem; font-weight: 600; cursor: pointer;
+  margin-left: .5rem;
+}

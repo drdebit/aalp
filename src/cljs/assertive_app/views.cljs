@@ -4,7 +4,8 @@
             [clojure.string :as str]
             [assertive-app.state :as state]
             [assertive-app.api :as api]
-            [assertive-app.tutorials :as tutorials]))
+            [assertive-app.tutorials :as tutorials]
+            [assertive-app.episodes :as episodes]))
 
 ;; ==================== Journal-entry amount rendering ====================
 ;; The amount is a NUMBER on the entry, never part of the account string.
@@ -825,10 +826,16 @@
   (let [show-menu? (r/atom false)
         sub-menu (r/atom nil)]
     (fn [selected-assertions available-assertions]
-      (let [;; Flatten available assertions and filter out already selected
+      (let [;; During the walkthrough only the assertions in play are on
+            ;; offer. Meeting four at once and sorting them out later is
+            ;; the thing the episode structure exists to avoid.
+            palette (state/walkthrough-palette)
+            ;; Flatten available assertions and filter out already selected
             all-assertions (for [[_domain assertions] available-assertions
                                  assertion assertions
-                                 :when (not (contains? selected-assertions (keyword (:code assertion))))]
+                                 :when (and (not (contains? selected-assertions (keyword (:code assertion))))
+                                            (or (nil? palette)
+                                                (contains? palette (keyword (:code assertion)))))]
                              assertion)
             ;; Assertions that need unit-type sub-menu
             needs-unit-sub? #{"provides" "receives"}]
@@ -876,6 +883,66 @@
                                  (reset! show-menu? false)))
                    :title (:description assertion)}
                   (:label assertion)])))])]))))
+
+(defn walkthrough-start-button
+  "Enter the walkthrough. It teaches; the drill still certifies, so this
+   is always optional and always leavable."
+  []
+  (when-not (state/walkthrough-active?)
+    [:button.wt-start
+     {:on-click #(state/start-walkthrough! 0)
+      :title "Work through SP's first year one step at a time"}
+     "Walk me through it"]))
+
+(defn walkthrough-panel
+  "One step at a time: a sentence, one thing to do, and a sentence reading
+   back what appeared.
+
+   The `then` text is withheld until the student has actually done the
+   thing, because it talks about what is now on screen. Advancing is
+   blocked until then -- not to police them, but because the explanation
+   makes no sense before the action."
+  []
+  (when (state/walkthrough-active?)
+    (let [{:keys [episode step]} (state/walkthrough)
+          ep       (episodes/episode episode)
+          st       (episodes/step episode step)
+          selected (state/selected-assertions)
+          done?    (episodes/step-complete? st selected)
+          last?    (and (= (inc step) (episodes/step-count episode))
+                        (= (inc episode) (episodes/episode-count)))]
+      ;; Keep the palette in step with the episode.
+      (when (not= (state/walkthrough-palette) (:palette ep))
+        (state/set-walkthrough-palette! (:palette ep)))
+      [:div.walkthrough
+       [:div.wt-head
+        [:span.wt-episode (str "Episode " (inc episode) " — " (:title ep))]
+        [:span.wt-progress (str "step " (inc step) " of " (episodes/step-count episode))]]
+
+       [:p.wt-say (:say st)]
+
+       (when (and (:do st) (not done?))
+         [:p.wt-todo
+          (case (:kind (:do st))
+            :set-date "Set the date to continue."
+            :read     "Have a look, then carry on."
+            :assert   (str "Add " (some-> (:code (:do st)) name) " to continue.")
+            nil)])
+
+       (when (and done? (:then st))
+         [:p.wt-then (:then st)])
+
+       [:div.wt-actions
+        [:button.wt-next
+         {:disabled (not done?)
+          :title (when-not done? "Do the step first — the explanation is about what appears when you do.")
+          :on-click #(if last?
+                       (state/end-walkthrough!)
+                       (do (state/advance-step! (episodes/step-count episode)
+                                                (episodes/episode-count))
+                           (state/clear-selections!)))}
+         (cond last? "Finish" (:then st) "Next" :else "Continue")]
+        [:button.wt-leave {:on-click #(state/end-walkthrough!)} "Leave the walkthrough"]]])))
 
 (defn sentence-builder
   "Main sentence builder component - builds assertions as natural language."
@@ -2930,8 +2997,10 @@
      ;; Gate or content
      (if completed?
        [:div
+        [walkthrough-panel]
         [:div.practice-toolbar
-         [tutorial-review-button level]]
+         [tutorial-review-button level]
+         [walkthrough-start-button]]
         [:div {:class (if is-construct? "two-column-layout" "three-column-layout")}
          [narrative-panel]
          (when-not is-construct?

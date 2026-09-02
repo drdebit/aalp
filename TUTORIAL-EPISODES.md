@@ -171,12 +171,28 @@ is issued rather than a different structure, and extends to further
 members for free: each issuance is an event with its own counterparty and
 count.
 
-What it does NOT settle is whether `provides` is the right verb. Every
-other use of `provides` means the business gave up something it had. The
-business did not have 200 ownership units lying around and hand them
-over — it brought them into existence by issuing them. Economically this
-is closer to creating a claim against itself than to an exchange, which
-is why "nothing went out, so the credit is the residual" is the honest
-derivation even in a transaction that looks like a swap.
+`provides` is kept, deliberately, and it is a simplification we are
+choosing rather than one we failed to notice. Every other use of
+`provides` means the business gave up something it HAD, and the business
+did not have 200 units lying around — it brought them into existence.
+But a certificate does go to the shareholder, and something has to carry
+the equity issuance's assertion set, so `provides ownership-units` stands
+for now.
 
-Equity may want a verb the vocabulary does not yet have. Left open.
+There is a mechanical reason to keep it as well. Without it, equity is
+defined purely by ABSENCE: money in, and no goods out, no obligation, no
+settlement of anything owed. Definitions by absence are fragile — a
+collection that forgets `modifies` would look like equity. A positive
+marker makes the classification say what it IS rather than what it is
+not.
+
+What equity actually seems to want is a verb the vocabulary does not
+have. Debt is a promise and `requires` carries it. Equity enables, and
+requires, and does several other things at once, because an issuance
+encodes contractual terms: voting, distribution, liquidation preference,
+transfer restrictions. That is a lot of assertion chain for an intro
+class and almost none of it changes the journal entry — which is exactly
+why simplifying here is right, and why the full version would be a good
+exercise for a business law course rather than this one.
+
+Left open, deliberately, with the simplification chosen on purpose.

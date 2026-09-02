@@ -89,6 +89,40 @@
 (defn update-assertion-parameter! [assertion-code param-key param-value]
   (swap! app-state assoc-in [:selected-assertions (keyword assertion-code) param-key] param-value))
 
+;; ==================== Walkthrough ====================
+;; Position in the episode sequence. The walkthrough teaches; the drill
+;; still certifies, so nothing here records mastery -- it only tracks
+;; where the student has got to.
+
+(defn walkthrough [] (:walkthrough @app-state))
+(defn walkthrough-active? [] (some? (:walkthrough @app-state)))
+
+(defn start-walkthrough!
+  ([] (start-walkthrough! 0))
+  ([episode-idx]
+   (swap! app-state assoc :walkthrough {:episode episode-idx :step 0})
+   (swap! app-state assoc :selected-assertions {})))
+
+(defn end-walkthrough! []
+  (swap! app-state dissoc :walkthrough))
+
+(defn advance-step! [step-count episode-count]
+  (swap! app-state update :walkthrough
+         (fn [{:keys [episode step] :as w}]
+           (cond
+             (< (inc step) step-count) (assoc w :step (inc step))
+             (< (inc episode) episode-count) {:episode (inc episode) :step 0}
+             :else w))))
+
+(defn walkthrough-palette
+  "Assertions the student may add right now, or nil for no restriction.
+   Concepts arrive when the business needs them, not all at once."
+  []
+  (:palette @app-state))
+
+(defn set-walkthrough-palette! [palette]
+  (swap! app-state assoc :palette palette))
+
 (defn clear-selections! []
   (swap! app-state assoc :selected-assertions {}))
 

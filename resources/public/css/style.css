@@ -4220,3 +4220,5 @@ header {
   padding: .35rem .8rem; font-size: .82rem; font-weight: 600; cursor: pointer;
   margin-left: .5rem;
 }
+.walkthrough-entry { background:#fff; border:1px solid #dfe5ea; border-radius:4px; padding:.85rem 1rem; }
+.walkthrough-entry h2 { font-size:1rem; margin:0 0 .6rem; color:#24405c; }

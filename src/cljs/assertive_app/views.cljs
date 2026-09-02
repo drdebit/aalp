@@ -321,7 +321,11 @@
   [assertion-code]
   (let [code (keyword assertion-code)
         level (state/current-level)
-        problem (state/current-problem)
+        ;; During the walkthrough the episode tells the story, and the
+        ;; problem sitting underneath is a different transaction with
+        ;; different numbers. Filling its values in would quietly
+        ;; contradict what the student was just asked to record.
+        problem (when-not (state/walkthrough-active?) (state/current-problem))
         vars (:variables problem)]
     (when (>= level 1)
       (case code
@@ -938,9 +942,16 @@
           :title (when-not done? "Do the step first — the explanation is about what appears when you do.")
           :on-click #(if last?
                        (state/end-walkthrough!)
-                       (do (state/advance-step! (episodes/step-count episode)
-                                                (episodes/episode-count))
-                           (state/clear-selections!)))}
+                       ;; An episode builds ONE entry across its steps --
+                       ;; date, then what came in, then who. Clearing
+                       ;; between steps would throw away the entry the
+                       ;; student is assembling, so it happens only when
+                       ;; the episode changes.
+                       (let [ep-before episode]
+                         (state/advance-step! (episodes/step-count episode)
+                                              (episodes/episode-count))
+                         (when (not= ep-before (:episode (state/walkthrough)))
+                           (state/clear-selections!))))}
          (cond last? "Finish" (:then st) "Next" :else "Continue")]
         [:button.wt-leave {:on-click #(state/end-walkthrough!)} "Leave the walkthrough"]]])))
 
@@ -2920,7 +2931,9 @@
         [walkthrough-panel]
         [:div.two-column-layout
          [sentence-builder]
-         [feedback-panel]]]
+         [:div.walkthrough-entry
+          [:h2 "What your assertions produce"]
+          [derived-je-panel]]]]
 
        ;; Practice drill: unledgered problems with complete feedback,
        ;; between the tutorial quiz and Year 1 recording

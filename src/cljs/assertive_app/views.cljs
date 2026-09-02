@@ -1017,7 +1017,7 @@
                            ;; about the printer an episode ago.
                            (state/remember-walkthrough-event! built)
                            (state/clear-selections!)
-                           (api/derive-je!)))}
+                           (api/derive-je!))))}
          ;; One label for one action. It used to say "Continue" on steps
          ;; without a closing line and "Next" on steps with one, which
          ;; made the same button look like two different controls.

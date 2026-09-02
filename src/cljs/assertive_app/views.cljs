@@ -924,7 +924,7 @@
        (when (and (:do st) (not done?))
          [:p.wt-todo
           (case (:kind (:do st))
-            :set-date "Set the date to continue."
+            :set-date "Add the date to continue."
             :read     "Have a look, then carry on."
             :assert   (str "Add " (some-> (:code (:do st)) name) " to continue.")
             nil)])

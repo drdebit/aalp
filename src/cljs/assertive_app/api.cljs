@@ -632,10 +632,22 @@
 (def ^:private derive-je-timer (atom nil))
 
 (defn derive-je-debounced!
-  "Debounced derivation for explore mode (recompute as students toggle)."
+  "Debounced derivation (recompute as students change their assertions)."
   []
   (when-let [t @derive-je-timer] (js/clearTimeout t))
   (reset! derive-je-timer (js/setTimeout derive-je! 250)))
+
+;; The walkthrough is built on watching the entry move as you assert, so
+;; the entry has to actually move. Outside the walkthrough this stays as
+;; it was -- derivation on problem load and on explore -- because that is
+;; verified behaviour and this is not the moment to change it.
+(defonce ^:private walkthrough-live-derivation
+  (add-watch state/app-state ::walkthrough-derive
+             (fn [_ _ old new]
+               (when (and (some? (:walkthrough new))
+                          (not= (:selected-assertions old)
+                                (:selected-assertions new)))
+                 (derive-je-debounced!)))))
 
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own

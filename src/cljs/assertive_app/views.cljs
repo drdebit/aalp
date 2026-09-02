@@ -871,7 +871,15 @@
                              (auto-populate-assertion! assertion-code)
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
-                "physical units"]])
+                "physical units"]
+               [:button.menu-item
+                {:on-click #(do
+                             (state/toggle-assertion! assertion-code)
+                             (state/update-assertion-parameter! assertion-code :unit "ownership-units")
+                             (auto-populate-assertion! assertion-code)
+                             (reset! sub-menu nil)
+                             (reset! show-menu? false))}
+                "ownership units"]])
 
             ;; Main menu: list available assertions
             (when-not @sub-menu

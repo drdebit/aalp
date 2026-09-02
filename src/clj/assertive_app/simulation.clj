@@ -725,6 +725,7 @@
       ;; Production - uses fixed recipe
       :produce-tshirts
       {:quantity-consumed (:blank-tshirts production-recipe)
+       :ink-consumed      (:ink-cartridges production-recipe)
        :quantity-produced (:output-quantity production-recipe)}
 
       ;; Default: no overrides

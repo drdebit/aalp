@@ -2477,13 +2477,15 @@ The printed t-shirts are now finished goods ready for sale."
                 :quantity [10 25 50 100 200]}}
 
    :production-direct
-   {:narrative-template "On {date}, SP produces {quantity} {product}, converting raw materials into finished goods ready for sale.
-
-This production is allowed by having the t-shirt printer you purchased earlier."
-    :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "physical-unit"}
-                          :creates {:unit "physical-unit"}
-                          :is-allowed-by {:capacity "t-shirt-printer"}}
+   {:narrative-template "On {date}, SP uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridge to produce {quantity-produced} printed t-shirts.\n\nThis production is allowed by having the t-shirt printer you purchased earlier."
+    :required-assertions
+   {:has-date {:date :date}
+    ;; SP's recipe is blank shirts AND ink. The record should say so:
+    ;; a transformation consumes everything it consumes.
+    :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity :quantity-consumed}
+               {:unit "physical-unit" :physical-item "ink-cartridges" :quantity :ink-consumed}]
+    :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity-produced}
+    :is-allowed-by {:capacity "t-shirt-printer"}},
     :correct-classification :production-direct
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
@@ -2901,12 +2903,20 @@ This production is allowed by having the t-shirt printer you purchased earlier."
             (into {} (for [[k v] m]
                        [k (cond
                             (map? v) (resolve-map v)
+                            ;; A flow assertion may hold several flows:
+                            ;; production consumes blank shirts AND ink.
+                            (sequential? v) (mapv #(if (map? %) (resolve-map %) (resolve-value %)) v)
                             :else (resolve-value v))])))]
     (if (map? required-assertions)
       (into {} (for [[assertion-key assertion-params] required-assertions]
-                 [assertion-key (if (map? assertion-params)
-                                  (resolve-map assertion-params)
-                                  (resolve-value assertion-params))]))
+                 [assertion-key (cond
+                                  (map? assertion-params) (resolve-map assertion-params)
+                                  ;; Several flows under one assertion --
+                                  ;; production consumes shirts AND ink.
+                                  (sequential? assertion-params)
+                                  (mapv #(if (map? %) (resolve-map %) (resolve-value %))
+                                        assertion-params)
+                                  :else (resolve-value assertion-params))]))
       ;; For set-based assertions (old format), return as-is
       required-assertions)))
 

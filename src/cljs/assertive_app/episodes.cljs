@@ -65,7 +65,7 @@
 
      {:say "Scroll down to \"Recorded — but not reflected\"."
       :do {:kind :read}
-      :then "There they are. Double-entry has no line for who owns the business. The 200 units are in the record, and later we work out percentages from them — but the journal entry cannot say it. Worth noticing early: the record holds more than the entry shows."}
+      :then "There they are. Double-entry measures in money, and 200 units is a count, not an amount — so no line carries it. That's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in your record, and we work out percentages from them later. The entry is doing exactly what it should; you're simply keeping track of more than it measures."}
 
      {:say "One more: who."
       :do {:kind :assert :code :has-counterparty}
@@ -160,7 +160,7 @@
 
      {:say "Say who bought them."
       :do {:kind :assert :code :has-counterparty}
-      :then "Four lines now. Cash and Revenue — and Revenue is a word you have never asserted and cannot assert. It appeared because goods went out to somebody in exchange for money. That pattern is what revenue IS."}
+      :then "Four lines now. Cash and Revenue — and notice you never asserted \"revenue\". It appeared because goods went out to somebody in exchange for money, and that pattern is what revenue means. You have been building up to this entry since episode one."}
 
      {:say "Look at the other two lines."
       :do {:kind :read}

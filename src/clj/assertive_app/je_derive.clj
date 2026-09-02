@@ -212,11 +212,22 @@
    :service            "A service consumed rather than a thing held: it is a cost of the period, not an asset."})
 
 (def not-reflected-texts
-  {:expects "Recorded -- but not reflected. Double-entry has no place for a probability-weighted expectation. The assertion stays in the record; the journal entry cannot see it."
-   :is-allowed-by "Recorded -- but not reflected. The legal authority for this event lives in the assertion record; no account exists for it."
-   :allows "Recorded -- but not reflected. What this event makes possible in the future produces no journal entry today."
-   :is-required-by "Recorded -- but not reflected. The framework requiring this event has no account."
-   :reports "Recorded -- but not reflected here. Reporting assertions drive calculations, not journal-entry lines."})
+  "Why an assertion produces no line.
+
+   These are not shortcomings. Double-entry records completed exchanges
+   measured in money, and that convention -- the monetary unit
+   assumption, chiefly -- is what makes entries comparable, addable and
+   auditable in the first place. The cost of it is that anything without
+   a money measure has nowhere to go, which is normally handled by
+   writing it down somewhere else, or not at all.
+
+   Keeping those assertions is the point: the entry stays exactly as
+   double-entry intends, and the rest of what SP knows stays with it."
+  {:expects "Recorded -- but not reflected. Double-entry records what has happened, measured in money, and an expectation is neither settled nor a money amount. It stays in your record, and it is what lets you compare later what you expected with what occurred."
+   :is-allowed-by "Recorded -- but not reflected. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
+   :allows "Recorded -- but not reflected. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified -- you have seen it do that."
+   :is-required-by "Recorded -- but not reflected. The framework requiring an event is not an exchange, so no account carries it."
+   :reports "Recorded -- but not reflected here. Reporting assertions drive calculations rather than journal-entry lines."})
 
 (def context-roles
   {:has-date "stamps the entry's date"
@@ -473,7 +484,7 @@
                                               ;; say -- the ownership schedule is computed
                                               ;; from the record instead.
                                               (claim? code)
-                                              "Recorded -- but not reflected. Double-entry has no line for who owns the business. The units are in the record, and the ownership schedule is worked out from them; the journal entry cannot say it."
+                                              "Recorded -- but not reflected. Double-entry measures in money, and 200 units is a count rather than an amount -- that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
 
                                               :else
                                               (get not-reflected-texts code

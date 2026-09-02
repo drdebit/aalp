@@ -611,7 +611,12 @@
     {:code :allows
      :label "Allows"
      :description "What acquiring this thing makes possible: the transformation it enables"
-     :level 2
+     ;; Level 0, not 2. Under the business-process sequence the very first
+     ;; purchase is the printer, and what makes it equipment rather than
+     ;; stock to resell is SP saying what it is for. It pays for itself on
+     ;; the next transaction, when the blank shirts it names arrive as
+     ;; inventory without anyone saying so.
+     :level 0
      :domain :forward-looking
      :parameterized true
      ;; Shape B, deliberately. The research model states the full recipe

@@ -53,3 +53,6 @@ missfont.log
 start-backend.sh
 restart-backend.sh
 *.docx
+
+# headless-student study output (transcripts, grades)
+study/runs/

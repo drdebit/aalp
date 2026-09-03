@@ -1,0 +1,613 @@
+{
+  "episodes" : [ {
+    "id" : "funding",
+    "title" : "The business is funded",
+    "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
+    "steps" : [ {
+      "say" : "SP the person and SP's T-Shirts the business are two different things. The business has its own money, owes its own debts, and keeps its own books.",
+      "then" : "That separation is why any of this works. If they were the same, \"SP puts money in\" would just be somebody moving money between their own pockets."
+    }, {
+      "say" : "Here's the part to hold on to: you are keeping the business's books.",
+      "then" : "Every assertion you make is the business saying what happened to it. When the business receives $20,000, that's money arriving — even though the person who handed it over is $20,000 poorer."
+    }, {
+      "say" : "Today the business is funded. SP puts in $20,000. Let's record it. Every event starts with when it happened.",
+      "do" : {
+        "kind" : "set-date"
+      },
+      "then" : "Good. That's an assertion — a plain statement about the world. True, but on its own it doesn't say much."
+    }, {
+      "say" : "The business received $20,000. Say so.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      },
+      "then" : "Two lines appeared at once. Cash on the debit side — money arriving is a debit. And Owner's Capital on the credit side. Why that one? Money came in and nothing went out with it. The business gave up no goods and took on no debt. What's left is a claim by whoever put the money in. That's what equity is — not a kind of transaction, but the part left over."
+    }, {
+      "say" : "The business didn't get that money for nothing. SP received 200 ownership units in return — the certificate, the stake, the thing that says how much of the business is theirs. Say that too.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "ownership-units"
+        }
+      },
+      "then" : "Now look carefully. Nothing changed. The entry is exactly what it was."
+    }, {
+      "say" : "Scroll down to \"Recorded — but not reflected\".",
+      "do" : {
+        "kind" : "read"
+      },
+      "then" : "There they are. Double-entry measures in money, and 200 units is a count, not an amount — so no line carries it. That's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in your record, and we work out percentages from them later. The entry is doing exactly what it should; you're simply keeping track of more than it measures."
+    }, {
+      "say" : "One more: who.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "The entry didn't change again. Counterparty doesn't get a line of its own — it tells you which account fits, without ever appearing on one. Later, when a second person invests, this is what keeps them apart."
+    } ]
+  }, {
+    "id" : "printer",
+    "title" : "SP buys a printer",
+    "palette" : [ "has-counterparty", "receives", "has-date", "allows", "provides" ],
+    "steps" : [ {
+      "say" : "The business has $20,000. Today it spends $3,000 on a t-shirt printer. Start with when.",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "The business paid $3,000. Say so.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      },
+      "then" : "Cash again, but on the credit side this time. Money leaving is a credit. You didn't pick that — it followed from what you said."
+    }, {
+      "say" : "Something has to balance it. What did the business get?",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "physical-unit"
+        }
+      },
+      "then" : "Hmm. Still not finished. The record knows the business got a printer. It doesn't know what to call it."
+    }, {
+      "say" : "Here's the interesting part. A printer isn't automatically equipment. A shop that resells printers would call the very same machine inventory. So the record has to say what this one is for.",
+      "then" : "Nothing to do yet — just worth knowing before the next step."
+    }, {
+      "say" : "SP bought it to turn blank t-shirts into printed ones. Say that.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "allows"
+      },
+      "then" : "There it is. Equipment. Not because printers are equipment — because you said this one is productive."
+    }, {
+      "say" : "Who did the business buy it from?",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Good. It balances, and every line came from something you said."
+    }, {
+      "say" : "Try something. Open the entry's Explore control and switch `allows` off.",
+      "do" : {
+        "kind" : "read"
+      },
+      "then" : "Equipment disappears. The record stops saying what the machine is for, so it stops knowing what to call it. Switch it back on."
+    }, {
+      "say" : "Tomorrow the business buys blank t-shirts.",
+      "then" : "Because of what you said today, the record will already know what they're for."
+    } ]
+  }, {
+    "id" : "materials",
+    "title" : "SP buys shirts and ink",
+    "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
+    "steps" : [ {
+      "say" : "Blank t-shirts, $100 for twenty. Same shape as yesterday: when, what went out, what came in, and who.",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "The business paid $100.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      }
+    }, {
+      "say" : "And received twenty blank t-shirts.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "physical-unit"
+        }
+      },
+      "then" : "Raw Materials Inventory. Notice you didn't say that — you never told the record these were materials."
+    }, {
+      "say" : "So where did it come from? Open that line and look under \"Decided earlier\".",
+      "do" : {
+        "kind" : "read"
+      },
+      "then" : "There's yesterday. The shirts are an input because you said the printer turns blank t-shirts into printed ones. The reason for today's entry was written down yesterday."
+    }, {
+      "say" : "Finish it off: who sold them?",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Done. And you learned no new assertions today — the same four you already had produced an account you hadn't seen."
+    } ]
+  }, {
+    "id" : "ink",
+    "title" : "SP buys ink",
+    "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
+    "steps" : [ {
+      "say" : "Ink next — two cartridges for $20. You know the shape by now: when, what went out, what came in, who.",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "The business paid $20.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      }
+    }, {
+      "say" : "And received two ink cartridges.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "physical-unit"
+        }
+      },
+      "then" : "Hmm. \"Not yet classified.\" Yesterday the shirts landed in Raw Materials because the record knew what they were for. Nobody has said what ink is for — the printer's capability only mentions shirts. The record won't guess. It will know the day the ink gets used."
+    }, {
+      "say" : "And who sold it.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Now the business has everything it needs to print."
+    } ]
+  }, {
+    "id" : "production",
+    "title" : "SP prints shirts",
+    "palette" : [ "creates", "has-date", "consumes", "is-allowed-by" ],
+    "steps" : [ {
+      "say" : "Today nothing is bought or sold. The business turns ten blank shirts and one ink cartridge into ten printed shirts. When did it happen?",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "Ten blank shirts were used up. Say so.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "consumes"
+      },
+      "then" : "Raw Materials Inventory, on the credit side — the shirts left. And look at the amount: $50. You didn't type that. It's what the business paid for those ten shirts."
+    }, {
+      "say" : "Ten printed shirts now exist that didn't before.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "creates"
+      },
+      "then" : "Finished Goods Inventory. The new shirts are worth what went into them."
+    }, {
+      "say" : "One more. What made this possible?",
+      "do" : {
+        "kind" : "assert",
+        "code" : "is-allowed-by"
+      },
+      "then" : "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."
+    } ]
+  }, {
+    "id" : "sale",
+    "title" : "SP sells shirts",
+    "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
+    "steps" : [ {
+      "say" : "A customer buys four printed shirts for $100. When?",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "Four shirts left the business.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "physical-unit"
+        }
+      }
+    }, {
+      "say" : "And $100 came in.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      }
+    }, {
+      "say" : "Say who bought them.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Four lines now. Cash and Revenue — and notice you never asserted \"revenue\". It appeared because goods went out to somebody in exchange for money, and that pattern is what revenue means. You have been building up to this entry since episode one."
+    }, {
+      "say" : "Look at the other two lines.",
+      "do" : {
+        "kind" : "read"
+      },
+      "then" : "Cost of Goods Sold, and Finished Goods going back down — priced at what those shirts cost to make, which the record worked out from the day you printed them. No new assertions again. Same vocabulary, new arrangement, two accounts you hadn't met."
+    } ]
+  } ],
+  "walkthrough-assertion-level" : 2,
+  "tutorials" : {
+    "0" : {
+      "title" : "Level 0: Cash Transactions",
+      "subtitle" : "Learn the basics of recording business exchanges",
+      "sections" : [ {
+        "heading" : "Your Story: You Run a T-Shirt Company",
+        "content" : "Welcome! In this course, **you** run SP's T-Shirt Company. You'll buy a printer, stock up on blank shirts and ink, print designs, and sell them.\n\nEvery business keeps a record of what happens — every purchase, every sale. That record is called the company's **books**, and keeping it accurately is what accounting *is*.\n\nYour job in Year 1 is to be the company's bookkeeper: things will happen in the business, and you will record them.\n\nDon't worry if you've never done anything like this. We'll go one small step at a time, and you'll get plenty of practice — with full feedback — before anything counts."
+      }, {
+        "heading" : "Recording = Describing What Happened",
+        "content" : "Here's the whole idea of this course in one sentence:\n\n**To record a transaction, you describe what happened — in a structured way.**\n\nThink about how you'd tell a friend about buying a coffee this morning:\n\n*\"This morning I paid $5 at Campus Coffee and got a latte.\"*\n\nThat one sentence contains four facts:\n- **When** it happened (this morning)\n- **Who** the other party was (Campus Coffee)\n- **What you gave** ($5)\n- **What you got** (a latte)\n\nThat's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."
+      }, {
+        "heading" : "Meet the Four Assertions",
+        "content" : "At this level you only need **four** assertions. Here they are, using the coffee example:\n\n**has-date** — *when* did it happen?\n(This morning. In business: the transaction date.)\n\n**has-counterparty** — *who* was the other party?\n(Campus Coffee. In business: the vendor you buy from, or the customer you sell to.)\n\n**provides** — *what did your company give up?*\n(The $5. \"Provides\" always describes what goes OUT of your company.)\n\n**receives** — *what did your company get?*\n(The latte. \"Receives\" always describes what comes IN to your company.)\n\n::assertions\nhas-date: this morning\nhas-counterparty: Campus Coffee\nprovides: $5 (money going out)\nreceives: 1 latte (a thing coming in)\n::\n\nEvery cash purchase you record at this level uses exactly these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?"
+      }, {
+        "heading" : "Two Kinds of Stuff: Money and Things",
+        "content" : "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:\n\n**monetary-unit** — money. Dollars. Cash.\n\n**physical-unit** — things. Blank t-shirts, ink cartridges, a t-shirt printer.\n\nIn a cash purchase, the pattern is always the same:\n- Your company **provides** money (monetary-unit)\n- Your company **receives** things (physical-unit)\n\nYou'll also enter *how much*: the dollar amount for the money, and the quantity (how many) for the things. Both numbers are right there in the transaction description — you never have to guess."
+      }, {
+        "heading" : "Worked Example, Step by Step",
+        "content" : "Let's record one together. Suppose you see this transaction:\n\n*\"On January 8, you purchase 50 blank t-shirts from TextileDirect for $150 cash.\"*\n\nHere is exactly what you'd do, click by click:\n\n**Step 1.** Read the sentence slowly. Find the four facts: the date (January 8), the other party (TextileDirect), what went out ($150), what came in (50 blank t-shirts).\n\n**Step 2.** **Has Date** is usually already selected with the date filled in — just check that it matches.\n\n**Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.\n\n**Step 4.** Click **Receives**. Choose **physical-unit** (things came in), pick the item (blank t-shirts), and enter the quantity: 50.\n\n**Step 5.** Click **Has Counterparty** and enter who: TextileDirect.\n\n**Step 6.** Read your sentence back at the top of the panel — it should retell the story. Then click **Submit**.\n\n::assertions\nhas-date: January 8\nhas-counterparty: TextileDirect\nprovides: $150 (monetary-unit)\nreceives: 50 blank t-shirts (physical-unit)\n::\n\nThat's the entire skill at this level. Every problem is this same pattern with different details."
+      }, {
+        "heading" : "Where the Journal Entry Comes From",
+        "content" : "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.\n\nThe translation rule is simple:\n\n- What you **receive** is **debited** — it came IN\n- What you **provide** is **credited** — it went OUT\n\nSo for the t-shirt purchase:\n\n::journal\nDR Raw Materials Inventory $150\nCR Cash $150\n::\n\nRead it as: \"t-shirts came in ($150 worth), cash went out ($150).\" Buying equipment works exactly the same way — a $3,000 printer gives DR Equipment, CR Cash.\n\nWatch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see the rule that built it. Over the semester, this is how debits and credits start to feel obvious instead of memorized."
+      }, {
+        "heading" : "Practice First — Mistakes Are Free",
+        "content" : "Next you'll take a short quiz on this reading, and then do a **practice round**.\n\nPractice problems are a sandbox: they do **not** go into your company's books, and you get complete feedback on every answer — what you got right, what you missed, and why. Get enough right and you'll unlock the real thing: recording Year 1 of your company's books.\n\nTwo things to remember once you ARE keeping the books:\n\n1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong — errors sit in the records until someone finds them. (You'll do that finding yourself, later, at year-end.)\n\n2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this — including during practice. Using it is smart, not cheating."
+      } ],
+      "quiz" : [ {
+        "id" : "l0-q0a",
+        "question" : "You pay $5 at Campus Coffee and get a latte. In assertion terms, what did you RECEIVE?",
+        "choices" : [ "The latte", "The $5", "Campus Coffee", "The morning" ],
+        "correct" : 0,
+        "explanation" : "**Receives** is what comes IN to you — the latte. The $5 went OUT (that's **provides**), Campus Coffee is the **counterparty**, and the morning is the **date**."
+      }, {
+        "id" : "l0-q0b",
+        "question" : "Which assertion answers the question: 'WHO was the other party in this transaction?'",
+        "choices" : [ "has-date", "provides", "has-counterparty", "receives" ],
+        "correct" : 2,
+        "explanation" : "**Has-counterparty** names the other party — the vendor you buy from or the customer you sell to. The four questions: when? (has-date) who? (has-counterparty) what went out? (provides) what came in? (receives)"
+      }, {
+        "id" : "l0-q1",
+        "question" : "When SP buys blank t-shirts for $500 cash, which assertion describes what SP gives up?",
+        "choices" : [ "receives (monetary-unit)", "provides (monetary-unit)", "requires (monetary-unit)", "expects (monetary-unit)" ],
+        "correct" : 1,
+        "explanation" : "SP **provides** cash (monetary-unit) to the supplier. 'Provides' always describes what your company gives up in an exchange."
+      }, {
+        "id" : "l0-q2",
+        "question" : "In a cash purchase, what does the 'has-counterparty' assertion indicate?",
+        "choices" : [ "The transaction involves an internal transfer", "There is another party involved in the exchange", "The transaction requires future payment", "The company is reporting revenue" ],
+        "correct" : 1,
+        "explanation" : "'Has-counterparty' indicates there is another party (vendor, customer, etc.) involved in the exchange. Internal operations like production don't have a counterparty."
+      }, {
+        "id" : "l0-q3",
+        "question" : "When SP receives equipment in a cash purchase, what happens in the journal entry?",
+        "choices" : [ "Equipment is credited (goes out)", "Cash is debited (comes in)", "Equipment is debited (comes in)", "Equipment is reported as expense" ],
+        "correct" : 2,
+        "explanation" : "What you **receive** gets **debited** — the asset is coming into the company. So Equipment (the relevant asset account) is debited."
+      }, {
+        "id" : "l0-q4",
+        "question" : "Which set of assertions correctly describes SP buying ink cartridges for $200 cash?",
+        "choices" : [ "provides physical-unit, receives monetary-unit, has-counterparty", "provides monetary-unit, receives physical-unit, has-counterparty", "requires monetary-unit, receives physical-unit, has-counterparty", "provides monetary-unit, creates physical-unit, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "SP **provides** cash (monetary-unit), **receives** ink cartridges (physical-unit), and there is a vendor (**has-counterparty**). 'Requires' is for credit transactions, and 'creates' is for production."
+      } ]
+    },
+    "1" : {
+      "title" : "Level 1: Credit Transactions",
+      "subtitle" : "Obligations, expectations, and the time dimension",
+      "sections" : [ {
+        "heading" : "Buying Now, Paying Later",
+        "content" : "In Level 0, everything happened at once: you handed over cash, you got your stuff, done. But think about how life actually works:\n\n*You order a pizza online. The pizza arrives now — your card gets charged at the end of the month.*\n\nThe pizza place gave you something today and trusts you to pay later. Businesses do this constantly — it's called buying **on credit** (or \"on account\").\n\nHere's the recording puzzle: on the day the ink cartridges arrive, what actually happened? You RECEIVED cartridges... but you didn't provide anything yet. No money moved!\n\nSomething did happen, though — something real that must be recorded: **you now owe money**. A promise to pay was created. Level 1 is about recording promises."
+      }, {
+        "heading" : "New Assertion: 'Requires' (a Promise Someone Must Keep)",
+        "content" : "**requires** — records an obligation: someone MUST do something in the future.\n\nWhen SP buys ink cartridges on 30-day credit for $100, here's the full description of what happened that day:\n\n::assertions\nhas-date: the purchase date\nhas-counterparty: InkMasters\nreceives: 50 ink cartridges (physical-unit)\nrequires: SP must provide $100 (monetary-unit) by the due date\n::\n\nCompare that to a cash purchase, and notice **what changed**:\n\n- **provides is GONE** — SP hasn't given anything yet. Nothing went out today. Don't select it!\n- **requires is NEW** — it records the promise: money must go out later, by a due date.\n\nWhen you select **requires** in the platform, you'll fill in what must be provided (money), how much ($100), and by when (the due date). All three are in the transaction description.\n\nThe journal entry follows the same in/out logic as before, with one new account:\n\n::journal\nDR Raw Materials Inventory $100\nCR Accounts Payable $100\n::\n\nCartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."
+      }, {
+        "heading" : "One Question to Rule Them All: Do We Also Need 'Expects'?",
+        "content" : "There's a second future-looking assertion:\n\n**expects** — records a belief about the future, with a confidence level: how sure are we this will actually happen?\n\nSo when do you need it? Ask one question:\n\n**\"Who controls whether the promise gets kept?\"**\n\n*Case 1: SP promises to pay InkMasters.* Who controls whether SP pays? **SP does.** There's nothing uncertain to assess about your own choices — you know you'll pay your bills. So: **requires only, no expects.**\n\n*Case 2: a customer promises to pay SP.* Who controls that? **The customer** — not you. Will they actually pay? Probably... but not certainly. That's a genuine uncertainty about someone ELSE, so SP records **requires** (the promise exists) AND **expects** (how confident SP is — say, 92%).\n\nMemorize the question, not a list of cases. Every credit transaction at this level is solved by asking: who controls whether the promise gets kept? **Your own promise → requires only. Someone else's promise to you → requires + expects.**"
+      }, {
+        "heading" : "Selling on Credit: The Other Chair",
+        "content" : "Now flip the pizza situation around: this time, **SP is the pizza place.** A customer takes SP's t-shirts today and promises to pay later.\n\n**Example: SP sells 10 printed t-shirts to CampusBoutique on 30-day credit for $250.**\n\nWalk through the four questions plus the new one:\n\n- When? The sale date. (**has-date**)\n- Who? CampusBoutique. (**has-counterparty**)\n- What went out? 10 printed t-shirts. (**provides** — yes, provides! SP gave up real shirts today.)\n- What came in? *Nothing yet* — no receives.\n- Any promise? Yes: the customer must pay $250 by the due date. (**requires**)\n\nAnd now the control question: who controls whether THIS promise gets kept? **The customer.** So SP also records:\n\n- How confident is SP of actually getting paid? (**expects**, with a confidence level — say 92%)\n\n::assertions\nhas-date: the sale date\nhas-counterparty: CampusBoutique\nprovides: 10 printed t-shirts (physical-unit)\nrequires: customer must provide $250 (monetary-unit) by the due date\nexpects: 92% confident of receiving that $250\n::\n\nThe confidence number isn't busywork — at year-end it feeds directly into estimating how much of what customers owe will actually arrive (accountants call this *bad debt*). You're doing real accounting judgment when you set it.\n\n**The journal entry:** a promise from a customer is money SP is owed — accountants call that an **asset** named **Accounts Receivable**. And giving up goods in exchange for a payment promise? Double-entry calls that **Revenue**:\n\n::journal\nDR Accounts Receivable $250\nCR Revenue $250\n::\n\nNotice something important: \"revenue\" was never one of your assertions. You just described what happened — goods out, payment promised — and *revenue is the name double-entry gives that pattern*. Categories come from patterns of facts. That's the deepest idea in this course, arriving quietly."
+      }, {
+        "heading" : "Paying in Advance (Both Directions)",
+        "content" : "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same control question.\n\n**A customer pays SP in advance** (say, a $500 deposit for a big custom order):\n\n- receives: $500 cash — money came IN today\n- requires: SP must deliver the shirts by the promised date\n- Control question: who controls delivery? **SP does** → no expects\n\n::journal\nDR Cash $500\nCR Deferred Revenue $500\n::\n\nThat credit line might surprise you: SP got cash but hasn't EARNED it yet — SP owes the customer shirts. An unearned advance is a **liability** (accountants call it *Deferred Revenue*). It flips to real revenue when SP delivers.\n\n**SP pays a vendor in advance** (say, $600 for a year of insurance):\n\n- provides: $600 cash — money went OUT today\n- expects: SP will receive coverage over the coming year (with confidence)\n- Control question: who controls delivering the coverage? **The vendor** → expects, not requires\n\n::journal\nDR Prepaid Expense $600\nCR Cash $600\n::\n\nSP paid but hasn't USED anything yet — the right to future coverage is something SP owns: an **asset** (*Prepaid Expense*).\n\n**The whole level in one table:**\n\n| Situation | Whose promise? | Who controls it? | Assertions |\n|-----------|-----------|---------------|-----------|\n| Credit purchase | SP owes vendor | SP | **requires** only |\n| Credit sale | Customer owes SP | Customer | **requires** + **expects** |\n| Customer pays in advance | SP owes delivery | SP | **requires** only |\n| SP pays in advance | Vendor owes service | Vendor | **expects** |\n\nOne question solves all four rows: **who controls whether the promise gets kept?** Your own promise → requires. Someone else's → expects (plus requires when there's a legal obligation, as in a credit sale)."
+      }, {
+        "heading" : "How to Approach Every Level 1 Problem",
+        "content" : "A recipe you can follow every single time:\n\n**Step 1.** Read the narrative. Ask: did money move TODAY? Did goods move TODAY? Record only what actually moved: **provides** for out, **receives** for in. If it didn't move today, don't select it.\n\n**Step 2.** Ask: was a promise made about the FUTURE? If yes, select **requires** and fill in what must be provided, how much, and by when — it's all in the narrative.\n\n**Step 3.** Ask the control question: is the promise SP's to keep, or someone else's? Someone else's → add **expects** with your confidence level.\n\n**Step 4.** Date and counterparty, same as always.\n\n**Step 5.** Read your sentence back — does it retell the story? Submit, then study the derived journal entry panel: click each line and see which of your assertions produced it.\n\nIf you get stuck during practice, the **Review Tutorial** button brings you back here. Mistakes in practice cost nothing — that's what it's for."
+      } ],
+      "quiz" : [ {
+        "id" : "l1-q1",
+        "question" : "When SP buys materials on credit, which assertions apply?",
+        "choices" : [ "receives, requires, expects, has-counterparty", "receives, requires, has-counterparty", "provides, requires, has-counterparty", "receives, expects, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "Credit purchases need **receives** (the goods), **requires** (obligation to pay), and **has-counterparty**. No **expects** — SP controls its own payments, so there's no uncertainty to assess."
+      }, {
+        "id" : "l1-q2",
+        "question" : "Why does a credit sale need BOTH 'requires' and 'expects'?",
+        "choices" : [ "They mean the same thing", "Requires creates the legal obligation; expects assesses whether the customer will actually pay", "Requires is for the goods; expects is for the cash", "Only the confidence level matters, not the obligation" ],
+        "correct" : 1,
+        "explanation" : "**Requires** establishes the legal payment obligation (the customer must pay). **Expects** captures SP's confidence that the customer will actually pay. Both are needed — the obligation exists regardless of confidence."
+      }, {
+        "id" : "l1-q3",
+        "question" : "What is the journal entry for a credit purchase of equipment?",
+        "choices" : [ "DR Cash, CR Equipment", "DR Equipment, CR Accounts Payable", "DR Accounts Payable, CR Equipment", "DR Equipment, CR Revenue" ],
+        "correct" : 1,
+        "explanation" : "SP **receives** equipment (debit) and **requires** future payment (credit to Accounts Payable). The asset comes in and a liability is created."
+      }, {
+        "id" : "l1-q4",
+        "question" : "Deferred revenue uses 'requires' but not 'expects'. Why?",
+        "choices" : [ "Because the customer hasn't paid yet", "Because SP controls its own delivery — no uncertainty to assess", "Because deferred revenue is always a liability", "Because expects is only for sales" ],
+        "correct" : 1,
+        "explanation" : "SP received payment and is obligated (**requires**) to deliver goods/services. Since SP controls its own delivery, there's no need for a confidence assessment (**expects**). The same logic applies to credit purchases — when you control the action, requires alone is enough."
+      } ]
+    },
+    "2" : {
+      "title" : "Level 2: Production and Transformation",
+      "subtitle" : "Transform raw materials into finished goods",
+      "sections" : [ {
+        "heading" : "Internal Transformations",
+        "content" : "Levels 0 and 1 covered **exchange transactions** — trading with external parties using provides, receives, requires, expects, and has-counterparty.\n\nLevel 2 introduces **internal transformations** — using your resources to create new products. No counterparty, no exchange — just transformation."
+      }, {
+        "heading" : "The Transformation Assertions",
+        "content" : "Production transactions use different assertions:\n\n**consumes** — Uses up resources (inputs to production)\n\n**creates** — Produces new resources (outputs from production)\n\n**is-allowed-by** — Links to the equipment that enables production\n\nNotice: **No counterparty!** This happens entirely within your business.\n\nRemember when you purchased that t-shirt printer in Level 0? The printer **allows** production — and production references this connection through **is-allowed-by**. Equipment enables transformation."
+      }, {
+        "heading" : "Printing T-Shirts",
+        "content" : "When SP prints t-shirts:\n\n**Example: Print 10 custom t-shirts**\n- consumes: 10 blank t-shirts (raw materials)\n- creates: 10 printed t-shirts (finished goods)\n- is-allowed-by: T-shirt Printer (equipment)\n\n**The Pattern:**\n- What you **create** gets **debited** (building up finished goods)\n- What you **consume** gets **credited** (using up raw materials)\n\n→ **Journal Entry:** DR Finished Goods Inventory, CR Raw Materials Inventory\n\nProduction may also consume labor and supplies — the journal entry captures all input costs."
+      }, {
+        "heading" : "Why Production is Different",
+        "content" : "**With exchanges:**\n- provides/receives → Value moves between you and someone else\n- Always involves a counterparty\n\n**With production:**\n- consumes/creates → Value moves between YOUR OWN asset accounts\n- No counterparty — happens internally\n- is-allowed-by connects the transformation to the equipment that makes it possible\n\nBoth blank t-shirts and printed t-shirts are your assets. Production just changes the form of your inventory.\n\nNow that you can produce finished goods, you'll be ready to sell them in Level 3!"
+      } ],
+      "quiz" : [ {
+        "id" : "l2-q1",
+        "question" : "Why don't production transactions have a 'has-counterparty' assertion?",
+        "choices" : [ "Because they always use cash", "Because production happens internally within the company", "Because equipment is involved", "Because there is no journal entry for production" ],
+        "correct" : 1,
+        "explanation" : "Production is an **internal transformation** — no external party is involved. You're converting one type of your own asset (raw materials) into another (finished goods)."
+      }, {
+        "id" : "l2-q2",
+        "question" : "In a production transaction, what does the 'consumes' assertion represent?",
+        "choices" : [ "Cash spent on labor", "Resources used up as inputs to production", "Revenue earned from sales", "Equipment depreciation" ],
+        "correct" : 1,
+        "explanation" : "'Consumes' indicates resources that are **used up** as inputs. In t-shirt production, blank t-shirts are consumed (their inventory is reduced)."
+      }, {
+        "id" : "l2-q3",
+        "question" : "What is the journal entry for producing 10 printed t-shirts from raw materials?",
+        "choices" : [ "DR Cash, CR Inventory", "DR Raw Materials, CR Finished Goods", "DR Finished Goods, CR Raw Materials", "DR Equipment, CR Raw Materials" ],
+        "correct" : 2,
+        "explanation" : "What you **create** (finished goods) is debited, and what you **consume** (raw materials) is credited. Value moves between your own asset accounts."
+      } ]
+    },
+    "3" : {
+      "title" : "Level 3: Cash Sales",
+      "subtitle" : "Sell your products and understand revenue",
+      "sections" : [ {
+        "heading" : "Selling What You've Made",
+        "content" : "You've purchased materials (L0), learned about credit transactions (L1), and produced finished goods (L2). Now it's time to sell those printed t-shirts for cash!\n\nYou already saw credit sales in Level 1. Cash sales are simpler — payment is immediate, so there's no `requires` or `expects`."
+      }, {
+        "heading" : "The Cash Sale Pattern",
+        "content" : "When a customer pays immediately:\n\n**Example: Sell 10 printed t-shirts for $250 cash**\n- has-counterparty: Customer\n- provides: 10 printed t-shirts (physical-unit)\n- receives: $250 cash (monetary-unit)\n\nThese are the same assertions as a cash purchase — just reversed:\n- **Purchase:** provides monetary-unit, receives physical-unit\n- **Sale:** provides physical-unit, receives monetary-unit\n\n→ **Journal Entry:** DR Cash $250, CR Revenue $250"
+      }, {
+        "heading" : "Revenue: From Assertions to Journal Entry",
+        "content" : "Here's an important insight: **revenue is not an assertion.** There's no 'reports revenue' assertion you need to select.\n\nInstead, revenue **emerges from the assertion pattern.** In assertive accounting, the assertions record *what happened*: SP provided goods and received cash from a customer. The journal entry system then maps this to the appropriate accounts.\n\n**What assertive accounting sees:**\n- SP provides physical goods (inventory leaves)\n- SP receives monetary units (cash comes in)\n- There is a counterparty (customer)\n\n**What double-entry sees:**\n- DR Cash — an asset increases\n- CR Revenue — income is earned\n\nThe revenue credit follows from the *meaning* of the exchange: when you provide goods to a customer for monetary units, that's a sale, and the monetary value is revenue. The assertions capture the economic reality; the journal entry categorizes it."
+      }, {
+        "heading" : "Cost of Goods Sold",
+        "content" : "When you sell inventory, two things happen economically:\n\n1. **Revenue** — Monetary units received for goods provided\n2. **Cost of Goods Sold** — The cost of the inventory you gave up\n\n→ Full Journal Entries:\n- DR Cash $250, CR Revenue $250 (revenue side)\n- DR Cost of Goods Sold $100, CR Finished Goods Inventory $100 (cost side)\n\n**Compare cash sales vs. credit sales:**\n\n| | Cash Sale | Credit Sale |\n|---|-----------|-------------|\n| **provides** | physical-unit | physical-unit |\n| **receives** | monetary-unit | — |\n| **requires** | — | Customer must pay |\n| **expects** | — | Confidence level |\n\nBoth types provide goods to a customer. The difference is whether payment is immediate (**receives**) or deferred (**requires** + **expects**). In both cases, revenue emerges from the exchange pattern — not from a separate assertion."
+      } ],
+      "quiz" : [ {
+        "id" : "l3-q1",
+        "question" : "Which assertions describe a cash sale of printed t-shirts?",
+        "choices" : [ "provides monetary-unit, receives physical-unit, has-counterparty", "provides physical-unit, receives monetary-unit, has-counterparty", "provides physical-unit, expects monetary-unit, has-counterparty", "provides physical-unit, requires monetary-unit, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "A cash sale: SP **provides** goods (physical-unit), **receives** cash (monetary-unit), and there's a customer (**has-counterparty**). No requires/expects because payment is immediate."
+      }, {
+        "id" : "l3-q2",
+        "question" : "How is revenue recognized in assertive accounting?",
+        "choices" : [ "Through a special 'reports revenue' assertion", "Revenue emerges from providing goods to a customer for monetary units", "The student must calculate revenue separately", "Revenue is only recorded at year-end" ],
+        "correct" : 1,
+        "explanation" : "Revenue **emerges from the assertion pattern**. When SP provides goods and receives (or is owed) monetary units from a customer, the journal entry system maps that exchange to Revenue. There's no separate revenue assertion."
+      }, {
+        "id" : "l3-q3",
+        "question" : "What is the FULL journal entry when SP sells t-shirts that cost $100 to produce for $250 cash?",
+        "choices" : [ "DR Cash $250, CR Revenue $250 only", "DR Cash $250, CR Revenue $250; DR COGS $100, CR Finished Goods $100", "DR Revenue $250, CR Cash $250", "DR Cash $150, CR Revenue $150 (net profit only)" ],
+        "correct" : 1,
+        "explanation" : "A sale triggers BOTH revenue recognition (DR Cash, CR Revenue) and cost recognition (DR Cost of Goods Sold, CR Finished Goods Inventory). Both the revenue and its associated cost are recognized."
+      }, {
+        "id" : "l3-q4",
+        "question" : "A cash sale and a cash purchase use the same assertions but reversed. What changes?",
+        "choices" : [ "Different assertions entirely", "Provides and receives swap — purchase provides cash for goods, sale provides goods for cash", "Sales don't use has-counterparty", "Purchases don't use provides" ],
+        "correct" : 1,
+        "explanation" : "Cash purchase: **provides** monetary-unit, **receives** physical-unit. Cash sale: **provides** physical-unit, **receives** monetary-unit. The assertions mirror each other — it's the direction of the exchange that differs."
+      } ]
+    },
+    "4" : {
+      "title" : "Level 4: Adjusting Entries",
+      "subtitle" : "Match revenues and expenses to the correct period",
+      "sections" : [ {
+        "heading" : "End-of-Period Adjustments",
+        "content" : "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.\n\nAdjusting entries ensure:\n- Expenses are recognized when incurred (not just when paid)\n- Revenues are recognized when earned (not just when received)\n- Assets reflect their current value"
+      }, {
+        "heading" : "The 'Reports' Assertion",
+        "content" : "Adjusting entries introduce a new assertion:\n\n**reports** — Explicitly recognizes a calculated amount based on some method or basis\n\nUp to now, journal entries have followed from what happened in the transaction. You didn't need to assert 'this is revenue' because revenue emerged from the exchange pattern (providing goods for payment). You didn't need to assert 'this is an expense' because the cost followed from providing inventory.\n\nBut adjusting entries are different. There's **no exchange** to derive from. Equipment silently loses value. Interest accumulates daily. Prepaid benefits expire. These need **explicit recognition** — you must assert what's being recognized and how it was calculated.\n\nCommon bases:\n- **systematic-allocation** — Depreciation (spreading cost over time)\n- **estimation** — Bad debts (predicting future losses)\n- **accrual** — Wages/interest (recognizing expense before payment)\n- **time-based** — Prepaid expenses (recognizing expired benefits)\n\nUnlike exchanges, adjusting entries have **no counterparty** — they are internal recognitions of economic reality."
+      }, {
+        "heading" : "Depreciation",
+        "content" : "Equipment loses value over time. We allocate its cost over its useful life:\n\n**Example: Monthly depreciation on $3,000 printer with 5-year life**\n- reports: expense (systematic-allocation basis)\n- consumes: asset-value\n\n**The Pattern:**\n- Asset value is consumed (credited via contra-account)\n- Expense is recognized (debited)\n\n→ **Journal Entry:** DR Depreciation Expense, CR Accumulated Depreciation\n\nNote: Accumulated Depreciation is a **contra-asset** that reduces equipment value on the balance sheet."
+      }, {
+        "heading" : "Accrued Expenses and Prepaid Adjustments",
+        "content" : "**Accrued Expenses** — expenses incurred before payment:\n- Wages: employees worked but payday hasn't arrived\n- Interest: accumulates daily on loans\n- reports: expense (accrual basis), requires: future payment\n→ DR Expense, CR Payable\n\n**Prepaid Adjustments** — 'using up' prepaid assets over time:\n- Insurance, rent paid in advance\n- reports: expense (time-based), consumes: prepaid-benefit\n→ DR Expense, CR Prepaid Asset\n\nLike production, adjusting entries have **no counterparty** — they're internal recognitions.\n\n**Why adjusting entries need 'reports' but sales don't:**\nIn a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."
+      } ],
+      "quiz" : [ {
+        "id" : "l4-q1",
+        "question" : "Why do adjusting entries need the 'reports' assertion when sales don't?",
+        "choices" : [ "Because adjusting entries are more important", "Because there's no exchange pattern to derive from — recognition must be explicit", "Because sales never affect expenses", "Because reports is only for the balance sheet" ],
+        "correct" : 1,
+        "explanation" : "In sales, revenue emerges from the assertion pattern (providing goods for payment). In adjusting entries, there's **no exchange** — depreciation, accruals, and prepaid consumption must be explicitly asserted through **reports** with a calculation basis."
+      }, {
+        "id" : "l4-q2",
+        "question" : "Why don't adjusting entries have a 'has-counterparty' assertion?",
+        "choices" : [ "Because they always involve cash", "Because they are estimates, not actual transactions", "Because they are internal recognitions, not exchanges with external parties", "Because they only affect the income statement" ],
+        "correct" : 2,
+        "explanation" : "Adjusting entries are **internal recognitions** of economic reality (like equipment losing value or wages being earned). No external party is involved in these entries."
+      }, {
+        "id" : "l4-q3",
+        "question" : "What is the journal entry for recording monthly depreciation on equipment?",
+        "choices" : [ "DR Equipment, CR Cash", "DR Depreciation Expense, CR Equipment", "DR Depreciation Expense, CR Accumulated Depreciation", "DR Accumulated Depreciation, CR Depreciation Expense" ],
+        "correct" : 2,
+        "explanation" : "Depreciation recognizes the expense (debit) and reduces the asset's book value through the contra-asset Accumulated Depreciation (credit), not by crediting Equipment directly."
+      }, {
+        "id" : "l4-q4",
+        "question" : "Which assertions describe accruing wages that employees have earned but not yet been paid?",
+        "choices" : [ "provides monetary-unit, has-counterparty", "reports expense (accrual), requires future payment", "receives physical-unit, reports expense", "consumes asset-value, creates liability" ],
+        "correct" : 1,
+        "explanation" : "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."
+      } ]
+    },
+    "5" : {
+      "title" : "Level 5: Equity Transactions",
+      "subtitle" : "Record owner investments, withdrawals, and dividends",
+      "sections" : [ {
+        "heading" : "Owner Transactions",
+        "content" : "So far, we've focused on operating transactions — buying, selling, producing, and adjusting. Now we'll record transactions with **owners**:\n\n- **Owner investments** — Putting money into the business\n- **Owner withdrawals** — Taking money out of the business\n- **Stock issuance** — Corporations selling shares\n- **Dividends** — Returning profits to shareholders\n\nThese transactions affect **equity**, not revenue or expense."
+      }, {
+        "heading" : "Owner Investments",
+        "content" : "When an owner contributes capital:\n\n**Example: Pat invests $20,000 for 20% ownership**\n- has-counterparty: Pat (owner)\n- receives: $20,000 (monetary-unit)\n- provides: ownership-interest\n\n→ **Journal Entry:** DR Cash $20,000, CR Owner's Capital $20,000\n\nNote: This isn't revenue! The company isn't earning money — it's receiving investment."
+      }, {
+        "heading" : "Dividends and Withdrawals",
+        "content" : "**Dividends** return profits to shareholders (two-step process):\n\n**Declaration:** reports distribution, requires future cash payment\n→ DR Retained Earnings, CR Dividends Payable\n\n**Payment:** provides cash, has-counterparty (shareholders)\n→ DR Dividends Payable, CR Cash\n\n**Owner Withdrawals** (sole proprietorships):\n- provides: cash (monetary-unit), has-counterparty: owner\n→ DR Owner's Drawing, CR Cash\n\nNote: Neither dividends nor withdrawals are expenses — they're returns of capital."
+      }, {
+        "heading" : "The Equity Pattern",
+        "content" : "**Key insight:** Equity transactions change the balance sheet composition without affecting income.\n\n| Transaction | Effect on Assets | Effect on Equity |\n|-------------|-----------------|------------------|\n| Investment | + Cash | + Capital |\n| Withdrawal | - Cash | - Drawing |\n| Dividend Declaration | No change | - Retained Earnings, + Payable |\n| Dividend Payment | - Cash | - Payable |\n\nEquity transactions use the same assertion framework — provides, receives, requires, reports — but the accounts affected are equity accounts."
+      } ],
+      "quiz" : [ {
+        "id" : "l5-q1",
+        "question" : "When an owner invests $10,000 cash into the business, is this revenue?",
+        "choices" : [ "Yes — the business is receiving money", "No — it's an equity investment, not earned revenue", "Yes — it increases the cash account", "No — it's an expense" ],
+        "correct" : 1,
+        "explanation" : "Owner investment is **not revenue**. Revenue is earned from business operations. An investment increases equity (Owner's Capital), not revenue. DR Cash, CR Owner's Capital."
+      }, {
+        "id" : "l5-q2",
+        "question" : "What assertions describe an owner withdrawing $1,000 from the business?",
+        "choices" : [ "receives monetary-unit, has-counterparty", "provides monetary-unit, has-counterparty", "reports expense, provides monetary-unit", "requires monetary-unit, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "The company **provides** cash (monetary-unit) to the owner (**has-counterparty**). This creates DR Owner's Drawing, CR Cash. It's not an expense."
+      }, {
+        "id" : "l5-q3",
+        "question" : "In the two-step dividend process, what happens at declaration?",
+        "choices" : [ "Cash is paid to shareholders", "Retained Earnings decreases and a payable is created", "Revenue is recorded", "Equipment is distributed to owners" ],
+        "correct" : 1,
+        "explanation" : "At declaration, the board commits to paying dividends: **Retained Earnings decreases** (debit) and **Dividends Payable is created** (credit). Cash doesn't move until the payment step."
+      } ]
+    },
+    "6" : {
+      "title" : "Level 6: Notes and Interest",
+      "subtitle" : "Borrow and lend with formal promissory notes",
+      "sections" : [ {
+        "heading" : "Formal Borrowing and Lending",
+        "content" : "Notes payable and receivable are **formal written promises** to pay a specific amount, usually with interest. They're more formal than accounts payable/receivable.\n\nKey concepts:\n- **Principal** — The amount borrowed\n- **Interest** — The cost of borrowing (charged over time)\n- **Maturity** — When the note is due"
+      }, {
+        "heading" : "Borrowing with a Note Payable",
+        "content" : "When SP borrows from a bank:\n\n**Example: Borrow $10,000 at 8% for 12 months**\n- has-counterparty: Bank\n- receives: $10,000 (monetary-unit)\n- requires: future repayment\n\n→ **Journal Entry:** DR Cash $10,000, CR Notes Payable $10,000\n\nThis is like a credit purchase, but the obligation is a **formal note**, not just accounts payable."
+      }, {
+        "heading" : "Interest and Repayment",
+        "content" : "**Interest accrues** continuously on borrowed money:\n\nMonthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month\n\n**Accrual entry:** reports expense (accrual), requires future payment\n→ DR Interest Expense, CR Interest Payable\n\n**Interest payment:** provides cash, has-counterparty\n→ DR Interest Payable, CR Cash\n\n**Note repayment:** provides cash, has-counterparty\n→ DR Notes Payable, CR Cash"
+      }, {
+        "heading" : "Lending (Notes Receivable)",
+        "content" : "SP can also be the lender:\n\n**Example: Lend $5,000 to supplier**\n- has-counterparty: Supplier\n- provides: $5,000 (monetary-unit)\n- expects: future repayment with interest\n\n→ DR Notes Receivable, CR Cash\n\n**Interest revenue accrual:**\n- reports: revenue (accrual), expects: future receipt\n→ DR Interest Receivable, CR Interest Revenue\n\nLending is the mirror of borrowing — the same assertions apply in reverse."
+      } ],
+      "quiz" : [ {
+        "id" : "l6-q1",
+        "question" : "How does a Notes Payable differ from Accounts Payable?",
+        "choices" : [ "Notes Payable is for smaller amounts", "Notes Payable is a formal written promise, usually with interest", "Accounts Payable always involves equipment", "There is no difference" ],
+        "correct" : 1,
+        "explanation" : "Notes Payable are **formal written promises** to pay, typically involving interest and a specific maturity date. Accounts Payable are less formal obligations from routine purchases on credit."
+      }, {
+        "id" : "l6-q2",
+        "question" : "Which assertions describe SP borrowing $10,000 from a bank via a promissory note?",
+        "choices" : [ "provides monetary-unit, has-counterparty", "receives monetary-unit, requires future repayment, has-counterparty", "reports revenue, receives monetary-unit", "expects monetary-unit, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "SP **receives** cash, **requires** future repayment (creating Notes Payable), and the bank is the **counterparty**. This is like a credit purchase — receives now, pays later."
+      }, {
+        "id" : "l6-q3",
+        "question" : "When SP accrues interest expense on a loan, what is the journal entry?",
+        "choices" : [ "DR Cash, CR Interest Revenue", "DR Interest Expense, CR Interest Payable", "DR Notes Payable, CR Cash", "DR Interest Payable, CR Interest Expense" ],
+        "correct" : 1,
+        "explanation" : "Interest accrual **reports** an expense and **requires** future payment: DR Interest Expense (recognizing the cost), CR Interest Payable (creating the obligation)."
+      }, {
+        "id" : "l6-q4",
+        "question" : "When SP lends money to a supplier, which assertion creates the Notes Receivable?",
+        "choices" : [ "requires (monetary-unit)", "provides (monetary-unit)", "expects (monetary-unit)", "reports (revenue)" ],
+        "correct" : 2,
+        "explanation" : "When lending, SP **expects** future repayment — this creates Notes Receivable (an asset). SP also **provides** cash now and has a counterparty."
+      } ]
+    },
+    "7" : {
+      "title" : "Level 7: Capstone Review",
+      "subtitle" : "Bringing it all together — the complete assertion framework",
+      "sections" : [ {
+        "heading" : "The Complete Framework",
+        "content" : "Congratulations on making it to Level 7! Let's review the complete assertion framework you've mastered:\n\n**Exchange Assertions:**\n\n| Assertion | Used For | Journal Entry Effect |\n|-----------|----------|---------------------|\n| **has-date** | Every transaction | Records when it happened |\n| **has-counterparty** | Exchanges with others | Identifies the other party |\n| **provides** | Giving something now | Credit to asset/equity |\n| **receives** | Getting something now | Debit to asset |\n| **requires** | Legal obligation (future) | Credit to liability |\n| **expects** | Confidence in future event | Debit to asset (receivable) |\n\n**Transformation Assertions:**\n\n| Assertion | Used For | Journal Entry Effect |\n|-----------|----------|---------------------|\n| **consumes** | Using up resources | Credit to asset (input) |\n| **creates** | Producing new resources | Debit to asset (output) |\n| **is-allowed-by** | Equipment enabling production | Links to equipment |\n\n**Recognition Assertion:**\n\n| Assertion | Used For | Journal Entry Effect |\n|-----------|----------|---------------------|\n| **reports** | Calculated recognitions (adjustments) | Debit/Credit per type |\n\n**Key insight:** Revenue doesn't need its own assertion. When you provide goods and receive (or are owed) payment, revenue emerges from that exchange pattern. But adjusting entries like depreciation and accruals have no exchange — they need `reports` to explicitly recognize calculated amounts."
+      }, {
+        "heading" : "Transaction Categories",
+        "content" : "Every transaction falls into one of these categories:\n\n**Exchange Transactions** (L0-L1, L3, L5-L6):\n- Always have a counterparty\n- Use provides/receives for immediate exchanges\n- Use requires/expects for future obligations\n- Revenue emerges from the sale pattern — no separate assertion needed\n\n**Internal Transformations** (L2):\n- No counterparty\n- Use consumes/creates for production\n- is-allowed-by links to enabling equipment\n\n**Adjusting Entries** (L4):\n- No counterparty\n- Use reports for calculated recognitions\n- May use consumes (prepaid), requires (accruals)\n- reports is needed because there's no exchange pattern to derive from"
+      }, {
+        "heading" : "From Assertions to Journal Entries",
+        "content" : "The beauty of assertive accounting: once you identify the correct assertions, the journal entry follows logically.\n\n**Debit rules:**\n- receives → Debit what comes in\n- creates → Debit what's produced\n- expects → Debit the receivable\n\n**Credit rules:**\n- provides → Credit what goes out\n- consumes → Credit what's used up\n- requires → Credit the payable\n\n**The requires/expects asymmetry:**\n- Credit purchase: **requires** only (SP controls payment)\n- Credit sale: **requires** + **expects** (customer controls payment)\n- Deferred revenue: **requires** only (SP controls delivery)\n- Prepaid expense: **expects** only (vendor delivers service)\n\n**Revenue:** Emerges from providing goods/services for monetary payment — the exchange pattern itself.\n\n**Adjustments:** Use **reports** to explicitly recognize amounts where no exchange occurred."
+      }, {
+        "heading" : "Ready for the Final Quiz",
+        "content" : "This capstone quiz covers all levels. You'll see questions that require you to identify assertion patterns across different transaction types.\n\nOnce you pass, you'll have demonstrated mastery of the complete assertive accounting framework. Good luck!"
+      } ],
+      "quiz" : [ {
+        "id" : "l7-q1",
+        "question" : "Which transaction type does NOT have a counterparty?",
+        "choices" : [ "Credit purchase of inventory", "Cash sale of goods", "Monthly depreciation adjustment", "Owner investment" ],
+        "correct" : 2,
+        "explanation" : "**Depreciation** is an adjusting entry — an internal recognition of asset value declining over time. No external party is involved. Purchases, sales, and owner transactions all involve counterparties."
+      }, {
+        "id" : "l7-q2",
+        "question" : "SP sells t-shirts on credit. Which assertions are required?",
+        "choices" : [ "provides, receives, has-counterparty", "provides, requires, expects, has-counterparty", "provides, expects, has-counterparty", "provides, requires, reports, has-counterparty" ],
+        "correct" : 1,
+        "explanation" : "Credit sales need **provides** (goods delivered), **requires** (legal payment obligation), **expects** (confidence in payment), and **has-counterparty**. No receives (payment hasn't happened yet) and no reports (revenue emerges from the exchange pattern)."
+      }, {
+        "id" : "l7-q3",
+        "question" : "SP buys raw materials on credit, produces finished goods, then sells them for cash. Which step uses 'consumes' and 'creates'?",
+        "choices" : [ "Buying raw materials", "Producing finished goods", "Selling finished goods", "Paying the vendor" ],
+        "correct" : 1,
+        "explanation" : "**Production** is the step that uses consumes (raw materials used up) and creates (finished goods produced). Buying and selling are exchange transactions; paying is settling an obligation."
+      }, {
+        "id" : "l7-q4",
+        "question" : "Why do adjusting entries need the 'reports' assertion but sales don't?",
+        "choices" : [ "Because sales are less important", "Because sales have an exchange pattern that implies revenue; adjustments have no exchange to derive from", "Because reports is only for expenses", "Because sales only affect the balance sheet" ],
+        "correct" : 1,
+        "explanation" : "In a sale, revenue emerges from the exchange: providing goods for payment. In an adjusting entry (depreciation, accruals), there's **no exchange** — you must explicitly assert what's being recognized and how. That's what **reports** is for."
+      } ]
+    }
+  }
+}

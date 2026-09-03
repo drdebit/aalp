@@ -1348,7 +1348,11 @@
     :level 1}
 
    :equipment-purchase-on-credit
-   {:required #{:has-date :receives :has-counterparty :requires}
+   ;; Same as the cash purchase: the printer is equipment because the
+   ;; record says what it is for. A student who learned that on the
+   ;; cash version and applied it here was marked wrong without a word.
+   {:required #{:has-date :receives :has-counterparty :requires :allows}
+    :optional #{:allows}
     :prohibited #{:provides :expects}  ;; No expects - we control our own payments
     :required-parameters {:receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
                           :requires {:action "provides" :unit "monetary-unit"}}
@@ -1994,7 +1998,7 @@
    Returns a map with :missing-assertions, :incorrect-assertions, :missing-parameters."
   [assertions-map classification-key]
   (let [classification (get classifications classification-key)
-        {:keys [required prohibited required-parameters]} classification
+        {:keys [required prohibited optional required-parameters]} classification
         assertion-keys (set (keys assertions-map))
 
         ;; Missing assertions
@@ -2002,6 +2006,11 @@
 
         ;; Prohibited assertions that are present
         incorrect-assertions (clojure.set/intersection assertion-keys prohibited)
+
+        ;; Present, not forbidden, but not part of this classification
+        ;; either. Unsaid, a near miss reads as an unexplained rejection.
+        extra-assertions (clojure.set/difference assertion-keys required (or optional #{})
+                                                 prohibited #{:has-date})
 
         ;; Assertions present but with wrong/missing parameters
         missing-parameters (when required-parameters
@@ -2015,6 +2024,7 @@
 
     {:missing-assertions missing-assertions
      :incorrect-assertions incorrect-assertions
+     :extra-assertions extra-assertions
      :missing-parameters missing-parameters}))
 
 (defn- format-param-key
@@ -2071,9 +2081,14 @@
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
   [hint-data]
-  (let [{:keys [missing-assertions incorrect-assertions missing-parameters]} hint-data
+  (let [{:keys [missing-assertions incorrect-assertions extra-assertions missing-parameters]} hint-data
         hints []]
     (cond-> hints
+      (seq extra-assertions)
+      (conj (str "Not part of this one: "
+                (clojure.string/join ", " (map #(get assertion-labels % (name %))
+                                               extra-assertions))))
+
       (seq missing-assertions)
       (conj (str "Missing assertions: "
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
@@ -2364,9 +2379,16 @@
                       :hints (when (not is-correct-match)
                                (let [matched-desc (:description classification)
                                      correct-desc (get-in classifications [correct-classification :description])]
-                                 [(str "Your assertions describe: " matched-desc)
-                                  (str "But this transaction is: " correct-desc)
-                                  "Check what the entity is providing vs. receiving."]))})
+                                 (into [(str "Your assertions describe: " matched-desc)
+                                        (str "But this transaction is: " correct-desc)]
+                                       ;; Say what separates the two, as the
+                                       ;; near-miss branch does; the generic
+                                       ;; line alone left a printer-on-credit
+                                       ;; student with nothing to act on.
+                                       (let [specific (format-hints (generate-dynamic-hints assertions-map correct-classification))]
+                                         (if (seq specific)
+                                           specific
+                                           ["Check what the entity is providing vs. receiving."])))))})
 
                    closest
                    (let [closest-classification (get classifications (:type closest))
@@ -2485,9 +2507,10 @@
                 :due-date :calculated}}
 
    :credit-equipment-purchase
-   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}. SP agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}, to print designs on blank t-shirts. SP agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
+                          :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}
                           :has-counterparty {:name :vendor}
                           ;; The purchase creates an obligation for SP to pay
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}

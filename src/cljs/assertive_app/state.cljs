@@ -100,8 +100,13 @@
 (defn start-walkthrough!
   ([] (start-walkthrough! 0))
   ([episode-idx]
-   (swap! app-state assoc :walkthrough {:episode episode-idx :step 0})
-   (swap! app-state assoc :selected-assertions {})))
+   ;; Starting over starts the business over. Without clearing the chain a
+   ;; student who restarts accumulates a second printer and a second pile
+   ;; of shirts, and the costs quietly drift.
+   (swap! app-state assoc
+          :walkthrough {:episode episode-idx :step 0}
+          :walkthrough-events []
+          :selected-assertions {})))
 
 (defn end-walkthrough! []
   (swap! app-state dissoc :walkthrough :walkthrough-events))

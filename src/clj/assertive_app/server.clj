@@ -110,8 +110,13 @@
                                 (set (map keyword selected-assertions-raw)))
           correct-classification (when-let [cc (:correct-classification body)]
                                    (keyword cc))
+          ;; The practice drill: each problem is a fresh scenario with no
+          ;; record behind it, so positions (raw materials, capital) that
+          ;; are read off a chain cannot be read here. Say so, rather
+          ;; than grading every purchase as unplaced.
           result (classification/classify-transaction selected-assertions
-                                                     :correct-classification correct-classification)
+                                                     :correct-classification correct-classification
+                                                     :context {:standalone? true})
           correct? (= :correct (get-in result [:feedback :status]))]
 
       ;; Return response - include progress if authenticated

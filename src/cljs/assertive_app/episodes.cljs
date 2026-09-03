@@ -126,6 +126,29 @@
       :do {:kind :assert :code :has-counterparty}
       :then "Done. And you learned no new assertions today — the same four you already had produced an account you hadn't seen."}]}
 
+   ;; Ink gets its own entry because an episode builds one event, and the
+   ;; printing that follows consumes ink as well as shirts. Without this
+   ;; the record refuses the production event: you cannot use what you
+   ;; never bought. Doing it twice also makes the point that raw
+   ;; materials is about the role, not about shirts.
+   {:id :ink
+    :title "SP buys ink"
+    :palette #{:has-date :provides :receives :has-counterparty}
+    :steps
+    [{:say "Ink next — two cartridges for $20. You know the shape by now: when, what went out, what came in, who."
+      :do {:kind :set-date}}
+
+     {:say "The business paid $20."
+      :do {:kind :assert :code :provides :params {:unit "monetary-unit"}}}
+
+     {:say "And received two ink cartridges."
+      :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
+      :then "Hmm. \"Not yet classified.\" Yesterday the shirts landed in Raw Materials because the record knew what they were for. Nobody has said what ink is for — the printer's capability only mentions shirts. The record won't guess. It will know the day the ink gets used."}
+
+     {:say "And who sold it."
+      :do {:kind :assert :code :has-counterparty}
+      :then "Now the business has everything it needs to print."}]}
+
    {:id :production
     :title "SP prints shirts"
     :palette #{:has-date :consumes :creates :is-allowed-by}

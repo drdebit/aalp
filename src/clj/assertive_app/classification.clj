@@ -1943,13 +1943,31 @@
    sentence and becomes a property of the paragraph."
   [assertions-map requirement context]
   (let [events (concat (:events context) [assertions-map])]
+    ;; A practice problem is a sentence with no paragraph: it stands
+    ;; alone, and nothing the student can say about a purchase of blank
+    ;; shirts makes them an input -- that was said when the printer was
+    ;; bought, in a record the drill does not have. Grading such a
+    ;; problem on its position would make the drill unpassable, so a
+    ;; caller that knows the problem is standalone says so and the
+    ;; position is not assessed. The Guided Year and the simulation pass
+    ;; the student's own ledger instead, and there positions are read.
+    (or (:standalone? context)
     (every? (fn [[assertion-code wanted]]
               (let [flows (let [v (get assertions-map assertion-code)]
                             (cond (nil? v) [] (sequential? v) v :else [v]))]
                 (some (fn [flow]
                         (= wanted (chain/inventory-position events (:physical-item flow))))
                       flows)))
-            requirement)))
+            requirement))))
+
+(defn- param-value-ok?
+  "Does a student's parameter value satisfy what the classification asks?
+   A required value of :any means the student must supply one -- a
+   confidence level on an expectation, say -- but the figure is theirs."
+  [actual wanted]
+  (if (= wanted :any)
+    (some? actual)
+    (= actual wanted)))
 
 (defn parameters-match?
   "Check if student parameters match required parameters for an assertion.
@@ -1967,7 +1985,7 @@
                     :else                        [student-params])
         matches? (fn [params]
                    (every? (fn [[param-key param-value]]
-                             (= (get params param-key) param-value))
+                             (param-value-ok? (get params param-key) param-value))
                            required-params))]
     (boolean (some matches? flows))))
 
@@ -1992,7 +2010,7 @@
                                         :when (contains? assertion-keys assertion-code)
                                         :let [student-params (get assertions-map assertion-code)]
                                         [param-key param-value] required-params
-                                        :when (not= (get student-params param-key) param-value)]
+                                        :when (not (param-value-ok? (get student-params param-key) param-value))]
                                     [assertion-code {param-key param-value}])))]
 
     {:missing-assertions missing-assertions
@@ -2071,9 +2089,11 @@
               (str "For " (get assertion-labels assertion-code (name assertion-code))
                    ": "
                    (clojure.string/join ", " (for [[param-key param-value] params]
-                                               (str (format-param-key param-key)
-                                                    " should be "
-                                                    (format-param-value param-key param-value))))))))))
+                                               (if (= param-value :any)
+                                                 (str (format-param-key param-key) " needs a value")
+                                                 (str (format-param-key param-key)
+                                                      " should be "
+                                                      (format-param-value param-key param-value)))))))))))
 
 (defn augment-journal-entry
   "Attach each journal entry line's amount, taken from the derivation.
@@ -2210,8 +2230,8 @@
                                                      (for [[assertion-code required-params] required-parameters
                                                            :when (contains? assertion-keys assertion-code)
                                                            [param-key param-value] required-params
-                                                           :when (= (get (get assertions-map assertion-code) param-key)
-                                                                    param-value)]
+                                                           :when (param-value-ok? (get (get assertions-map assertion-code) param-key)
+                                                                                  param-value)]
                                                        1))
                                                    0)]
                             {:type class-key
@@ -2306,7 +2326,17 @@
        :assertion-linkages linkages
        :feedback (cond
                    (seq exact-matches)
-                   (let [match-key best-exact-match
+                   (let [;; Two classifications can both fit exactly -- an
+                         ;; equipment purchase that says what the printer is
+                         ;; for matches both the plain purchase and the
+                         ;; capability acquisition. If the one this problem
+                         ;; asked for is among the exact matches, the student
+                         ;; has said everything it requires and nothing it
+                         ;; forbids, and is right.
+                         match-key (if (and correct-classification
+                                            (some #{correct-classification} exact-matches))
+                                     correct-classification
+                                     best-exact-match)
                          classification (get classifications match-key)
                          ;; Check if this is the correct classification
                          is-correct-match (or (nil? correct-classification)
@@ -2404,10 +2434,15 @@
                 :amount [100 250 500 1000]}}
 
    :cash-equipment-purchase
-   {:narrative-template "On {date}, you purchase {equipment-type} from {vendor} for ${amount} cash."
+   ;; The classification requires `allows` (a printer is equipment only
+   ;; because the record says what it is for), so the answer key must
+   ;; carry it and the narrative must give the student grounds to say it.
+   ;; Without both, the drill served a problem its own key could not pass.
+   {:narrative-template "On {date}, you purchase {equipment-type} from {vendor} for ${amount} cash, to print designs on blank t-shirts."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
+                          :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-equipment-purchase
     :level 0
@@ -3056,14 +3091,44 @@ The printed t-shirts are now finished goods ready for sale."
    This ensures correlated values like quantity/amount stay paired.
    Variables with unique lengths are selected independently."
   [variables]
-  (let [;; Group variable keys by the length of their option arrays
-        by-length (group-by (fn [[_k options]] (count options)) variables)
+  (let [;; Only option lists take part in pairing. A variable whose value
+        ;; is a marker (:calculated, :student-input) is derived afterwards
+        ;; by resolve-derived-variables; counting it here threw, and every
+        ;; template carrying a due date failed to generate at all.
+        listed (filter (fn [[_k options]] (sequential? options)) variables)
+        ;; Group variable keys by the length of their option arrays
+        by-length (group-by (fn [[_k options]] (count options)) listed)
         ;; For each length group, pick a random index once and apply to all
         selected (for [[length vars-in-group] by-length
                        :let [idx (rand-int length)]]
                    (for [[k options] vars-in-group]
                      [k (nth options idx)]))]
     (into {} (apply concat selected))))
+
+(defn- resolve-derived-variables
+  "Fill in the variables a template marks rather than lists.
+
+     :due-date   :calculated     the event date plus the chosen :days
+     :confidence :student-input  the student supplies it; the answer key
+                                 carries the counterparty's history rate
+                                 from the template's profiles (85 when
+                                 there is none), which is the figure the
+                                 context panel invites them to use."
+  [template vars]
+  (reduce (fn [vars [k marker]]
+            (case marker
+              :calculated
+              (assoc vars k (if-let [d (:date vars)]
+                              (str (.plusDays (java.time.LocalDate/parse d) (long (or (:days vars) 30))))
+                              (:date vars)))
+              :student-input
+              (let [party (or (:customer vars) (:vendor vars))
+                    profile (or (get-in template [:customer-profiles party])
+                                (get-in template [:vendor-profiles party]))]
+                (assoc vars k (or (:history-rate profile) (:reliability profile) 85)))
+              vars))
+          vars
+          (remove (fn [[_k v]] (sequential? v)) (:variables template))))
 
 (defn generate-problem
   "Generate a random problem at the specified level.
@@ -3073,7 +3138,7 @@ The printed t-shirts are now finished goods ready for sale."
   (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
         [template-key template] (rand-nth (seq available-templates))
         ;; Use indexed selection for same-length variable arrays to keep values paired
-        vars (select-paired-variables (:variables template))
+        vars (resolve-derived-variables template (select-paired-variables (:variables template)))
         narrative (apply-template (:narrative-template template) vars)
         classification (get classifications (:correct-classification template))
 

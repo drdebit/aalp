@@ -186,11 +186,17 @@
    -> {item units}. An item nothing has happened to is simply absent,
    which is not the same as zero and reads differently to a student."
   [events]
+  ;; A transformation may consume or create more than one thing, and the
+  ;; client stores several flows as a vector. Read them all; reading only
+  ;; a single map made a two-input production event invisible here while
+  ;; cost-basis and item-roles saw it, so the record priced the shirts
+  ;; and then said SP had none to sell.
   (reduce (fn [acc assertions]
             (reduce (fn [acc [assertion-key sign]]
-                      (if-let [{:keys [item units]} (physical (get assertions assertion-key))]
-                        (update acc item (fnil + 0) (* sign (or units 0)))
-                        acc))
+                      (reduce (fn [acc {:keys [item units]}]
+                                (update acc item (fnil + 0) (* sign (or units 0))))
+                              acc
+                              (physicals (get assertions assertion-key))))
                     acc
                     {:receives 1 :creates 1 :consumes -1 :provides -1}))
           {} events))

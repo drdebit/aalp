@@ -20,6 +20,7 @@ they belong later, as another way of looking at events already recorded.
 | 1 | the business is funded | `has-date`, `receives`, `provides`, `has-counterparty` | Cash, Owner's Capital |
 | 2 | SP buys a printer | `allows` | Equipment |
 | 3 | SP buys shirts and ink | — none — | Raw Materials Inventory |
+| 3b | SP buys ink | — none — | Raw Materials Inventory (again) |
 | 4 | SP prints shirts | `consumes`, `creates`, `is-allowed-by` | Finished Goods |
 | 5 | SP sells shirts | — none — | Revenue, Cost of Goods Sold |
 

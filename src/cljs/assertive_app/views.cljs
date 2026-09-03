@@ -1564,14 +1564,14 @@
                         (when debit-linkage
                           [:span.linkage " ← " (format-linkage debit-linkage)])
                         (when counterparty-str
-                          [:span.linkage ", " counterparty-str])]
+                          [:span.linkage "← " counterparty-str])]
                        [:div.entry-line
                         [:span.credit "CR: " (:credit entry)]
                         [je-amount (:amount entry)]
                         (when credit-linkage
                           [:span.linkage " ← " (format-linkage credit-linkage)])
                         (when counterparty-str
-                          [:span.linkage ", " counterparty-str])]]))]))
+                          [:span.linkage "← " counterparty-str])]]))]))
 
              ;; For incorrect answers, also show what the correct JE should be
              (when (and is-incorrect? correct-class)

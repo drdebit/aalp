@@ -595,7 +595,13 @@
   []
   (POST (str api-base "/derive-je")
     {:params {:selected-assertions (state/selected-assertions)
-              :variables (:variables (state/current-problem))
+              ;; In the walkthrough the problem underneath is the guided
+              ;; day, a different transaction; its amount was pricing
+              ;; lines the student had not yet given a quantity ($3,000
+              ;; on a shirt purchase). The walkthrough's numbers are the
+              ;; student's own, so nothing else supplies one.
+              :variables (when-not (state/walkthrough-active?)
+                           (:variables (state/current-problem)))
               ;; What the student established earlier in the walkthrough.
               ;; Sent rather than stored: the walkthrough teaches, and a
               ;; student working through it twice should not accumulate

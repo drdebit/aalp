@@ -163,7 +163,7 @@ class Platform:
     # ------------------------------------------------------------ derivation
     def _variables(self):
         if self.phase == "walkthrough":
-            return self.guided_vars   # what the real client sends: the guided day underneath
+            return {}   # api.cljs derive-je!: the walkthrough's numbers are the student's own
         return (self.problem or {}).get("variables") or {}
 
     def _derive(self):

@@ -142,7 +142,11 @@
          :when (and (contains? (:available-for item-def) assertion-type)
                     (<= (:unlock-level item-def) max-level))]
      {:value (name item-key)
-      :label (str (:label item-def) " (" (:description item-def) ")")})))
+      ;; The bare name. Saying "(raw materials for production)" in the
+      ;; dropdown hands the student the classification the record is
+      ;; supposed to derive; one wrote afterwards that the system "has a
+      ;; lookup table" and that nothing they asserted decided anything.
+      :label (:label item-def)})))
 
 (defn all-physical-item-options
   "Every physical item, for assertions that name a thing without a
@@ -153,7 +157,11 @@
    (for [[item-key item-def] physical-items
          :when (<= (:unlock-level item-def) max-level)]
      {:value (name item-key)
-      :label (str (:label item-def) " (" (:description item-def) ")")})))
+      ;; The bare name. Saying "(raw materials for production)" in the
+      ;; dropdown hands the student the classification the record is
+      ;; supposed to derive; one wrote afterwards that the system "has a
+      ;; lookup table" and that nothing they asserted decided anything.
+      :label (:label item-def)})))
 
 (defn get-physical-item-account
   "Get the account for a physical item, considering whether providing or receiving."

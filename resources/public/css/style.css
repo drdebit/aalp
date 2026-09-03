@@ -4223,3 +4223,50 @@ header {
 .walkthrough-entry { background:#fff; border:1px solid #dfe5ea; border-radius:4px; padding:.85rem 1rem; }
 .walkthrough-entry h2 { font-size:1rem; margin:0 0 .6rem; color:#24405c; }
 .allows-content, .allowed-by-content { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem; }
+
+/* ==================== Journal entries line up ====================
+   An entry is a column of amounts, and reading one means comparing those
+   amounts down the page. Laid out as plain inline text the figure lands
+   wherever the account name happens to end, so "Cost of Goods Sold" and
+   "Cash" push their amounts to different places and the column the
+   reader is actually looking for is not there. Fixed columns for the
+   account and the amount; explanatory text flows after them. */
+
+.entry-line .debit,
+.entry-line .credit {
+  flex: 0 0 auto;
+  min-width: 16rem;
+}
+.entry-line .je-amount {
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+  margin-left: 0;
+  text-align: right;
+}
+.entry-line .linkage { flex: 1 1 auto; }
+
+/* Tabular figures so digits sit in the same place from row to row --
+   without it, 1s are narrower than 8s and a right-aligned column still
+   looks crooked. */
+.je-amount,
+.dj-amount,
+.ledger-debit,
+.ledger-credit { font-variant-numeric: tabular-nums; }
+
+.dj-amount { min-width: 7rem; white-space: nowrap; }
+
+/* In the ledger the account and its amount share a cell, so the amount
+   is pushed to the right edge of that cell rather than trailing the
+   name. */
+.ledger-debit, .ledger-credit {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  /* Narrow screens: let the account name shrink rather than forcing a
+     horizontal scroll for the sake of a column. */
+  .entry-line .debit, .entry-line .credit { min-width: 10rem; }
+  .entry-line .je-amount { min-width: 6rem; }
+}

@@ -93,7 +93,7 @@
       :do {:kind :assert :code :allows}
       :then "There it is. Equipment. Not because printers are equipment — because you said this one is productive."}
 
-     {:say "Who did the business buy it from?"
+     {:say "Who did the business buy it from? The shop was PrinterWorld."
       :do {:kind :assert :code :has-counterparty}
       :then "Good. It balances, and every line came from something you said."}
 
@@ -122,7 +122,7 @@
       :do {:kind :read}
       :then "There's yesterday. The shirts are an input because you said the printer turns blank t-shirts into printed ones. The reason for today's entry was written down yesterday."}
 
-     {:say "Finish it off: who sold them?"
+     {:say "Finish it off: who sold them? TextileDirect."
       :do {:kind :assert :code :has-counterparty}
       :then "Done. And you learned no new assertions today — the same four you already had produced an account you hadn't seen."}]}
 
@@ -145,7 +145,7 @@
       :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
       :then "Hmm. \"Not yet classified.\" Yesterday the shirts landed in Raw Materials because the record knew what they were for. Nobody has said what ink is for — the printer's capability only mentions shirts. The record won't guess. It will know the day the ink gets used."}
 
-     {:say "And who sold it."
+     {:say "And who sold it — InkMasters."
       :do {:kind :assert :code :has-counterparty}
       :then "Now the business has everything it needs to print."}]}
 

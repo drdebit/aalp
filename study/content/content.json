@@ -89,7 +89,7 @@
       },
       "then" : "There it is. Equipment. Not because printers are equipment — because you said this one is productive."
     }, {
-      "say" : "Who did the business buy it from?",
+      "say" : "Who did the business buy it from? The shop was PrinterWorld.",
       "do" : {
         "kind" : "assert",
         "code" : "has-counterparty"
@@ -140,7 +140,7 @@
       },
       "then" : "There's yesterday. The shirts are an input because you said the printer turns blank t-shirts into printed ones. The reason for today's entry was written down yesterday."
     }, {
-      "say" : "Finish it off: who sold them?",
+      "say" : "Finish it off: who sold them? TextileDirect.",
       "do" : {
         "kind" : "assert",
         "code" : "has-counterparty"
@@ -176,7 +176,7 @@
       },
       "then" : "Hmm. \"Not yet classified.\" Yesterday the shirts landed in Raw Materials because the record knew what they were for. Nobody has said what ink is for — the printer's capability only mentions shirts. The record won't guess. It will know the day the ink gets used."
     }, {
-      "say" : "And who sold it.",
+      "say" : "And who sold it — InkMasters.",
       "do" : {
         "kind" : "assert",
         "code" : "has-counterparty"
@@ -269,7 +269,7 @@
         "content" : "Here's the whole idea of this course in one sentence:\n\n**To record a transaction, you describe what happened — in a structured way.**\n\nThink about how you'd tell a friend about buying a coffee this morning:\n\n*\"This morning I paid $5 at Campus Coffee and got a latte.\"*\n\nThat one sentence contains four facts:\n- **When** it happened (this morning)\n- **Who** the other party was (Campus Coffee)\n- **What you gave** ($5)\n- **What you got** (a latte)\n\nThat's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."
       }, {
         "heading" : "Meet the Four Assertions",
-        "content" : "At this level you only need **four** assertions. Here they are, using the coffee example:\n\n**has-date** — *when* did it happen?\n(This morning. In business: the transaction date.)\n\n**has-counterparty** — *who* was the other party?\n(Campus Coffee. In business: the vendor you buy from, or the customer you sell to.)\n\n**provides** — *what did your company give up?*\n(The $5. \"Provides\" always describes what goes OUT of your company.)\n\n**receives** — *what did your company get?*\n(The latte. \"Receives\" always describes what comes IN to your company.)\n\n::assertions\nhas-date: this morning\nhas-counterparty: Campus Coffee\nprovides: $5 (money going out)\nreceives: 1 latte (a thing coming in)\n::\n\nEvery cash purchase you record at this level uses exactly these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?"
+        "content" : "At this level you only need **four** assertions. Here they are, using the coffee example:\n\n**has-date** — *when* did it happen?\n(This morning. In business: the transaction date.)\n\n**has-counterparty** — *who* was the other party?\n(Campus Coffee. In business: the vendor you buy from, or the customer you sell to.)\n\n**provides** — *what did your company give up?*\n(The $5. \"Provides\" always describes what goes OUT of your company.)\n\n**receives** — *what did your company get?*\n(The latte. \"Receives\" always describes what comes IN to your company.)\n\n::assertions\nhas-date: this morning\nhas-counterparty: Campus Coffee\nprovides: $5 (money going out)\nreceives: 1 latte (a thing coming in)\n::\n\nEvery cash purchase you record at this level uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?\n\nOne exception, and it matters: a machine bought to *make* things needs a fifth fact — what it is for. That is **allows** (\"this printer turns blank t-shirts into printed ones\"). Without it the record has a printer and no idea whether it is equipment or stock to resell, and it will say so. Shirts and ink don't need it; the printer does."
       }, {
         "heading" : "Two Kinds of Stuff: Money and Things",
         "content" : "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:\n\n**monetary-unit** — money. Dollars. Cash.\n\n**physical-unit** — things. Blank t-shirts, ink cartridges, a t-shirt printer.\n\nIn a cash purchase, the pattern is always the same:\n- Your company **provides** money (monetary-unit)\n- Your company **receives** things (physical-unit)\n\nYou'll also enter *how much*: the dollar amount for the money, and the quantity (how many) for the things. Both numbers are right there in the transaction description — you never have to guess."

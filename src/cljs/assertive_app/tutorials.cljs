@@ -74,7 +74,9 @@ provides: $5 (money going out)
 receives: 1 latte (a thing coming in)
 ::
 
-Every cash purchase you record at this level uses exactly these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?"}
+Every cash purchase you record at this level uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?
+
+One exception, and it matters: a machine bought to *make* things needs a fifth fact — what it is for. That is **allows** (\"this printer turns blank t-shirts into printed ones\"). Without it the record has a printer and no idea whether it is equipment or stock to resell, and it will say so. Shirts and ink don't need it; the printer does."}
 
      {:heading "Two Kinds of Stuff: Money and Things"
       :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:

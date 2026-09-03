@@ -18,7 +18,8 @@
             [assertive-app.je-derive :as je-derive]
             [assertive-app.analytics :as analytics]
             [clojure.walk :as walk]
-            [assertive-app.chain :as chain]))
+            [assertive-app.chain :as chain]
+            [assertive-app.cost-basis :as cost]))
 
 (defn wrap-cors
   "Middleware to enable CORS for development"
@@ -524,7 +525,16 @@
             ;; wrap-json-body already keywordizes keys, so these
             ;; arrive in the shape the derivation expects.
             walked  (vec (or prior-events []))
-            context (update context :events #(concat (or % []) walked))
+            events  (concat (or (:events context) []) walked)
+            ;; The cost basis has to be recomputed over the COMBINED
+            ;; chain, not just the ledger. Otherwise a walkthrough
+            ;; establishes what things ARE -- blank shirts are an input --
+            ;; while leaving them unpriced, and the production entry comes
+            ;; out with the right accounts and an em dash where every
+            ;; amount should be.
+            context (assoc context
+                           :events events
+                           :cost-basis (cost/cost-basis events))
             sel     (or selected-assertions {})]
         (response/response
           (assoc (je-derive/derive-je sel (or variables {}) context)

@@ -1,4 +1,4 @@
-# AALP — where things stand (2026-09-03)
+# AALP — where things stand (2026-09-03, evening)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
@@ -15,6 +15,21 @@ working master; GitHub `origin` tracks it commit for commit.
 Deploy: commit, push, then on choochoo `git pull --ff-only origin master`.
 The shadow-cljs watch picks up `.cljs` changes on its own; a `.clj`
 change needs `./restart-backend.sh`.
+
+**Headless students** live in `study/` (README there). They are the
+fastest way to find out whether a change teaches:
+
+    bb study/dump_content.clj                       # refresh the copy they see
+    cd study && ./run_cohort.sh c3 "s21:novice:haiku s22:trad:haiku" --max-turns 240
+    python3 smoke_walk.py                           # scripted perfect student, no model
+
+Each student is a `claude -p` session with no tools and a replaced system
+prompt, so it sees only the screen; the text-mode client mirrors the
+guided-mode path and `api.cljs` payloads. Read `runs/<id>/transcript.md`
+before trusting a grade. Test users are `<id>@study.test`. A cohort of
+four on haiku takes ~35 min and counts against the Claude subscription
+(cohort c2's post-tests hit the session limit; `study/runs/resume-c2.sh`
+re-sits them in the same sessions).
 
 The local machine **cannot** run the backend — its Datomic transactor
 fails postgres auth and has since Feb 2026. Local is for editing,
@@ -62,6 +77,41 @@ assertions, and nothing else is a source of truth.**
   materials and a capability. Every refusal carries a message.
 - **Labels are a translation, not data.** Renaming an account changes
   nothing about what was asserted.
+
+## What the first two cohorts found (2026-09-03)
+
+Cohort c1 ran against the platform as it stood that morning; c2 after
+the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
+
+- **The walkthrough teaches.** All eight students finished it; post-only
+  items (why Owner's Capital, what `allows` decides, inherited Raw
+  Materials, recorded-but-not-reflected, production without a
+  counterparty) scored 2/2 almost everywhere; debit/credit meaning rose
+  from 0.5 to 1.75 mean. Two copy points survived into c2's transcripts
+  and are now fixed: the sentence builder said "SP receives ... from
+  SP" right after episode one had separated SP from the business
+  (subject is now "the business"), and episode two never named the
+  printer's vendor.
+- **The drill did not.** In c1, 0 of 43 practice submissions were right:
+  the practice problem is a sentence with no paragraph, so positions
+  read off the chain could never be met, the equipment key lacked the
+  `allows` its classification demanded, half the level-1 problems could
+  not be generated (a marker value counted as an option list), and
+  `:any` was compared literally. Fixed in `4d57ab6`; in c2 all 20
+  level-0 submissions were right and every student streak-passed.
+- **Level 1 was unanswerable in the browser** (c2): nothing set `action`
+  or `unit` on `requires`/`expects`, and every level-1 classification
+  requires both. Fixed in `a10e250` -- defaults on add,
+  a visible unit control -- **not yet exercised by a cohort**.
+- **A fresh business could not print.** Episode 3 never bought ink, so
+  episode 4's production was refused and episode 5's cost was unpriced;
+  the hand verification in the morning had ink in a ledger. There is an
+  ink episode now, and `chain/on-hand` reads multi-flow consumes/creates.
+- **Students do not stop.** Given an unpassable drill, three of four
+  haiku students eventually refused to continue rather than leave; they
+  now have a quit action. The persona firewall leaks: three "novices"
+  wrote correct journal entries on the pre-test. Post-only items and the
+  think-aloud are the trustworthy signal.
 
 ## Conformance (the oracle)
 
@@ -125,13 +175,32 @@ All five episodes, end to end:
     ep3  blank shirts -> Raw Materials Inventory, drill-down showing
          "DECIDED EARLIER 2026-01-02 you said this turns blank-tshirts
          into printed-tshirts"
+    ep3b ink -> "(not yet classified)" until it is used (see open question 0)
     ep4  CR Raw Materials 50 + CR Raw Materials 10 / DR Finished Goods 60
     ep5  DR Cash 100 / CR Revenue 100, DR COGS 24 / CR Finished Goods 24
 
 The 24 is four shirts at the 6 each that flowed from ep4 from ep3.
-Nothing typed. No constraint violations anywhere in the chain.
+Nothing typed. No constraint violations anywhere in the chain. Re-verified
+against choochoo by `study/smoke_walk.py` (fresh user, empty ledger) on
+2026-09-03 evening.
 
 ## Open questions, in rough priority order
+
+0. **Ink is "not yet classified" when bought**, honestly, because the
+   printer's `allows` names only blank shirts as an input and there is
+   no assertion by which a purchase of ink can say what it is for. It
+   resolves the day the ink is consumed. Either `allows` takes several
+   inputs, or that is the lesson (the episode copy says the latter).
+   Related: in the drill the derived panel shows "(not yet classified)"
+   for shirts while the feedback says Raw Materials, because
+   `/api/derive-je` has no paragraph either. Options: give the drill a
+   canonical SP paragraph as `prior-events` (numbers in sale problems
+   will not fit one), or let a standalone derivation fall back to the
+   catalogue in one named place.
+0b. **Level-2 production keys** (`production-raw-to-wip`,
+   `production-wip-to-finished`) grade themselves wrong, and
+   `production-direct`'s narrative leaves `{quantity-consumed}` unfilled.
+   The level-3 drill serves them.
 
 1. **Equity wants a verb the vocabulary does not have.** `provides
    ownership-units` is kept deliberately — the certificate does go to the

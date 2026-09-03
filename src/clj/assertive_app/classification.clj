@@ -641,7 +641,7 @@
      ;; student they cannot produce without it. Rates and restrictions
      ;; are a later assertion on the same event, not a bigger one now.
      :sentence {:fragment "which allows SP to turn"
-                :pattern [:consumes-item :creates-item]
+                :pattern [:consumes-items :creates-item]
                 :joiner " into "
                 :section-break true
                 :section-label "This makes possible:"
@@ -653,10 +653,13 @@
                                {:is-denominated-in-physical-unit :consumes-item}}
                     :creates  {:is-denominated-in-unit
                                {:is-denominated-in-physical-unit :creates-item}}}}}}
-     :parameters {:consumes-item {:type :dropdown
-                                  :label "turns"
-                                  :options :derives-from-physical-items
-                                  :help "What this thing takes in"}
+     ;; The research example's capability consumes a LIST (blank shirt
+     ;; and ink); :consumes-items is that list. :consumes-item is read as
+     ;; the one-element case wherever the record still carries it.
+     :parameters {:consumes-items {:type :multi-dropdown
+                                   :label "turns"
+                                   :options :derives-from-physical-items
+                                   :help "What this thing takes in -- every input"}
                   :creates-item {:type :dropdown
                                  :label "into"
                                  :options :derives-from-physical-items
@@ -2468,11 +2471,11 @@
    ;; because the record says what it is for), so the answer key must
    ;; carry it and the narrative must give the student grounds to say it.
    ;; Without both, the drill served a problem its own key could not pass.
-   {:narrative-template "On {date}, you purchase {equipment-type} from {vendor} for ${amount} cash, to print designs on blank t-shirts."
+   {:narrative-template "On {date}, you purchase {equipment-type} from {vendor} for ${amount} cash, to print designs on blank t-shirts with ink."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
-                          :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}
+                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
                           :has-counterparty {:name :vendor}}
     :correct-classification :cash-equipment-purchase
     :level 0
@@ -2515,10 +2518,10 @@
                 :due-date :calculated}}
 
    :credit-equipment-purchase
-   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}, to print designs on blank t-shirts. SP agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, SP receives {equipment-type} from {vendor}, to print designs on blank t-shirts with ink. SP agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
-                          :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}
+                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
                           :has-counterparty {:name :vendor}
                           ;; The purchase creates an obligation for SP to pay
                           :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}

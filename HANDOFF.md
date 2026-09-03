@@ -117,8 +117,8 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
   as a convention; that `requires` never says whose promise it is; that
   services and intangibles never appear, so the novel-transfer item is a
   guess; and that an unfinished walkthrough line showed $3,000 from the
-  guided day underneath (fixed). The ink lesson ("not yet classified")
-  and the drill key (ink -> Raw Materials) disagree; see open question 0.
+  guided day underneath (fixed). The ink lesson and the drill key
+  disagreed; resolved by multi-input `allows`, see open question 0.
 - **A fresh business could not print.** Episode 3 never bought ink, so
   episode 4's production was refused and episode 5's cost was unpriced;
   the hand verification in the morning had ink in a ledger. There is an
@@ -202,17 +202,16 @@ against choochoo by `study/smoke_walk.py` (fresh user, empty ledger) on
 
 ## Open questions, in rough priority order
 
-0. **Ink is "not yet classified" when bought**, honestly, because the
-   printer's `allows` names only blank shirts as an input and there is
-   no assertion by which a purchase of ink can say what it is for. It
-   resolves the day the ink is consumed. Either `allows` takes several
-   inputs, or that is the lesson (the episode copy says the latter).
-   Related: in the drill the derived panel shows "(not yet classified)"
-   for shirts while the feedback says Raw Materials, because
-   `/api/derive-je` has no paragraph either. Options: give the drill a
-   canonical SP paragraph as `prior-events` (numbers in sale problems
-   will not fit one), or let a standalone derivation fall back to the
-   catalogue in one named place.
+0. **Resolved (2026-09-03, Matt):** `allows` now consumes a list, as the
+   research example does -- `{:consumes-items ["blank-tshirts"
+   "ink-cartridges"] :creates-item "printed-tshirts"}` -- so ink is Raw
+   Materials the day it is bought. A lone `:consumes-item` in an older
+   record is still read as the one-element case. Still open: in the drill
+   the derived panel shows "(not yet classified)" for shirts while the
+   feedback says Raw Materials, because `/api/derive-je` has no paragraph
+   either. Options: give the drill a canonical SP paragraph as
+   `prior-events` (numbers in sale problems will not fit one), or let a
+   standalone derivation fall back to the catalogue in one named place.
 0b. **Level-2 production keys** (`production-raw-to-wip`,
    `production-wip-to-finished`) grade themselves wrong, and
    `production-direct`'s narrative leaves `{quantity-consumed}` unfilled.

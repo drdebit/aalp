@@ -121,7 +121,7 @@
     :provides {:unit "monetary-unit" :quantity 3000}
     :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
     :has-counterparty {:name "EquipmentDirect"}
-    :allows {:consumes-item "blank-tshirts" :creates-item "printed-tshirts"}}])
+    :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}}])
 
 (defn check
   "Conformance result for one classification."

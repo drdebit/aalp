@@ -89,7 +89,7 @@
      {:say "Here's the interesting part. A printer isn't automatically equipment. A shop that resells printers would call the very same machine inventory. So the record has to say what this one is for."
       :then "Nothing to do yet — just worth knowing before the next step."}
 
-     {:say "SP bought it to turn blank t-shirts into printed ones. Say that."
+     {:say "SP bought it to turn blank t-shirts and ink into printed ones. Say that — both inputs."
       :do {:kind :assert :code :allows}
       :then "There it is. Equipment. Not because printers are equipment — because you said this one is productive."}
 
@@ -143,7 +143,7 @@
 
      {:say "And received two ink cartridges."
       :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
-      :then "Hmm. \"Not yet classified.\" Yesterday the shirts landed in Raw Materials because the record knew what they were for. Nobody has said what ink is for — the printer's capability only mentions shirts. The record won't guess. It will know the day the ink gets used."}
+      :then "Raw Materials Inventory again. Not because ink is like a shirt — because when you bought the printer you said it takes ink as well as shirts. Open the line: the reason is the same day's decision."}
 
      {:say "And who sold it — InkMasters."
       :do {:kind :assert :code :has-counterparty}

@@ -37,6 +37,17 @@
                                        (catch Exception _ nil))
                       :else nil))})))
 
+(defn allows-inputs
+  "What a capability takes in, as item names. The research example's
+   `allows` consumes a list -- a blank shirt AND ink -- so the assertion
+   carries :consumes-items; a lone :consumes-item is the one-element case
+   and is still read."
+  [allows]
+  (->> (or (seq (:consumes-items allows))
+           (some-> (:consumes-item allows) vector))
+       (keep #(when (and % (not= "" %)) (name %)))
+       vec))
+
 (defn- physicals
   "Every physical flow under an assertion. A transformation consumes more
    than one thing -- a blank shirt AND ink -- so a flow assertion may
@@ -88,9 +99,8 @@
                   acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
                         (update acc item (fnil conj #{}) :enables)
                         acc)
-                  acc (if-let [i (:consumes-item allows)]
-                        (update acc (name i) (fnil conj #{}) :consumable)
-                        acc)
+                  acc (reduce (fn [acc i] (update acc i (fnil conj #{}) :consumable))
+                              acc (allows-inputs allows))
                   acc (if-let [i (:creates-item allows)]
                         (update acc (name i) (fnil conj #{}) :producible)
                         acc)]
@@ -225,15 +235,17 @@
    thing and states what that thing allows -- turns blanks into printed
    shirts -- is what makes production possible afterwards.
 
-   -> [{:enabler item :consumes item :creates item}]"
+   -> [{:enabler item :consumes #{item ...} :creates item}]"
   [events]
   (vec (keep (fn [assertions]
-               (let [{:keys [consumes-item creates-item]} (:allows assertions)
+               (let [allows  (:allows assertions)
+                     inputs  (allows-inputs allows)
+                     creates (:creates-item allows)
                      enabler (:item (physical (:receives assertions)))]
-                 (when (and consumes-item creates-item)
+                 (when (and (seq inputs) creates)
                    {:enabler  enabler
-                    :consumes (name consumes-item)
-                    :creates  (name creates-item)})))
+                    :consumes (set inputs)
+                    :creates  (name creates)})))
              events)))
 
 (defn- fmt [n] (if (and (number? n) (== n (long n))) (long n) n))
@@ -304,25 +316,29 @@
    exactly the gap a student should meet, and fill themselves, rather
    than be told about in advance."
   [selections events]
-  (let [in  (first (physicals (:consumes selections)))
+  (let [ins (vec (physicals (:consumes selections)))
+        in  (first ins)
         out (first (physicals (:creates selections)))]
     (when (and in out)
       (let [caps  (capabilities events)
             held  (on-hand events)
-            match (first (filter #(and (= (:consumes %) (:item in))
+            ;; Every input consumed has to be one the capability takes.
+            match (first (filter #(and (every? (:consumes %) (map :item ins))
                                        (= (:creates %) (:item out)))
-                                 caps))]
+                                 caps))
+            said  (fn [c] (str (str/join " and " (sort (:consumes c))) " into " (:creates c)))
+            used  (str/join " and " (map :item ins))]
         (cond
           (nil? match)
           {:kind :no-capability
-           :consumes (:item in) :creates (:item out)
+           :consumes used :creates (:item out)
            :message
            (if (seq caps)
-             (str "Nothing in your record says SP can turn " (:item in) " into "
+             (str "Nothing in your record says SP can turn " used " into "
                   (:item out) ". What SP can do: "
-                  (str/join "; " (map #(str (:consumes %) " into " (:creates %)) caps))
+                  (str/join "; " (map said caps))
                   ".")
-             (str "Nothing in your record says SP can turn " (:item in) " into "
+             (str "Nothing in your record says SP can turn " used " into "
                   (:item out) ". What did SP acquire that makes this possible, "
                   "and what did you say it allows?"))}
 
@@ -382,7 +398,7 @@
             allows (:allows assertions)
             acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
                   (add acc item :enables) acc)
-            acc (if-let [i (:consumes-item allows)] (add acc (name i) :consumable) acc)
+            acc (reduce (fn [acc i] (add acc i :consumable)) acc (allows-inputs allows))
             acc (if-let [i (:creates-item allows)]  (add acc (name i) :producible) acc)]
         acc))
     {} events))

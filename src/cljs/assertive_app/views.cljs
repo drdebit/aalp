@@ -685,13 +685,39 @@
    depends on -- so the pair it names has to be sayable, not merely
    present."
   [params]
-  [sentence-section :capability "This makes possible:"
-   [:div.allows-content
-    [:span "which allows SP to turn "]
-    [item-select :allows :consumes-item (:consumes-item params)]
-    [:span " into "]
-    [item-select :allows :creates-item (:creates-item params)]
-    [remove-assertion-button :allows]]])
+  ;; A capability may take several inputs -- printing a shirt takes a
+  ;; blank shirt AND ink, and the research example's `allows` consumes
+  ;; a list. One select per input, plus a way to add another.
+  (let [inputs (let [v (:consumes-items params)]
+                 (cond (seq v) (vec v)
+                       (:consumes-item params) [(:consumes-item params)]
+                       :else [""]))
+        set-inputs! #(state/update-assertion-parameter! :allows :consumes-items %)]
+    [sentence-section :capability "This makes possible:"
+     [:div.allows-content
+      [:span "which allows SP to turn "]
+      (doall
+        (for [[i item] (map-indexed vector inputs)]
+          ^{:key (str "allows-in-" i)}
+          [:span
+           (when (pos? i) [:span " and "])
+           [:select.inline-select
+            {:value (or item "")
+             :on-change #(set-inputs! (assoc inputs i (.. % -target -value)))}
+            [:option {:value ""} "item"]
+            (for [opt (assertion-param-options :allows :consumes-items)]
+              ^{:key (str "allows-in-" i "-" (:value opt))}
+              [:option {:value (:value opt)} (:label opt)])]
+           (when (> (count inputs) 1)
+             [:button.remove-flow
+              {:title "Remove this one"
+               :on-click #(set-inputs! (vec (keep-indexed (fn [j x] (when (not= i j) x)) inputs)))} "×"])]))
+      [:button.add-flow
+       {:on-click #(set-inputs! (conj inputs ""))}
+       "+ another input"]
+      [:span " into "]
+      [item-select :allows :creates-item (:creates-item params)]
+      [remove-assertion-button :allows]]]))
 
 (defn- render-is-allowed-by-section
   "What made this event possible -- the capability it rests on."
@@ -1342,7 +1368,10 @@
                                    (let [a (:assertions e)]
                                      (if-let [al (:allows a)]
                                        (str "you said this turns "
-                                            (:consumes-item al) " into " (:creates-item al))
+                                            (clojure.string/join " and "
+                                              (or (seq (:consumes-items al))
+                                                  (some-> (:consumes-item al) vector)))
+                                            " into " (:creates-item al))
                                        (str "recorded as " (clojure.string/join ", "
                                                              (map name (keys a))))))]]))])
                           (when (:unresolved-reason line)

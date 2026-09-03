@@ -19,7 +19,7 @@ script = {
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":3000}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"t-shirt-printer","quantity":1}},{"type":"next"},
      {"type":"next"},
-     {"type":"add_assertion","code":"allows","params":{"consumes-item":"blank-tshirts","creates-item":"printed-tshirts"}},{"type":"next"},
+     {"type":"add_assertion","code":"allows","params":{"consumes-items":["blank-tshirts","ink-cartridges"],"creates-item":"printed-tshirts"}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"PrinterWorld"}},{"type":"next"},
      {"type":"explore"},{"type":"toggle_assertion","code":"allows"},{"type":"toggle_assertion","code":"allows"},{"type":"explore"},{"type":"next"},
      {"type":"next"}],

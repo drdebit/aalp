@@ -314,9 +314,20 @@ class Platform:
                     raise ActionError(f"'{clean['physical-item']}' is not in the item dropdown for {code}. Options: {', '.join(allowed)}.")
                 clean.setdefault("unit", "physical-unit")
         if code == "allows":
-            for k in ("consumes-item", "creates-item"):
-                if k in clean and clean[k] not in ITEM_LABELS:
-                    raise ActionError(f"'{clean[k]}' is not in the dropdown for {k}. Options: {', '.join(ITEM_LABELS)}.")
+            items = params.get("consumes-items")
+            if items is None and "consumes-item" in params:
+                items = [params["consumes-item"]]
+            if isinstance(items, str):
+                items = [items]
+            if items is not None:
+                items = [i for i in items if i]
+                for i in items:
+                    if i not in ITEM_LABELS:
+                        raise ActionError(f"'{i}' is not in the dropdown for consumes-items. Options: {', '.join(ITEM_LABELS)}.")
+                clean["consumes-items"] = items
+            clean.pop("consumes-item", None)
+            if "creates-item" in clean and clean["creates-item"] not in ITEM_LABELS:
+                raise ActionError(f"'{clean['creates-item']}' is not in the dropdown for creates-item. Options: {', '.join(ITEM_LABELS)}.")
         if code == "is-allowed-by":
             opts = [o["value"] for o in self.param_options("is-allowed-by", "capacity")]
             if "capacity" in clean and opts and clean["capacity"] not in opts:
@@ -734,7 +745,8 @@ class Platform:
             elif code == "has-counterparty":
                 out.append(f"  with {p.get('name') or '(party name not set)'}   [has-counterparty]")
             elif code == "allows":
-                out.append(f"  This makes possible: which allows SP to turn {ITEM_LABELS.get(p.get('consumes-item'), '(item)')} into {ITEM_LABELS.get(p.get('creates-item'), '(item)')}   [allows: {_kv(p)}]")
+                ins = " and ".join(ITEM_LABELS.get(i, "(item)") for i in (p.get("consumes-items") or [])) or "(inputs)"
+                out.append(f"  This makes possible: which allows SP to turn {ins} into {ITEM_LABELS.get(p.get('creates-item'), '(item)')}   [allows: {_kv(p)}]")
             elif code == "is-allowed-by":
                 out.append(f"  This is: enabled by {ITEM_LABELS.get(p.get('capacity'), '(item)')}   [is-allowed-by: {_kv(p)}]")
             elif code in FLOW_CODES:
@@ -764,6 +776,9 @@ class Platform:
                           "physical-item (only when unit = physical-unit; dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in items) + ")"]
             elif code in FLOW_CODES:
                 fields = ["flows: a list of {quantity, physical-item}; add another row for a second input. physical-item dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS)]
+            elif code == "allows":
+                fields = ["consumes-items: a list of inputs, e.g. [\"blank-tshirts\", \"ink-cartridges\"] (dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS) + ")",
+                          "creates-item (dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS) + ")"]
             else:
                 if code == "requires":
                     params = {k: v for k, v in params.items() if k != "action"}
@@ -812,7 +827,7 @@ class Platform:
                 for e in ln.get("established-by") or []:
                     a_ = e.get("assertions") or {}
                     if a_.get("allows"):
-                        txt = f"you said this turns {a_['allows'].get('consumes-item')} into {a_['allows'].get('creates-item')}"
+                        txt = f"you said this turns {' and '.join(a_['allows'].get('consumes-items') or [a_['allows'].get('consumes-item')])} into {a_['allows'].get('creates-item')}"
                     else:
                         txt = "recorded as " + ", ".join(a_.keys())
                     out.append(f"        Decided earlier: {e.get('date') or ''} {txt}")

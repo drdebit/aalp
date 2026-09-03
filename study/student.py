@@ -43,6 +43,7 @@ Rules of the game — follow them exactly:
   * think_aloud: 2-5 sentences in your own voice: what you notice on the screen, what you don't understand, what you plan to do and why. This is the most important thing you produce — be candid about what is unclear.
   * action: exactly one action from the screen's "Actions available" list, in the JSON shape shown. Fill in real values (dates as YYYY-MM-DD, numbers as numbers, dropdown values exactly as listed).
 - Read the whole screen each turn, especially text that appeared because of your last action. When the platform tells you to look at something, look (open the line) before moving on — once; don't loop.
+- If you would genuinely give up and leave the site, use the quit action and say why — that is a legitimate outcome and it is recorded. Do not stop responding; every turn needs an action.
 - In the practice round, decide on your full set of assertions before you submit; you can add several across turns and then submit. Use 'Show me a worked example' only when you are genuinely stuck.
 """
 

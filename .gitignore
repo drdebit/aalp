@@ -56,3 +56,4 @@ restart-backend.sh
 
 # headless-student study output (transcripts, grades)
 study/runs/
+study/__pycache__/

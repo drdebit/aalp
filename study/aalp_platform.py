@@ -409,6 +409,14 @@ class Platform:
         self.log("open_line", index=i, account=self.derived["lines"][i].get("account"))
         return "Opened." if self.expanded is not None else "Closed."
 
+    def act_quit(self, a):
+        """The student closes the site. Always available; logged as such."""
+        self.summary["quit"] = {"at": self.location(), "reason": a.get("reason", "")}
+        self.log("quit", reason=a.get("reason", ""))
+        self.stages = []
+        self.phase = "done"
+        return "You closed the platform."
+
     def act_close_line(self, a):
         self.expanded = None
         return "Closed."
@@ -697,7 +705,8 @@ class Platform:
     # ------------------------------------------------------------ rendering
     def render(self):
         f = getattr(self, "render_" + self.phase)
-        return f()
+        return f() + '\n(Always available: {"type":"quit","reason":"..."} closes the site for good — only if you would really give up and leave.)'
+
 
     def _sentence(self):
         if not self.selected:

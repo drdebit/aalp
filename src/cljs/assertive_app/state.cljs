@@ -140,6 +140,42 @@
 (defn set-walkthrough-palette! [palette]
   (swap! app-state assoc :palette palette))
 
+;; ---- Flows that may hold more than one thing ----------------------
+;; A transformation consumes more than one thing: printing a shirt takes
+;; a blank shirt AND ink. The research model writes `consumes` as a list
+;; for that reason. A single map is the one-element case, so these read
+;; either shape and write the shape that fits.
+
+(defn flows
+  "The flows under an assertion, always as a vector."
+  [code]
+  (let [v (get (selected-assertions) (keyword code))]
+    (cond (nil? v) [] (sequential? v) (vec v) (map? v) [v] :else [])))
+
+(defn update-flow-parameter!
+  "Set one parameter on the nth flow of an assertion."
+  [code idx param-key value]
+  (let [code (keyword code)
+        cur  (flows code)
+        next (assoc-in (vec cur) [idx param-key] value)]
+    (swap! app-state assoc-in [:selected-assertions code]
+           (if (= 1 (count next)) (first next) next))))
+
+(defn add-flow!
+  "Add another thing to this assertion -- a second material consumed, say."
+  [code]
+  (let [code (keyword code)
+        cur  (flows code)]
+    (swap! app-state assoc-in [:selected-assertions code]
+           (conj (vec cur) {}))))
+
+(defn remove-flow!
+  [code idx]
+  (let [code (keyword code)
+        next (vec (keep-indexed (fn [i f] (when (not= i idx) f)) (flows code)))]
+    (swap! app-state assoc-in [:selected-assertions code]
+           (cond (empty? next) {} (= 1 (count next)) (first next) :else next))))
+
 (defn clear-selections! []
   (swap! app-state assoc :selected-assertions {}))
 

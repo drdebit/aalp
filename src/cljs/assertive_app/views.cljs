@@ -616,6 +616,44 @@
      ^{:key (str (name assertion-code) "-" (name param-key) "-" (:value opt))}
      [:option {:value (:value opt)} (:label opt)])])
 
+(defn- render-transformation-section
+  "What a transformation used up, or what it made.
+
+   A transformation may consume more than one thing -- printing a shirt
+   takes a blank shirt AND ink -- so this renders a row per flow with a
+   way to add another. Creating is written the same way for symmetry,
+   though SP only ever makes one thing at a time so far."
+  [code label]
+  (let [rows (state/flows code)
+        rows (if (seq rows) rows [{}])]
+    [sentence-section :transformation label
+     [:div.transformation-content
+      (doall
+        (for [[idx flow] (map-indexed vector rows)]
+          ^{:key (str (name code) "-" idx)}
+          [:div.transformation-row
+           [:input.inline-number
+            {:type "number" :placeholder "qty" :value (or (:quantity flow) "")
+             :on-change #(state/update-flow-parameter! code idx :quantity
+                                                       (.. % -target -value))}]
+           [:select.inline-select
+            {:value (or (:physical-item flow) "")
+             :on-change #(do (state/update-flow-parameter! code idx :unit "physical-unit")
+                             (state/update-flow-parameter! code idx :physical-item
+                                                           (.. % -target -value)))}
+            [:option {:value ""} "item"]
+            (for [opt (assertion-param-options :receives :physical-item)]
+              ^{:key (str (name code) "-" idx "-" (:value opt))}
+              [:option {:value (:value opt)} (:label opt)])]
+           (when (> (count rows) 1)
+             [:button.remove-flow
+              {:title "Remove this one"
+               :on-click #(state/remove-flow! code idx)} "×"])]))
+      [:button.add-flow
+       {:on-click #(state/add-flow! code)}
+       (str "+ another " (if (= code :consumes) "input" "output"))]
+      [remove-assertion-button code]]]))
+
 (defn- render-allows-section
   "What acquiring this thing makes possible.
 
@@ -1105,6 +1143,13 @@
       (when (contains? selected :expects)
         [render-expects-section (:expects selected) counterparty-name
          customer-profiles vendor-profiles is-prepaid?])
+
+      ;; A transformation: what was used up, and what was made
+      (when (contains? selected :consumes)
+        [render-transformation-section :consumes "This uses up:"])
+
+      (when (contains? selected :creates)
+        [render-transformation-section :creates "This makes:"])
 
       ;; What this acquisition makes possible
       (when (contains? selected :allows)

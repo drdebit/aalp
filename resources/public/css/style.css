@@ -4270,3 +4270,13 @@ header {
   .entry-line .debit, .entry-line .credit { min-width: 10rem; }
   .entry-line .je-amount { min-width: 6rem; }
 }
+
+/* ---- Transformations: what went in, what came out ------------------- */
+.transformation-content { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.transformation-row { display: flex; align-items: center; gap: .4rem; }
+.add-flow {
+  background: none; border: 1px dashed #b9c4cd; color: #4a5c6b;
+  border-radius: 3px; padding: .15rem .5rem; font-size: .78rem; cursor: pointer;
+}
+.add-flow:hover { border-color: #7fa8c4; color: #24405c; }
+.remove-flow { background: none; border: 0; color: #b0392b; cursor: pointer; font-size: 1rem; line-height: 1; }

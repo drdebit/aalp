@@ -4232,18 +4232,31 @@ header {
    reader is actually looking for is not there. Fixed columns for the
    account and the amount; explanatory text flows after them. */
 
-.entry-line .debit,
-.entry-line .credit {
-  flex: 0 0 auto;
-  min-width: 16rem;
+/* Grid, not flex. Fixed columns aligned the amounts but then squeezed the
+   linkage text into a sliver that wrapped over four lines -- alignment
+   bought at the cost of the explanation being readable. The account and
+   its amount are one row; whatever explains the line goes underneath it,
+   across the full width, where it has room. */
+.entry-line {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: .75rem;
+  row-gap: .1rem;
+  align-items: baseline;
 }
+.entry-line .debit,
+.entry-line .credit { grid-column: 1; min-width: 0; }
 .entry-line .je-amount {
-  flex: 0 0 auto;
-  min-width: 7.5rem;
+  grid-column: 2;
   margin-left: 0;
   text-align: right;
+  white-space: nowrap;
 }
-.entry-line .linkage { flex: 1 1 auto; }
+.entry-line .linkage {
+  grid-column: 1 / -1;
+  margin-left: 0;
+  font-size: 0.8em;
+}
 
 /* Tabular figures so digits sit in the same place from row to row --
    without it, 1s are narrower than 8s and a right-aligned column still
@@ -4264,12 +4277,7 @@ header {
   gap: 1rem;
 }
 
-@media (max-width: 900px) {
-  /* Narrow screens: let the account name shrink rather than forcing a
-     horizontal scroll for the sake of a column. */
-  .entry-line .debit, .entry-line .credit { min-width: 10rem; }
-  .entry-line .je-amount { min-width: 6rem; }
-}
+
 
 /* ---- Transformations: what went in, what came out ------------------- */
 .transformation-content { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }

@@ -15,12 +15,12 @@ CWD = os.path.expanduser("~/.cache/aalp-study/cwd")
 
 
 class Session:
-    def __init__(self, model, system_prompt, name="session", log_path=None, max_retries=3):
+    def __init__(self, model, system_prompt, name="session", log_path=None, max_retries=3, resume_sid=None):
         self.model = model
         self.system_prompt = system_prompt
         self.name = name
-        self.sid = str(uuid.uuid4())
-        self.started = False
+        self.sid = resume_sid or str(uuid.uuid4())
+        self.started = resume_sid is not None
         self.log_path = log_path
         self.max_retries = max_retries
         self.total_cost = 0.0

@@ -321,8 +321,14 @@ class Platform:
             opts = [o["value"] for o in self.param_options("is-allowed-by", "capacity")]
             if "capacity" in clean and opts and clean["capacity"] not in opts:
                 raise ActionError(f"'{clean['capacity']}' is not in the dropdown. Options: {', '.join(opts)}.")
-        if code == "requires" and "action" in clean and clean["action"] not in ("provides", "receives"):
-            raise ActionError("requires 'action' must be 'provides' or 'receives'.")
+        # Mirror views.cljs auto-populate-assertion!: the verb is fixed and
+        # the unit defaults to the other side of the present exchange.
+        if code == "requires":
+            clean["action"] = "provides"
+            clean.setdefault("unit", "physical-unit" if self.selected.get("receives", {}).get("unit") == "monetary-unit" else "monetary-unit")
+        if code == "expects":
+            clean["action"] = "receives"
+            clean.setdefault("unit", "physical-unit" if self.selected.get("provides", {}).get("unit") == "monetary-unit" else "monetary-unit")
         return clean
 
     def act_add_assertion(self, a):
@@ -759,6 +765,10 @@ class Platform:
             elif code in FLOW_CODES:
                 fields = ["flows: a list of {quantity, physical-item}; add another row for a second input. physical-item dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS)]
             else:
+                if code == "requires":
+                    params = {k: v for k, v in params.items() if k != "action"}
+                if code == "expects":
+                    params = dict(params, unit={"type": "dropdown", "label": "what", "options": [{"value": "monetary-unit", "label": "cash"}, {"value": "physical-unit", "label": "goods or services"}]})
                 for k, spec in params.items():
                     desc = spec.get("type", "")
                     if spec.get("options"):

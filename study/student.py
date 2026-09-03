@@ -81,6 +81,8 @@ def main():
     ap.add_argument("--items", default=None, help="comma-separated item ids to assess (default: all)")
     ap.add_argument("--no-pretest", action="store_true")
     ap.add_argument("--no-grading", action="store_true")
+    ap.add_argument("--resume-assess", default=None, metavar="SID",
+                    help="skip pre-test and learning; run post-test + grading against this existing student session")
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "runs"))
     a = ap.parse_args()
 
@@ -98,6 +100,14 @@ def main():
 
     def say(msg):
         print(f"[{a.id} {time.strftime('%H:%M:%S')}] {msg}", flush=True)
+
+    if a.resume_assess:
+        pretest = json.load(open(os.path.join(run, "pretest.json"))) if os.path.exists(os.path.join(run, "pretest.json")) else {}
+        learning = json.load(open(os.path.join(run, "learning.json")))
+        stu = Session(a.model, system, name="student", log_path=llm_log, resume_sid=a.resume_assess)
+        meta = json.load(open(os.path.join(run, "meta.json")))
+        run_assessment(a, run, meta, name, persona, items, llm_log, pretest, learning, stu, say)
+        return
 
     # ---------------- pre-test ----------------
     pretest = {}
@@ -118,6 +128,8 @@ def main():
         pass
     plat = Platform(client, content, a.stages.split(","), event_log=os.path.join(run, "events.jsonl"))
     stu = Session(a.model, system, name="student", log_path=llm_log)
+    meta["student_sid"] = stu.sid
+    json.dump(meta, open(os.path.join(run, "meta.json"), "w"), indent=1)
     tpath = os.path.join(run, "transcript.jsonl")
     mdpath = os.path.join(run, "transcript.md")
     with open(mdpath, "w") as md:
@@ -153,7 +165,12 @@ def main():
     learning = {"turns": turn, "finished_path": plat.done, "stopped_at": plat.location(),
                 "platform_summary": plat.summary, "cost_usd": stu.total_cost}
     json.dump(learning, open(os.path.join(run, "learning.json"), "w"), indent=1)
+    run_assessment(a, run, meta, name, persona, items, llm_log, pretest, learning, stu, say)
 
+
+def run_assessment(a, run, meta, name, persona, items, llm_log, pretest, learning, stu, say):
+    """Post-test in the student's own session, rubric grading, gap analysis, summary."""
+    tpath = os.path.join(run, "transcript.jsonl")
     # ---------------- post-test ----------------
     posttest = {}
     for it in items + assess.META_ITEMS:

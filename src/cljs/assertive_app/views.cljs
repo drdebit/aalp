@@ -339,6 +339,27 @@
         (when-let [counterparty (or (:vendor vars) (:customer vars) (:employee vars))]
           (state/update-assertion-parameter! :has-counterparty :name counterparty))
 
+        ;; An obligation or expectation names a future flow. The
+        ;; classification asks which verb and which unit that flow has,
+        ;; and until now nothing on the sentence builder set either -- so
+        ;; every level-1 problem was marked wrong however it was answered.
+        ;; Whoever owes, provides; SP expects to receive. The unit is the
+        ;; other side of the present exchange: money is owed for goods
+        ;; taken, goods are owed for money taken.
+        :requires
+        (let [sel (state/selected-assertions)
+              unit (if (= "monetary-unit" (get-in sel [:receives :unit])) "physical-unit" "monetary-unit")]
+          (state/update-assertion-parameter! :requires :action "provides")
+          (when-not (get-in sel [:requires :unit])
+            (state/update-assertion-parameter! :requires :unit unit)))
+
+        :expects
+        (let [sel (state/selected-assertions)
+              unit (if (= "monetary-unit" (get-in sel [:provides :unit])) "physical-unit" "monetary-unit")]
+          (state/update-assertion-parameter! :expects :action "receives")
+          (when-not (get-in sel [:expects :unit])
+            (state/update-assertion-parameter! :expects :unit unit)))
+
         ;; No auto-population for other assertions
         nil))))
 
@@ -585,7 +606,9 @@
       [:span " must provide "]
       [inline-number-input :requires :quantity (:quantity params) "amount"]
       " "
-      [:span.unit-label (if (= (:unit params) "physical-unit") "Physical Units" "cash")]
+      [inline-dropdown :requires :unit [{:value "monetary-unit" :label "cash"}
+                                       {:value "physical-unit" :label "goods"}]
+       (:unit params) "what"]
       [:span (str " to " recipient " by ")]
       [inline-date-input :requires :due-date (:due-date params)]
       [remove-assertion-button :requires]]]))
@@ -698,6 +721,10 @@
 
       [:div.confidence-row
        [:span context-label " "]
+       [inline-dropdown :expects :unit [{:value "monetary-unit" :label "cash"}
+                                      {:value "physical-unit" :label "goods or services"}]
+        (:unit params) "what"]
+       " with "
        [confidence-slider :expects (:confidence params)]
        [:span " confidence."]
        [remove-assertion-button :expects]]]]))

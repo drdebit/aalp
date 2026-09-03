@@ -28,8 +28,8 @@ prompt, so it sees only the screen; the text-mode client mirrors the
 guided-mode path and `api.cljs` payloads. Read `runs/<id>/transcript.md`
 before trusting a grade. Test users are `<id>@study.test`. A cohort of
 four on haiku takes ~35 min and counts against the Claude subscription
-(cohort c2's post-tests hit the session limit; `study/runs/resume-c2.sh`
-re-sits them in the same sessions).
+(cohort c2's post-tests hit the session limit and were re-sat by
+`study/runs/resume-c2.sh`; `--resume-assess SID` does that for any run).
 
 The local machine **cannot** run the backend — its Datomic transactor
 fails postgres auth and has since Feb 2026. Local is for editing,
@@ -101,8 +101,24 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
   level-0 submissions were right and every student streak-passed.
 - **Level 1 was unanswerable in the browser** (c2): nothing set `action`
   or `unit` on `requires`/`expects`, and every level-1 classification
-  requires both. Fixed in `a10e250` -- defaults on add,
-  a visible unit control -- **not yet exercised by a cohort**.
+  requires both. Fixed in `a10e250` -- defaults on add, a visible unit
+  control. Cohort c3 then passed level 1: all three students streak-
+  passed both drills and finished the path; the one recurring miss was
+  the printer on credit, which did not permit `allows` (fixed, `892d536`).
+- **What c3 says about teaching, with the drill working**
+  (`study/runs/report-c3.md`). Post-only assertive-accounting items were
+  2/2 for the novice and hasty personas. The traditional-accounting
+  persona scored 0 on inherited classification and cost flow: the item
+  dropdown said "(raw materials for production)", so they concluded the
+  system "has a lookup table" (labels are bare names now), and the drill's
+  sale narrative says "the t-shirts cost $250 to produce", so cost looked
+  like it came from the problem text rather than the record. Both students
+  and the analyst note that debit/credit is taught only by example, never
+  as a convention; that `requires` never says whose promise it is; that
+  services and intangibles never appear, so the novel-transfer item is a
+  guess; and that an unfinished walkthrough line showed $3,000 from the
+  guided day underneath (fixed). The ink lesson ("not yet classified")
+  and the drill key (ink -> Raw Materials) disagree; see open question 0.
 - **A fresh business could not print.** Episode 3 never bought ink, so
   episode 4's production was refused and episode 5's cost was unpriced;
   the hand verification in the morning had ink in a ledger. There is an

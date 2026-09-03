@@ -953,7 +953,11 @@
   []
   (when-not (state/walkthrough-active?)
     [:button.wt-start
-     {:on-click #(state/start-walkthrough! 0)
+     {:on-click #(do (state/start-walkthrough! 0)
+                     ;; The walkthrough needs the vocabulary its later
+                     ;; episodes use; the palette still decides what is
+                     ;; offered at each step.
+                     (api/fetch-assertions! episodes/assertion-level))
       :title "Work through SP's first year one step at a time"}
      "Walk me through it"]))
 
@@ -1000,7 +1004,8 @@
          {:disabled (not done?)
           :title (when-not done? "Do the step first — the explanation is about what appears when you do.")
           :on-click #(if last?
-                       (state/end-walkthrough!)
+                       (do (state/end-walkthrough!)
+                           (api/fetch-assertions! (state/current-level)))
                        ;; An episode builds ONE entry across its steps --
                        ;; date, then what came in, then who. Clearing
                        ;; between steps would throw away the entry the
@@ -1022,7 +1027,11 @@
          ;; without a closing line and "Next" on steps with one, which
          ;; made the same button look like two different controls.
          (if last? "Finish" "Next")]
-        [:button.wt-leave {:on-click #(state/end-walkthrough!)} "Leave the walkthrough"]]])))
+        [:button.wt-leave
+         {:on-click #(do (state/end-walkthrough!)
+                         ;; Put the student's own vocabulary back.
+                         (api/fetch-assertions! (state/current-level)))}
+         "Leave the walkthrough"]]])))
 
 (defn sentence-builder
   "Main sentence builder component - builds assertions as natural language."
@@ -3008,8 +3017,10 @@
         [walkthrough-panel]
         [:div.two-column-layout
          [sentence-builder]
+         ;; derived-je-panel carries its own heading; adding another
+         ;; printed "What your assertions produce" twice, one above the
+         ;; other.
          [:div.walkthrough-entry
-          [:h2 "What your assertions produce"]
           [derived-je-panel]]]]
 
        ;; Practice drill: unledgered problems with complete feedback,

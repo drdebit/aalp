@@ -166,6 +166,17 @@
       :do {:kind :read}
       :then "Cost of Goods Sold, and Finished Goods going back down — priced at what those shirts cost to make, which the record worked out from the day you printed them. No new assertions again. Same vocabulary, new arrangement, two accounts you hadn't met."}]}])
 
+(def assertion-level
+  "The level whose assertion vocabulary the walkthrough needs.
+
+   The palette decides what a student is OFFERED at each step, but it can
+   only narrow what is available, and availability is keyed to the level
+   the student has reached. The walkthrough is a tour of the whole first
+   year -- it reaches production by episode four -- so it needs the
+   vocabulary of the last episode from the start, and lets the palette do
+   the pedagogical narrowing."
+  2)
+
 (defn episode [idx] (get episodes idx))
 (defn episode-count [] (count episodes))
 (defn step [ep-idx st-idx] (get-in episodes [ep-idx :steps st-idx]))

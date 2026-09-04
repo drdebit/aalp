@@ -574,6 +574,16 @@
                                                  (context-codes code))
                                      {:code code
                                       :text (cond
+                                              ;; A probability on the business's OWN
+                                              ;; promise: recorded, never a line, and
+                                              ;; under 100% it says something about
+                                              ;; the business rather than anyone else.
+                                              (and (= :expects code)
+                                                   (= "provides" (get-in selections [:requires :action])))
+                                              (let [conf (num-or-nil (get-in selections [:expects :confidence]))]
+                                                (str "In the chain, not on the entry. A probability on the business's own promise. The entry is the same with or without it."
+                                                     (when (and conf (< conf 100))
+                                                       " Under 100% on your own promise is worth a second look: it says the business is not sure it will pay, which is about the business, not the counterparty.")))
                                               ;; A claim on the business is countable and
                                               ;; recorded, and double-entry has no line for
                                               ;; it. Who owns the business, and how much of

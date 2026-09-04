@@ -1400,7 +1400,11 @@
 
    :inventory-purchase-on-credit
    {:required #{:has-date :receives :has-counterparty :requires}
-    :prohibited #{:provides :expects}  ;; No expects - we control our own payments
+    ;; The business's own promise. A probability on it is the business's
+    ;; to record or not -- we teach no policy -- so `expects` is welcome;
+    ;; the entry is the same either way.
+    :optional #{:expects}
+    :prohibited #{:provides}
     :required-parameters {:receives {:unit "physical-unit"}
                           ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
                           :requires {:action "provides" :unit "monetary-unit"}}
@@ -1416,8 +1420,11 @@
    ;; record says what it is for. A student who learned that on the
    ;; cash version and applied it here was marked wrong without a word.
    {:required #{:has-date :receives :has-counterparty :requires :allows}
-    :optional #{:allows}
-    :prohibited #{:provides :expects}  ;; No expects - we control our own payments
+    ;; The business's own promise. A probability on it is the business's
+    ;; to record or not -- we teach no policy -- so `expects` is welcome;
+    ;; the entry is the same either way.
+    :optional #{:allows :expects}
+    :prohibited #{:provides}
     :required-parameters {:receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
                           :requires {:action "provides" :unit "monetary-unit"}}
     :description "Credit purchase of equipment (receive equipment now, obligation to pay later)"
@@ -1443,7 +1450,11 @@
 
    :deferred-revenue
    {:required #{:has-date :receives :has-counterparty :requires}
-    :prohibited #{:provides :expects}  ;; No expects - SP controls their own delivery
+    ;; The business's own promise. A probability on it is the business's
+    ;; to record or not -- we teach no policy -- so `expects` is welcome;
+    ;; the entry is the same either way.
+    :optional #{:expects}
+    :prohibited #{:provides}
     :required-parameters {:receives {:unit "monetary-unit"}
                           :requires {:action "provides" :unit "physical-unit"}}
     :description "Deferred revenue (receive payment now, obligation to provide goods later)"

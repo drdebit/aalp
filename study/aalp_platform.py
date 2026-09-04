@@ -348,8 +348,9 @@ class Platform:
             clean["action"] = "receives" if self.selected.get("provides", {}).get("unit") == "physical-unit" else "provides"
             clean.setdefault("unit", "physical-unit" if self.selected.get("receives", {}).get("unit") == "monetary-unit" else "monetary-unit")
         if code == "expects":
-            clean["action"] = "receives"
-            clean.setdefault("unit", "service-unit" if self.selected.get("provides", {}).get("unit") == "monetary-unit" else "monetary-unit")
+            owes = self.selected.get("requires", {}).get("action") == "provides"
+            clean["action"] = "provides" if owes else "receives"
+            clean.setdefault("unit", self.selected.get("requires", {}).get("unit", "monetary-unit") if owes else ("service-unit" if self.selected.get("provides", {}).get("unit") == "monetary-unit" else "monetary-unit"))
         return clean
 
     def act_add_assertion(self, a):
@@ -776,7 +777,8 @@ class Platform:
                 # views.cljs: a prepaid (money out + expects) reads "expects to receive services"
                 prepaid = self.selected.get("provides", {}).get("unit") == "monetary-unit"
                 what = {"physical-unit": "goods", "service-unit": "services", "monetary-unit": "cash"}.get(p.get("unit"), "goods or services" if prepaid else "cash")
-                out.append(f"  Expectation of fulfillment: the business expects to receive {what} with {p.get('confidence', '(?)')}% confidence   [expects: {_kv(p)}]")
+                verb = "provide what it owes" if p.get("action") == "provides" else f"receive {what}"
+                out.append(f"  Expectation of fulfillment: the business expects to {verb} with {p.get('confidence', '(?)')}% confidence   [expects: {_kv(p)}]")
             else:
                 out.append(f"  [{code}: {_kv(p)}]")
         return "\n".join(out)

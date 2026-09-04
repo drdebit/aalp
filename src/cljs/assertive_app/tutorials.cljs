@@ -285,7 +285,7 @@ Notice something important: \"revenue\" was never one of your assertions. You ju
 
 - receives: $500 cash — money came IN today
 - requires: SP must deliver the shirts by the promised date
-- Probability question: SP knows whether it will deliver — nothing to estimate → no **expects**
+- Probability question: SP knows whether it will deliver — nothing to estimate, so **expects** is optional (usually left off)
 
 ::journal
 DR Cash $500
@@ -311,9 +311,9 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 
 | Situation | Whose promise? | Probability wanted? | Assertions |
 |-----------|-----------|---------------|-----------|
-| Credit purchase | SP owes vendor | No — SP's own promise | **requires** only |
+| Credit purchase | SP owes vendor | Usually not — SP's own promise | **requires** (expects optional) |
 | Credit sale | Customer owes SP | Yes — will they pay? | **requires** + **expects** |
-| Customer pays in advance | SP owes delivery | No — SP's own promise | **requires** only |
+| Customer pays in advance | SP owes delivery | Usually not — SP's own promise | **requires** (expects optional) |
 | SP pays in advance | Vendor owes delivery | Yes — will SP get what it paid for? | **expects** (+ **requires** if you like) |
 
 One question solves all four rows: **is there a probability here we want written down?** Your own promise → requires, nothing to estimate. Someone else's promise to you → expects carries the probability, and requires records the promise itself."}
@@ -338,7 +338,7 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
       :question "When SP buys materials on credit, which assertions apply?"
       :choices ["receives, requires, expects, has-counterparty" "receives, requires, has-counterparty" "provides, requires, has-counterparty" "receives, expects, has-counterparty"]
       :correct 1
-      :explanation "Credit purchases need **receives** (the goods), **requires** (obligation to pay), and **has-counterparty**. No **expects** — it's SP's own promise, so there is no probability SP needs to write down."}
+      :explanation "Credit purchases need **receives** (the goods), **requires** (obligation to pay), and **has-counterparty**. **expects** is optional here — it's SP's own promise, so there is usually no probability worth writing down, though nothing stops you."}
 
      {:id :l1-q2
       :question "Why does a credit sale need BOTH 'requires' and 'expects'?"
@@ -353,10 +353,10 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
       :explanation "SP **receives** equipment (debit) and **requires** future payment (credit to Accounts Payable). The asset comes in and a liability is created."}
 
      {:id :l1-q4
-      :question "Deferred revenue uses 'requires' but not 'expects'. Why?"
-      :choices ["Because the customer hasn't paid yet" "Because it's SP's own promise — there is no probability to record" "Because deferred revenue is always a liability" "Because expects is only for sales"]
+      :question "A company records 'expects' at 100% on its own promise to pay a vendor next month. Is that wrong?"
+      :choices ["Yes — expects is only for other people's promises" "No — it's a probability the company chose to write down, and the entry is the same either way" "Yes — a company can't have a probability about itself" "No — but only because the amount is small"]
       :correct 1
-      :explanation "SP received payment and is obligated (**requires**) to deliver goods/services. It's SP's own promise to deliver, so there is no probability to record (**expects**). The same logic applies to credit purchases — when you control the action, requires alone is enough."}]}
+      :explanation "Neither is required nor forbidden. **requires** records the promise; **expects** records a probability, and whether to write one down on your own promise is the company's call. If it did, and the number were under 100%, that would say something about the company's own finances — worth noticing."}]}
 
    2
    {:title "Level 2: Production and Transformation"
@@ -819,9 +819,9 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 - requires → Credit the payable
 
 **The requires/expects asymmetry:**
-- Credit purchase: **requires** only (SP's own promise — nothing to estimate)
+- Credit purchase: **requires** (SP's own promise — a probability is optional)
 - Credit sale: **requires** + **expects** (will the customer pay? a probability worth recording)
-- Deferred revenue: **requires** only (SP's own promise to deliver)
+- Deferred revenue: **requires** (SP's own promise to deliver — a probability is optional)
 - Prepaid expense: **expects** only (vendor delivers service)
 
 **Revenue:** Emerges from providing goods/services for monetary payment — the exchange pattern itself.

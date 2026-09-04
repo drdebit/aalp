@@ -371,8 +371,13 @@
         ;; usually a service. Goods out and an expectation: a sale on
         ;; credit, and what is expected is money.
         (let [sel (state/selected-assertions)
-              unit (if (= "monetary-unit" (get-in sel [:provides :unit])) "service-unit" "monetary-unit")]
-          (state/update-assertion-parameter! :expects :action "receives")
+              ;; On the business's own promise the expected event is the
+              ;; business providing what it owes.
+              owes? (= "provides" (get-in sel [:requires :action]))
+              unit (cond owes? (get-in sel [:requires :unit] "monetary-unit")
+                         (= "monetary-unit" (get-in sel [:provides :unit])) "service-unit"
+                         :else "monetary-unit")]
+          (state/update-assertion-parameter! :expects :action (if owes? "provides" "receives"))
           (when-not (get-in sel [:expects :unit])
             (state/update-assertion-parameter! :expects :unit unit)))
 
@@ -774,9 +779,9 @@
   "Render the 'expects' confidence section with context.
    Context-aware: shows customer context for credit sales, vendor context for prepaid expenses."
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]
-  (let [context-label (if is-prepaid?
-                        "SP expects to receive services with"
-                        "SP expects payment with")]
+  (let [context-label (cond (= "provides" (:action params)) "The business expects to provide what it owes with"
+                            is-prepaid? "The business expects to receive what it paid for with"
+                            :else "The business expects to receive what it is owed with")]
     [sentence-section :expectation "Expectation of fulfillment:"
      [:div.expects-content
       ;; Show appropriate context based on transaction type

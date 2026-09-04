@@ -60,7 +60,7 @@
 
      {:say "The business received $20,000. Say so."
       :do {:kind :assert :code :receives :params {:unit "monetary-unit"}}
-      :then "Two lines appeared at once. Cash on the debit side — money arriving is a debit. And Owner's Capital on the credit side. Why that one? Money came in and nothing went out with it. The business gave up no goods and took on no debt. What's left is a claim by whoever put the money in. That's what equity is — not a kind of transaction, but the part left over."}
+      :then "Two lines appeared at once. Cash, an asset, on the left — the debit side. And Owner's Capital on the right — the credit side. Why that account? Money came in and nothing went out with it. The business gave up no goods and took on no debt. What's left is a claim by whoever put the money in. That's what equity is — not a kind of transaction, but the part left over. As for left and right: that is a convention the rest of the course covers. Assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."}
 
      {:say "The business didn't get that money for nothing. SP received 200 ownership units in return — the certificate, the stake, the thing that says how much of the business is theirs. Say that too."
       :do {:kind :assert :code :provides :params {:unit "ownership-units"}}

@@ -226,21 +226,22 @@ CR Accounts Payable $100
 
 Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
 
-     {:heading "One Question to Rule Them All: Do We Also Need 'Expects'?"
+     {:heading "The Second Question: Do We Want a Probability?"
       :content "There's a second future-looking assertion:
 
-**expects** — records a belief about the future, with a confidence level: how sure are we this will actually happen?
+**expects** — records a *probability*: how sure the business is that something will actually happen, as a confidence level.
 
-So when do you need it? Ask one question:
+That is the whole distinction. **requires** records a promise. **expects** records a probability. So the question to ask of any promise is not \"whose fault is it if this fails\" but:
 
-**\"Who controls whether the promise gets kept?\"**
+**\"Do we want a probability on this?\"**
 
-*Case 1: SP promises to pay InkMasters.* Who controls whether SP pays? **SP does.** There's nothing uncertain to assess about your own choices — you know you'll pay your bills. So: **requires only, no expects.**
+*Case 1: SP promises to pay InkMasters.* SP knows whether it will pay its own bills. There is nothing to estimate, so nothing to record: **requires** only.
 
-*Case 2: a customer promises to pay SP.* Who controls that? **The customer** — not you. Will they actually pay? Probably... but not certainly. That's a genuine uncertainty about someone ELSE, so SP records **requires** (the promise exists) AND **expects** (how confident SP is — say, 92%).
+*Case 2: a customer promises to pay SP.* Will they? Probably... and *probably* is a number. Some customers don't pay, and at year-end the business will need to say how much of what it is owed it really expects to collect. So SP records the promise (**requires**) *and* the probability (**expects**, say 92%).
 
-Memorize the question, not a list of cases. Every credit transaction at this level is solved by asking: who controls whether the promise gets kept? **Your own promise → requires only. Someone else's promise to you → requires + expects.**"}
+*Case 3: SP pays a vendor in advance.* The contract requires the vendor to deliver — so **requires** is perfectly reasonable, and a company sure of its vendor might record it. But the thing SP really wants on the record is how confident it is of getting what it paid for: **expects**. You may record both; the entry is the same either way.
 
+Memorize the question, not a list of cases: *is there a probability here I want written down?* If yes, **expects** carries it."}
      {:heading "Selling on Credit: The Other Chair"
       :content "Now flip the pizza situation around: this time, **SP is the pizza place.** A customer takes SP's t-shirts today and promises to pay later.
 
@@ -254,7 +255,7 @@ Walk through the four questions plus the new one:
 - What came in? *Nothing yet* — no receives.
 - Any promise? Yes: the customer must pay $250 by the due date. (**requires** — recorded from SP's side, as what SP *is to receive*. Provides and receives are always SP's own actions; SP never \"provides\" something a customer hands over.)
 
-And now the control question: who controls whether THIS promise gets kept? **The customer.** So SP also records:
+And now the probability question: is there a number SP wants on the record? Yes — will this customer actually pay? So SP also records:
 
 - How confident is SP of actually getting paid? (**expects**, with a confidence level — say 92%)
 
@@ -278,13 +279,13 @@ CR Revenue $250
 Notice something important: \"revenue\" was never one of your assertions. You just described what happened — goods out, payment promised — and *revenue is the name double-entry gives that pattern*. Categories come from patterns of facts. That's the deepest idea in this course, arriving quietly."}
 
      {:heading "Paying in Advance (Both Directions)"
-      :content "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same control question.
+      :content "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same probability question.
 
 **A customer pays SP in advance** (say, a $500 deposit for a big custom order):
 
 - receives: $500 cash — money came IN today
 - requires: SP must deliver the shirts by the promised date
-- Control question: who controls delivery? **SP does** → no expects
+- Probability question: SP knows whether it will deliver — nothing to estimate → no **expects**
 
 ::journal
 DR Cash $500
@@ -296,8 +297,8 @@ That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP
 **SP pays a vendor in advance** (say, $600 for a year of insurance):
 
 - provides: $600 cash — money went OUT today
-- expects: SP will receive coverage over the coming year (with confidence)
-- Control question: who controls delivering the coverage? **The vendor** → expects, not requires
+- expects: SP will receive coverage over the coming year, with a confidence level
+- Probability question: is there a number SP wants on the record? **Yes** — how sure it is of getting what it paid for → **expects**. (The policy requires the insurer to deliver, so **requires** is fine to add as well; the entry doesn't change.)
 
 ::journal
 DR Prepaid Expense $600
@@ -308,14 +309,14 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 
 **The whole level in one table:**
 
-| Situation | Whose promise? | Who controls it? | Assertions |
+| Situation | Whose promise? | Probability wanted? | Assertions |
 |-----------|-----------|---------------|-----------|
-| Credit purchase | SP owes vendor | SP | **requires** only |
-| Credit sale | Customer owes SP | Customer | **requires** + **expects** |
-| Customer pays in advance | SP owes delivery | SP | **requires** only |
-| SP pays in advance | Vendor owes service | Vendor | **expects** |
+| Credit purchase | SP owes vendor | No — SP's own promise | **requires** only |
+| Credit sale | Customer owes SP | Yes — will they pay? | **requires** + **expects** |
+| Customer pays in advance | SP owes delivery | No — SP's own promise | **requires** only |
+| SP pays in advance | Vendor owes delivery | Yes — will SP get what it paid for? | **expects** (+ **requires** if you like) |
 
-One question solves all four rows: **who controls whether the promise gets kept?** Your own promise → requires. Someone else's → expects (plus requires when there's a legal obligation, as in a credit sale)."}
+One question solves all four rows: **is there a probability here we want written down?** Your own promise → requires, nothing to estimate. Someone else's promise to you → expects carries the probability, and requires records the promise itself."}
 
      {:heading "How to Approach Every Level 1 Problem"
       :content "A recipe you can follow every single time:
@@ -324,7 +325,7 @@ One question solves all four rows: **who controls whether the promise gets kept?
 
 **Step 2.** Ask: was a promise made about the FUTURE? If yes, select **requires** and fill in what must be provided, how much, and by when — it's all in the narrative.
 
-**Step 3.** Ask the control question: is the promise SP's to keep, or someone else's? Someone else's → add **expects** with your confidence level.
+**Step 3.** Ask the probability question: is there a number SP wants on the record — how sure it is of getting what it's owed or has paid for? If so → add **expects** with that confidence level.
 
 **Step 4.** Date and counterparty, same as always.
 
@@ -337,7 +338,7 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
       :question "When SP buys materials on credit, which assertions apply?"
       :choices ["receives, requires, expects, has-counterparty" "receives, requires, has-counterparty" "provides, requires, has-counterparty" "receives, expects, has-counterparty"]
       :correct 1
-      :explanation "Credit purchases need **receives** (the goods), **requires** (obligation to pay), and **has-counterparty**. No **expects** — SP controls its own payments, so there's no uncertainty to assess."}
+      :explanation "Credit purchases need **receives** (the goods), **requires** (obligation to pay), and **has-counterparty**. No **expects** — it's SP's own promise, so there is no probability SP needs to write down."}
 
      {:id :l1-q2
       :question "Why does a credit sale need BOTH 'requires' and 'expects'?"
@@ -353,9 +354,9 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
 
      {:id :l1-q4
       :question "Deferred revenue uses 'requires' but not 'expects'. Why?"
-      :choices ["Because the customer hasn't paid yet" "Because SP controls its own delivery — no uncertainty to assess" "Because deferred revenue is always a liability" "Because expects is only for sales"]
+      :choices ["Because the customer hasn't paid yet" "Because it's SP's own promise — there is no probability to record" "Because deferred revenue is always a liability" "Because expects is only for sales"]
       :correct 1
-      :explanation "SP received payment and is obligated (**requires**) to deliver goods/services. Since SP controls its own delivery, there's no need for a confidence assessment (**expects**). The same logic applies to credit purchases — when you control the action, requires alone is enough."}]}
+      :explanation "SP received payment and is obligated (**requires**) to deliver goods/services. It's SP's own promise to deliver, so there is no probability to record (**expects**). The same logic applies to credit purchases — when you control the action, requires alone is enough."}]}
 
    2
    {:title "Level 2: Production and Transformation"

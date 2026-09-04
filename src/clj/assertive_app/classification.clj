@@ -1455,7 +1455,12 @@
 
    :prepaid-expense
    {:required #{:has-date :provides :has-counterparty :expects}
-    :prohibited #{:receives :requires}  ;; No requires - the vendor isn't legally obligated in same way
+    ;; The contract does require delivery, and a company sure of its
+    ;; vendor may well record that. What makes this a prepaid is the
+    ;; probability the business attaches to receiving what it paid for:
+    ;; `expects`. `requires` is welcome alongside it.
+    :optional #{:requires}
+    :prohibited #{:receives}
     :required-parameters {:provides {:unit "monetary-unit"}
                           ;; What is prepaid is usually a service (rent,
                           ;; insurance, maintenance); goods on order count too.

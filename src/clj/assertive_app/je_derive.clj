@@ -120,6 +120,16 @@
     :amount :monetary
     :text :position}
 
+   ;; -------- Paid ahead: a right to something still to come -----------
+   {:id :prepaid
+    :when {:assertion :expects
+           :params {:action "receives" :unit #{"service-unit" "physical-unit"}}}
+    :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :receives}]}
+    :line {:side :debit :account "Prepaid Expense"}
+    :amount :monetary
+    :text "SP paid, and expects to receive what it paid for later. Nothing has been used up yet; what SP holds is a right to something still to come, kept for a future use -- an asset, Prepaid Expense, until the service is received and used."}
+
    ;; -------- A service received --------------------------------------
    {:id :service-expense
     :when {:assertion :receives
@@ -249,6 +259,7 @@
    :is-allowed-by "In the chain, not on the entry. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
    :allows "In the chain, not on the entry. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified -- you have seen it do that."
    :is-required-by "In the chain, not on the entry. The framework requiring an event is not an exchange, so no account carries it."
+   :requires "In the chain, not on the entry. A promise is recorded here; it reaches the entry as a claim in money -- something owed, or owing -- when the pattern says so. This one does not add a line of its own."
    :reports "In the chain, not on the entry here. Reporting assertions drive calculations rather than journal-entry lines."})
 
 (def context-roles
@@ -422,6 +433,40 @@
         "This item has no recorded position yet.")
     text))
 
+(defn- account-kind
+  "What kind of thing an account name stands for. The kind is read off
+   the label -- a translation, like the label itself."
+  [account]
+  (let [a (str account)]
+    (cond (re-find #"(?i)revenue" a)                         (if (re-find #"(?i)deferred|unearned" a) :liability :revenue)
+          (re-find #"(?i)expense|cost of goods" a)            :expense
+          (re-find #"(?i)payable|deferred|unearned|note" a)    :liability
+          (re-find #"(?i)capital|equity|stock|retained" a)     :equity
+          (re-find #"not yet classified" a)                    nil
+          :else                                                :asset)))
+
+(defn- side-sentence
+  "The side of a line, as a consequence rather than a convention to
+   memorise. The assertions say two things: the direction -- more of it
+   (received, made) or less (provided, used up) -- and what kind of
+   thing it is. The only ingredient that is not asserted is the
+   convention itself: assets and expenses have their home on the left,
+   claims on the business and revenue on the right, and a thing grows on
+   its home side."
+  [side account]
+  (when-let [kind (account-kind account)]
+    (let [left?  (contains? #{:asset :expense} kind)
+          debit? (= :debit side)
+          more?  (= left? debit?)
+          noun   (case kind :asset "an asset" :expense "an expense" :liability "a claim on the business"
+                            :equity "the owners' claim" :revenue "revenue")
+          home   (if left? "left" "right")]
+      (str (if more? "More of " "Less of ") noun ". "
+           (if left? "Assets and expenses" "Claims on the business and revenue")
+           " have their home on the " home ", and a thing "
+           (if more? "grows on its home side" "shrinks on the other side")
+           ": " (if debit? "debit" "credit") "."))))
+
 (defn derive-je
   "Derive a journal entry from the student's selected assertions.
 
@@ -492,7 +537,10 @@
                          ;; underneath and nothing else.
                          :assertions (select-keys selections prov)
                          :rule-id id
-                         :rule-text (resolve-line-text text matched-params context)
+                         :rule-text (let [account (resolve-line-account (:account line) matched-params context)
+                                          base    (resolve-line-text text matched-params context)
+                                          side    (side-sentence (:side line) account)]
+                                      (if side (str base " " side) base))
                          ;; Why this account, when the reason is not in
                          ;; this event.
                          :established-by (or (when (= :position (:account line))

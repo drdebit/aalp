@@ -2178,6 +2178,21 @@
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
                                                missing-assertions))))
 
+      ;; Present tense for what happened; a promise for what is due. The
+      ;; student who writes "receives cash" on a credit sale has put a
+      ;; future flow in the present, and "Incorrect: Receives" does not
+      ;; say so.
+      (and (seq (clojure.set/intersection incorrect-assertions #{:receives :provides}))
+           (seq (clojure.set/intersection missing-assertions #{:requires :expects})))
+      (conj (str "provides and receives are for what actually moved today. "
+                 (cond
+                   (not (contains? missing-assertions :requires))
+                   "What was paid for is still to come. Record how sure the business is of getting it: `expects`."
+                   (contains? incorrect-assertions :receives)
+                   "Nothing came in today -- it is promised for later, and a promise is `requires` (with `expects` if you want a probability on it)."
+                   :else
+                   "Nothing went out today -- it is promised for later, and a promise is `requires`.")))
+
       ;; The lesson, not just the label: this is the assertion students
       ;; forget on a design after remembering it on a printer.
       (contains? missing-assertions :allows)

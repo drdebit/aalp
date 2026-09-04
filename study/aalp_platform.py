@@ -312,6 +312,8 @@ class Platform:
                 clean[k] = _num(v)
             else:
                 clean[k] = str(v)
+        if code == "provides" and "from-event" in params and params["from-event"] not in (None, ""):
+            clean["from-event"] = str(params["from-event"])
         if code in ("provides", "receives", "requires"):
             unit = clean.get("unit")
             if unit and unit not in UNIT_WORD:
@@ -750,7 +752,8 @@ class Platform:
                     thing = UNIT_WORD.get(unit, unit)
                 else:
                     thing = "(unit type not set)"
-                out.append(f"  the business {code} {q} {thing}   [{code}: {_kv(p)}]")
+                frm = f" from batch {p['from-event']}" if p.get("from-event") else ""
+                out.append(f"  the business {code} {q} {thing}{frm}   [{code}: {_kv(p)}]")
             elif code == "has-counterparty":
                 out.append(f"  with {p.get('name') or '(party name not set)'}   [has-counterparty]")
             elif code == "allows":
@@ -789,6 +792,8 @@ class Platform:
                 items = PROVIDES_ITEMS if code == "provides" else RECEIVES_ITEMS
                 fields = [f"unit (dropdown: {units})", "quantity (number)",
                           "physical-item (only when unit = physical-unit; dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in items) + ")"]
+                if code == "provides":
+                    fields.append("from-event (optional: the id of the batch in the chain these came from; the entry lists batches when there are any)")
             elif code in FLOW_CODES:
                 fields = ["flows: a list of {quantity, physical-item}; add another row for a second input. physical-item dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS)]
             elif code == "allows":
@@ -841,7 +846,13 @@ class Platform:
                     out.append("        Underneath this line: " + "; ".join(f"{k} {_kv(v)}" if isinstance(v, dict) else f"{k} {v}" for k, v in ln["assertions"].items()))
                 for e in ln.get("established-by") or []:
                     a_ = e.get("assertions") or {}
-                    if a_.get("allows"):
+                    if e.get("batch"):
+                        made = a_.get("creates") or a_.get("receives") or {}
+                        m = made[0] if isinstance(made, list) else made
+                        cons = a_.get("consumes")
+                        cons = cons if isinstance(cons, list) else ([cons] if cons else [])
+                        txt = f"batch {e['batch']}: {m.get('quantity')} {m.get('physical-item')}" + (f" at {money(e.get('unit-cost'))} each" if e.get("unit-cost") is not None else "") + (", made from " + " and ".join(f"{f.get('quantity')} {f.get('physical-item')}" for f in cons) if cons else "")
+                    elif a_.get("allows"):
                         txt = f"you said this turns {' and '.join(a_['allows'].get('consumes-items') or [a_['allows'].get('consumes-item')])} into {a_['allows'].get('creates-item')}"
                     else:
                         txt = "recorded as " + ", ".join(a_.keys())
@@ -851,6 +862,11 @@ class Platform:
         for p in ph:
             side = "DR" if p.get("side") == "debit" else "CR"
             out.append(f"      {side} ???  ?   {p.get('prompt')}")
+        if d.get("batches"):
+            out.append("  Batches in the chain you could be providing from (on the provides line, set from-event to one):")
+            for it, bs in d["batches"].items():
+                for b in bs:
+                    out.append(f"    {it}: from-event \"{b.get('id')}\" — {b.get('date')}: {b.get('left')} of {b.get('units')} left" + (f" at {money(b.get('unit-cost'))} each" if b.get("unit-cost") is not None else ""))
         if lines:
             t = d.get("totals") or {}
             out.append("  ✓ Balanced" if t.get("balanced?") else f"  Debits {money(t.get('debits'))} vs credits {money(t.get('credits'))} -- not balanced yet")

@@ -323,7 +323,7 @@
   ([amount-kind matched-code matched-params selections variables context]
    (let [basis (:cost-basis context)
          priced (fn [item units reason]
-                  (if-let [c (cost/cost-of basis item units)]
+                  (if-let [c (cost/cost-of basis item units (:from-event matched-params))]
                     {:quantity (q/monetary c) :unresolved? false}
                     {:quantity nil :unresolved? true :unresolved-reason reason}))]
      (case amount-kind
@@ -446,6 +446,9 @@
   ([selections variables context]
   (let [selections (into {} (map (fn [[k v]] [(keyword k) (or v {})]) selections))
         context (assoc context :current selections)
+        ;; The name `context` is reused below for the context ROLES the
+        ;; entry shows; keep the chain under its own name.
+        chain-ctx context
         ;; One firing per matching FLOW, not per assertion: consuming a
         ;; blank shirt and an ink cartridge is two things consumed, and
         ;; the entry needs a line for each.
@@ -492,8 +495,21 @@
                          :rule-text (resolve-line-text text matched-params context)
                          ;; Why this account, when the reason is not in
                          ;; this event.
-                         :established-by (when (= :position (:account line))
-                                           (seq (established-elsewhere matched-params context)))
+                         :established-by (or (when (= :position (:account line))
+                                               (seq (established-elsewhere matched-params context)))
+                                             ;; A cost line taken from a named batch
+                                             ;; shows the batch: the event that made
+                                             ;; or bought these units, and its price.
+                                             (when (and (= :cost-basis amount) (:from-event matched-params))
+                                               (let [id (name (:from-event matched-params))
+                                                     ev (first (filter #(= id (some-> (:has-identifier %) name))
+                                                                       (:events context)))
+                                                     uc (get-in context [:cost-basis :by-event id :unit-cost])]
+                                                 (when ev
+                                                   [{:date (get-in ev [:has-date :date])
+                                                     :batch id
+                                                     :unit-cost uc
+                                                     :assertions (select-keys ev [:receives :consumes :creates :provides :allows])}]))))
                          :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))
@@ -536,7 +552,12 @@
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
                               :prompt "Something must balance this. What did SP get, or settle? The assertions do not say yet."}))]
-    {:lines lines
+    {:batches (let [items (distinct (keep :physical-item (as-flows (:provides selections))))]
+               (into {} (for [it items
+                              :let [bs (chain/batches (:events chain-ctx) it)]
+                              :when (seq bs)]
+                          [it (mapv #(assoc % :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id %) :unit-cost])) bs)])))
+     :lines lines
      :placeholders placeholders
      :context context
      :not-reflected not-reflected

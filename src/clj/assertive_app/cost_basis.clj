@@ -92,31 +92,48 @@
 
    -> {item {:units n :cost n :unit-cost n}}"
   [prior-events]
-  (let [basis (reduce (fn [basis assertions]
-                        (if-let [a (acquisition assertions)]
-                          (accumulate basis a)
-                          (if-let [p (production assertions)]
-                            (let [in-cost (reduce
-                                            (fn [tot {:keys [item units]}]
-                                              (if-let [uc (unit-cost basis item)]
-                                                (+ tot (* uc units))
-                                                (reduced nil)))
-                                            0 (:inputs p))]
-                              (if in-cost
-                                (accumulate basis {:item (:item p) :units (:units p)
-                                                   :cost in-cost})
-                                basis))
-                            basis)))
-                      {} prior-events)]
-    (into {} (for [[item v] basis
-                   :let [uc (unit-cost basis item)]
-                   :when uc]
-               [item (assoc v :unit-cost uc)]))))
+  (let [{:keys [basis by-event]}
+        (reduce (fn [{:keys [basis by-event] :as acc} assertions]
+                  (let [id (some-> (:has-identifier assertions) name)
+                        note (fn [basis {:keys [item units cost]}]
+                               ;; Each priced event is remembered on its
+                               ;; own, so a later event can point at it:
+                               ;; specific identification, when asked for.
+                               (cond-> by-event
+                                 id (assoc id {:item item :units units :cost cost
+                                               :unit-cost (/ (double cost) units)})))]
+                    (if-let [a (acquisition assertions)]
+                      {:basis (accumulate basis a) :by-event (note basis a)}
+                      (if-let [p (production assertions)]
+                        (let [in-cost (reduce
+                                        (fn [tot {:keys [item units]}]
+                                          (if-let [uc (unit-cost basis item)]
+                                            (+ tot (* uc units))
+                                            (reduced nil)))
+                                        0 (:inputs p))]
+                          (if in-cost
+                            (let [made {:item (:item p) :units (:units p) :cost in-cost}]
+                              {:basis (accumulate basis made) :by-event (note basis made)})
+                            acc))
+                        acc))))
+                {:basis {} :by-event {}} prior-events)]
+    (assoc (into {} (for [[item v] basis
+                          :let [uc (unit-cost basis item)]
+                          :when uc]
+                      [item (assoc v :unit-cost uc)]))
+           :by-event by-event)))
 
 (defn cost-of
   "Cost of `units` of `item` under this basis, or nil when the record
-   does not price it."
-  [basis item units]
-  (when-let [uc (get-in basis [(some-> item name) :unit-cost])]
-    (when-let [n (num-or-nil units)]
-      (* uc n))))
+   does not price it. With `from-event`, the units are the ones that
+   event acquired or made and cost what THEY cost -- specific
+   identification; without it, the weighted average."
+  ([basis item units] (cost-of basis item units nil))
+  ([basis item units from-event]
+   (when-let [n (num-or-nil units)]
+     (let [item (some-> item name)
+           ev   (when from-event (get-in basis [:by-event (name from-event)]))]
+       (if (and ev (= (:item ev) item))
+         (* (:unit-cost ev) n)
+         (when-let [uc (get-in basis [item :unit-cost])]
+           (* uc n)))))))

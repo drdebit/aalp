@@ -50,7 +50,7 @@ script = {
      {"type":"add_assertion","code":"provides","params":{"unit":"physical-unit","physical-item":"printed-tshirts","quantity":4}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"Customer"}},{"type":"next"},
-     {"type":"open_line","index":2},{"type":"next"}],
+     {"type":"add_assertion","code":"provides","params":{"from-event":"production"}},{"type":"open_line","index":2},{"type":"next"}],
 }
 show = {("design",3),("materials",3),("production",3),("service",2),("sale",4)}
 while p.phase == "walkthrough":

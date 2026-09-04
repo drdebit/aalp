@@ -567,6 +567,8 @@
     :title "Remove this assertion"}
    "×"])
 
+(declare format-currency)
+
 (defn- render-provides-fragment
   "Render the 'provides' part of the sentence."
   [params]
@@ -578,7 +580,19 @@
      " "
      (if (= (:unit params) "physical-unit")
        [:span
-        [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]]
+        [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]
+        ;; Which batch? The chain lists what could be sold and what each
+        ;; batch cost; naming one prices the sale from it (specific
+        ;; identification). Unnamed, the average prices it.
+        (when-let [bs (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item params) ""))]))]
+          [:span
+           [:span.connector " from "]
+           [inline-dropdown :provides :from-event
+            (for [b bs]
+              {:value (:id b)
+               :label (str (:id b) " — " (:date b) ": " (:left b) " of " (:units b) " left"
+                           (when (:unit-cost b) (str " at " (format-currency (:unit-cost b)) " each")))})
+            (:from-event params) "which batch?"]])]
        [:span.unit-label "cash"])
      [remove-assertion-button :provides]]))
 
@@ -1440,6 +1454,19 @@
                                   (when (:date e) [:span.dj-established-date (:date e)])
                                   [:span.dj-established-text
                                    (let [a (:assertions e)]
+                                     (cond
+                                       (:batch e)
+                                       (str "batch " (:batch e) ": "
+                                            (let [made (or (:creates a) (:receives a))
+                                                  m (if (sequential? made) (first made) made)]
+                                              (str (:quantity m) " " (:physical-item m)))
+                                            (when (:unit-cost e) (str " at " (format-currency (:unit-cost e)) " each"))
+                                            (when-let [c (:consumes a)]
+                                              (str ", made from "
+                                                   (clojure.string/join " and "
+                                                     (for [f (if (sequential? c) c [c])]
+                                                       (str (:quantity f) " " (:physical-item f)))))))
+                                       :else
                                      (if-let [al (:allows a)]
                                        (str "you said this turns "
                                             (clojure.string/join " and "
@@ -1447,7 +1474,7 @@
                                                   (some-> (:consumes-item al) vector)))
                                             " into " (:creates-item al))
                                        (str "recorded as " (clojure.string/join ", "
-                                                             (map name (keys a))))))]]))])
+                                                             (map name (keys a)))))))]]))])
                           (when (:unresolved-reason line)
                             [:div.dj-unpriced-note (:unresolved-reason line)])]])])))
                (doall

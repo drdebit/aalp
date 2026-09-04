@@ -237,9 +237,9 @@
       :do {:kind :assert :code :has-counterparty}
       :then "Four lines now. Cash and Revenue — and notice you never asserted \"revenue\". It appeared because goods went out to somebody in exchange for money, and that pattern is what revenue means. You have been building up to this entry since episode one."}
 
-     {:say "Look at the other two lines."
-      :do {:kind :read}
-      :then "Cost of Goods Sold, and Finished Goods going back down — priced at what those shirts cost to make, which the record worked out from the day you printed them. No new assertions again. Same vocabulary, new arrangement, two accounts you hadn't met."}]}])
+     {:say "Look at the other two lines: Cost of Goods Sold, and Finished Goods going back down, $24. You never typed that number. Where did it come from? Which four shirts were these? Look in the chain for shirts the business can sell, and on the provides line pick the batch they came from."
+      :do {:kind :assert :code :provides :params {:from-event "production"}}
+      :then "Four of the ten printed on January 5th, at $6 each: $24. And the $6 was $5 of blank shirt bought on the 4th and $1 of ink. Open the Cost of Goods Sold line and the batch is named there. Nothing was typed; the cost was carried forward, event by event, from what the business paid. No new assertions again — same vocabulary, new arrangement, two accounts you hadn't met."}]}])
 
 (def assertion-level
   "The level whose assertion vocabulary the walkthrough needs.

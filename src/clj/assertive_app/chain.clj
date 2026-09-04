@@ -223,6 +223,35 @@
                     {:receives 1 :creates 1 :consumes -1 :provides -1}))
           {} events))
 
+(defn batches
+  "The events that brought `item` into the business, with what each has
+   left: the batches a later event can point at. Only outflows that
+   name a batch draw it down; an unnamed outflow is priced on the
+   average and belongs to no batch in particular.
+
+   -> [{:id s :date s :units n :left n}]"
+  [events item]
+  (let [item (some-> item name)
+        drawn (reduce (fn [acc assertions]
+                        (reduce (fn [acc {:keys [from-event] :as f}]
+                                  (if (and from-event (= item (some-> (:physical-item f) name)))
+                                    (update acc (name from-event) (fnil + 0) (or (:units (physical f)) 0))
+                                    acc))
+                                acc
+                                (mapcat #(let [v (get assertions %)]
+                                           (cond (nil? v) [] (sequential? v) v :else [v]))
+                                        [:provides :consumes])))
+                      {} events)]
+    (vec (for [assertions events
+               :let [id (some-> (:has-identifier assertions) name)]
+               :when id
+               in (concat (physicals (:receives assertions)) (physicals (:creates assertions)))
+               :when (= item (:item in))]
+           {:id id
+            :date (get-in assertions [:has-date :date])
+            :units (:units in)
+            :left (- (:units in) (get drawn id 0))}))))
+
 (defn- monetary-qty [params]
   (when (= "monetary-unit" (some-> (:unit params) name))
     (let [q (:quantity params)]

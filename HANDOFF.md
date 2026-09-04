@@ -192,7 +192,10 @@ level-1 rounds were 21 of 27 with conceptual misses -- a design without
 `allows`, a prepaid recorded as received, `expects` on the wrong side).
 c5 moved cost-flow to 2/2 for everyone (the batch query) and the
 traditional persona to 2/2 on inherited classification (the reseller).
-c6 is running on all of it. Next:
+c6 ran on all of it: every student finished the path and every
+post-test item was 2/2 for all three -- the first cohort at ceiling.
+The remaining complaint is the novice's: debits and credits are shown,
+not explained; that is the class's material by decision. Next:
 
     cd study && ./run_cohort.sh c7 "s71:novice:haiku s72:trad:haiku s73:hasty:haiku" --max-turns 280
 

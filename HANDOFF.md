@@ -180,11 +180,21 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
 - **The `allows` experiment is a required step**, episodes open with
   their date, the buyer is Campus Boutique.
 
-Cohort c4 ran after the first six of these (all three finished the
-path; 27 of 28 practice submissions right); c5 is running on all of it.
-Next:
+- **Expects is optional on the business's own promises** (credit
+  purchases, customer advances): both are logically acceptable and we
+  teach no policy. Under 100% on your own promise the strip says it is
+  about the business, not the counterparty -- the example's red flag.
+- **The `allows` hint is the lesson**, prepayments say how many shirts,
+  resellers are half the eligible practice problems.
 
-    cd study && ./run_cohort.sh c6 "s61:novice:haiku s62:trad:haiku s63:hasty:haiku" --max-turns 280
+Cohorts c4 and c5 ran on the earlier parts (all finished the path; c5's
+level-1 rounds were 21 of 27 with conceptual misses -- a design without
+`allows`, a prepaid recorded as received, `expects` on the wrong side).
+c5 moved cost-flow to 2/2 for everyone (the batch query) and the
+traditional persona to 2/2 on inherited classification (the reseller).
+c6 is running on all of it. Next:
+
+    cd study && ./run_cohort.sh c7 "s71:novice:haiku s72:trad:haiku s73:hasty:haiku" --max-turns 280
 
 ## Conformance (the oracle)
 

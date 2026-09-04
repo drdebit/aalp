@@ -237,11 +237,11 @@
 
    Keeping those assertions is the point: the entry stays exactly as
    double-entry intends, and the rest of what SP knows stays with it."
-  {:expects "Recorded -- but not reflected. Double-entry records what has happened, measured in money, and an expectation is neither settled nor a money amount. It stays in your record, and it is what lets you compare later what you expected with what occurred."
-   :is-allowed-by "Recorded -- but not reflected. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
-   :allows "Recorded -- but not reflected. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified -- you have seen it do that."
-   :is-required-by "Recorded -- but not reflected. The framework requiring an event is not an exchange, so no account carries it."
-   :reports "Recorded -- but not reflected here. Reporting assertions drive calculations rather than journal-entry lines."})
+  {:expects "In the chain, not on the entry. Double-entry records what has happened, measured in money, and an expectation is neither settled nor a money amount. It stays in your record, and it is what lets you compare later what you expected with what occurred."
+   :is-allowed-by "In the chain, not on the entry. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
+   :allows "In the chain, not on the entry. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified -- you have seen it do that."
+   :is-required-by "In the chain, not on the entry. The framework requiring an event is not an exchange, so no account carries it."
+   :reports "In the chain, not on the entry here. Reporting assertions drive calculations rather than journal-entry lines."})
 
 (def context-roles
   {:has-date "stamps the entry's date"
@@ -503,7 +503,7 @@
                                               ;; say -- the ownership schedule is computed
                                               ;; from the record instead.
                                               (claim? code)
-                                              "Recorded -- but not reflected. Double-entry measures in money, and 200 units is a count rather than an amount -- that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
+                                              "In the chain, not on the entry. Double-entry measures in money, and 200 units is a count rather than an amount -- that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
 
                                               :else
                                               (get not-reflected-texts code

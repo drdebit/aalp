@@ -123,10 +123,13 @@
   (vec (:walkthrough-events @app-state)))
 
 (defn remember-walkthrough-event!
-  "Keep the assertions just completed, so later episodes can see them."
-  [assertions]
+  "Keep the assertions just completed, so later episodes can see them.
+   The event gets an identifier -- the episode's -- so a later event can
+   point at it: the shirts sold are the ones printed on the 5th."
+  [assertions episode-id]
   (when (seq assertions)
-    (swap! app-state update :walkthrough-events (fnil conj []) assertions)))
+    (swap! app-state update :walkthrough-events (fnil conj [])
+           (assoc assertions :has-identifier (name episode-id)))))
 
 (defn advance-step! [step-count episode-count]
   (swap! app-state update :walkthrough

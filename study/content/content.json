@@ -36,11 +36,11 @@
       },
       "then" : "Now look carefully. Nothing changed. The entry is exactly what it was."
     }, {
-      "say" : "Scroll down to \"Recorded — but not reflected\".",
+      "say" : "Look under the entry, at \"In the chain, not on the entry\". The chain is everything the business has said — the list on the left is it, and it grows with every episode. The entry is what double-entry can measure of the chain, in money.",
       "do" : {
         "kind" : "read"
       },
-      "then" : "There they are. Double-entry measures in money, and 200 units is a count, not an amount — so no line carries it. That's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in your record, and we work out percentages from them later. The entry is doing exactly what it should; you're simply keeping track of more than it measures."
+      "then" : "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later. The entry is doing exactly what it should; the chain simply holds more than the entry measures."
     }, {
       "say" : "One more: who.",
       "do" : {

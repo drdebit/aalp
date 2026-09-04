@@ -3240,24 +3240,29 @@ The printed t-shirts are now finished goods ready for sale."
     {:company company
      :unit-costs {:blank-tshirts shirt-cost :ink-cartridges ink-cost}
      :events
-     [{:has-date {:date "2026-01-02"}
+     [{:has-identifier "Funding-001"
+       :has-date {:date "2026-01-02"}
        :receives {:unit "monetary-unit" :quantity 25000}
        :provides {:unit "ownership-units" :quantity 100}
        :has-counterparty {:name "the owner"}}
-      {:has-date {:date "2026-01-03"}
+      {:has-identifier "Printer-001"
+       :has-date {:date "2026-01-03"}
        :provides {:unit "monetary-unit" :quantity 3000}
        :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
        :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
        :has-counterparty {:name "PrinterWorld"}}
-      {:has-date {:date "2026-01-04"}
+      {:has-identifier "Shirts-001"
+       :has-date {:date "2026-01-04"}
        :provides {:unit "monetary-unit" :quantity (* shirts shirt-cost)}
        :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity shirts}
        :has-counterparty {:name "TextileDirect"}}
-      {:has-date {:date "2026-01-04"}
+      {:has-identifier "Ink-001"
+       :has-date {:date "2026-01-04"}
        :provides {:unit "monetary-unit" :quantity (* ink ink-cost)}
        :receives {:unit "physical-unit" :physical-item "ink-cartridges" :quantity ink}
        :has-counterparty {:name "InkMasters"}}
-      {:has-date {:date "2026-01-05"}
+      {:has-identifier "Printing-001"
+       :has-date {:date "2026-01-05"}
        :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed}
                   {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed}

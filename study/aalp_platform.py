@@ -469,7 +469,7 @@ class Platform:
             return "Next step."
         # episode boundary: what was built joins the chain
         if self.selected:
-            self.walk_events.append(copy.deepcopy(self._sel_payload()))
+            self.walk_events.append(dict(copy.deepcopy(self._sel_payload()), **{"has-identifier": ep["id"]}))
         self.summary["walkthrough"]["episodes_completed"] = self.wt["episode"] + 1
         self.wt = {"episode": self.wt["episode"] + 1, "step": 0}
         self.selected = OrderedDict()
@@ -857,11 +857,20 @@ class Platform:
         if d.get("context"):
             out.append("  Context: " + "; ".join(f"{c.get('code')} {c.get('role')}" for c in d["context"]))
         if d.get("not-reflected"):
-            out.append("  Recorded -- but not reflected:")
+            out.append("  In the chain, not on the entry:")
             for nr in d["not-reflected"]:
                 out.append(f"    [{nr.get('code')}] {nr.get('text')}")
         if lines:
             out.append("  (click a line to see the rule behind it: open_line with its [index])")
+        return "\n".join(out)
+
+    def _chain_text(self, title):
+        events = self._prior_events()
+        out = [f"--- {title} ---"]
+        if not events:
+            out.append("  Nothing yet. The first thing you say starts it.")
+        for ev in events:
+            out.append("  " + (f"[{ev.get('has-identifier')}] " if ev.get("has-identifier") else "") + _event_summary(ev))
         return "\n".join(out)
 
     def _builder_actions(self):
@@ -889,6 +898,7 @@ class Platform:
         last = self.wt["step"] + 1 == n and self.wt["episode"] + 1 == len(self.episodes)
         out.append(f"[button: {'Finish' if last else 'Next'}{'' if done else ' — disabled: Do the step first — the explanation is about what appears when you do.'}]   [button: Leave the walkthrough]")
         out.append("")
+        out.append(self._chain_text("The chain — what the business has said so far"))
         out.append("--- Your sentence (the sentence builder) ---")
         out.append(self._sentence())
         out.append(self._palette_text())
@@ -972,7 +982,8 @@ class Platform:
         out = [f"=== Practice round {d['round']} ===",
                f"Other people's businesses, not SP's: each problem is a different company with its own books, and nothing carries over between problems. Mistakes here are free. Get {d['pass_count']} of {d['round_size']} right — or {d['streak_pass']} in a row — to start recording.",
                f"This round: {d['correct']} correct of {d['attempted']} attempted{streak_note}   [button: Review Tutorial]",
-               "", "--- Transaction ---", p.get("narrative", ""), "",
+               "", "--- Transaction ---"] + ([p["company-blurb"]] if p.get("company-blurb") else []) + [p.get("narrative", ""), "",
+               self._chain_text(f"The chain — {p.get('company', 'this company')}'s books so far"),
                "--- Your sentence (the sentence builder) ---", self._sentence()]
         acts = []
         if d.get("worked_example"):
@@ -1065,6 +1076,33 @@ def _num(v):
         return int(f) if f == int(f) else f
     except (TypeError, ValueError):
         raise ActionError(f"'{v}' is not a number.")
+
+
+def _event_summary(ev):
+    def flow(v):
+        fs = v if isinstance(v, list) else ([v] if v else [])
+        parts = []
+        for f in fs:
+            u = f.get("unit")
+            if u == "monetary-unit": parts.append(f"${f.get('quantity')}")
+            elif u == "ownership-units": parts.append(f"{f.get('quantity')} ownership units")
+            elif u == "service-unit": parts.append("a service")
+            else: parts.append(f"{f.get('quantity')} {f.get('physical-item', '?')}")
+        return " + ".join(parts)
+    bits = []
+    if ev.get("receives"): bits.append("received " + flow(ev["receives"]))
+    if ev.get("provides"): bits.append("provided " + flow(ev["provides"]))
+    if ev.get("consumes"): bits.append("used up " + flow(ev["consumes"]))
+    if ev.get("creates"): bits.append("made " + flow(ev["creates"]))
+    if ev.get("has-counterparty"): bits.append("with " + str(ev["has-counterparty"].get("name")))
+    if ev.get("allows"):
+        al = ev["allows"]; ins = al.get("consumes-items") or ([al["consumes-item"]] if al.get("consumes-item") else [])
+        bits.append("allows: " + " and ".join(ins) + " → " + str(al.get("creates-item")))
+    if ev.get("requires"):
+        r = ev["requires"]; bits.append(("requires: to receive " if r.get("action") == "receives" else "requires: to provide ") + flow(r) + " by " + str(r.get("due-date")))
+    if ev.get("expects"): bits.append(f"expects, {ev['expects'].get('confidence')}% sure")
+    if ev.get("is-allowed-by"): bits.append("enabled by " + str(ev["is-allowed-by"].get("capacity")))
+    return f"{(ev.get('has-date') or {}).get('date', '—')}: " + "; ".join(bits)
 
 
 def _kv(p):

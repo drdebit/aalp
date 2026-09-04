@@ -215,6 +215,8 @@
               (str account " ← " hint)
               account)]))]]]))
 
+(declare chain-panel)
+
 (defn narrative-panel []
   (let [problem (state/current-problem)
         is-reverse? (= (:problem-type problem) "reverse")
@@ -251,9 +253,14 @@
            [:p (:narrative problem)]]]
 
          :else
-         ;; Forward problem: Show narrative as usual
+         ;; Forward problem: the narrative, then the company's chain,
+         ;; because the entry will be read against it.
          [:div.narrative
-          [:p (:narrative problem)]])
+          (when-let [blurb (:company-blurb problem)]
+            [:p.company-blurb blurb])
+          [:p (:narrative problem)]
+          (when-let [ev (seq (:prior-events problem))]
+            [chain-panel ev (str "The chain — " (or (:company problem) "this company") "'s books so far")])])
        [:p.loading "Loading problem..."])]))
 
 (defn parameter-input [assertion-code param-key param-spec current-value]
@@ -1074,6 +1081,50 @@
       :title "Work through SP's first year one step at a time"}
      "Walk me through it"]))
 
+(defn- event-summary
+  "One line for one event in the chain: the date, what moved, and what
+   the event said beyond that."
+  [ev]
+  (let [flow (fn [v] (let [fs (cond (nil? v) [] (sequential? v) v :else [v])]
+                       (clojure.string/join " + "
+                         (for [f fs]
+                           (cond (= "monetary-unit" (:unit f)) (str "$" (:quantity f))
+                                 (= "ownership-units" (:unit f)) (str (:quantity f) " ownership units")
+                                 (= "service-unit" (:unit f)) "a service"
+                                 :else (str (:quantity f) " " (or (:physical-item f) "?")))))))
+        bits (cond-> []
+               (:receives ev) (conj (str "received " (flow (:receives ev))))
+               (:provides ev) (conj (str "provided " (flow (:provides ev))))
+               (:consumes ev) (conj (str "used up " (flow (:consumes ev))))
+               (:creates ev)  (conj (str "made " (flow (:creates ev))))
+               (:has-counterparty ev) (conj (str "with " (get-in ev [:has-counterparty :name])))
+               (:allows ev) (conj (str "allows: "
+                                       (clojure.string/join " and " (or (seq (get-in ev [:allows :consumes-items]))
+                                                                        (some-> (get-in ev [:allows :consumes-item]) vector)))
+                                       " → " (get-in ev [:allows :creates-item])))
+               (:requires ev) (conj (str "requires: " (if (= "receives" (get-in ev [:requires :action])) "to receive " "to provide ")
+                                         (flow (:requires ev)) " by " (get-in ev [:requires :due-date])))
+               (:expects ev) (conj (str "expects, " (get-in ev [:expects :confidence]) "% sure"))
+               (:is-allowed-by ev) (conj (str "enabled by " (get-in ev [:is-allowed-by :capacity]))))]
+    (str (or (get-in ev [:has-date :date]) "—") ": " (clojure.string/join "; " bits))))
+
+(defn chain-panel
+  "The chain: everything the business has said so far. This is the
+   record the entry is a reading of, and the place a later event's
+   reason lives -- shown, so that \"in the chain\" points at something."
+  [events title]
+  [:div.chain-panel
+   [:h4 title]
+   (if (seq events)
+     [:ol.chain-events
+      (doall
+        (for [[i ev] (map-indexed vector events)]
+          ^{:key (str "chain-" i)}
+          [:li.chain-event
+           (when-let [id (:has-identifier ev)] [:span.chain-id (str id " ")])
+           (event-summary ev)]))]
+     [:p.chain-empty "Nothing yet. The first thing you say starts it."])])
+
 (defn walkthrough-panel
   "One step at a time: a sentence, one thing to do, and a sentence reading
    back what appeared.
@@ -1134,7 +1185,7 @@
                            ;; chain the next one is read against: blank
                            ;; shirts are inventory because of what was said
                            ;; about the printer an episode ago.
-                           (state/remember-walkthrough-event! built)
+                           (state/remember-walkthrough-event! built (:id (episodes/episode ep-before)))
                            (state/clear-selections!)
                            (api/derive-je!))))}
          ;; One label for one action. It used to say "Continue" on steps
@@ -1425,7 +1476,7 @@
 
            (when (seq not-reflected)
              [:div.dj-not-reflected
-              [:h5 "Recorded -- but not reflected"]
+              [:h5 "In the chain, not on the entry"]
               (doall
                 (for [nr not-reflected]
                   ^{:key (:code nr)}
@@ -3140,7 +3191,9 @@
        [:div.walkthrough-container
         [walkthrough-panel]
         [:div.two-column-layout
-         [sentence-builder]
+         [:div
+          [chain-panel (state/walkthrough-events) "The chain — what the business has said so far"]
+          [sentence-builder]]
          ;; derived-je-panel carries its own heading; adding another
          ;; printed "What your assertions produce" twice, one above the
          ;; other.

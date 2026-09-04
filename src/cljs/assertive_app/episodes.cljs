@@ -104,6 +104,32 @@
      {:say "Tomorrow the business buys blank t-shirts."
       :then "Because of what you said today, the record will already know what they're for."}]}
 
+   ;; The same lesson as the printer, on something with no weight: a
+   ;; design is an asset because the record says what it is for and it
+   ;; is not used up by that use. Sits between the printer and the
+   ;; shirts so `allows` is seen twice in a row on two different things.
+   {:id :design
+    :title "SP buys a design"
+    :palette #{:has-date :provides :receives :has-counterparty :allows}
+    :steps
+    [{:say "A printer prints something. Today SP pays a designer $400 for a logo to put on the shirts. When?"
+      :do {:kind :set-date}}
+
+     {:say "The business paid $400."
+      :do {:kind :assert :code :provides :params {:unit "monetary-unit"}}}
+
+     {:say "And received a design — one logo."
+      :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
+      :then "Not yet classified, again. A design isn't automatically anything. A design studio would sell it on; the record has to hear what SP will do with it."}
+
+     {:say "SP bought it to print on blank shirts, with ink, making printed ones. Same as the printer: say what it allows."
+      :do {:kind :assert :code :allows}
+      :then "Design (Intangible Asset). Nothing you can drop on your foot — and an asset for exactly the reason the printer was: it makes printed shirts possible, and it is still there after every shirt. Kept for a future use, not used up by it. That is what \"asset\" means."}
+
+     {:say "Who did the business pay? Ada Okafor, the designer."
+      :do {:kind :assert :code :has-counterparty}
+      :then "Balanced. Two very different things, one reason, one account family."}]}
+
    {:id :materials
     :title "SP buys shirts and ink"
     :palette #{:has-date :provides :receives :has-counterparty}
@@ -167,6 +193,25 @@
      {:say "One more. What made this possible?"
       :do {:kind :assert :code :is-allowed-by}
       :then "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."}]}
+
+   ;; The other answer to "what is left afterwards?": nothing.
+   {:id :service
+    :title "The printer is serviced"
+    :palette #{:has-date :provides :receives :has-counterparty}
+    :steps
+    [{:say "The printer needs a service. A technician from PrinterWorld comes out and SP pays $60. When?"
+      :do {:kind :set-date}}
+
+     {:say "The business paid $60."
+      :do {:kind :assert :code :provides :params {:unit "monetary-unit"}}}
+
+     {:say "And received a service — work done for it. Pick \"Service\" as the unit."
+      :do {:kind :assert :code :receives :params {:unit "service-unit"}}
+      :then "Services Expense. No \"not yet classified\" this time, and no allows to add: a service is used up as it is done. Nothing is left to keep for a future use, so there is nothing to call an asset. That is what an expense is — the printer was kept; the servicing is gone."}
+
+     {:say "And who did the work."
+      :do {:kind :assert :code :has-counterparty}
+      :then "Done. Compare it with the design: money went out both days. One bought something that stays, one bought something that doesn't, and the record knows which because you told it what each was for."}]}
 
    {:id :sale
     :title "SP sells shirts"

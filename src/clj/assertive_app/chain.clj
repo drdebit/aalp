@@ -174,12 +174,24 @@
    :capital         "Equipment (Fixed Asset)"
    :service         "Service Cost"})
 
+(defn position-account
+  "The label for a position. The position itself is read off the record;
+   only the word chosen for it consults the catalogue, and only to tell a
+   machine from a design -- both are capital, kept for future use and not
+   used up by it, and double-entry files them under different names."
+  [position item item-kinds]
+  (if (and (= :capital position)
+           (= :intangible (get item-kinds (keyword (or item "")))))
+    "Design (Intangible Asset)"
+    (position-accounts position)))
+
 (defn inventory-account
   "The account an item's movements hit, given the chain and the firm's
    catalogue. nil when neither determines a position."
   ([events item] (inventory-account events item nil))
   ([events item item-kinds]
-   (some-> (inventory-position events item item-kinds) position-accounts)))
+   (some-> (inventory-position events item item-kinds)
+           (position-account item item-kinds))))
 
 ;; ---------------------------------------------------------------------------
 ;; What SP actually has

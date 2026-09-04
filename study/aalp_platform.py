@@ -22,12 +22,13 @@ ITEM_LABELS = {
     "ink-cartridges": "Ink Cartridges",
     "t-shirt-printer": "T-Shirt Printer",
     "printed-tshirts": "Printed T-Shirts",
+    "logo-design": "Logo Design",
 }
 # The sentence builder hard-codes these (views.cljs render-provides/receives-fragment).
 PROVIDES_ITEMS = ["printed-tshirts", "blank-tshirts"]
-RECEIVES_ITEMS = ["printed-tshirts", "blank-tshirts", "ink-cartridges", "t-shirt-printer"]
+RECEIVES_ITEMS = ["printed-tshirts", "blank-tshirts", "ink-cartridges", "t-shirt-printer", "logo-design"]
 UNIT_WORD = {"monetary-unit": "cash", "physical-unit": "physical units", "time-unit": "time",
-             "effort-unit": "effort/labor", "ownership-units": "ownership units"}
+             "effort-unit": "effort/labor", "service-unit": "a service", "ownership-units": "ownership units"}
 FLOW_CODES = ("consumes", "creates")
 # Legacy vocabulary entries the sentence builder never renders.
 HIDDEN_CODES = {"consumes-inventory", "consumes-supplies", "consumes-labor", "creates-finished-goods"}

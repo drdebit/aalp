@@ -80,6 +80,19 @@
     :purchasable? true
     :sellable? false}
 
+   :logo-design
+   {:label "Logo Design"
+    :description "a design to print on shirts"
+    :account "Design (Intangible Asset)"
+    :account-type :asset
+    :enables [:capability]
+    :available-for #{:receives}
+    :unlock-level 0
+    :unit-cost 400
+    :category :intangible
+    :purchasable? false
+    :sellable? false}
+
    :printed-tshirts
    {:label "Printed T-Shirts"
     :description "finished goods for sale"
@@ -116,6 +129,7 @@
    {:value "physical-unit" :label "Physical Units"}
    {:value "time-unit" :label "Time"}
    {:value "effort-unit" :label "Effort/Labor"}
+   {:value "service-unit" :label "Service (work done for the business)"}
    {:value "ownership-units" :label "Ownership Units (shares/membership)"}])
 
 ;; Derived helpers for simulation
@@ -1348,6 +1362,28 @@
      :requires-position {:receives :capital}
      :examples ["SP purchases t-shirt printer for $3,000 cash, and says it turns blank shirts into printed ones"])
 
+   :design-purchase
+   (cash-exchange
+     "Cash purchase of a design (provide cash, receive an intangible asset)"
+     [{:debit "Design (Intangible Asset)" :credit "Cash"}]
+     :provides-unit "monetary-unit"
+     :receives-unit "physical-unit"
+     :physical-item "logo-design"
+     ;; A design is an asset for the same reason a printer is: the record
+     ;; says what it is for, and it is not used up by that use.
+     :permits #{:allows}
+     :also-required #{:allows}
+     :requires-position {:receives :capital}
+     :examples ["SP pays a designer $400 for a logo it will print on shirts, and says so"])
+
+   :service-purchase
+   (cash-exchange
+     "Cash purchase of a service (provide cash, receive work done -- an expense)"
+     [{:debit "Services Expense" :credit "Cash"}]
+     :provides-unit "monetary-unit"
+     :receives-unit "service-unit"
+     :examples ["SP pays $60 to have the printer serviced"])
+
    :inventory-purchase-on-credit
    {:required #{:has-date :receives :has-counterparty :requires}
     :prohibited #{:provides :expects}  ;; No expects - we control our own payments
@@ -2488,6 +2524,32 @@
                 :equipment-type ["a T-shirt Printer"]
                 :vendor ["PrinterWorld" "EquipmentDirect" "BusinessSupply"]
                 :amount [3000]}}
+
+   :cash-design-purchase
+   {:narrative-template "On {date}, {company} pays {vendor} ${amount} for a logo design it will print on its blank t-shirts."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "physical-unit" :physical-item "logo-design" :quantity 1}
+                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
+                          :has-counterparty {:name :vendor}}
+    :correct-classification :design-purchase
+    :level 0
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
+                :vendor ["Ada Okafor, designer" "Pixel & Thread Studio" "a freelance illustrator"]
+                :amount [300 400 500]}}
+
+   :cash-service-purchase
+   {:narrative-template "On {date}, {company} pays {vendor} ${amount} to {service}."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "service-unit" :quantity 1}
+                          :has-counterparty {:name :vendor}}
+    :correct-classification :service-purchase
+    :level 0
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
+                :vendor ["PrinterWorld" "QuickFix Repairs" "the landlord's electrician"]
+                :service ["service its printer" "repair a jammed print head" "rewire the shop's lighting"]
+                :amount [60 90 150]}}
 
    :cash-sale
    {:narrative-template "On {date}, {company} sells {quantity} printed t-shirts to {customer} for ${amount} cash. It printed those shirts earlier at ${unit-cost} each."

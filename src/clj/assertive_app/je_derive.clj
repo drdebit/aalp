@@ -89,13 +89,13 @@
     :when {:assertion :receives :params {:unit "monetary-unit"}}
     :line {:side :debit :account "Cash"}
     :amount :flow
-    :text "Money coming in increases Cash, an asset. Assets increase with debits."}
+    :text "Money the business holds is Cash -- an asset, because it can be turned to any future use the business has. More came in."}
 
    {:id :cash-out
     :when {:assertion :provides :params {:unit "monetary-unit"}}
     :line {:side :credit :account "Cash"}
     :amount :flow
-    :text "Money going out decreases Cash. Assets decrease with credits."}
+    :text "Money the business holds is Cash -- an asset. Some went out."}
 
    ;; -------- Money in with nothing going out: the residual ----------
    {:id :owner-capital
@@ -119,6 +119,14 @@
     :line {:side :debit :account :position}
     :amount :monetary
     :text :position}
+
+   ;; -------- A service received --------------------------------------
+   {:id :service-expense
+    :when {:assertion :receives
+           :params {:unit "service-unit"}}
+    :line {:side :debit :account "Services Expense"}
+    :amount :monetary
+    :text "SP received a service -- work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What SP paid or owes for it is the money side of the same exchange."}
 
    ;; -------- Labour received ------------------------------------------
    {:id :wage-expense
@@ -208,10 +216,13 @@
   "Why the item landed in this account. The position is read off the
    chain (and SP's catalogue of what kind of thing each item is), so the
    explanation names the reasoning rather than the item."
-  {:raw-materials      "SP's rulebook: this is an input -- something bought to be used up in production, not sold as it is. Inputs are Raw Materials Inventory, an asset, carried at what SP gave (or owes) for them."
+  ;; Each says what the thing IS to the business and why -- its future
+  ;; use -- which is what the account name stands for. Why an asset sits
+  ;; on the debit side is the accounting equation's business, not ours.
+  {:raw-materials      "The record says this will be used up making something to sell -- the capability it feeds names it as an input. A thing held for a future use is an asset, and one held to be used up in production is Raw Materials Inventory."
    :work-in-process    "This item was created by one transformation and consumed by another: it is caught between stages. Nobody asserted that -- it is true because of what the record shows happened next, and it would stop being true if nothing further consumed it."
-   :finished-goods     "SP's rulebook: this is ready to sell as it stands, so it is Finished Goods Inventory -- an asset held for sale."
-   :equipment-or-other "SP's rulebook: this is used for years rather than sold to customers, so it is Equipment -- a long-term asset."
+   :finished-goods     "The record says this was made (or bought) to be sold as it stands. An asset held for sale is Finished Goods Inventory."
+   :capital            "The record says this is what makes production possible -- it turns inputs into products -- and it is not used up doing so. A thing kept for a future use, and still there after that use, is a long-lived asset: Equipment when it is a machine, an intangible asset when it is a design."
    :service            "A service consumed rather than a thing held: it is a cost of the period, not an asset."})
 
 (def not-reflected-texts
@@ -255,6 +266,8 @@
       "physical-unit"      (q/physical v (keyword (or physical-item "unspecified")))
       ("time-unit" "time") (q/time-qty v)
       ("effort-unit" "effort") (q/effort v)
+      ;; A service is work done for the business: effort it received.
+      "service-unit"           (q/effort v)
       ;; A claim on the business: countable, additive, commensurable
       ;; between holders -- and deliberately NOT monetary, so it can
       ;; never price a journal-entry line. Units are recorded; what they
@@ -387,7 +400,7 @@
   [account flow context]
   (if (= :position account)
     (or (some-> (resolve-position flow context)
-                chain/position-accounts)
+                (chain/position-account (:physical-item flow) (:item-kinds context)))
         ;; Not an account. The record has not said what this thing is,
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.

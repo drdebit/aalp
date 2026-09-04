@@ -106,6 +106,49 @@
       "then" : "Because of what you said today, the record will already know what they're for."
     } ]
   }, {
+    "id" : "design",
+    "title" : "SP buys a design",
+    "palette" : [ "has-counterparty", "receives", "has-date", "allows", "provides" ],
+    "steps" : [ {
+      "say" : "A printer prints something. Today SP pays a designer $400 for a logo to put on the shirts. When?",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "The business paid $400.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      }
+    }, {
+      "say" : "And received a design — one logo.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "physical-unit"
+        }
+      },
+      "then" : "Not yet classified, again. A design isn't automatically anything. A design studio would sell it on; the record has to hear what SP will do with it."
+    }, {
+      "say" : "SP bought it to print on blank shirts, with ink, making printed ones. Same as the printer: say what it allows.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "allows"
+      },
+      "then" : "Design (Intangible Asset). Nothing you can drop on your foot — and an asset for exactly the reason the printer was: it makes printed shirts possible, and it is still there after every shirt. Kept for a future use, not used up by it. That is what \"asset\" means."
+    }, {
+      "say" : "Who did the business pay? Ada Okafor, the designer.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Balanced. Two very different things, one reason, one account family."
+    } ]
+  }, {
     "id" : "materials",
     "title" : "SP buys shirts and ink",
     "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
@@ -215,6 +258,42 @@
       "then" : "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."
     } ]
   }, {
+    "id" : "service",
+    "title" : "The printer is serviced",
+    "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
+    "steps" : [ {
+      "say" : "The printer needs a service. A technician from PrinterWorld comes out and SP pays $60. When?",
+      "do" : {
+        "kind" : "set-date"
+      }
+    }, {
+      "say" : "The business paid $60.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "provides",
+        "params" : {
+          "unit" : "monetary-unit"
+        }
+      }
+    }, {
+      "say" : "And received a service — work done for it. Pick \"Service\" as the unit.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "receives",
+        "params" : {
+          "unit" : "service-unit"
+        }
+      },
+      "then" : "Services Expense. No \"not yet classified\" this time, and no allows to add: a service is used up as it is done. Nothing is left to keep for a future use, so there is nothing to call an asset. That is what an expense is — the printer was kept; the servicing is gone."
+    }, {
+      "say" : "And who did the work.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Done. Compare it with the design: money went out both days. One bought something that stays, one bought something that doesn't, and the record knows which because you told it what each was for."
+    } ]
+  }, {
     "id" : "sale",
     "title" : "SP sells shirts",
     "palette" : [ "has-counterparty", "receives", "has-date", "provides" ],
@@ -278,7 +357,7 @@
         "content" : "Let's record one together. Suppose you see this transaction:\n\n*\"On January 8, you purchase 50 blank t-shirts from TextileDirect for $150 cash.\"*\n\nHere is exactly what you'd do, click by click:\n\n**Step 1.** Read the sentence slowly. Find the four facts: the date (January 8), the other party (TextileDirect), what went out ($150), what came in (50 blank t-shirts).\n\n**Step 2.** **Has Date** is usually already selected with the date filled in — just check that it matches.\n\n**Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.\n\n**Step 4.** Click **Receives**. Choose **physical-unit** (things came in), pick the item (blank t-shirts), and enter the quantity: 50.\n\n**Step 5.** Click **Has Counterparty** and enter who: TextileDirect.\n\n**Step 6.** Read your sentence back at the top of the panel — it should retell the story. Then click **Submit**.\n\n::assertions\nhas-date: January 8\nhas-counterparty: TextileDirect\nprovides: $150 (monetary-unit)\nreceives: 50 blank t-shirts (physical-unit)\n::\n\nThat's the entire skill at this level. Every problem is this same pattern with different details."
       }, {
         "heading" : "Where the Journal Entry Comes From",
-        "content" : "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.\n\nThe translation rule is simple:\n\n- What you **receive** is **debited** — it came IN\n- What you **provide** is **credited** — it went OUT\n\nSo for the t-shirt purchase:\n\n::journal\nDR Raw Materials Inventory $150\nCR Cash $150\n::\n\nRead it as: \"t-shirts came in ($150 worth), cash went out ($150).\" Buying equipment works exactly the same way — a $3,000 printer gives DR Equipment, CR Cash.\n\nWatch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see the rule that built it. Over the semester, this is how debits and credits start to feel obvious instead of memorized."
+        "content" : "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.\n\nWhat the entry adds to your sentence is a **name for each thing** — an account — and the name says what that thing *is* to the business:\n\n::journal\nDR Raw Materials Inventory $150\nCR Cash $150\n::\n\nCash is money the business holds; it is an **asset** because it can be put to any future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts, and that future use is what \"Raw Materials Inventory\" means. A printer is held to *make* things and is still there afterwards, so it is \"Equipment\". Money spent on a repair buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterwards?*\n\nThat is where your assertions come in. The record can only name a thing once it knows what it is for — and you are the one who says so. Which side each name goes on (debit or credit) is the accounting equation's job, and the rest of the course covers it; here, the platform fills that in for you.\n\nWatch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says \"(not yet classified)\", the record is telling you it doesn't know yet what the thing is for."
       }, {
         "heading" : "Practice First — Mistakes Are Free",
         "content" : "Next you'll take a short quiz on this reading, and then do a **practice round**.\n\nPractice problems are a sandbox: they do **not** go into your company's books, and you get complete feedback on every answer — what you got right, what you missed, and why. Get enough right and you'll unlock the real thing: recording Year 1 of your company's books.\n\nTwo things to remember once you ARE keeping the books:\n\n1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong — errors sit in the records until someone finds them. (You'll do that finding yourself, later, at year-end.)\n\n2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this — including during practice. Using it is smart, not cheating."

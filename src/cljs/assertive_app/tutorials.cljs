@@ -122,21 +122,18 @@ That's the entire skill at this level. Every problem is this same pattern with d
      {:heading "Where the Journal Entry Comes From"
       :content "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.
 
-The translation rule is simple:
-
-- What you **receive** is **debited** — it came IN
-- What you **provide** is **credited** — it went OUT
-
-So for the t-shirt purchase:
+What the entry adds to your sentence is a **name for each thing** — an account — and the name says what that thing *is* to the business:
 
 ::journal
 DR Raw Materials Inventory $150
 CR Cash $150
 ::
 
-Read it as: \"t-shirts came in ($150 worth), cash went out ($150).\" Buying equipment works exactly the same way — a $3,000 printer gives DR Equipment, CR Cash.
+Cash is money the business holds; it is an **asset** because it can be put to any future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts, and that future use is what \"Raw Materials Inventory\" means. A printer is held to *make* things and is still there afterwards, so it is \"Equipment\". Money spent on a repair buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterwards?*
 
-Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see the rule that built it. Over the semester, this is how debits and credits start to feel obvious instead of memorized."}
+That is where your assertions come in. The record can only name a thing once it knows what it is for — and you are the one who says so. Which side each name goes on (debit or credit) is the accounting equation's job, and the rest of the course covers it; here, the platform fills that in for you.
+
+Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says \"(not yet classified)\", the record is telling you it doesn't know yet what the thing is for."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.

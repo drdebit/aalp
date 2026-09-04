@@ -9,13 +9,13 @@ c = AalpClient(); c.login("smoke-walk@study.test")
 content = json.load(open("content/content.json"))
 p = Platform(c, content, ["walkthrough", "tutorial:0"])
 script = {
- 0: [{"type":"next"},{"type":"next"},
+ "funding": [{"type":"next"},{"type":"next"},
      {"type":"add_assertion","code":"has-date","params":{"date":"2026-01-01"}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":20000}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"ownership-units","quantity":200}},{"type":"next"},
      {"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"SP"}},{"type":"next"}],
- 1: [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
+ "printer": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":3000}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"t-shirt-printer","quantity":1}},{"type":"next"},
      {"type":"next"},
@@ -23,30 +23,39 @@ script = {
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"PrinterWorld"}},{"type":"next"},
      {"type":"explore"},{"type":"toggle_assertion","code":"allows"},{"type":"toggle_assertion","code":"allows"},{"type":"explore"},{"type":"next"},
      {"type":"next"}],
- 2: [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
+ "design": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
+     {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":400}},{"type":"next"},
+     {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"logo-design","quantity":1}},{"type":"next"},
+     {"type":"add_assertion","code":"allows","params":{"consumes-items":["blank-tshirts","ink-cartridges"],"creates-item":"printed-tshirts"}},{"type":"next"},
+     {"type":"add_assertion","code":"has-counterparty","params":{"name":"Ada Okafor"}},{"type":"next"}],
+ "materials": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"blank-tshirts","quantity":20}},{"type":"next"},
      {"type":"open_line","index":0},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"TextileDirect"}},{"type":"next"}],
- 3: [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
+ "ink": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":20}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"ink-cartridges","quantity":2}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"InkMasters"}},{"type":"next"}],
- 4: [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-04"}},{"type":"next"},
+ "production": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-04"}},{"type":"next"},
      {"type":"add_assertion","code":"consumes","params":{"flows":[{"quantity":10,"physical-item":"blank-tshirts"},{"quantity":1,"physical-item":"ink-cartridges"}]}},{"type":"next"},
      {"type":"add_assertion","code":"creates","params":{"flows":[{"quantity":10,"physical-item":"printed-tshirts"}]}},{"type":"next"},
      {"type":"add_assertion","code":"is-allowed-by","params":{"capacity":"t-shirt-printer"}},{"type":"next"}],
- 5: [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-05"}},{"type":"next"},
+ "service": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-04"}},{"type":"next"},
+     {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":60}},{"type":"next"},
+     {"type":"add_assertion","code":"receives","params":{"unit":"service-unit","quantity":1}},{"type":"next"},
+     {"type":"add_assertion","code":"has-counterparty","params":{"name":"PrinterWorld"}},{"type":"next"}],
+ "sale": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-05"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"physical-unit","physical-item":"printed-tshirts","quantity":4}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"Customer"}},{"type":"next"},
      {"type":"open_line","index":2},{"type":"next"}],
 }
-show = {(0,4),(1,7),(2,3),(4,3),(5,4)}
+show = {("design",3),("materials",3),("production",3),("service",2),("sale",4)}
 while p.phase == "walkthrough":
-    ep = p.wt["episode"]
+    ep = p.episodes[p.wt["episode"]]["id"]
     for a in script[ep]:
-        if (ep, p.wt["step"] if p.wt else -1) in show and a["type"] in ("open_line","explore","toggle_assertion") or (ep,p.wt["step"] if p.wt else -1) in show and a["type"]=="next":
+        if (ep, p.wt["step"] if p.wt else -1) in show and a["type"]=="next":
             print(p.render()); print("......")
         r = p.apply(a)
         if r not in ("OK.","Next step.","New episode.") and not r.startswith(("Added","Updated","Opened","Closed","Explor","allows switched","Walkthrough")):

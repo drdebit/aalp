@@ -578,7 +578,8 @@
   (let [item-options [{:value "printed-tshirts" :label "Printed T-Shirts"}
                       {:value "blank-tshirts" :label "Blank T-Shirts"}
                       {:value "ink-cartridges" :label "Ink Cartridges"}
-                      {:value "t-shirt-printer" :label "T-Shirt Printer"}]]
+                      {:value "t-shirt-printer" :label "T-Shirt Printer"}
+                      {:value "logo-design" :label "Logo Design"}]]
     [:span.assertion-fragment.receives
      [:span.verb "receives "]
      [inline-number-input :receives :quantity (:quantity params) "qty"]
@@ -586,7 +587,12 @@
      (if (= (:unit params) "physical-unit")
        [:span
         [inline-dropdown :receives :physical-item item-options (:physical-item params) "item"]]
-       [:span.unit-label "cash"])
+       [:span.unit-label (case (:unit params)
+                           "service-unit" "a service"
+                           "effort-unit" "labour"
+                           "time-unit" "time"
+                           "ownership-units" "ownership units"
+                           "cash")])
      [remove-assertion-button :receives]]))
 
 (defn- render-counterparty-fragment

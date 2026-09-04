@@ -59,11 +59,12 @@ class AalpClient:
     def classify(self, payload):
         return self._req("POST", "/classify", payload)
 
-    def derive_je(self, selected, variables, prior_events):
+    def derive_je(self, selected, variables, prior_events, isolated=False):
         return self._req("POST", "/derive-je",
                          {"selected-assertions": selected,
                           "variables": variables or {},
-                          "prior-events": prior_events or []})
+                          "prior-events": prior_events or [],
+                          "isolated": isolated})
 
     def worked_example_viewed(self, payload):
         return self._req("POST", "/worked-example-viewed", payload)

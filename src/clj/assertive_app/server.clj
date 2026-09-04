@@ -110,13 +110,19 @@
                                 (set (map keyword selected-assertions-raw)))
           correct-classification (when-let [cc (:correct-classification body)]
                                    (keyword cc))
-          ;; The practice drill: each problem is a fresh scenario with no
-          ;; record behind it, so positions (raw materials, capital) that
-          ;; are read off a chain cannot be read here. Say so, rather
-          ;; than grading every purchase as unplaced.
+          ;; The practice drill: each problem belongs to another company
+          ;; and comes with that company's record, which the client sends
+          ;; back. Positions and costs are read off it, the same way SP's
+          ;; are read off SP's ledger. A request with no record at all is
+          ;; graded as a sentence with no paragraph.
+          prior (vec (or (:prior-events body) []))
           result (classification/classify-transaction selected-assertions
                                                      :correct-classification correct-classification
-                                                     :context {:standalone? true})
+                                                     :context (if (seq prior)
+                                                                {:events prior
+                                                                 :item-kinds simulation/item-kinds
+                                                                 :cost-basis (cost/cost-basis prior)}
+                                                                {:standalone? true}))
           correct? (= :correct (get-in result [:feedback :status]))]
 
       ;; Return response - include progress if authenticated
@@ -530,7 +536,11 @@
             ;; wrap-json-body already keywordizes keys, so these
             ;; arrive in the shape the derivation expects.
             walked  (vec (or prior-events []))
-            events  (concat (or (:events context) []) walked)
+            ;; A practice problem is another company's, and the walkthrough
+            ;; is a lesson: neither is read against SP's ledger.
+            events  (if (:isolated body)
+                      walked
+                      (concat (or (:events context) []) walked))
             ;; The cost basis has to be recomputed over the COMBINED
             ;; chain, not just the ledger. Otherwise a walkthrough
             ;; establishes what things ARE -- blank shirts are an input --

@@ -284,6 +284,9 @@
     (POST (str api-base "/classify")
       {:params (cond-> {:selected-assertions (state/selected-assertions)
                         :correct-classification correct-classification
+                        ;; The company's record, so the grader reads the
+                        ;; same paragraph the derived panel does.
+                        :prior-events (:prior-events problem)
                         ;; Include metadata for progress tracking
                         :problem-id (:id problem)
                         :problem-type (or (:problem-type problem) "forward")
@@ -606,7 +609,14 @@
               ;; Sent rather than stored: the walkthrough teaches, and a
               ;; student working through it twice should not accumulate
               ;; two printers in their books.
-              :prior-events (state/walkthrough-events)}
+              :prior-events (if (state/walkthrough-active?)
+                              (state/walkthrough-events)
+                              ;; A practice problem carries the record of
+                              ;; the company it belongs to.
+                              (:prior-events (state/current-problem)))
+              ;; Neither a lesson nor another company's problem is read
+              ;; against SP's own ledger.
+              :isolated (or (state/walkthrough-active?) (state/drill-active?))}
      :format :json
      :headers (auth-headers)
      :response-format :json

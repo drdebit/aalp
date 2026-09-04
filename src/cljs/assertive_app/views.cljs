@@ -3133,8 +3133,9 @@
           [:div.drill-header
            [:h2 (str "Practice round " round)]
            [:p.drill-sandbox-note
-            (str "These practice transactions don't go into your books — "
-                 "mistakes here are free. Get "
+            (str "Other people's businesses, not SP's: each problem is a "
+                 "different company with its own books, and nothing carries "
+                 "over between problems. Mistakes here are free. Get "
                  pass-count " of " round-size
                  (if streak-pass
                    (str " right — or " streak-pass " in a row — to start recording.")

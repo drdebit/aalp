@@ -166,10 +166,15 @@ class Platform:
             return {}   # api.cljs derive-je!: the walkthrough's numbers are the student's own
         return (self.problem or {}).get("variables") or {}
 
+    def _prior_events(self):
+        if self.phase == "walkthrough":
+            return self.walk_events
+        return (self.problem or {}).get("prior-events") or []
+
     def _derive(self):
         try:
-            self.derived = self.c.derive_je(self._sel_payload(), self._variables(),
-                                            self.walk_events if self.phase == "walkthrough" else [])
+            self.derived = self.c.derive_je(self._sel_payload(), self._variables(), self._prior_events(),
+                                            isolated=self.phase in ("walkthrough", "drill"))
         except Exception as e:
             self.derived = {"error": str(e)}
 
@@ -608,6 +613,7 @@ class Platform:
         p = self.problem
         payload = {"selected-assertions": self._sel_payload(),
                    "correct-classification": p.get("correct-classification"),
+                   "prior-events": p.get("prior-events") or [],
                    "problem-id": p.get("id"), "problem-type": p.get("problem-type") or "forward",
                    "level": p.get("level", 0), "template-level": p.get("template-level"),
                    "template-key": p.get("template"),
@@ -954,7 +960,7 @@ class Platform:
         p = self.problem or {}
         streak_note = f" · {d['streak']} in a row" if d["streak_pass"] and d["streak"] >= 2 else ""
         out = [f"=== Practice round {d['round']} ===",
-               f"These practice transactions don't go into your books — mistakes here are free. Get {d['pass_count']} of {d['round_size']} right — or {d['streak_pass']} in a row — to start recording.",
+               f"Other people's businesses, not SP's: each problem is a different company with its own books, and nothing carries over between problems. Mistakes here are free. Get {d['pass_count']} of {d['round_size']} right — or {d['streak_pass']} in a row — to start recording.",
                f"This round: {d['correct']} correct of {d['attempted']} attempted{streak_note}   [button: Review Tutorial]",
                "", "--- Transaction ---", p.get("narrative", ""), "",
                "--- Your sentence (the sentence builder) ---", self._sentence()]

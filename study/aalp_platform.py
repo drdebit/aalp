@@ -340,7 +340,7 @@ class Platform:
         # Mirror views.cljs auto-populate-assertion!: the verb is fixed and
         # the unit defaults to the other side of the present exchange.
         if code == "requires":
-            clean["action"] = "provides"
+            clean["action"] = "receives" if self.selected.get("provides", {}).get("unit") == "physical-unit" else "provides"
             clean.setdefault("unit", "physical-unit" if self.selected.get("receives", {}).get("unit") == "monetary-unit" else "monetary-unit")
         if code == "expects":
             clean["action"] = "receives"
@@ -760,9 +760,12 @@ class Platform:
                 flows = "; ".join(f"{fl.get('quantity', '(qty)')} × {ITEM_LABELS.get(fl.get('physical-item'), '(item)')}" for fl in fls) or "(nothing yet)"
                 out.append(f"  {'Consumes' if code == 'consumes' else 'Creates'}: {flows}   [{code}]")
             elif code == "requires":
-                who = "SP" if "receives" in self.selected and self.selected["receives"].get("unit") == "physical-unit" else (self.selected.get("has-counterparty", {}).get("name") or "The counterparty")
-                unit = "physical units" if p.get("unit") == "physical-unit" else "cash"
-                out.append(f"  This creates an obligation: {who} must provide {p.get('quantity', '(amount)')} {unit} by {p.get('due-date', '(due date)')}   [requires: {_kv(p)}]")
+                party = self.selected.get("has-counterparty", {}).get("name") or "the counterparty"
+                unit = "goods" if p.get("unit") == "physical-unit" else "cash"
+                if p.get("action") == "receives":
+                    out.append(f"  This creates an obligation: The business is to receive {p.get('quantity', '(amount)')} {unit} from {party} by {p.get('due-date', '(due date)')} — a claim the business holds; {party} must provide it.   [requires: {_kv(p)}]")
+                else:
+                    out.append(f"  This creates an obligation: The business must provide {p.get('quantity', '(amount)')} {unit} to {party} by {p.get('due-date', '(due date)')} — a debt the business owes.   [requires: {_kv(p)}]")
             elif code == "expects":
                 out.append(f"  Expectation of fulfillment: SP expects payment with {p.get('confidence', '(?)')}% confidence   [expects: {_kv(p)}]")
             else:

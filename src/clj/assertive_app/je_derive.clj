@@ -159,8 +159,11 @@
    ;; -------- Obligations: SAME assertion, different account,
    ;;          depending on which way the goods flowed ---------------
    {:id :receivable
+    ;; The business is to RECEIVE money: provides and receives are always
+    ;; the business's own actions, so a customer's promise is recorded as
+    ;; what the business will receive, not as the customer providing.
     :when {:assertion :requires
-           :params {:action "provides" :unit "monetary-unit"}}
+           :params {:action "receives" :unit "monetary-unit"}}
     :context {:all-of [{:assertion :provides :params {:unit "physical-unit"}}]}
     :line {:side :debit :account "Accounts Receivable"}
     :amount :flow

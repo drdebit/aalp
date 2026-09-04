@@ -573,8 +573,10 @@
                    :nested-assertion :action-structure}}}
      :parameters {:action {:type :dropdown
                            :label "Obligated to"
-                           :options [{:value "provides" :label "Provide (they give us something)"}
-                                     {:value "receives" :label "Receive (we give them something)"}]}
+                           ;; Always from the business's side: it provides
+                           ;; what it owes and receives what it is owed.
+                           :options [{:value "provides" :label "Provide (the business owes this)"}
+                                     {:value "receives" :label "Receive (the business is owed this)"}]}
                   :unit {:type :dropdown
                          :label "Unit type"
                          :options unit-type-options}
@@ -1378,7 +1380,9 @@
    {:required #{:has-date :provides :has-counterparty :requires :expects}
     :prohibited #{:receives}
     :required-parameters {:provides {:unit "physical-unit"}
-                          :requires {:action "provides" :unit "monetary-unit"}
+                          ;; The business is to RECEIVE the money: provides and
+                          ;; receives are always its own actions.
+                          :requires {:action "receives" :unit "monetary-unit"}
                           :expects {:confidence :any}}  ; Student must provide confidence
     :description "Credit sale: provide goods, customer obligated to pay, assess collection probability"
     :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
@@ -2541,8 +2545,9 @@
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
-                          ;; The sale creates a legal obligation for payment
-                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}
+                          ;; The sale creates a legal obligation for payment:
+                          ;; the business is to receive it.
+                          :requires {:action "receives" :unit "monetary-unit" :quantity :amount :due-date :due-date}
                           ;; Our assessment of collection probability - student must think about this
                           :expects {:confidence :confidence}}
     :correct-classification :sale-on-credit

@@ -346,10 +346,16 @@
         ;; Whoever owes, provides; SP expects to receive. The unit is the
         ;; other side of the present exchange: money is owed for goods
         ;; taken, goods are owed for money taken.
+        ;; Provides and receives are the business's own actions, in an
+        ;; obligation as in an exchange: it will provide what it owes and
+        ;; receive what it is owed. A sale on credit is therefore
+        ;; "requires: receives money"; a purchase on credit "requires:
+        ;; provides money".
         :requires
         (let [sel (state/selected-assertions)
+              sale? (= "physical-unit" (get-in sel [:provides :unit]))
               unit (if (= "monetary-unit" (get-in sel [:receives :unit])) "physical-unit" "monetary-unit")]
-          (state/update-assertion-parameter! :requires :action "provides")
+          (state/update-assertion-parameter! :requires :action (if sale? "receives" "provides"))
           (when-not (get-in sel [:requires :unit])
             (state/update-assertion-parameter! :requires :unit unit)))
 
@@ -597,20 +603,25 @@
    - Credit sale (SP provides goods) → counterparty must provide cash
    - Credit purchase (SP receives goods) → SP must provide cash to counterparty"
   [params counterparty-name is-purchase?]
-  (let [;; Determine obligated party and recipient based on transaction type
-        obligated-party (if is-purchase? "SP" (or counterparty-name "The counterparty"))
-        recipient (if is-purchase? (or counterparty-name "the vendor") "SP")]
+  ;; Said from the business's side, always: it must provide what it owes,
+  ;; and it is to receive what it is owed. The closing gloss names whose
+  ;; promise this is, which the verb alone left ambiguous.
+  (let [owes?  (not= "receives" (:action params))
+        party  (or counterparty-name "the counterparty")]
     [sentence-section :obligation "This creates an obligation:"
      [:div.requires-content
-      [:span.party-name obligated-party]
-      [:span " must provide "]
+      [:span.party-name "The business"]
+      [:span (if owes? " must provide " " is to receive ")]
       [inline-number-input :requires :quantity (:quantity params) "amount"]
       " "
       [inline-dropdown :requires :unit [{:value "monetary-unit" :label "cash"}
                                        {:value "physical-unit" :label "goods"}]
        (:unit params) "what"]
-      [:span (str " to " recipient " by ")]
+      [:span (str (if owes? " to " " from ") party " by ")]
       [inline-date-input :requires :due-date (:due-date params)]
+      [:span.obligation-gloss (if owes?
+                                " — a debt the business owes."
+                                (str " — a claim the business holds; " party " must provide it."))]
       [remove-assertion-button :requires]]]))
 
 (defn- assertion-param-options

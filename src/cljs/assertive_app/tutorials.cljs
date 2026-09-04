@@ -255,7 +255,7 @@ Walk through the four questions plus the new one:
 - Who? CampusBoutique. (**has-counterparty**)
 - What went out? 10 printed t-shirts. (**provides** — yes, provides! SP gave up real shirts today.)
 - What came in? *Nothing yet* — no receives.
-- Any promise? Yes: the customer must pay $250 by the due date. (**requires**)
+- Any promise? Yes: the customer must pay $250 by the due date. (**requires** — recorded from SP's side, as what SP *is to receive*. Provides and receives are always SP's own actions; SP never \"provides\" something a customer hands over.)
 
 And now the control question: who controls whether THIS promise gets kept? **The customer.** So SP also records:
 
@@ -265,7 +265,7 @@ And now the control question: who controls whether THIS promise gets kept? **The
 has-date: the sale date
 has-counterparty: CampusBoutique
 provides: 10 printed t-shirts (physical-unit)
-requires: customer must provide $250 (monetary-unit) by the due date
+requires: SP is to receive $250 (monetary-unit) by the due date — the customer's promise
 expects: 92% confident of receiving that $250
 ::
 

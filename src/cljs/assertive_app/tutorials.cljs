@@ -819,9 +819,9 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 - requires → Credit the payable
 
 **The requires/expects asymmetry:**
-- Credit purchase: **requires** only (SP controls payment)
-- Credit sale: **requires** + **expects** (customer controls payment)
-- Deferred revenue: **requires** only (SP controls delivery)
+- Credit purchase: **requires** only (SP's own promise — nothing to estimate)
+- Credit sale: **requires** + **expects** (will the customer pay? a probability worth recording)
+- Deferred revenue: **requires** only (SP's own promise to deliver)
 - Prepaid expense: **expects** only (vendor delivers service)
 
 **Revenue:** Emerges from providing goods/services for monetary payment — the exchange pattern itself.

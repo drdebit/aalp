@@ -157,9 +157,34 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
   accountant's bill.
 - **`allows` consumes a list**, as in the research example.
 
-**Not yet run against a cohort:** everything in this section. Next:
+- **The chain is shown and named.** Every event carries an identifier;
+  the chain (the walkthrough's episodes, or a practice company's record)
+  is listed beside the sentence builder and under the narrative, and the
+  strip reads "In the chain, not on the entry".
+- **Two resellers among the practice companies.** No press: their blank
+  shirts are finished goods because the chain shows them bought and sold
+  on, a purchase there is `merchandise-purchase`, and revenue and cost
+  of goods sold ask the position of what was provided rather than naming
+  an item. Companies have blurbs; common narratives have variants.
+- **Cost by query.** A goods-out flow may carry `from-event`, the id of
+  the batch; the cost basis prices those units at that batch's cost
+  (specific identification), else the weighted average. The derivation
+  returns `:batches`, the sentence builder offers them on a goods-out
+  line, and the sale episode asks the student to find the four shirts.
+- **The side of a line as a consequence.** Every rule text ends with the
+  direction the assertions give and the kind of thing it is, joined by
+  the one convention the class supplies. Episode one states it once.
+- **Expects is the probability.** The level-1 tutorial and quiz ask "do
+  we want a probability here?" instead of "who controls it"; a prepaid
+  permits `requires`; a prepaid derives Prepaid Expense.
+- **The `allows` experiment is a required step**, episodes open with
+  their date, the buyer is Campus Boutique.
 
-    cd study && ./run_cohort.sh c4 "s41:novice:haiku s42:trad:haiku s43:hasty:haiku" --max-turns 260
+Cohort c4 ran after the first six of these (all three finished the
+path; 27 of 28 practice submissions right); c5 is running on all of it.
+Next:
+
+    cd study && ./run_cohort.sh c6 "s61:novice:haiku s62:trad:haiku s63:hasty:haiku" --max-turns 280
 
 ## Conformance (the oracle)
 
@@ -167,7 +192,7 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
 `:journal-entry` templates are no longer a rival producer; they are the
 oracle. Current state, 43 classifications:
 
-    13 match   11 partial   18 gap   3 conflict   0 amount violations   (of 45)
+    14 match   11 partial   18 gap   3 conflict   0 amount violations   (of 46)
 
 - **conflict** = the rulebook derives an account the template does not
   name. All three are the template disagreeing with its own assertions:

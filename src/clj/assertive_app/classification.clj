@@ -2167,6 +2167,11 @@
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
                                                missing-assertions))))
 
+      ;; The lesson, not just the label: this is the assertion students
+      ;; forget on a design after remembering it on a printer.
+      (contains? missing-assertions :allows)
+      (conj "A thing that makes products -- a printer, a design -- isn't an asset until the record says what it is for. What does it turn into what? Say it with allows.")
+
       (seq incorrect-assertions)
       (conj (str "Incorrect assertions: "
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
@@ -2662,18 +2667,20 @@
                         "RegionalRetailer" {:history-rate 65 :total-orders 8 :industry-avg 75}}}
 
    :prepayment
-   {:narrative-template "On {date}, {company} receives ${amount} advance payment from {customer} for {service}. {company} must deliver within {days} days."
+   {:narrative-template "On {date}, {company} receives ${amount} in advance from {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
+    :narrative-templates ["On {date}, {company} receives ${amount} in advance from {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
+                          "{customer} pays {company} ${amount} up front on {date} for an order of {quantity} printed t-shirts, to be delivered within {days} days."]
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :customer}
-                          ;; SP is obligated to provide goods/services
-                          :requires {:action "provides" :unit "physical-unit" :due-date :due-date}}
+                          ;; The business must provide the shirts later
+                          :requires {:action "provides" :unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity :due-date :due-date}}
     :correct-classification :deferred-revenue
     :level 1
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
-                :service ["custom t-shirt printing services" "merchandise fulfillment" "a bulk order"]
-                :amount [2000 5000 10000 15000 20000]
+                :quantity [100 250 500 1000]
+                :amount [1000 2500 5000 10000]
                 :days [30 60 90 180]
                 ;; Due date derived from date + days
                 :due-date :calculated}}
@@ -3377,7 +3384,7 @@ The printed t-shirts are now finished goods ready for sale."
         ;; shop with no press: buying or selling its shirts, paying for a
         ;; service. About a third of those go to a reseller.
         reseller-ok? (contains? #{:cash-inventory-purchase :cash-sale :credit-sale :cash-service-purchase} template-key)
-        kind (if (and reseller-ok? (< (rand) 0.35)) :reseller :printer)
+        kind (if (and reseller-ok? (< (rand) 0.5)) :reseller :printer)
         backstory (practice-backstory (rand-nth (filterv #(= kind (:kind %)) practice-companies)))
         vars (-> (select-paired-variables (:variables template))
                  (as-> v (resolve-derived-variables template v))

@@ -360,8 +360,11 @@
             (state/update-assertion-parameter! :requires :unit unit)))
 
         :expects
+        ;; Money out and an expectation: a prepaid, and what is prepaid is
+        ;; usually a service. Goods out and an expectation: a sale on
+        ;; credit, and what is expected is money.
         (let [sel (state/selected-assertions)
-              unit (if (= "monetary-unit" (get-in sel [:provides :unit])) "physical-unit" "monetary-unit")]
+              unit (if (= "monetary-unit" (get-in sel [:provides :unit])) "service-unit" "monetary-unit")]
           (state/update-assertion-parameter! :expects :action "receives")
           (when-not (get-in sel [:expects :unit])
             (state/update-assertion-parameter! :expects :unit unit)))
@@ -621,7 +624,8 @@
       [inline-number-input :requires :quantity (:quantity params) "amount"]
       " "
       [inline-dropdown :requires :unit [{:value "monetary-unit" :label "cash"}
-                                       {:value "physical-unit" :label "goods"}]
+                                       {:value "physical-unit" :label "goods"}
+                                       {:value "service-unit" :label "services"}]
        (:unit params) "what"]
       [:span (str (if owes? " to " " from ") party " by ")]
       [inline-date-input :requires :due-date (:due-date params)]
@@ -765,7 +769,8 @@
       [:div.confidence-row
        [:span context-label " "]
        [inline-dropdown :expects :unit [{:value "monetary-unit" :label "cash"}
-                                      {:value "physical-unit" :label "goods or services"}]
+                                      {:value "physical-unit" :label "goods"}
+                                      {:value "service-unit" :label "services"}]
         (:unit params) "what"]
        " with "
        [confidence-slider :expects (:confidence params)]

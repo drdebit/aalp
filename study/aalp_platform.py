@@ -345,7 +345,7 @@ class Platform:
             clean.setdefault("unit", "physical-unit" if self.selected.get("receives", {}).get("unit") == "monetary-unit" else "monetary-unit")
         if code == "expects":
             clean["action"] = "receives"
-            clean.setdefault("unit", "physical-unit" if self.selected.get("provides", {}).get("unit") == "monetary-unit" else "monetary-unit")
+            clean.setdefault("unit", "service-unit" if self.selected.get("provides", {}).get("unit") == "monetary-unit" else "monetary-unit")
         return clean
 
     def act_add_assertion(self, a):
@@ -748,7 +748,7 @@ class Platform:
                     thing = UNIT_WORD.get(unit, unit)
                 else:
                     thing = "(unit type not set)"
-                out.append(f"  SP {code} {q} {thing}   [{code}: {_kv(p)}]")
+                out.append(f"  the business {code} {q} {thing}   [{code}: {_kv(p)}]")
             elif code == "has-counterparty":
                 out.append(f"  with {p.get('name') or '(party name not set)'}   [has-counterparty]")
             elif code == "allows":
@@ -762,13 +762,16 @@ class Platform:
                 out.append(f"  {'Consumes' if code == 'consumes' else 'Creates'}: {flows}   [{code}]")
             elif code == "requires":
                 party = self.selected.get("has-counterparty", {}).get("name") or "the counterparty"
-                unit = "goods" if p.get("unit") == "physical-unit" else "cash"
+                unit = {"physical-unit": "goods", "service-unit": "services"}.get(p.get("unit"), "cash")
                 if p.get("action") == "receives":
                     out.append(f"  This creates an obligation: The business is to receive {p.get('quantity', '(amount)')} {unit} from {party} by {p.get('due-date', '(due date)')} — a claim the business holds; {party} must provide it.   [requires: {_kv(p)}]")
                 else:
                     out.append(f"  This creates an obligation: The business must provide {p.get('quantity', '(amount)')} {unit} to {party} by {p.get('due-date', '(due date)')} — a debt the business owes.   [requires: {_kv(p)}]")
             elif code == "expects":
-                out.append(f"  Expectation of fulfillment: SP expects payment with {p.get('confidence', '(?)')}% confidence   [expects: {_kv(p)}]")
+                # views.cljs: a prepaid (money out + expects) reads "expects to receive services"
+                prepaid = self.selected.get("provides", {}).get("unit") == "monetary-unit"
+                what = {"physical-unit": "goods", "service-unit": "services", "monetary-unit": "cash"}.get(p.get("unit"), "goods or services" if prepaid else "cash")
+                out.append(f"  Expectation of fulfillment: the business expects to receive {what} with {p.get('confidence', '(?)')}% confidence   [expects: {_kv(p)}]")
             else:
                 out.append(f"  [{code}: {_kv(p)}]")
         return "\n".join(out)

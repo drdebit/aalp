@@ -1443,7 +1443,9 @@
    {:required #{:has-date :provides :has-counterparty :expects}
     :prohibited #{:receives :requires}  ;; No requires - the vendor isn't legally obligated in same way
     :required-parameters {:provides {:unit "monetary-unit"}
-                          :expects {:action "receives" :unit "physical-unit"}}
+                          ;; What is prepaid is usually a service (rent,
+                          ;; insurance, maintenance); goods on order count too.
+                          :expects {:action "receives" :unit #{"physical-unit" "service-unit"}}}
     :description "Prepaid expense (provide payment now, expect to receive goods/services later)"
     :journal-entry [{:debit "Prepaid Expense (Asset)" :credit "Cash"}]
     :note "A prepaid expense is an asset representing SP's expectation of receiving future benefits. SP provides cash now and expects to receive services/goods over time. Unlike credit sales, confidence is typically high since vendors are contractually bound."
@@ -2021,9 +2023,9 @@
    A required value of :any means the student must supply one -- a
    confidence level on an expectation, say -- but the figure is theirs."
   [actual wanted]
-  (if (= wanted :any)
-    (some? actual)
-    (= actual wanted)))
+  (cond (= wanted :any) (some? actual)
+        (set? wanted)   (contains? wanted actual)
+        :else           (= actual wanted)))
 
 (defn parameters-match?
   "Check if student parameters match required parameters for an assertion.
@@ -2656,7 +2658,7 @@
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :vendor}
                           ;; SP expects to receive services - high confidence since vendor is contractually bound
-                          :expects {:action "receives" :unit "physical-unit" :confidence :confidence}}
+                          :expects {:action "receives" :unit "service-unit" :confidence :confidence}}
     :correct-classification :prepaid-expense
     :level 1
     ;; Vendor context - vendors are typically reliable

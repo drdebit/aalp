@@ -137,9 +137,15 @@
     :text "SP received effort -- someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What SP owes or paid for it is the money side of the same exchange."}
 
    ;; -------- Goods provided: revenue needs a counterparty ------------
+   ;; Revenue is providing FINISHED GOODS to a counterparty -- goods the
+   ;; record says were made or bought to be sold as they stand. Which
+   ;; item that is depends on the business: printed shirts for a printer,
+   ;; blank ones for a shop that sells blanks on. The rule asks the
+   ;; position, not the item.
    {:id :revenue
     :when {:assertion :provides
-           :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
+           :params {:unit "physical-unit"}}
+    :position :finished-goods
     :context {:all-of [{:assertion :has-counterparty}]}
     :line {:side :credit :account "Revenue"}
     :amount :monetary
@@ -148,7 +154,8 @@
 
    {:id :cogs
     :when {:assertion :provides
-           :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
+           :params {:unit "physical-unit"}}
+    :position :finished-goods
     :context {:all-of [{:assertion :has-counterparty}]}
     :line {:side :debit :account "Cost of Goods Sold"}
     :amount :cost-basis
@@ -157,7 +164,8 @@
 
    {:id :cogs-inventory
     :when {:assertion :provides
-           :params {:unit "physical-unit" :physical-item "printed-tshirts"}}
+           :params {:unit "physical-unit"}}
+    :position :finished-goods
     :context {:all-of [{:assertion :has-counterparty}]}
     :line {:side :credit :account "Finished Goods Inventory"}
     :amount :cost-basis
@@ -444,7 +452,13 @@
         fired (mapcat (fn [rule]
                         (let [{:keys [assertion params]} (:when rule)
                               flows (as-flows (get selections assertion))
-                              hits  (filterv #(params-match? % (or params {})) flows)
+                              hits  (filterv #(and (params-match? % (or params {}))
+                                                   ;; A rule may ask what the thing IS,
+                                                   ;; read off the chain, not just what
+                                                   ;; the flow says about it.
+                                                   (or (nil? (:position rule))
+                                                       (= (:position rule) (resolve-position % context))))
+                                             flows)
                               {:keys [ok? used]} (context-satisfied? selections (or (:context rule) {}))]
                           (when (and ok? (seq hits))
                             (mapv (fn [flow]

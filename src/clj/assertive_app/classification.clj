@@ -1321,8 +1321,11 @@
    :cash-sale
    {:required #{:has-date :provides :receives :has-counterparty}
     :prohibited #{:requires :expects}
-    :required-parameters {:provides {:unit "physical-unit" :physical-item "printed-tshirts"}
+    :required-parameters {:provides {:unit "physical-unit"}
                           :receives {:unit "monetary-unit"}}
+    ;; A sale is of finished goods -- printed shirts for a printer, blank
+    ;; ones for a shop that sells blanks on. The chain says which.
+    :requires-position {:provides :finished-goods}
     :description "Cash sale with revenue and cost recognition"
     :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
@@ -1383,6 +1386,17 @@
      :provides-unit "monetary-unit"
      :receives-unit "service-unit"
      :examples ["SP pays $60 to have the printer serviced"])
+
+   :merchandise-purchase
+   (cash-exchange
+     "Cash purchase of goods to sell on (provide cash, receive merchandise)"
+     [{:debit "Finished Goods Inventory" :credit "Cash"}]
+     :provides-unit "monetary-unit"
+     :receives-unit "physical-unit"
+     ;; The same blank shirts a printer holds as raw materials: what makes
+     ;; them merchandise is that this business sells them as they are.
+     :requires-position {:receives :finished-goods}
+     :examples ["A shop that sells blank shirts on buys 100 of them for $300"])
 
    :inventory-purchase-on-credit
    {:required #{:has-date :receives :has-counterparty :requires}
@@ -2496,6 +2510,9 @@
 (def transaction-templates
   {:cash-inventory-purchase
    {:narrative-template "On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
+    :narrative-templates ["On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
+                          "{vendor}'s delivery arrives on {date}: {quantity} {inventory-type}. {company} pays the ${amount} on the spot."
+                          "{company} restocks. On {date} it buys {quantity} {inventory-type} from {vendor} and pays ${amount} in cash."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
@@ -2542,6 +2559,8 @@
 
    :cash-service-purchase
    {:narrative-template "On {date}, {company} pays {vendor} ${amount} to {service}."
+    :narrative-templates ["On {date}, {company} pays {vendor} ${amount} to {service}."
+                          "Something needed doing. On {date} {vendor} came out to {service}, and {company} paid the ${amount} bill in cash."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "service-unit" :quantity 1}
@@ -2554,7 +2573,9 @@
                 :amount [60 90 150]}}
 
    :cash-sale
-   {:narrative-template "On {date}, {company} sells {quantity} printed t-shirts to {customer} for ${amount} cash. It printed those shirts earlier at ${unit-cost} each."
+   {:narrative-template "On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash. It {sourced} those shirts earlier at ${unit-cost} each."
+    :narrative-templates ["On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash. It {sourced} those shirts earlier at ${unit-cost} each."
+                          "{customer} comes by on {date} and takes {quantity} {product}, paying {company} ${amount} in cash. The shirts had cost {company} ${unit-cost} each when it {sourced} them."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :receives {:unit "monetary-unit" :quantity :amount}
@@ -2605,7 +2626,7 @@
                 :due-date :calculated}}
 
    :credit-sale
-   {:narrative-template "On {date}, {company} provides {quantity} printed t-shirts to {customer}, printed earlier at ${unit-cost} each. {customer} agrees to pay ${amount} within {days} days. The t-shirts cost ${cogs} to produce."
+   {:narrative-template "On {date}, {company} provides {quantity} {product} to {customer}, {sourced} earlier at ${unit-cost} each. {customer} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
@@ -3219,16 +3240,58 @@ The printed t-shirts are now finished goods ready for sale."
   "Practice problems belong to other businesses, never to SP. Each problem
    is read against that company's own small record and nothing else, so
    nothing a student practises on carries over -- a mini-game before the
-   real books, recognisable as such."
-  ["Riverside Print Co." "Campus Threads" "Bold Ink Apparel" "Northside Tees"
-   "Maple Street Prints" "Harbor Line Shirts" "Blue Heron Printing" "Summit Screen Works"])
+   real books, recognisable as such.
+
+   Two kinds of business, on purpose. A printer holds blank shirts as an
+   input; a shop that sells blank shirts on holds the very same item as
+   finished goods. Nothing about the shirt decides that -- the record
+   does -- and a student who has been getting shirts right by their name
+   meets the case where the name is not enough."
+  [{:name "Riverside Print Co." :kind :printer
+    :blurb "Riverside Print Co. runs a small screen-printing shop by the river. It buys blank shirts and ink, prints designs on them, and sells the printed shirts."}
+   {:name "Bold Ink Apparel" :kind :printer
+    :blurb "Bold Ink Apparel prints band merchandise. Blank shirts and ink come in; printed shirts go out to the bands' fans."}
+   {:name "Northside Tees" :kind :printer
+    :blurb "Northside Tees is a two-person print shop above a bakery. It prints custom shirts for local events."}
+   {:name "Maple Street Prints" :kind :printer
+    :blurb "Maple Street Prints does school and club orders: blank shirts in, printed shirts out, one press."}
+   {:name "Blue Heron Printing" :kind :printer
+    :blurb "Blue Heron Printing prints nature designs on shirts and sells them at weekend markets."}
+   {:name "Summit Screen Works" :kind :printer
+    :blurb "Summit Screen Works prints shirts for hiking clubs. It owns one printer and buys its shirts and ink in bulk."}
+   {:name "Campus Threads" :kind :reseller
+    :blurb "Campus Threads buys plain blank t-shirts wholesale and sells them on to clubs and teams, as they are. It prints nothing and owns no press."}
+   {:name "Harbor Line Shirts" :kind :reseller
+    :blurb "Harbor Line Shirts is a wholesaler: it buys blank shirts by the box and sells them on to shops. It has never printed a shirt."}])
 
 (defn practice-backstory
   "A practice company's record: funded, a press that turns blank shirts
    and ink into printed shirts, materials bought at known prices, and a
    batch already printed. Every position and cost a practice problem needs
    is read off these events, the same way SP's are read off SP's."
-  [company]
+  [{:keys [name kind blurb] :as company}]
+  (if (= kind :reseller)
+    (let [shirt-cost (rand-nth [3 4 5])
+          shirts     (rand-nth [100 150 200])
+          sold       (rand-nth [30 40 50])]
+      {:company name :kind :reseller :blurb blurb
+       :sale-item "blank-tshirts"
+       :events
+       [{:has-identifier "Funding-001"
+         :has-date {:date "2026-01-02"}
+         :receives {:unit "monetary-unit" :quantity 15000}
+         :provides {:unit "ownership-units" :quantity 100}
+         :has-counterparty {:name "the owner"}}
+        {:has-identifier "Shirts-001"
+         :has-date {:date "2026-01-04"}
+         :provides {:unit "monetary-unit" :quantity (* shirts shirt-cost)}
+         :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity shirts}
+         :has-counterparty {:name "TextileDirect"}}
+        {:has-identifier "Sale-001"
+         :has-date {:date "2026-01-06"}
+         :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity sold}
+         :receives {:unit "monetary-unit" :quantity (* sold (+ shirt-cost 4))}
+         :has-counterparty {:name "the chess club"}}]})
   (let [shirt-cost (rand-nth [3 4 5 6])
         shirts     (rand-nth [60 80 100 120])
         ink        (rand-nth [6 8 10])
@@ -3237,7 +3300,8 @@ The printed t-shirts are now finished goods ready for sale."
         ;; one dollar a shirt, so a printed shirt costs a whole dollar
         ;; more than a blank one and the narrative can say so exactly.
         ink-cost   (/ printed 2)]
-    {:company company
+    {:company name :kind :printer :blurb blurb
+     :sale-item "printed-tshirts"
      :unit-costs {:blank-tshirts shirt-cost :ink-cartridges ink-cost}
      :events
      [{:has-identifier "Funding-001"
@@ -3266,7 +3330,7 @@ The printed t-shirts are now finished goods ready for sale."
        :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed}
                   {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed}
-       :is-allowed-by {:capacity "t-shirt-printer"}}]}))
+       :is-allowed-by {:capacity "t-shirt-printer"}}]})))
 
 (defn- practice-variables
   "Fit a template's numbers to the practice company's record: you can only
@@ -3277,10 +3341,13 @@ The printed t-shirts are now finished goods ready for sale."
   (let [events   (:events backstory)
         held     (chain/on-hand events)
         basis    (cost/cost-basis events)
-        printed  (long (get held "printed-tshirts" 0))
-        unit     (or (get-in basis ["printed-tshirts" :unit-cost])
-                     (get-in basis [:printed-tshirts :unit-cost]))
-        vars     (assoc vars :company (:company backstory))]
+        item     (or (:sale-item backstory) "printed-tshirts")
+        printed  (long (get held item 0))
+        unit     (get-in basis [item :unit-cost])
+        vars     (assoc vars :company (:company backstory)
+                             :product (if (= item "blank-tshirts") "blank t-shirts" "printed t-shirts")
+                             :sourced (if (= item "blank-tshirts") "bought" "printed")
+                             :sale-item item)]
     (cond-> vars
       (and (:quantity vars) (:cogs vars) (pos? printed) unit)
       (as-> v (let [q (min (long (:quantity v)) printed)]
@@ -3301,11 +3368,28 @@ The printed t-shirts are now finished goods ready for sale."
   (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
         [template-key template] (rand-nth (seq available-templates))
         ;; Use indexed selection for same-length variable arrays to keep values paired
-        backstory (practice-backstory (rand-nth practice-companies))
+        ;; A reseller can only be handed problems that make sense for a
+        ;; shop with no press: buying or selling its shirts, paying for a
+        ;; service. About a third of those go to a reseller.
+        reseller-ok? (contains? #{:cash-inventory-purchase :cash-sale :credit-sale :cash-service-purchase} template-key)
+        kind (if (and reseller-ok? (< (rand) 0.35)) :reseller :printer)
+        backstory (practice-backstory (rand-nth (filterv #(= kind (:kind %)) practice-companies)))
         vars (-> (select-paired-variables (:variables template))
                  (as-> v (resolve-derived-variables template v))
-                 (practice-variables backstory))
-        narrative (apply-template (:narrative-template template) vars)
+                 (practice-variables backstory)
+                 (as-> v (if (= kind :reseller)
+                           (assoc v :inventory-type "blank t-shirts" :physical-item "blank-tshirts")
+                           v)))
+        ;; For a reseller the goods bought are merchandise, and what is
+        ;; sold is blank shirts; the classification follows the chain.
+        template (cond-> template
+                   (and (= kind :reseller) (= template-key :cash-inventory-purchase))
+                   (assoc :correct-classification :merchandise-purchase)
+                   (and (= kind :reseller) (contains? #{:cash-sale :credit-sale} template-key))
+                   (update :required-assertions assoc-in [:provides :physical-item] "blank-tshirts"))
+        narrative (apply-template (rand-nth (or (:narrative-templates template)
+                                                [(:narrative-template template)]))
+                                  vars)
         classification (get classifications (:correct-classification template))
 
         ;; For reverse problems, create minimal context and inject amounts into journal entries
@@ -3332,6 +3416,7 @@ The printed t-shirts are now finished goods ready for sale."
                       ;; record back with every derivation and answer, so the
                       ;; panel and the grader read the same paragraph.
                       :company (:company backstory)
+                      :company-blurb (:blurb backstory)
                       :prior-events (:events backstory)
                       :correct-assertions resolved-assertions
                       :correct-classification (:correct-classification template)

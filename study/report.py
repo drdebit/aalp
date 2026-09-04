@@ -33,6 +33,8 @@ def fmt(x):
 
 
 def main():
+    global content_episodes
+    content_episodes = json.load(open(os.path.join(HERE, "content", "content.json")))["episodes"]
     ap = argparse.ArgumentParser()
     ap.add_argument("--cohort", required=True)
     ap.add_argument("ids", nargs="+")
@@ -58,7 +60,7 @@ def main():
                 return f"not passed ({sum(e['correct'] for e in subs)}/{len(subs)} right)" if subs else "—"
             return f"passed r{x['rounds']} ({x['correct_last_round']}/{x['attempted_last_round']}, {x['entry_path']})"
         out.append(f"| {i} | {s.get('persona')} | {s.get('model')} | {l.get('turns')} | {'yes' if l.get('finished_path') else 'no: ' + str(l.get('stopped_at'))} | "
-                   f"{wt.get('episodes_completed')}/5{' (left)' if wt.get('left_early') else ''} | {len(q.get('L0', []))}/{len(q.get('L1', []))} | {drill('L0')} | {drill('L1')} | ${s.get('cost_usd', 0)} |")
+                   f"{wt.get('episodes_completed')}/{len(content_episodes)}{' (left)' if wt.get('left_early') else ''} | {len(q.get('L0', []))}/{len(q.get('L1', []))} | {drill('L0')} | {drill('L1')} | ${s.get('cost_usd', 0)} |")
 
     # ---- learning gains ----
     out += ["", "## Assessment (0-2 per item, rubric-graded)", "",

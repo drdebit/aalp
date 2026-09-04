@@ -1,4 +1,4 @@
-# AALP — where things stand (2026-09-03, evening)
+# AALP — where things stand (2026-09-04)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
@@ -129,13 +129,45 @@ the fixes below. Reports: `study/runs/report-c1.md`, `report-c2.md`.
   wrote correct journal entries on the pre-test. Post-only items and the
   think-aloud are the trustworthy signal.
 
+## Decided 2026-09-04 (Matt), and built
+
+- **Practice is a mini-game about other companies.** Every practice
+  problem names one of eight businesses and carries that company's own
+  small record (funded, a press that takes shirts and ink, materials at
+  known prices, a batch printed). The client sends the record back with
+  each derivation and answer, so the panel and the grader read the same
+  paragraph; sale and production numbers are drawn from what the company
+  holds and the narrative states the cost the record will derive. Nothing
+  carries over between problems; the walkthrough stays a lesson, SP's
+  ledger starts with the Guided Year. The two work-in-process templates
+  are gone.
+- **Account texts say what a thing IS, not which side it sits on.** The
+  position texts and the cash rules explain future use and what is left
+  afterwards; the level-0 tutorial no longer teaches "receive = debit".
+  Debits and credits belong to the accounting equation and the class.
+- **Provides and receives are the business's own actions, always.** A sale
+  on credit is `requires: receives money`; the obligation sentence says
+  "the business must provide ... to X -- a debt it owes" or "the business
+  is to receive ... from X -- a claim it holds".
+- **A design and a service.** `logo-design` (an intangible; capital by the
+  printer's reasoning, labelled Design (Intangible Asset)) and a
+  `service-unit` denomination (Services Expense: used up as done, nothing
+  kept). Two classifications, two level-0 templates, two walkthrough
+  episodes: eight episodes now. The post-test's novel item is an
+  accountant's bill.
+- **`allows` consumes a list**, as in the research example.
+
+**Not yet run against a cohort:** everything in this section. Next:
+
+    cd study && ./run_cohort.sh c4 "s41:novice:haiku s42:trad:haiku s43:hasty:haiku" --max-turns 260
+
 ## Conformance (the oracle)
 
 `test/assertive_app/je_conformance.clj`. The 45 hand-written
 `:journal-entry` templates are no longer a rival producer; they are the
 oracle. Current state, 43 classifications:
 
-    11 match   11 partial   18 gap   3 conflict   0 amount violations
+    13 match   11 partial   18 gap   3 conflict   0 amount violations   (of 45)
 
 - **conflict** = the rulebook derives an account the template does not
   name. All three are the template disagreeing with its own assertions:
@@ -153,7 +185,7 @@ business in order; the drill stays organised by pattern with fresh
 scenarios and keeps all the ALEKS mechanics (test-out, 5-streak, worked
 examples, stuck detection, time-on-task).
 
-Five episodes in `src/cljs/assertive_app/episodes.cljs`, copy in
+Eight episodes in `src/cljs/assertive_app/episodes.cljs`, copy in
 `TUTORIAL-EPISODES.md`:
 
 | # | episode | new assertions |

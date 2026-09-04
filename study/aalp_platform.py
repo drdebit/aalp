@@ -196,6 +196,8 @@ class Platform:
             return True
         if kind == "set-date":
             return "has-date" in self.selected
+        if kind == "remove":
+            return do.get("code") not in self.selected
         if kind == "assert":
             sel = self.selected.get(do["code"])
             if sel is None:
@@ -879,6 +881,7 @@ class Platform:
         if do and not done:
             kind = do.get("kind")
             todo = {"set-date": "Add the date to continue.", "read": "Have a look, then carry on.",
+                    "remove": f"Switch {do.get('code')} off to continue.",
                     "assert": f"Add {do.get('code')} to continue."}.get(kind, "")
             out.append(f"  → {todo}")
         if done and st.get("then"):

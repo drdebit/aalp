@@ -1105,6 +1105,7 @@
          [:p.wt-todo
           (case (:kind (:do st))
             :set-date "Add the date to continue."
+            :remove   (str "Switch " (some-> (:code (:do st)) name) " off to continue.")
             :read     "Have a look, then carry on."
             :assert   (str "Add " (some-> (:code (:do st)) name) " to continue.")
             nil)])

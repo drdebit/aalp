@@ -33,6 +33,9 @@
       nil        true
       :read      true
       :set-date  (contains? selected :has-date)
+      ;; Switching an assertion off is the step: the explanation is about
+      ;; what disappears, and it makes no sense until it has.
+      :remove    (not (contains? selected code))
       :assert    (boolean (has-params? selected code (or params {})))
       true)))
 
@@ -51,7 +54,7 @@
      {:say "Here's the part to hold on to: you are keeping the business's books."
       :then "Every assertion you make is the business saying what happened to it. When the business receives $20,000, that's money arriving — even though the person who handed it over is $20,000 poorer."}
 
-     {:say "Today the business is funded. SP puts in $20,000. Let's record it. Every event starts with when it happened."
+     {:say "It's January 1st, 2026, and today the business is funded. SP puts in $20,000. Let's record it. Every event starts with when it happened."
       :do {:kind :set-date}
       :then "Good. That's an assertion — a plain statement about the world. True, but on its own it doesn't say much."}
 
@@ -75,7 +78,7 @@
     :title "SP buys a printer"
     :palette #{:has-date :provides :receives :has-counterparty :allows}
     :steps
-    [{:say "The business has $20,000. Today it spends $3,000 on a t-shirt printer. Start with when."
+    [{:say "January 2nd. The business has $20,000, and today it spends $3,000 on a t-shirt printer. Start with when."
       :do {:kind :set-date}}
 
      {:say "The business paid $3,000. Say so."
@@ -98,11 +101,15 @@
       :then "Good. It balances, and every line came from something you said."}
 
      {:say "Try something. Open the entry's Explore control and switch `allows` off."
-      :do {:kind :read}
-      :then "Equipment disappears. The record stops saying what the machine is for, so it stops knowing what to call it. Switch it back on."}
+      :do {:kind :remove :code :allows}
+      :then "Equipment disappears. The record stopped saying what the machine is for, so it stopped knowing what to call it."}
 
-     {:say "Tomorrow the business buys blank t-shirts."
-      :then "Because of what you said today, the record will already know what they're for."}]}
+     {:say "Now switch it back on."
+      :do {:kind :assert :code :allows}
+      :then "And it's back. Nothing about the printer changed; what the record says about it did. That is the whole trick, and you will see it again."}
+
+     {:say "Next, a design to print — and then blank t-shirts."
+      :then "Because of what you said today, the record will already know what the shirts are for."}]}
 
    ;; The same lesson as the printer, on something with no weight: a
    ;; design is an asset because the record says what it is for and it
@@ -112,7 +119,7 @@
     :title "SP buys a design"
     :palette #{:has-date :provides :receives :has-counterparty :allows}
     :steps
-    [{:say "A printer prints something. Today SP pays a designer $400 for a logo to put on the shirts. When?"
+    [{:say "January 3rd. A printer prints something, so today SP pays a designer $400 for a logo to put on the shirts. When?"
       :do {:kind :set-date}}
 
      {:say "The business paid $400."
@@ -134,7 +141,7 @@
     :title "SP buys shirts and ink"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
-    [{:say "Blank t-shirts, $100 for twenty. Same shape as yesterday: when, what went out, what came in, and who."
+    [{:say "January 4th. Blank t-shirts, $100 for twenty. Same shape as before: when, what went out, what came in, and who."
       :do {:kind :set-date}}
 
      {:say "The business paid $100."
@@ -146,7 +153,7 @@
 
      {:say "So where did it come from? Open that line and look under \"Decided earlier\"."
       :do {:kind :read}
-      :then "There's yesterday. The shirts are an input because you said the printer turns blank t-shirts into printed ones. The reason for today's entry was written down yesterday."}
+      :then "There's January 2nd. The shirts are an input because you said the printer turns blank t-shirts and ink into printed ones. The reason for today's entry was written down two days ago."}
 
      {:say "Finish it off: who sold them? TextileDirect."
       :do {:kind :assert :code :has-counterparty}
@@ -161,7 +168,7 @@
     :title "SP buys ink"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
-    [{:say "Ink next — two cartridges for $20. You know the shape by now: when, what went out, what came in, who."
+    [{:say "Same day, January 4th. Ink next — two cartridges for $20. You know the shape by now: when, what went out, what came in, who."
       :do {:kind :set-date}}
 
      {:say "The business paid $20."
@@ -179,7 +186,7 @@
     :title "SP prints shirts"
     :palette #{:has-date :consumes :creates :is-allowed-by}
     :steps
-    [{:say "Today nothing is bought or sold. The business turns ten blank shirts and one ink cartridge into ten printed shirts. When did it happen?"
+    [{:say "January 5th. Nothing is bought or sold today: the business turns ten blank shirts and one ink cartridge into ten printed shirts. When did it happen?"
       :do {:kind :set-date}}
 
      {:say "Ten blank shirts were used up. Say so."
@@ -199,7 +206,7 @@
     :title "The printer is serviced"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
-    [{:say "The printer needs a service. A technician from PrinterWorld comes out and SP pays $60. When?"
+    [{:say "January 6th. The printer needs a service. A technician from PrinterWorld comes out and SP pays $60. When?"
       :do {:kind :set-date}}
 
      {:say "The business paid $60."
@@ -217,7 +224,7 @@
     :title "SP sells shirts"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
-    [{:say "A customer buys four printed shirts for $100. When?"
+    [{:say "January 7th. Campus Boutique buys four printed shirts for $100. When?"
       :do {:kind :set-date}}
 
      {:say "Four shirts left the business."
@@ -226,7 +233,7 @@
      {:say "And $100 came in."
       :do {:kind :assert :code :receives :params {:unit "monetary-unit"}}}
 
-     {:say "Say who bought them."
+     {:say "Say who bought them: Campus Boutique."
       :do {:kind :assert :code :has-counterparty}
       :then "Four lines now. Cash and Revenue — and notice you never asserted \"revenue\". It appeared because goods went out to somebody in exchange for money, and that pattern is what revenue means. You have been building up to this entry since episode one."}
 

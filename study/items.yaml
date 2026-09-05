@@ -49,7 +49,7 @@ items:
     tag: "aa:equity-residual"
     pre: false
     q: When the business was funded you said only that it received $20,000 (plus when and from whom). Owner's Capital appeared on the credit side by itself. Why that account, and not Revenue or a loan?
-    rubric: "1 pt: money came in, nothing went out, no obligation to repay, so what is left is the contributor's claim — equity as the residual. 1 pt: revenue would need goods or services provided to a counterparty; a loan would need an obligation (requires) to repay."
+    rubric: "1 pt: money came in, nothing went out, no obligation to repay, so what is left is the contributor's claim — equity as the residual. 1 pt: revenue would need goods or services provided to a counterparty (the platform shows this on the sale); the loan contrast is a bonus, not required, since the platform never shows a loan."
   - id: aa3
     tag: "aa:allows-role"
     pre: false

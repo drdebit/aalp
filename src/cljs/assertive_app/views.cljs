@@ -226,7 +226,9 @@
             is-reverse? "Journal Entry"
             is-construct? "Transaction"
             :else "Transaction")]
-     [level-selector]
+     ;; Levels and problem modes are practice-mode controls; the Guided
+     ;; Year's drill is one level at a time, forward only.
+     (when-not (state/guided-mode?) [level-selector])
      (if problem
        (cond
          is-reverse?
@@ -1519,8 +1521,13 @@
                                   [:code.dj-assertion-code (name code)]
                                   (when (seq params)
                                     [:span.dj-assertion-params
-                                     (clojure.string/join ", "
-                                       (map (fn [[k v]] (str (name k) " " v)) params))])]))])
+                                     ;; A flow assertion may hold several flows
+                                     ;; (consumes shirts AND ink): a vector of
+                                     ;; maps, each rendered on its own.
+                                     (let [kv (fn [m] (clojure.string/join ", " (map (fn [[k v]] (str (name k) " " v)) m)))]
+                                       (if (sequential? params)
+                                         (clojure.string/join "; " (map kv params))
+                                         (kv params)))])]))])
                           ;; Why this account, when the reason was given
                           ;; in an earlier event. Without this the
                           ;; drill-down stops at the edge of the event and
@@ -1781,7 +1788,8 @@
        (some? feedback)
        [:div.feedback
         [:div.status {:class (name (:status feedback))}
-         [:h3 (case (:status feedback)
+         ;; The status arrives from JSON as a string.
+         [:h3 (case (keyword (:status feedback))
                 :correct "✓ Correct!"
                 :incorrect "✗ Incorrect"
                 :incomplete "⚠ Incomplete"

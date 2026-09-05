@@ -256,13 +256,18 @@
   (state/set-loading! true)
   (POST (str api-base "/generate-problem")
     {:params {:level level
-              :problem-type (state/problem-type)}
+              :problem-type (state/problem-type)
+              ;; Patterns already served this round, so the next draw
+              ;; prefers one the student has not met yet.
+              :served (vec (get-in @state/app-state [:drill :served] []))}
      :format :json
      :headers (auth-headers)
      :response-format :json
      :keywords? true
      :handler (fn [response]
                 (state/set-current-problem! response)
+                (state/set-je-peek! false)
+                (state/set-derived-je! nil)
                 (state/clear-selections!)
                 ;; Pre-select has-date so the sentence is always visible
                 (state/toggle-assertion! :has-date)

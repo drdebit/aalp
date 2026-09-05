@@ -1700,6 +1700,15 @@
          "Clear"]
         ;; ALEKS-style explanation, drill only: see the worked recording
         ;; at the cost of this problem not counting toward the round
+        ;; The cheaper look: derive what these assertions produce, now,
+        ;; without committing. It reads the student's own assertions
+        ;; and nothing else, so it leaks nothing about the key; a
+        ;; student who sees "(not yet classified)" and adds allows has
+        ;; learned the thing the drill is for.
+        (when (and (state/drill-active?) (not is-construct?) (seq selected))
+          [:button.secondary.peek-btn
+           {:on-click #(do (state/set-je-peek! true) (api/derive-je!))}
+           "What would this produce?"])
         (when (and (state/drill-active?) (not is-construct?))
           [:button.secondary.worked-example-btn
            {:on-click #(api/show-worked-example!)}
@@ -1714,7 +1723,9 @@
        ;; Show current selection status
        (and (nil? feedback) (not worked-example?) (seq selected))
        [:div.status
-        [:p "Assertions selected: " (count (keys selected))]]
+        [:p "Assertions selected: " (count (keys selected))]
+        (when (state/je-peek?)
+          [derived-je-panel])]
 
        ;; Show feedback after submission
        (some? feedback)

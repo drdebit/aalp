@@ -618,6 +618,11 @@
                               :prompt "Something must balance this. What did SP get, or settle? The assertions do not say yet."}))]
     {:holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
                                                             (:events chain-ctx))))
+                          ;; Only what can go out: materials and goods. A
+                          ;; printer is on hand too, but nobody sells it
+                          ;; by the batch.
+                          :when (contains? #{:raw-materials :finished-goods :work-in-process}
+                                           (chain/inventory-position (:events chain-ctx) it))
                           b (chain/batches (:events chain-ctx) it)
                           :when (pos? (:left b))]
                       (assoc b :item it :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id b) :unit-cost]))))

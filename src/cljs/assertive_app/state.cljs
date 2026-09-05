@@ -73,7 +73,13 @@
 
 ;; State mutators
 (defn set-current-problem! [problem]
-  (swap! app-state assoc :current-problem problem))
+  (swap! app-state assoc :current-problem problem)
+  ;; The drill remembers which patterns this round has served.
+  (when (and problem (get-in @app-state [:drill :active?]))
+    (swap! app-state update-in [:drill :served] (fnil conj []) (:template problem))))
+
+(defn je-peek? [] (boolean (get-in @app-state [:je-derive :peek?])))
+(defn set-je-peek! [v] (swap! app-state assoc-in [:je-derive :peek?] v))
 
 (defn set-available-assertions! [assertions]
   (swap! app-state assoc :available-assertions assertions))
@@ -686,7 +692,7 @@
          (fn [d]
            (when d
              (-> d
-                 (assoc :attempted 0 :correct 0 :streak 0
+                 (assoc :attempted 0 :correct 0 :streak 0 :served []
                         :miss-streak 0 :miss-assertions {} :worked-example? false)
                  (update :round inc))))))
 

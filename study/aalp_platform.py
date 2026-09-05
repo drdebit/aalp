@@ -219,7 +219,9 @@ class Platform:
         self._fetch_problem()
 
     def _fetch_problem(self):
-        self.problem = self.c.generate_problem(self.level, "forward")
+        served = [h.get("template") for h in self.drill["history"] if h.get("round") == self.drill["round"]] if self.drill else []
+        self.problem = self.c.generate_problem(self.level, "forward", served=served)
+        self.peek = False
         self.selected = OrderedDict()
         self.feedback = None
         self.derived = None
@@ -399,6 +401,8 @@ class Platform:
     def _after_builder_change(self):
         self.expanded = None
         if self.phase == "walkthrough":
+            self._derive()
+        elif getattr(self, "peek", False):
             self._derive()
 
     # -- explore mode (walkthrough always; drill after feedback) --
@@ -659,6 +663,15 @@ class Platform:
         self.log("submit", template=p.get("template"), correct=correct, status=status,
                  selected=self._sel_payload(), missing=missing, hints=self.feedback.get("hints"))
         return "Submitted."
+
+    def act_peek(self, a):
+        """'What would this produce?': derive the current assertions without committing."""
+        if self.phase != "drill" or not self._builder_open() or not self.selected:
+            raise ActionError("No such button here.")
+        self.peek = True
+        self._derive()
+        self.log("peek", selected=self._sel_payload())
+        return "Derived from your assertions so far (nothing submitted)."
 
     def act_worked_example(self, a):
         if self.phase != "drill" or not self._builder_open():
@@ -1030,8 +1043,11 @@ class Platform:
         elif self.feedback is None:
             out += [self._palette_text(), "", "--- Feedback ---",
                     f"Assertions selected: {len(self.selected)}" if self.selected else "",
-                    "[button: Submit Answer]  [button: Clear]  [button: Show me a worked example]"]
+                    "[button: Submit Answer]  [button: Clear]  [button: What would this produce?]  [button: Show me a worked example]"]
+            if getattr(self, "peek", False) and self.derived:
+                out.append(self._derived_text())
             acts = self._builder_actions() + ['{"type":"submit"}', '{"type":"clear"}',
+                                              '{"type":"peek"} (see what your assertions produce, without submitting)',
                                               '{"type":"worked_example"}', '{"type":"review_tutorial"}']
         else:
             out += ["", "--- Feedback ---"] + self._feedback_text()

@@ -1408,11 +1408,27 @@
     :required-parameters {:receives {:unit "physical-unit"}
                           ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
                           :requires {:action "provides" :unit "monetary-unit"}}
+    ;; Materials because the chain says they are an input; a shop that
+    ;; sells them on is buying merchandise, below.
+    :requires-position {:receives :raw-materials}
     :description "Credit purchase of raw materials (receive materials now, obligation to pay later)"
     :journal-entry [{:debit "Raw Materials Inventory" :credit "Accounts Payable"}]
-    :note "A credit purchase creates an obligation: SP receives materials immediately and is legally required to provide cash by a due date. Unlike credit sales, there's no 'expects' because SP controls their own payment - the obligation will definitely be fulfilled."
+    :note "A credit purchase creates an obligation: SP receives materials immediately and is legally required to provide cash by a due date. A probability on SP's own promise (expects) is SP's to record or not."
     :examples ["SP receives blank t-shirts, must pay vendor $500 in 60 days"
                "SP receives ink cartridges, must pay vendor $125 in 30 days"]
+    :level 1}
+
+   :merchandise-purchase-on-credit
+   {:required #{:has-date :receives :has-counterparty :requires}
+    :optional #{:expects}
+    :prohibited #{:provides}
+    :required-parameters {:receives {:unit "physical-unit"}
+                          :requires {:action "provides" :unit "monetary-unit"}}
+    :requires-position {:receives :finished-goods}
+    :description "Credit purchase of goods to sell on (receive merchandise now, obligation to pay later)"
+    :journal-entry [{:debit "Finished Goods Inventory" :credit "Accounts Payable"}]
+    :note "The same shirts a printer holds as materials; what makes them merchandise is that this business sells them as they are."
+    :examples ["A shop that sells blank shirts on takes 200 of them on 30-day credit"]
     :level 1}
 
    :equipment-purchase-on-credit
@@ -3402,14 +3418,19 @@ The printed t-shirts are now finished goods ready for sale."
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
-  [level & {:keys [problem-type show-assertions] :or {problem-type :forward show-assertions false}}]
+  [level & {:keys [problem-type show-assertions served] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
-        [template-key template] (rand-nth (seq available-templates))
+        ;; A streak can end a round before a pattern has come up at all.
+        ;; Prefer the patterns this round has not served yet; only when
+        ;; every one has been seen does the draw go back to all of them.
+        served (set (map keyword (or served [])))
+        unserved (remove #(contains? served (key %)) available-templates)
+        [template-key template] (rand-nth (seq (if (seq unserved) unserved available-templates)))
         ;; Use indexed selection for same-length variable arrays to keep values paired
         ;; A reseller can only be handed problems that make sense for a
         ;; shop with no press: buying or selling its shirts, paying for a
         ;; service. About a third of those go to a reseller.
-        reseller-ok? (contains? #{:cash-inventory-purchase :cash-sale :credit-sale :cash-service-purchase} template-key)
+        reseller-ok? (contains? #{:cash-inventory-purchase :credit-inventory-purchase :cash-sale :credit-sale :cash-service-purchase} template-key)
         kind (if (and reseller-ok? (< (rand) 0.5)) :reseller :printer)
         backstory (practice-backstory (rand-nth (filterv #(= kind (:kind %)) practice-companies)))
         vars (-> (select-paired-variables (:variables template))
@@ -3423,6 +3444,8 @@ The printed t-shirts are now finished goods ready for sale."
         template (cond-> template
                    (and (= kind :reseller) (= template-key :cash-inventory-purchase))
                    (assoc :correct-classification :merchandise-purchase)
+                   (and (= kind :reseller) (= template-key :credit-inventory-purchase))
+                   (assoc :correct-classification :merchandise-purchase-on-credit)
                    (and (= kind :reseller) (contains? #{:cash-sale :credit-sale} template-key))
                    (update :required-assertions assoc-in [:provides :physical-item] "blank-tshirts"))
         narrative (apply-template (rand-nth (or (:narrative-templates template)

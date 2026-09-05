@@ -53,9 +53,9 @@ class AalpClient:
     def assertions(self, level):
         return self._req("GET", "/assertions", params={"level": level})["assertions"]
 
-    def generate_problem(self, level, problem_type="forward", served=None):
+    def generate_problem(self, level, problem_type="forward", served=None, missed=None):
         return self._req("POST", "/generate-problem",
-                         {"level": level, "problem-type": problem_type, "served": served or []})
+                         {"level": level, "problem-type": problem_type, "served": served or [], "missed": missed or []})
 
     def classify(self, payload):
         return self._req("POST", "/classify", payload)

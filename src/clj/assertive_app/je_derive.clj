@@ -120,6 +120,65 @@
     :amount :monetary
     :text :position}
 
+   ;; -------- Adjusting entries: a calculation recorded as an event ------
+   ;; `reports` carries a category, a basis, and the amount the
+   ;; calculation builder produced. Each basis is a different reason to
+   ;; recognise something the exchanges did not: use of a long-lived
+   ;; asset, doubt about a receivable, a cost incurred before it is paid,
+   ;; a prepaid used up, an advance earned.
+   {:id :depreciation
+    :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :line {:side :debit :account "Depreciation Expense"}
+    :amount :reported
+    :text "A long-lived asset is used up a little each period. The part used this period is an expense; the calculation is the assertion, and the record keeps how it was worked out."}
+   {:id :depreciation-contra
+    :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :line {:side :credit :account "Accumulated Depreciation"}
+    :amount :reported
+    :text "The asset is not written down directly: what has been used up so far accumulates beside it, so the original cost stays visible."}
+   {:id :bad-debt
+    :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
+    :line {:side :debit :account "Bad Debt Expense"}
+    :amount :reported
+    :text "Some of what customers owe will not arrive. The probabilities recorded on those sales (expects) say how much; that shortfall is a cost of having sold on credit."}
+   {:id :bad-debt-allowance
+    :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
+    :line {:side :credit :account "Allowance for Doubtful Accounts"}
+    :amount :reported
+    :text "The receivable is not reduced directly -- no particular customer has failed yet. The doubt sits beside it as an allowance."}
+   {:id :accrued-expense
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :line {:side :debit :account "Accrued Expense"}
+    :amount :reported
+    :text "A cost has been incurred -- work done for the business, or interest run up -- before any money moved. The expense belongs to the period it was incurred."}
+   {:id :accrued-liability
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :line {:side :credit :account "Accrued Liabilities"}
+    :amount :reported
+    :text "And what is owed for it is a claim on the business until it is paid: the `requires` says so."}
+   {:id :prepaid-used
+    :when {:assertion :reports :params {:category "expense" :basis "time-based"}}
+    :line {:side :debit :account "Insurance Expense"}
+    :amount :reported
+    :text "Part of what was paid for in advance has now been used -- time has passed. That part is an expense of this period."}
+   {:id :prepaid-down
+    :when {:assertion :reports :params {:category "expense" :basis "time-based"}}
+    :line {:side :credit :account "Prepaid Expense"}
+    :amount :reported
+    :text "The right to future service is smaller by the same amount."}
+   {:id :advance-earned
+    :when {:assertion :reports :params {:category "revenue" :basis "earned"}}
+    :line {:side :debit :account "Unearned Revenue"}
+    :amount :reported
+    :text "Part of an advance has been earned: the goods or service it paid for have now been provided. The business owes that much less."}
+   {:id :advance-revenue
+    :when {:assertion :reports :params {:category "revenue" :basis "earned"}}
+    :line {:side :credit :account "Revenue"}
+    :amount :reported
+    :text "And that part is revenue now -- earned by providing, not by being paid."}
+
    ;; -------- Paid ahead: a right to something still to come -----------
    {:id :prepaid
     :when {:assertion :expects
@@ -344,6 +403,12 @@
                                 (monetary-amount selections variables))
                     :unresolved? false})
        :monetary {:quantity (monetary-amount selections variables) :unresolved? false}
+       ;; The figure the calculation builder produced, carried on the
+       ;; reports assertion itself.
+       :reported (if-let [n (num-or-nil (:amount matched-params))]
+                   {:quantity (q/monetary n) :unresolved? false}
+                   {:quantity nil :unresolved? true
+                    :unresolved-reason "The calculation has not been done yet: the reports assertion carries no amount."})
 
        ;; What the goods COST -- not what they sold for. Recovered from
        ;; the events that acquired or produced them (see cost-basis).

@@ -98,7 +98,21 @@
   {"Equipment"     "Equipment (Fixed Asset)"
    "Wages Expense" "Wage Expense"})
 
-(defn canonical-account [a] (get account-aliases a a))
+(def ^:private adjusting-aliases
+  "An accrued wage and an accrued interest are the same position with
+   different words; so are a prepaid insurance and a prepaid rent. The
+   rulebook names the position; the templates name the instance."
+  {"Wages Expense" "Accrued Expense" "Wage Expense" "Accrued Expense" "Interest Expense" "Accrued Expense"
+   "Wages Payable" "Accrued Liabilities" "Interest Payable" "Accrued Liabilities"
+   "Prepaid Insurance" "Prepaid Expense" "Prepaid Rent" "Prepaid Expense"
+   "Deferred Revenue (Liability)" "Unearned Revenue"
+   ;; The residual claim under a different entity form: the same position,
+   ;; a corporation's word for it.
+   "Common Stock" "Owner's Capital"})
+
+(defn canonical-account [a]
+  (let [a (get account-aliases a a)]
+    (get adjusting-aliases a a)))
 
 (defn- template-accounts [class-key]
   (let [je (get-in c/classifications [class-key :journal-entry])

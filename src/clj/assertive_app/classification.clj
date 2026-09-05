@@ -1627,7 +1627,11 @@
                           :is-allowed-by {:framework "ucc"}}
     :prohibited #{}
     :description "Commercial sale enabled by Uniform Commercial Code"
-    :journal-entry [{:debit "Cash" :credit "Revenue"}]
+    ;; The same event as a cash sale plus the legal assertion; its own
+    ;; provides + has-counterparty produce the cost pair, so the template
+    ;; names it too.
+    :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
+                    {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "The UCC provides the legal framework that makes commercial sales enforceable."
     :examples ["SP sells t-shirts under standard commercial law"
                "SP engages in commerce enabled by UCC Article 2"]
@@ -1641,7 +1645,10 @@
                           :is-required-by {:framework "employment-law"}}
     :prohibited #{}
     :description "Employment relationship with legal requirements"
-    :journal-entry [{:debit "Wage Expense" :credit "Wages Payable"}]
+    ;; `provides monetary-unit` is money that moved: the wages were paid.
+    ;; An obligation still owed would be requires/provides, as
+    ;; accrued-wages has.
+    :journal-entry [{:debit "Wage Expense" :credit "Cash"}]
     :note "Employment is both enabled by and subject to employment law (minimum wage, benefits, etc.)."
     :examples ["SP hires employee subject to minimum wage requirements"
                "SP employs staff under labor law framework"]

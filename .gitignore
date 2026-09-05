@@ -50,8 +50,6 @@ missfont.log
 *.sqlite
 
 # Scripts with credentials
-start-backend.sh
-restart-backend.sh
 *.docx
 
 # headless-student study output (transcripts, grades)

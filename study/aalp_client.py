@@ -5,7 +5,8 @@ import json
 import urllib.request
 import urllib.error
 
-DEFAULT_BASE = "http://choochoo.dyn.gsu.edu:3000/api"
+import os
+DEFAULT_BASE = os.environ.get("AALP_BASE", "http://choochoo.dyn.gsu.edu:3000/api")
 
 
 class AalpClient:

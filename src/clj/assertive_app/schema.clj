@@ -389,17 +389,31 @@
         (str/replace "@" "%40")
         (str/replace "!" "%21"))))
 
+(defn- in-memory?
+  "Run on an in-memory Datomic when asked (AALP_DB=mem) or when there is
+   no database password at all. The local machine cannot reach the
+   shared transactor; this lets the whole backend run there anyway, and
+   the scripted walk and the conformance harness with it. Nothing
+   survives a restart, which is the point."
+  []
+  (or (= "mem" (System/getenv "AALP_DB"))
+      (str/blank? (System/getenv "DATOMIC_DB_PASSWORD"))))
+
 (def db-uri
-  (str "datomic:sql://aalp?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
-       (get-db-password)))
+  (if (in-memory?)
+    "datomic:mem://aalp"
+    (str "datomic:sql://aalp?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
+         (get-db-password))))
 
 (def engine-db-uri
   "URI for the assertive-engine's own database on the same transactor.
    Dedicated database (aalp-engine) so student-recorded reports and
    decomposed events persist across backend restarts, kept separate
    from the engine's benchmark database."
-  (str "datomic:sql://aalp-engine?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
-       (get-db-password)))
+  (if (in-memory?)
+    "datomic:mem://aalp-engine"
+    (str "datomic:sql://aalp-engine?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
+         (get-db-password))))
 
 (defn init-db!
   "Create database and transact schema if needed. Returns connection."

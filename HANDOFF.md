@@ -31,9 +31,11 @@ four on haiku takes ~35 min and counts against the Claude subscription
 (cohort c2's post-tests hit the session limit and were re-sat by
 `study/runs/resume-c2.sh`; `--resume-assess SID` does that for any run).
 
-The local machine **cannot** run the backend — its Datomic transactor
-fails postgres auth and has since Feb 2026. Local is for editing,
-compiling and the conformance harness:
+The local machine cannot reach the shared transactor, but the backend
+runs on an in-memory Datomic when `DATOMIC_DB_PASSWORD` is unset
+(`AALP_DB=mem ./restart-backend.sh`), enough for the scripted walk and
+the browser pass. Local is otherwise for editing, compiling and the
+conformance harness:
 
     npx shadow-cljs compile app
     DATOMIC_DB_PASSWORD=dummy clojure -M:test -e \
@@ -192,6 +194,22 @@ level-1 rounds were 21 of 27 with conceptual misses -- a design without
 `allows`, a prepaid recorded as received, `expects` on the wrong side).
 c5 moved cost-flow to 2/2 for everyone (the batch query) and the
 traditional persona to 2/2 on inherited classification (the reseller).
+**2026-09-05.** Everything on the improvement list is built: seven
+episodes (servicing beside the design), the account-name question in
+episode two, the closing transition, sticky step notes, holdings by
+batch under the chain, resellers on credit, patterns-not-yet-served
+first, the pre-submit peek, `is-allowed-by` pointing at the event,
+batch links on production inputs, the backend on in-memory Datomic
+without a password, `restart-backend.sh` in git reading
+`~/.config/aalp/env`, no oracle conflicts (24 match), level-5 adjusting
+entries deriving from `reports`. A **headless-browser pass**
+(`study/browser/`) on the real page then found and fixed a second
+sentence renderer still saying "SP", a unit sub-menu with no service
+option (the servicing step was impossible in the browser), a
+multi-flow drill-down that crashed the panel, and "Status: correct";
+the practice-mode level/mode selectors are hidden in the Guided Year.
+34 of 35 walkthrough checks and 9 of 9 drill checks pass.
+
 c6 ran on all of it: every student finished the path and every
 post-test item was 2/2 for all three -- the first cohort at ceiling.
 The remaining complaint is the novice's: debits and credits are shown,
@@ -205,7 +223,7 @@ not explained; that is the class's material by decision. Next:
 `:journal-entry` templates are no longer a rival producer; they are the
 oracle. Current state, 43 classifications:
 
-    14 match   11 partial   18 gap   3 conflict   0 amount violations   (of 46)
+    24 match   11 partial   12 gap   0 conflict   0 amount violations   (of 47)
 
 - **conflict** = the rulebook derives an account the template does not
   name. All three are the template disagreeing with its own assertions:

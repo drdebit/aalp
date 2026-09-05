@@ -214,6 +214,23 @@ multi-flow drill-down that crashed the panel, and "Status: correct";
 the practice-mode level/mode selectors are hidden in the Guided Year.
 34 of 35 walkthrough checks and 9 of 9 drill checks pass.
 
+**Cohort c7 (2026-09-05) was the first through the learner-lab firewall**
+(`study/runs/report-c7.md`): calibration clean for all three (a probe
+that any intro student could answer was rewritten first), gatekeeper
+rewrites 10/174, 2/169, 6/187, post-test quotes verified 58/69, 46/59,
+62/68. All three finished the path; level-1 rounds 5/5, 5/5 and 13/10.
+With no training knowledge to lean on, the novice scored 0 on what a
+journal entry is, 0→1 on why it balances, 1 on why Owner's Capital, and
+0 on how the record knew shirts were materials -- each time saying "the
+screens never explained why". The traditional and hasty learners got
+those. Cost flow (the batch query) and asset-vs-expense were 2/2 for
+everyone. Read: the walkthrough's one-line reasons are enough for a
+learner who can connect them to prior knowledge and not for one who
+cannot; the reasons that landed for everyone were the ones the learner
+had to DO something with (find the batch). The candidate fix is the
+same move for "decided earlier": a step that has the learner pick, in
+the chain, the event that decided today's account.
+
 c6 ran on all of it: every student finished the path and every
 post-test item was 2/2 for all three -- the first cohort at ceiling.
 The remaining complaint is the novice's: debits and credits are shown,

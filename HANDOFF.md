@@ -1,7 +1,38 @@
-# AALP — where things stand (2026-09-04)
+# AALP — where things stand (2026-09-05, end of day)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
+
+## Start here (next session)
+
+The question on the table: **what to change based on cohort c7**, the
+first cohort run through the learner-lab knowledge firewall
+(`study/runs/report-c7.md`; the section "Cohort c7" below has the
+reading). In short: every learner finished the path and the drill; the
+things a learner had to *do* (find the batch, take `allows` off and put
+it back) landed for everyone; the reasons that are only *told* (why
+Owner's Capital, how the record knew shirts were materials, why an
+entry balances) did not land for the novice, who said "the screens
+never explained why". Candidates, in the order I would take them:
+
+1. An active step for "decided earlier" in episode 4: the learner picks,
+   in the chain, the event that decided today's account (the batch-link
+   move, which made cost flow 2/2 for everyone).
+2. Decide whether "why an entry balances" is the class's (as debits and
+   credits are) or the platform's; if the platform's, episode 1 needs a
+   sentence that says it as a reason, not an observation.
+3. Rerun one cohort after either change:
+   `cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting s83:hasty-sophomore" --max-turns 260`
+   (about an hour; read the report's Firewall line first).
+
+Matt has a TODO (org, Research, scheduled 2026-09-07) to walk the whole
+tutorial in the browser himself and make final changes. The browser
+regression pass is `study/browser/` (Playwright); last result 34/35 and
+9/9.
+
+Everything is committed and pushed; choochoo runs the latest commit; the
+`learner-lab` skill is committed in system-configs and symlinked into
+`~/.claude/skills/`. Nothing is running.
 
 ## Running it
 

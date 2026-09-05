@@ -16,11 +16,15 @@ Deploy: commit, push, then on choochoo `git pull --ff-only origin master`.
 The shadow-cljs watch picks up `.cljs` changes on its own; a `.clj`
 change needs `./restart-backend.sh`.
 
-**Headless students** live in `study/` (README there). They are the
-fastest way to find out whether a change teaches:
+**Headless learners** live in `study/` (README there) and run on the
+`learner-lab` skill (`~/.claude/skills/learner-lab`, from system-configs),
+which adds a knowledge firewall: calibration probes before the platform,
+a gatekeeper on every turn, and post-tests that score only what the
+learner can quote from a screen. They are the fastest way to find out
+whether a change teaches:
 
     bb study/dump_content.clj                       # refresh the copy they see
-    cd study && ./run_cohort.sh c3 "s21:novice:haiku s22:trad:haiku" --max-turns 240
+    cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting" --max-turns 260
     python3 smoke_walk.py                           # scripted perfect student, no model
 
 Each student is a `claude -p` session with no tools and a replaced system

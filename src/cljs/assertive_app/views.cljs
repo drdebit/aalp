@@ -1130,7 +1130,9 @@
 (defn chain-panel
   "The chain: everything the business has said so far. This is the
    record the entry is a reading of, and the place a later event's
-   reason lives -- shown, so that \"in the chain\" points at something."
+   reason lives -- shown, so that \"in the chain\" points at something.
+   Under it, what the chain leaves on hand, batch by batch, so that a
+   goods-out line has something visible to point at."
   [events title]
   [:div.chain-panel
    [:h4 title]
@@ -1142,7 +1144,16 @@
           [:li.chain-event
            (when-let [id (:has-identifier ev)] [:span.chain-id (str id " ")])
            (event-summary ev)]))]
-     [:p.chain-empty "Nothing yet. The first thing you say starts it."])])
+     [:p.chain-empty "Nothing yet. The first thing you say starts it."])
+   (when-let [hs (seq (:holdings (state/derived-je)))]
+     [:div.chain-holdings
+      [:h5 "On hand, by batch"]
+      (doall
+        (for [[i h] (map-indexed vector hs)]
+          ^{:key (str "hold-" i)}
+          [:div.chain-holding
+           (str (:left h) " " (name (:item h)) " from " (:id h) " (" (:date h)
+                (when (:unit-cost h) (str ", " (format-currency (:unit-cost h)) " each")) ")")]))])])
 
 (defn walkthrough-panel
   "One step at a time: a sentence, one thing to do, and a sentence reading
@@ -1168,6 +1179,12 @@
        [:div.wt-head
         [:span.wt-episode (str "Episode " (inc episode) " — " (:title ep))]
         [:span.wt-progress (str "step " (inc step) " of " (episodes/step-count episode))]]
+
+       ;; The last step's closing line stays, greyed, until this step is
+       ;; done: a student who clicks Next before reading it can still.
+       (when (and (not done?) (pos? step))
+         (when-let [prev (:then (episodes/step episode (dec step)))]
+           [:p.wt-then.wt-then-previous prev]))
 
        [:p.wt-say (:say st)]
 
@@ -1199,14 +1216,24 @@
                              built     (state/selected-assertions)]
                          (state/advance-step! (episodes/step-count episode)
                                               (episodes/episode-count))
-                         (when (not= ep-before (:episode (state/walkthrough)))
-                           ;; The episode just finished becomes part of the
-                           ;; chain the next one is read against: blank
-                           ;; shirts are inventory because of what was said
-                           ;; about the printer an episode ago.
-                           (state/remember-walkthrough-event! built (:id (episodes/episode ep-before)))
-                           (state/clear-selections!)
-                           (api/derive-je!))))}
+                         (let [{ep-now :episode st-now :step} (state/walkthrough)
+                               next-step (episodes/step ep-now st-now)]
+                           (cond
+                             ;; The episode just finished becomes part of the
+                             ;; chain the next one is read against: blank
+                             ;; shirts are inventory because of what was said
+                             ;; about the printer an episode ago.
+                             (not= ep-before ep-now)
+                             (do (state/remember-walkthrough-event! built (episodes/event-id-for (episodes/episode ep-before)))
+                                 (state/clear-selections!)
+                                 (api/derive-je!))
+                             ;; A second event inside the same episode: what
+                             ;; was built so far joins the chain under the
+                             ;; episode's id, and the builder starts again.
+                             (:new-event next-step)
+                             (do (state/remember-walkthrough-event! built (:id (episodes/episode ep-before)))
+                                 (state/clear-selections!)
+                                 (api/derive-je!))))))}
          ;; One label for one action. It used to say "Continue" on steps
          ;; without a closing line and "Next" on steps with one, which
          ;; made the same button look like two different controls.

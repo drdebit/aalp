@@ -23,12 +23,15 @@ script = {
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"PrinterWorld"}},{"type":"next"},
      {"type":"explore"},{"type":"toggle_assertion","code":"allows"},{"type":"next"},
      {"type":"toggle_assertion","code":"allows"},{"type":"explore"},{"type":"next"},
-     {"type":"next"}],
- "design": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
+     {"type":"next"},{"type":"next"}],
+ "design": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":400}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"logo-design","quantity":1}},{"type":"next"},
      {"type":"add_assertion","code":"allows","params":{"consumes-items":["blank-tshirts","ink-cartridges"],"creates-item":"printed-tshirts"}},{"type":"next"},
-     {"type":"add_assertion","code":"has-counterparty","params":{"name":"Ada Okafor"}},{"type":"next"}],
+     {"type":"add_assertion","code":"has-counterparty","params":{"name":"Ada Okafor"}},{"type":"next"},
+     {"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
+     {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":60}},{"type":"next"},
+     {"type":"add_assertion","code":"receives","params":{"unit":"service-unit","quantity":1}},{"type":"next"}],
  "materials": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"blank-tshirts","quantity":20}},{"type":"next"},
@@ -42,17 +45,13 @@ script = {
      {"type":"add_assertion","code":"consumes","params":{"flows":[{"quantity":10,"physical-item":"blank-tshirts"},{"quantity":1,"physical-item":"ink-cartridges"}]}},{"type":"next"},
      {"type":"add_assertion","code":"creates","params":{"flows":[{"quantity":10,"physical-item":"printed-tshirts"}]}},{"type":"next"},
      {"type":"add_assertion","code":"is-allowed-by","params":{"capacity":"t-shirt-printer"}},{"type":"next"}],
- "service": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-04"}},{"type":"next"},
-     {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":60}},{"type":"next"},
-     {"type":"add_assertion","code":"receives","params":{"unit":"service-unit","quantity":1}},{"type":"next"},
-     {"type":"add_assertion","code":"has-counterparty","params":{"name":"PrinterWorld"}},{"type":"next"}],
  "sale": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-05"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"physical-unit","physical-item":"printed-tshirts","quantity":4}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"Customer"}},{"type":"next"},
-     {"type":"add_assertion","code":"provides","params":{"from-event":"production"}},{"type":"open_line","index":2},{"type":"next"}],
+     {"type":"add_assertion","code":"provides","params":{"from-event":"production"}},{"type":"open_line","index":2},{"type":"next"},{"type":"next"}],
 }
-show = {("design",3),("materials",3),("production",3),("service",2),("sale",4)}
+show = {("design",3),("design",7),("materials",3),("production",3),("sale",4)}
 while p.phase == "walkthrough":
     ep = p.episodes[p.wt["episode"]]["id"]
     for a in script[ep]:

@@ -430,7 +430,7 @@
   [text flow context]
   (if (= :position text)
     (or (some-> (resolve-position flow context) position-texts)
-        "This item has no recorded position yet.")
+        "Nothing in the chain says what this is for, so the record has no name for it yet. `allows` would say it -- what it turns into what -- and so would a later event that uses it up or sells it on.")
     text))
 
 (defn- account-kind
@@ -461,11 +461,17 @@
           noun   (case kind :asset "an asset" :expense "an expense" :liability "a claim on the business"
                             :equity "the owners' claim" :revenue "revenue")
           home   (if left? "left" "right")]
-      (str (if more? "More of " "Less of ") noun ". "
-           (if left? "Assets and expenses" "Claims on the business and revenue")
-           " have their home on the " home ", and a thing "
-           (if more? "grows on its home side" "shrinks on the other side")
-           ": " (if debit? "debit" "credit") "."))))
+      (str (if more? "More of " "Less of ") noun " -- home side " home ": "
+           (if debit? "debit" "credit") "."))))
+
+(defn- chain-physicals
+  "Physical flows under an assertion, as {:item :units}, either shape."
+  [v]
+  (for [f (cond (nil? v) [] (sequential? v) v :else [v])
+        :when (= "physical-unit" (some-> (:unit f) name))
+        :let [item (some-> (:physical-item f) name)]
+        :when item]
+    {:item item}))
 
 (defn derive-je
   "Derive a journal entry from the student's selected assertions.
@@ -610,7 +616,12 @@
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
                               :prompt "Something must balance this. What did SP get, or settle? The assertions do not say yet."}))]
-    {:batches (let [items (distinct (keep :physical-item (as-flows (:provides selections))))]
+    {:holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
+                                                            (:events chain-ctx))))
+                          b (chain/batches (:events chain-ctx) it)
+                          :when (pos? (:left b))]
+                      (assoc b :item it :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id b) :unit-cost]))))
+     :batches (let [items (distinct (keep :physical-item (as-flows (:provides selections))))]
                (into {} (for [it items
                               :let [bs (chain/batches (:events chain-ctx) it)]
                               :when (seq bs)]

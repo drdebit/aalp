@@ -39,6 +39,13 @@
       :assert    (boolean (has-params? selected code (or params {})))
       true)))
 
+(defn event-id-for
+  "The identifier the event built in this episode gets when it joins the
+   chain: the episode's id, unless a :new-event step inside the episode
+   started a second one, in which case the latest such step names it."
+  [ep]
+  (name (or (some :event-id (:steps ep)) (:id ep))))
+
 ;; ---------------------------------------------------------------------------
 ;; The episodes
 ;; ---------------------------------------------------------------------------
@@ -108,6 +115,9 @@
       :do {:kind :assert :code :allows}
       :then "And it's back. Nothing about the printer changed; what the record says about it did. That is the whole trick, and you will see it again."}
 
+     {:say "One thing to hold on to before moving on. Every account name is an answer to the same question: what is this thing for, and what is left afterwards?"
+      :then "Cash is money the business holds — an asset, because it can be put to any future use. The printer is held to make things and is still there afterwards: Equipment. Shirts will be held to be used up making printed ones: Raw Materials. Money spent on a repair buys nothing that lasts: an expense. The record can only name a thing once it knows what it is for, and you are the one who says so."}
+
      {:say "Next, a design to print — and then blank t-shirts."
       :then "Because of what you said today, the record will already know what the shirts are for."}]}
 
@@ -116,7 +126,7 @@
    ;; is not used up by that use. Sits between the printer and the
    ;; shirts so `allows` is seen twice in a row on two different things.
    {:id :design
-    :title "SP buys a design"
+    :title "SP buys a design, and the printer is serviced"
     :palette #{:has-date :provides :receives :has-counterparty :allows}
     :steps
     [{:say "January 3rd. A printer prints something, so today SP pays a designer $400 for a logo to put on the shirts. When?"
@@ -135,7 +145,22 @@
 
      {:say "Who did the business pay? Ada Okafor, the designer."
       :do {:kind :assert :code :has-counterparty}
-      :then "Balanced. Two very different things, one reason, one account family."}]}
+      :then "Balanced. Two very different things, one reason, one account family."}
+
+     ;; The other answer to "what is left afterwards?": nothing. A second
+     ;; event in the same episode, so the contrast sits beside the design
+     ;; rather than a whole episode later.
+     {:say "Same afternoon, and the contrast. The printer needs a service: a technician from PrinterWorld comes out and SP pays $60. New event — start with when."
+      :new-event true
+      :event-id :service
+      :do {:kind :set-date}}
+
+     {:say "The business paid $60."
+      :do {:kind :assert :code :provides :params {:unit "monetary-unit"}}}
+
+     {:say "And received a service — work done for it. Pick \"Service\" as the unit."
+      :do {:kind :assert :code :receives :params {:unit "service-unit"}}
+      :then "Services Expense, straight away — no \"not yet classified\", no allows to add. A service is used up as it is done. Nothing is left to keep for a future use, so there is nothing to call an asset. That is what an expense is. Money went out for the design and for the servicing; one bought something that stays, one something that doesn't, and the record knows which because you said what each was for."}]}
 
    {:id :materials
     :title "SP buys shirts and ink"
@@ -201,25 +226,6 @@
       :do {:kind :assert :code :is-allowed-by}
       :then "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."}]}
 
-   ;; The other answer to "what is left afterwards?": nothing.
-   {:id :service
-    :title "The printer is serviced"
-    :palette #{:has-date :provides :receives :has-counterparty}
-    :steps
-    [{:say "January 6th. The printer needs a service. A technician from PrinterWorld comes out and SP pays $60. When?"
-      :do {:kind :set-date}}
-
-     {:say "The business paid $60."
-      :do {:kind :assert :code :provides :params {:unit "monetary-unit"}}}
-
-     {:say "And received a service — work done for it. Pick \"Service\" as the unit."
-      :do {:kind :assert :code :receives :params {:unit "service-unit"}}
-      :then "Services Expense. No \"not yet classified\" this time, and no allows to add: a service is used up as it is done. Nothing is left to keep for a future use, so there is nothing to call an asset. That is what an expense is — the printer was kept; the servicing is gone."}
-
-     {:say "And who did the work."
-      :do {:kind :assert :code :has-counterparty}
-      :then "Done. Compare it with the design: money went out both days. One bought something that stays, one bought something that doesn't, and the record knows which because you told it what each was for."}]}
-
    {:id :sale
     :title "SP sells shirts"
     :palette #{:has-date :provides :receives :has-counterparty}
@@ -239,7 +245,10 @@
 
      {:say "Look at the other two lines: Cost of Goods Sold, and Finished Goods going back down, $24. You never typed that number. Where did it come from? Which four shirts were these? Look in the chain for shirts the business can sell, and on the provides line pick the batch they came from."
       :do {:kind :assert :code :provides :params {:from-event "production"}}
-      :then "Four of the ten printed on January 5th, at $6 each: $24. And the $6 was $5 of blank shirt bought on the 4th and $1 of ink. Open the Cost of Goods Sold line and the batch is named there. Nothing was typed; the cost was carried forward, event by event, from what the business paid. No new assertions again — same vocabulary, new arrangement, two accounts you hadn't met."}]}])
+      :then "Four of the ten printed on January 5th, at $6 each: $24. And the $6 was $5 of blank shirt bought on the 4th and $1 of ink. Open the Cost of Goods Sold line and the batch is named there. Nothing was typed; the cost was carried forward, event by event, from what the business paid. No new assertions again — same vocabulary, new arrangement, two accounts you hadn't met."}
+
+     {:say "That was SP's first week, as a lesson. What comes next is practice, on other people's businesses — each problem is a different company with its own chain, and nothing carries over. SP's own books start after that."
+      :then "Same vocabulary throughout. Go and use it."}]}])
 
 (def assertion-level
   "The level whose assertion vocabulary the walkthrough needs.

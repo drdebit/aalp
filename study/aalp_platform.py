@@ -198,6 +198,8 @@ class Platform:
             return "has-date" in self.selected
         if kind == "remove":
             return do.get("code") not in self.selected
+        if kind == "new-event":
+            return "has-date" in self.selected
         if kind == "assert":
             sel = self.selected.get(do["code"])
             if sel is None:
@@ -469,10 +471,21 @@ class Platform:
         if self.wt["step"] + 1 < nsteps:
             self.wt["step"] += 1
             self.expanded = None
+            nxt = ep["steps"][self.wt["step"]]
+            if nxt.get("new-event"):
+                # views.cljs: a second event in the episode; what was built joins the chain
+                if self.selected:
+                    self.walk_events.append(dict(copy.deepcopy(self._sel_payload()), **{"has-identifier": ep["id"]}))
+                self.selected = OrderedDict()
+                self.stash = {}
+                self.explore = False
+                self._derive()
+                return "New event within the episode."
             return "Next step."
         # episode boundary: what was built joins the chain
         if self.selected:
-            self.walk_events.append(dict(copy.deepcopy(self._sel_payload()), **{"has-identifier": ep["id"]}))
+            eid = next((st.get("event-id") for st in ep["steps"] if st.get("event-id")), ep["id"])
+            self.walk_events.append(dict(copy.deepcopy(self._sel_payload()), **{"has-identifier": eid}))
         self.summary["walkthrough"]["episodes_completed"] = self.wt["episode"] + 1
         self.wt = {"episode": self.wt["episode"] + 1, "step": 0}
         self.selected = OrderedDict()
@@ -889,6 +902,9 @@ class Platform:
             out.append("  Nothing yet. The first thing you say starts it.")
         for ev in events:
             out.append("  " + (f"[{ev.get('has-identifier')}] " if ev.get("has-identifier") else "") + _event_summary(ev))
+        hs = (self.derived or {}).get("holdings") or []
+        if hs:
+            out.append("  On hand, by batch: " + "; ".join(f"{h.get('left')} {h.get('item')} from {h.get('id')} ({h.get('date')}" + (f", {money(h.get('unit-cost'))} each" if h.get("unit-cost") is not None else "") + ")" for h in hs))
         return "\n".join(out)
 
     def _builder_actions(self):
@@ -902,8 +918,10 @@ class Platform:
         ep, st = self._wt_step()
         done = self._step_complete(st)
         n = len(ep["steps"])
-        out = [f"=== WALKTHROUGH — Episode {self.wt['episode']+1} — {ep['title']}   (step {self.wt['step']+1} of {n}) ===",
-               st["say"]]
+        out = [f"=== WALKTHROUGH — Episode {self.wt['episode']+1} — {ep['title']}   (step {self.wt['step']+1} of {n}) ==="]
+        if not done and self.wt["step"] > 0 and ep["steps"][self.wt["step"] - 1].get("then"):
+            out.append("(previous step's note, still here) " + ep["steps"][self.wt["step"] - 1]["then"])
+        out.append(st["say"])
         do = st.get("do")
         if do and not done:
             kind = do.get("kind")

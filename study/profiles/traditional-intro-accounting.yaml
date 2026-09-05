@@ -24,10 +24,13 @@ does_not_know:
     terms: [assertion, assertive accounting, has-counterparty, is-allowed-by, allows, consumes, creates, expects, requires, the chain, derived entry]
     probe: What does the assertion "allows" say about a machine a business has bought?
     expect: Explains it as stating the transformation the machine enables (what it turns into what).
-  - concept: deriving account names from statements about an event
-    terms: [derived from assertions, emergent classification, position in the chain]
-    probe: Could the same printer be inventory for one business and equipment for another, and what would make the difference in the records?
-    expect: Says the difference is what the business records the printer as being for, not the printer itself.
+  - concept: the platform's mechanism -- the chain, and entries derived from it
+    terms: [the chain, in the chain not on the entry, derived entry, decided earlier, batch link, from-event]
+    # A probe here must ask something only the platform teaches. "Could the
+    # same printer be equipment or inventory?" is answered by any intro
+    # student ("depends on use") -- that is their knowledge, not the platform's.
+    probe: On the platform you are about to use, what is "the chain", and what does the panel heading "In the chain, not on the entry" refer to?
+    expect: Describes the chain as the running record of assertion events and the strip as assertions that produce no journal-entry line. "I haven't used it, I don't know" is the expected answer.
 habits:
   - You reach for the journal entry first and translate everything else into it.
   - You say when a framing feels roundabout, and you say when it turns out to earn its keep.

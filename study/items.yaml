@@ -1,0 +1,87 @@
+platform_blurb: >-
+  You are using an online accounting learning platform ("SP's T-Shirt Business") as part of a course. You will be
+  shown the screen as text, one screen per turn, and you act by choosing ONE of the actions the screen lists.
+  Read the whole screen each turn, especially text that appeared because of your last action. When the platform
+  asks you to look at something, look (open the line) once, then move on. In a practice round, build your full
+  set of assertions before you submit. If you would genuinely give up and leave, use the quit action and say why.
+items:
+  - id: de1
+    tag: "de:debit-credit"
+    pre: true
+    q: In your own words, what is a journal entry? What are its two sides called, and what decides which side a line goes on?
+    rubric: "1 pt: a journal entry records one business event as lines that balance, with two sides (debit and credit). 1 pt: which side depends on what kind of thing the line is (asset, expense, claim, revenue) and whether there is more or less of it — some version of a home side and growth on that side. Zero for the bank-card sense of debit/credit alone."
+  - id: de2
+    tag: "de:cash-purchase"
+    pre: true
+    q: SP's business buys a t-shirt printer for $3,000 cash. Write the journal entry (which account on each side, and the amounts).
+    rubric: "1 pt: debit Equipment (or an equivalent asset) 3,000. 1 pt: credit Cash 3,000. Reversed sides score 0 on both."
+  - id: de3
+    tag: "de:credit-purchase"
+    pre: true
+    q: SP's business buys $500 of blank t-shirts on account, to be paid in 30 days. Write the journal entry.
+    rubric: "1 pt: debit Raw Materials Inventory (or inventory/materials) 500. 1 pt: credit Accounts Payable (or a clearly named liability to the supplier) 500, not Cash."
+  - id: de4
+    tag: "de:sale-cogs"
+    pre: true
+    q: SP's business sells 5 printed shirts for $125 cash; those 5 shirts cost $30 in total to make. Write every line.
+    rubric: "1 pt: debit Cash 125 and credit Revenue 125. 1 pt: debit Cost of Goods Sold 30 and credit Finished Goods Inventory 30."
+  - id: de5
+    tag: "de:why-balance"
+    pre: true
+    q: Why does a journal entry always balance? And if a business simply receives $20,000 from its owner, what is on the other side, and why?
+    rubric: "1 pt: every event has two sides — what came in and what went out, or the claim created — measured in the same money. 1 pt: Owner's Capital / equity, because nothing went out and no debt was created, so what remains is the owner's claim, the residual."
+  - id: aa8
+    tag: "aa:deferred-revenue"
+    pre: true
+    q: SP's business receives $2,000 today from a customer for custom shirts it will deliver next month. Describe how you would record it — what statements you would make about the event — and what the journal entry would be.
+    rubric: "1 pt: money received now AND an obligation to provide shirts later (requires / must deliver). 1 pt: debit Cash 2,000, credit a liability such as Deferred or Unearned Revenue — not revenue yet."
+  - id: aa9
+    tag: "aa:novel-transfer"
+    pre: true
+    q: "A situation you have not seen: the business's accountant prepares its tax return and sends a bill for $300, due next month. How would you record it — what statements about the event — and what do you think the journal entry would be? Say what you are unsure about."
+    rubric: "1 pt: the business receives a service (used up as done) and takes on an obligation to provide $300 later; no cash moves today. 1 pt: debit an expense (services / professional fees) 300 and credit Accounts Payable or a clearly named liability — not an asset, not Cash."
+  - id: aa1
+    tag: "aa:assertion-concept"
+    pre: false
+    q: What is an "assertion" in the system you just used? Name the assertions you used and say what each one says about an event.
+    rubric: "1 pt: a plain statement about what happened in an event (when, who, what went out, what came in, what it enables), from which the entry is derived. 1 pt: at least four of has-date, receives, provides, has-counterparty, allows, consumes, creates, is-allowed-by with correct meanings."
+  - id: aa2
+    tag: "aa:equity-residual"
+    pre: false
+    q: When the business was funded you said only that it received $20,000 (plus when and from whom). Owner's Capital appeared on the credit side by itself. Why that account, and not Revenue or a loan?
+    rubric: "1 pt: money came in, nothing went out, no obligation to repay, so what is left is the contributor's claim — equity as the residual. 1 pt: revenue would need goods or services provided to a counterparty; a loan would need an obligation (requires) to repay."
+  - id: aa3
+    tag: "aa:allows-role"
+    pre: false
+    q: The same printer could be Equipment for SP and Inventory for a shop that resells printers. Which assertion told the record which one it was, and why does the reseller's printer come out differently?
+    rubric: "1 pt: the allows assertion — what the printer is for (turns blank shirts and ink into printed ones). 1 pt: the reseller never says the printer makes anything, so the record has no reason to call it equipment — what the record says about the thing decides, not the thing itself."
+  - id: aa4
+    tag: "aa:inherited-classification"
+    pre: false
+    q: When you bought blank t-shirts you never said they were "raw materials", yet the entry said Raw Materials Inventory. How did the record know?
+    rubric: "1 pt: because of what was said earlier about the printer — allows said it turns blank shirts into printed ones, so shirts are an input (decided earlier). 1 pt: the account is read off the chain of earlier events rather than looked up for the item; the same four assertions produced a new account."
+  - id: aa5
+    tag: "aa:in-the-chain"
+    pre: false
+    q: What does "In the chain, not on the entry" mean? Give an example from what you did and explain why the entry cannot show it.
+    rubric: "1 pt: things in the chain (the record of what was said) that produce no journal-entry line. 1 pt: a correct example (the 200 ownership units; allows; is-allowed-by) and the reason: the entry measures in money, a count or a permission has no line, and the chain keeps it anyway."
+  - id: aa6
+    tag: "aa:cost-flow"
+    pre: false
+    q: On the production entry, an amount appeared for the shirts used up without you typing it. Where did it come from? And when shirts were sold, where did Cost of Goods Sold get its amount, and how did you find which shirts they were?
+    rubric: "1 pt: from what the business paid for those shirts when it bought them (the earlier purchase, price per shirt). 1 pt: the sale was priced from the batch printed earlier (the production event, at its cost per shirt), found by looking in the chain and naming the batch on the provides line."
+  - id: aa7
+    tag: "aa:production-no-counterparty"
+    pre: false
+    q: Why is there no counterparty on the production entry? What is different about that event compared with a purchase or a sale?
+    rubric: "1 pt: nothing entered or left the business; something inside it changed form (consumes -> creates). 1 pt: purchases and sales are exchanges with another party; production is an internal transformation enabled by the printer."
+  - id: aa10
+    tag: "aa:asset-vs-expense"
+    pre: false
+    q: The business paid $400 for a design and $60 to have the printer serviced. One became an asset and one an expense. What made the difference, in the record's terms?
+    rubric: "1 pt: the design is kept for a future use and is not used up by that use (it allows making printed shirts) — an asset; the service is used up as it is done, nothing is left to keep — an expense. 1 pt: the difference came from what the business said each was for (allows on the design; nothing lasting for the service), not from the kind of thing."
+meta:
+  - id: m1
+    q: What was the most confusing part of the platform for you, and what would you change about it?
+  - id: m2
+    q: On a 1-5 scale, how well do you now understand (a) journal entries and (b) assertions? Give both numbers and a sentence on each.

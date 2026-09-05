@@ -15,25 +15,20 @@ measured and its gaps located before real students hit them.
   Disclosure mirrors the UI: a line's rule text only when the line is
   opened, the walkthrough's `then` only after the step is done, the
   derived entry in a drill only after commit.
-- **`llm.py`** — a sealed model session over `claude -p`: no tools, a
-  replaced system prompt, a working directory outside the repo, so the
-  student sees nothing but the screen. One session per student, so
-  confusion, learning and the post-test are one conversation.
-- **`student.py`** — one student: persona → pre-test → learning loop
-  (screen in, `{think_aloud, action}` out, one action per turn) →
-  post-test → rubric grading by a separate grader model → gap analysis
-  of the think-aloud transcript.
-- **`assess.py`** — the items, rubrics and grader/analyst briefs.
-  Pre-tested items (double-entry basics, a deferred-revenue transfer, a
-  novel transfer) are asked before and after; platform-specific items
-  (why Owner's Capital, what `allows` does, inherited Raw Materials,
-  recorded-but-not-reflected, cost flow, production without a
-  counterparty) are post-only.
-- **`report.py`** — aggregates a cohort into `runs/report-<cohort>.md`.
+- **`adapter.py`** — the learner-lab adapter: the text-mode client
+  presented through the lab's interface.
+- **`items.yaml`** — the test items and rubrics, and the platform blurb
+  the learner is given. Pre-tested items (double-entry basics, two
+  transfers) are asked before and after; platform-specific items are
+  post-only, and every post-test claim must be quoted from a screen.
+- **`profiles/`** — knowledge profiles: `novice-business-undergrad`
+  (general knowledge, nothing specialised), `traditional-intro-accounting`
+  (thinks in accounts, has never seen assertions), `hasty-sophomore`.
 
-Personas (in `student.py`): `novice` (never took accounting), `trad`
-(passed a traditional intro course, thinks in accounts), `hasty`
-(skims, tries things).
+The learners themselves, the gatekeeper, calibration, grading and the
+report are the **`learner-lab` skill** (`~/.claude/skills/learner-lab`,
+from `system-configs`). Read its SKILL.md for the procedure and for how
+to read the integrity line.
 
 ## Running
 
@@ -42,8 +37,11 @@ Students log in as `<id>@study.test`, so they never touch a real user.
 
     bb study/dump_content.clj          # refresh copy from the cljs sources (repo root)
     cd study
-    python3 student.py --id s01 --persona novice --model haiku \
-        --stages walkthrough,tutorial:0,tutorial:1 --max-turns 240
+    ./run_cohort.sh c7 "s71:novice-business-undergrad s72:traditional-intro-accounting s73:hasty-sophomore" --max-turns 260
+    # one learner by hand:
+    python3 ~/.claude/skills/learner-lab/learnerlab/cli.py run --adapter adapter.py:Adapter \
+        --adapter-args '{"learner_id":"s01"}' --profile profiles/novice-business-undergrad.yaml \
+        --items items.yaml --id s01 --out runs
     ./run_cohort.sh c1 "s01:novice:haiku s02:trad:haiku s03:hasty:sonnet" --max-turns 240
 
 Stages: `walkthrough`, `tutorial:N` (gate → reading → quiz → drill),
@@ -64,12 +62,12 @@ model — the fastest way to check the client after a platform change.
 - It measures the platform's **content and feedback**, not its visual
   UI. Layout, affordance discoverability and rendering bugs need a
   browser pass.
-- The student is a language model told to know nothing beyond the
-  screen. That firewall is a prompt, not a guarantee; the `trad`
-  persona is *allowed* debit/credit knowledge. Read the think-aloud
-  before trusting a score.
-- The rubric grader and gap analyst are models too. They are strict
-  and literal by instruction; spot-check `grades.json` against
-  `posttest.json`.
+- The learner is a language model. The lab's firewall (calibration,
+  gatekeeper every turn, cited answers) makes the knowledge constraint
+  structural rather than a request; read the report's Firewall section
+  before its numbers, and the think-aloud before trusting a score.
+- Cohorts c1-c6 (Sept 3-4, 2026) predate the firewall; their pre/post
+  gains on general items are not trustworthy, their drill outcomes and
+  think-alouds are.
 - Legacy vocabulary entries the sentence builder never renders
   (`consumes-inventory` etc.) are hidden, as in the UI.

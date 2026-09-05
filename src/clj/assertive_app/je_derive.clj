@@ -667,7 +667,7 @@
 
                                               :else
                                               (get not-reflected-texts code
-                                                   "Recorded -- but no rule in SP's rulebook produces a journal-entry line from this assertion."))}))
+                                                   "In the chain, not on the entry. No rule in SP's rulebook produces a journal-entry line from this assertion as it stands."))}))
                                  (keys selections)))
         sum-side (fn [side]
                    (reduce + 0 (keep #(when (= side (:side %)) (:amount %)) lines)))

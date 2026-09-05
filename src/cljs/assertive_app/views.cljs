@@ -755,7 +755,7 @@
         set-inputs! #(state/update-assertion-parameter! :allows :consumes-items %)]
     [sentence-section :capability "This makes possible:"
      [:div.allows-content
-      [:span "which allows SP to turn "]
+      [:span "which allows the business to turn "]
       (doall
         (for [[i item] (map-indexed vector inputs)]
           ^{:key (str "allows-in-" i)}
@@ -1108,7 +1108,17 @@
                              (auto-populate-assertion! assertion-code)
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
-                "ownership units"]])
+                "ownership units"]
+               ;; Work done for the business: used up as it is done.
+               (when (= "receives" (name assertion-code))
+                 [:button.menu-item
+                  {:on-click #(do
+                               (state/toggle-assertion! assertion-code)
+                               (state/update-assertion-parameter! assertion-code :unit "service-unit")
+                               (auto-populate-assertion! assertion-code)
+                               (reset! sub-menu nil)
+                               (reset! show-menu? false))}
+                  "a service"])])
 
             ;; Main menu: list available assertions
             (when-not @sub-menu
@@ -1311,7 +1321,8 @@
         [:div.main-sentence
          [:span "On "]
          [inline-date-input :has-date :date (get-in selected [:has-date :date])]
-         [:span ", SP "]
+         ;; The subject is the business, not SP (see the other builder).
+         [:span ", the business "]
 
          ;; Provides fragment
          (when (contains? selected :provides)

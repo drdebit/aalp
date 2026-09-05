@@ -107,11 +107,11 @@
       :do {:kind :assert :code :has-counterparty}
       :then "Good. It balances, and every line came from something you said."}
 
-     {:say "Try something. Open the entry's Explore control and switch `allows` off."
+     {:say "Try something. Take `allows` off — the × beside it — and watch the entry."
       :do {:kind :remove :code :allows}
       :then "Equipment disappears. The record stopped saying what the machine is for, so it stopped knowing what to call it."}
 
-     {:say "Now switch it back on."
+     {:say "Now put it back: + Add Assertion, Allows, the same two inputs and output."
       :do {:kind :assert :code :allows}
       :then "And it's back. Nothing about the printer changed; what the record says about it did. That is the whole trick, and you will see it again."}
 

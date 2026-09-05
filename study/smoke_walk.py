@@ -44,7 +44,7 @@ script = {
  "production": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-04"}},{"type":"next"},
      {"type":"add_assertion","code":"consumes","params":{"flows":[{"quantity":10,"physical-item":"blank-tshirts"},{"quantity":1,"physical-item":"ink-cartridges"}]}},{"type":"next"},
      {"type":"add_assertion","code":"creates","params":{"flows":[{"quantity":10,"physical-item":"printed-tshirts"}]}},{"type":"next"},
-     {"type":"add_assertion","code":"is-allowed-by","params":{"capacity":"t-shirt-printer"}},{"type":"next"}],
+     {"type":"add_assertion","code":"is-allowed-by","params":{"capacity":"printer"}},{"type":"next"}],
  "sale": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-05"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"physical-unit","physical-item":"printed-tshirts","quantity":4}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},

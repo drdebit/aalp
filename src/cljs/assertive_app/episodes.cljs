@@ -222,7 +222,7 @@
       :do {:kind :assert :code :creates}
       :then "Finished Goods Inventory. The new shirts are worth what went into them."}
 
-     {:say "One more. What made this possible?"
+     {:say "One more. What made this possible? Point at it in the chain: the event where the business bought the printer and said what it was for."
       :do {:kind :assert :code :is-allowed-by}
       :then "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."}]}
 

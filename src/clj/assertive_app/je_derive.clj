@@ -360,7 +360,7 @@
                              "The consumed materials have no recorded cost yet -- nothing in the ledger records acquiring them."))
        :total-input-cost
        (let [inputs (as-flows (:consumes selections))
-             costs  (map #(cost/cost-of basis (:physical-item %) (:quantity %)) inputs)]
+             costs  (map #(cost/cost-of basis (:physical-item %) (:quantity %) (:from-event %)) inputs)]
          (if (and (seq costs) (every? some? costs))
            {:quantity (q/monetary (reduce + costs)) :unresolved? false}
            {:quantity nil :unresolved? true
@@ -549,12 +549,13 @@
                                       (if side (str base " " side) base))
                          ;; Why this account, when the reason is not in
                          ;; this event.
-                         :established-by (or (when (= :position (:account line))
-                                               (seq (established-elsewhere matched-params context)))
+                         :established-by (seq (concat
+                                             (when (= :position (:account line))
+                                               (established-elsewhere matched-params context))
                                              ;; A cost line taken from a named batch
                                              ;; shows the batch: the event that made
                                              ;; or bought these units, and its price.
-                                             (when (and (= :cost-basis amount) (:from-event matched-params))
+                                             (when (and (contains? #{:cost-basis :input-cost} amount) (:from-event matched-params))
                                                (let [id (name (:from-event matched-params))
                                                      ev (first (filter #(= id (some-> (:has-identifier %) name))
                                                                        (:events context)))
@@ -563,7 +564,7 @@
                                                    [{:date (get-in ev [:has-date :date])
                                                      :batch id
                                                      :unit-cost uc
-                                                     :assertions (select-keys ev [:receives :consumes :creates :provides :allows])}]))))
+                                                     :assertions (select-keys ev [:receives :consumes :creates :provides :allows])}])))))
                          :entry-label entry-label}))
                     fired)
         line-producing (set (mapcat :provenance lines))
@@ -626,7 +627,8 @@
                           b (chain/batches (:events chain-ctx) it)
                           :when (pos? (:left b))]
                       (assoc b :item it :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id b) :unit-cost]))))
-     :batches (let [items (distinct (keep :physical-item (as-flows (:provides selections))))]
+     :batches (let [items (distinct (keep :physical-item (concat (as-flows (:provides selections))
+                                                                (as-flows (:consumes selections)))))]
                (into {} (for [it items
                               :let [bs (chain/batches (:events chain-ctx) it)]
                               :when (seq bs)]

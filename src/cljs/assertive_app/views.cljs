@@ -715,6 +715,19 @@
             (for [opt (assertion-param-options :receives :physical-item)]
               ^{:key (str (name code) "-" idx "-" (:value opt))}
               [:option {:value (:value opt)} (:label opt)])]
+           ;; Which batch was used up? As on a sale: name it and the
+           ;; input costs what that batch cost.
+           (when-let [bs (and (= code :consumes)
+                              (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item flow) ""))])))]
+             [:select.inline-select
+              {:value (or (:from-event flow) "")
+               :on-change #(state/update-flow-parameter! code idx :from-event (.. % -target -value))}
+              [:option {:value ""} "from which batch?"]
+              (for [b bs]
+                ^{:key (str (name code) "-" idx "-b-" (:id b))}
+                [:option {:value (:id b)}
+                 (str (:id b) " — " (:date b) ": " (:left b) " left"
+                      (when (:unit-cost b) (str " at " (format-currency (:unit-cost b)) " each")))])])
            (when (> (count rows) 1)
              [:button.remove-flow
               {:title "Remove this one"
@@ -766,14 +779,40 @@
       [item-select :allows :creates-item (:creates-item params)]
       [remove-assertion-button :allows]]]))
 
+(defn- chain-capabilities
+  "The events in the chain that granted a capability -- said `allows` --
+   as options: what an `is-allowed-by` can point at. The research example
+   points at the event, not the machine."
+  []
+  (let [events (if (state/walkthrough-active?)
+                 (state/walkthrough-events)
+                 (:prior-events (state/current-problem)))]
+    (for [ev events
+          :when (and (:allows ev) (:has-identifier ev))
+          :let [al (:allows ev)
+                ins (or (seq (:consumes-items al)) (some-> (:consumes-item al) vector))]]
+      {:value (:has-identifier ev)
+       :label (str (:has-identifier ev) " — " (get-in ev [:has-date :date]) ": "
+                   (or (get-in ev [:receives :physical-item]) "capability")
+                   ", allows " (clojure.string/join " and " ins) " → " (:creates-item al))})))
+
 (defn- render-is-allowed-by-section
-  "What made this event possible -- the capability it rests on."
+  "What made this event possible -- the event that granted the capability."
   [params]
-  [sentence-section :capability "This is:"
-   [:div.allowed-by-content
-    [:span "enabled by "]
-    [item-select :is-allowed-by :capacity (:capacity params)]
-    [remove-assertion-button :is-allowed-by]]])
+  (let [caps (seq (chain-capabilities))]
+    [sentence-section :capability "This is:"
+     [:div.allowed-by-content
+      [:span "enabled by "]
+      (if caps
+        [:select.inline-select
+         {:value (or (:capacity params) "")
+          :on-change #(state/update-assertion-parameter! :is-allowed-by :capacity (.. % -target -value))}
+         [:option {:value ""} "which event?"]
+         (for [c caps]
+           ^{:key (str "cap-" (:value c))}
+           [:option {:value (:value c)} (:label c)])]
+        [item-select :is-allowed-by :capacity (:capacity params)])
+      [remove-assertion-button :is-allowed-by]]]))
 
 (defn- render-expects-section
   "Render the 'expects' confidence section with context.

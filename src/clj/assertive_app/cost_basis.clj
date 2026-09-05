@@ -42,7 +42,8 @@
 (defn- physical [params]
   (when (= "physical-unit" (some-> (:unit params) name))
     (when-let [n (num-or-nil (:quantity params))]
-      {:item (some-> (:physical-item params) name) :units n})))
+      (cond-> {:item (some-> (:physical-item params) name) :units n}
+        (:from-event params) (assoc :from-event (name (:from-event params)))))))
 
 (defn- physicals
   "Every physical flow under an assertion. A transformation consumes more
@@ -106,8 +107,14 @@
                       {:basis (accumulate basis a) :by-event (note basis a)}
                       (if-let [p (production assertions)]
                         (let [in-cost (reduce
-                                        (fn [tot {:keys [item units]}]
-                                          (if-let [uc (unit-cost basis item)]
+                                        (fn [tot {:keys [item units from-event]}]
+                                          ;; An input that names its batch costs
+                                          ;; what that batch cost; otherwise the
+                                          ;; running average.
+                                          (if-let [uc (or (when from-event
+                                                            (let [ev (get by-event from-event)]
+                                                              (when (= (:item ev) item) (:unit-cost ev))))
+                                                          (unit-cost basis item))]
                                             (+ tot (* uc units))
                                             (reduced nil)))
                                         0 (:inputs p))]

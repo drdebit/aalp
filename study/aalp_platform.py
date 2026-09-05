@@ -296,6 +296,8 @@ class Platform:
                 f = {"unit": "physical-unit"}
                 if fl.get("quantity") not in (None, ""):
                     f["quantity"] = _num(fl["quantity"])
+                if fl.get("from-event"):
+                    f["from-event"] = str(fl["from-event"])
                 if fl.get("physical-item"):
                     if fl["physical-item"] not in ITEM_LABELS:
                         raise ActionError(f"'{fl['physical-item']}' is not in the item dropdown. Options: {', '.join(ITEM_LABELS)}.")
@@ -343,7 +345,8 @@ class Platform:
             if "creates-item" in clean and clean["creates-item"] not in ITEM_LABELS:
                 raise ActionError(f"'{clean['creates-item']}' is not in the dropdown for creates-item. Options: {', '.join(ITEM_LABELS)}.")
         if code == "is-allowed-by":
-            opts = [o["value"] for o in self.param_options("is-allowed-by", "capacity")]
+            caps = [ev.get("has-identifier") for ev in self._prior_events() if ev.get("allows") and ev.get("has-identifier")]
+            opts = caps or [o["value"] for o in self.param_options("is-allowed-by", "capacity")]
             if "capacity" in clean and opts and clean["capacity"] not in opts:
                 raise ActionError(f"'{clean['capacity']}' is not in the dropdown. Options: {', '.join(opts)}.")
         # Mirror views.cljs auto-populate-assertion!: the verb is fixed and
@@ -787,7 +790,7 @@ class Platform:
                 ins = " and ".join(ITEM_LABELS.get(i, "(item)") for i in (p.get("consumes-items") or [])) or "(inputs)"
                 out.append(f"  This makes possible: which allows SP to turn {ins} into {ITEM_LABELS.get(p.get('creates-item'), '(item)')}   [allows: {_kv(p)}]")
             elif code == "is-allowed-by":
-                out.append(f"  This is: enabled by {ITEM_LABELS.get(p.get('capacity'), '(item)')}   [is-allowed-by: {_kv(p)}]")
+                out.append(f"  This is: enabled by {ITEM_LABELS.get(p.get('capacity'), p.get('capacity') or '(event)')}   [is-allowed-by: {_kv(p)}]")
             elif code in FLOW_CODES:
                 fls = p if isinstance(p, list) else ([p] if p else [])
                 flows = "; ".join(f"{fl.get('quantity', '(qty)')} × {ITEM_LABELS.get(fl.get('physical-item'), '(item)')}" for fl in fls) or "(nothing yet)"
@@ -823,7 +826,13 @@ class Platform:
                 if code == "provides":
                     fields.append("from-event (optional: the id of the batch in the chain these came from; the entry lists batches when there are any)")
             elif code in FLOW_CODES:
-                fields = ["flows: a list of {quantity, physical-item}; add another row for a second input. physical-item dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS)]
+                fields = ["flows: a list of {quantity, physical-item, optional from-event (the batch's id in the chain)}; add another row for a second input. physical-item dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS)]
+            elif code == "is-allowed-by":
+                caps = [ev for ev in self._prior_events() if ev.get("allows") and ev.get("has-identifier")]
+                if caps:
+                    fields = ["capacity (dropdown of events in the chain that granted a capability: " + ", ".join(f"{ev['has-identifier']} = {_event_summary(ev)[:70]}" for ev in caps) + ")"]
+                else:
+                    fields = ["capacity (dropdown: " + ", ".join(f"{o['value']} = {o['label']}" for o in (params.get("capacity") or {}).get("options", [])) + ")"]
             elif code == "allows":
                 fields = ["consumes-items: a list of inputs, e.g. [\"blank-tshirts\", \"ink-cartridges\"] (dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS) + ")",
                           "creates-item (dropdown: " + ", ".join(f"{i} = {ITEM_LABELS[i]}" for i in RECEIVES_ITEMS) + ")"]

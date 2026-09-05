@@ -1531,7 +1531,9 @@
    {:required #{:consumes :creates :is-allowed-by}
     :required-parameters {:consumes {:unit "physical-unit"}
                           :creates {:unit "physical-unit"}
-                          :is-allowed-by {:capacity "t-shirt-printer"}}
+                          ;; Points at what allowed it -- the printer event,
+                          ;; or the printer -- and must be supplied.
+                          :is-allowed-by {:capacity :any}}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
     :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
@@ -3384,7 +3386,7 @@ The printed t-shirts are now finished goods ready for sale."
        :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed}
                   {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed}
-       :is-allowed-by {:capacity "t-shirt-printer"}}]})))
+       :is-allowed-by {:capacity "Printer-001"}}]})))
 
 (defn- practice-variables
   "Fit a template's numbers to the practice company's record: you can only
@@ -3446,6 +3448,9 @@ The printed t-shirts are now finished goods ready for sale."
                    (assoc :correct-classification :merchandise-purchase)
                    (and (= kind :reseller) (= template-key :credit-inventory-purchase))
                    (assoc :correct-classification :merchandise-purchase-on-credit)
+                   ;; A practice production points at the company's printer event.
+                   (get-in template [:required-assertions :is-allowed-by])
+                   (assoc-in [:required-assertions :is-allowed-by :capacity] "Printer-001")
                    (and (= kind :reseller) (contains? #{:cash-sale :credit-sale} template-key))
                    (update :required-assertions assoc-in [:provides :physical-item] "blank-tshirts"))
         narrative (apply-template (rand-nth (or (:narrative-templates template)

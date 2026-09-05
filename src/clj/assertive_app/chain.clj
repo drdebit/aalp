@@ -37,6 +37,20 @@
                                        (catch Exception _ nil))
                       :else nil))})))
 
+(defn capacity-item
+  "What an `is-allowed-by` points at, as an item name. The research
+   example points at the EVENT that granted the capability -- the printer
+   purchase -- and so may the platform now that events carry
+   identifiers; an item name is still read, for older records."
+  [cap events]
+  (let [cap (name cap)
+        by-id (into {} (for [e events
+                             :let [id (some-> (:has-identifier e) name)
+                                   it (:item (physical (:receives e)))]
+                             :when (and id it)]
+                         [id it]))]
+    (get by-id cap cap)))
+
 (defn allows-inputs
   "What a capability takes in, as item names. The research example's
    `allows` consumes a list -- a blank shirt AND ink -- so the assertion
@@ -86,7 +100,7 @@
                   ;; a printer capital -- it turns blanks into printed
                   ;; shirts without being used up in doing so.
                   acc (if-let [cap (get-in assertions [:is-allowed-by :capacity])]
-                        (update acc (name cap) (fnil conj #{}) :enables)
+                        (update acc (capacity-item cap events) (fnil conj #{}) :enables)
                         acc)
                   ;; The same fact stated forward, at acquisition: this
                   ;; event asserts that what it receives turns one thing
@@ -435,7 +449,7 @@
                         {:receives :acquired :consumes :consumed
                          :creates  :created  :provides :provided})
             acc (if-let [cap (get-in assertions [:is-allowed-by :capacity])]
-                  (add acc (name cap) :enables) acc)
+                  (add acc (capacity-item cap events) :enables) acc)
             allows (:allows assertions)
             acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
                   (add acc item :enables) acc)

@@ -106,7 +106,7 @@
                         {:assertion :consumes}]}
     :line {:side :credit :account "Owner's Capital"}
     :amount :monetary
-    :text "Money came in and nothing went out with it. SP gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by whoever put the money in, against whatever the business has -- and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes."}
+    :text "Money came in and nothing went out with it. SP gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by whoever put the money in, against whatever the business has -- and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so -- provides, and who -- and this line becomes Revenue.)"}
 
    ;; -------- Goods received: the account is the item's POSITION -------
    ;; Not three rules keyed on which item it is. One rule that asks where

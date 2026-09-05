@@ -685,7 +685,11 @@
                            (if correct?
                              freqs
                              (reduce (fn [m a] (update m a (fnil inc 0)))
-                                     freqs missing-assertions)))))))))
+                                     freqs missing-assertions))))
+                 (update :missed (fn [ms]
+                                   (if correct?
+                                     ms
+                                     (conj (or ms []) (:template (:current-problem @app-state)))))))))))
 
 (defn reset-drill-round! []
   (swap! app-state update :drill

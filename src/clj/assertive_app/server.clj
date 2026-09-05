@@ -171,7 +171,8 @@
           problem (classification/generate-problem level
                                                   :problem-type problem-type
                                                   :show-assertions show-assertions?
-                                                  :served (:served body))]
+                                                  :served (:served body)
+                                                  :missed (:missed body))]
       (response/response problem)))
 
   (POST "/api/validate-je" {body :body :as request}

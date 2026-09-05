@@ -259,7 +259,10 @@
               :problem-type (state/problem-type)
               ;; Patterns already served this round, so the next draw
               ;; prefers one the student has not met yet.
-              :served (vec (get-in @state/app-state [:drill :served] []))}
+              :served (vec (get-in @state/app-state [:drill :served] []))
+              ;; Patterns missed earlier: they come round again before the
+              ;; round can be passed without them.
+              :missed (vec (get-in @state/app-state [:drill :missed] []))}
      :format :json
      :headers (auth-headers)
      :response-format :json

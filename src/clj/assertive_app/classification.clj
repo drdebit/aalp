@@ -3425,14 +3425,18 @@ The printed t-shirts are now finished goods ready for sale."
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
-  [level & {:keys [problem-type show-assertions served] :or {problem-type :forward show-assertions false}}]
+  [level & {:keys [problem-type show-assertions served missed] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
-        ;; A streak can end a round before a pattern has come up at all.
-        ;; Prefer the patterns this round has not served yet; only when
-        ;; every one has been seen does the draw go back to all of them.
+        ;; A streak can end a round before a pattern has come up at all,
+        ;; and a fresh round could pass without meeting the pattern that
+        ;; failed the last one. Prefer, in order: patterns the student
+        ;; missed and has not met again this round; patterns not served
+        ;; this round; then everything.
         served (set (map keyword (or served [])))
+        missed (set (map keyword (or missed [])))
+        owed (filter #(and (contains? missed (key %)) (not (contains? served (key %)))) available-templates)
         unserved (remove #(contains? served (key %)) available-templates)
-        [template-key template] (rand-nth (seq (if (seq unserved) unserved available-templates)))
+        [template-key template] (rand-nth (seq (cond (seq owed) owed (seq unserved) unserved :else available-templates)))
         ;; Use indexed selection for same-length variable arrays to keep values paired
         ;; A reseller can only be handed problems that make sense for a
         ;; shop with no press: buying or selling its shirts, paying for a
@@ -3489,6 +3493,10 @@ The printed t-shirts are now finished goods ready for sale."
                       :company (:company backstory)
                       :company-blurb (:blurb backstory)
                       :prior-events (:events backstory)
+                      ;; The history behind a confidence figure: the UI shows
+                      ;; it beside `expects`, and never had it before.
+                      :customer-profiles (:customer-profiles template)
+                      :vendor-profiles (:vendor-profiles template)
                       :correct-assertions resolved-assertions
                       :correct-classification (:correct-classification template)
                       :level level                        ; Student's current level

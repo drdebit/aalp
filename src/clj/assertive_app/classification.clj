@@ -2992,8 +2992,7 @@ The printed t-shirts are now finished goods ready for sale."
    :record-depreciation
    {:narrative-template "On {date}, {company} records depreciation expense on the {asset}. The {asset} cost ${cost} and has a {years}-year useful life with no salvage value. Monthly depreciation is ${depreciation}."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "expense" :basis "systematic-allocation"}
-                          :consumes {:unit "asset-value"}}
+                          :reports {:category "expense" :basis "systematic-allocation"}}
     :correct-classification :depreciation-expense
     :level 5
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
@@ -3005,8 +3004,7 @@ The printed t-shirts are now finished goods ready for sale."
    :record-bad-debt
    {:narrative-template "On {date}, {company} estimates that {percent}% of its accounts receivable totaling ${ar-balance} will be uncollectible. {company} records bad debt expense of ${bad-debt-amount}."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "expense" :basis "estimation"}
-                          :expects {:action "uncollectible" :unit "monetary-unit"}}
+                          :reports {:category "expense" :basis "estimation"}}
     :correct-classification :bad-debt-expense
     :level 5
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]

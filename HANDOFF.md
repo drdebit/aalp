@@ -41,12 +41,41 @@ learner is handed its **own think-aloud notes** back before the exam
 honest version of a student re-reading their notebook. c7-c9 summaries
 were back-filled (all 1 compaction; regenerated reports say so).
 
-**Cohort c10** is the first run on the fixed instrument; read
-`study/runs/report-c10.md` and compare the episode-1 items with c9. The
-platform is unchanged between c9 and c10 except two small fixes below,
-so c10 vs c9 is mostly the instrument.
+**Cohort c10 ran on the fixed instrument** (`study/runs/report-c10.md`),
+and the first version of the fix was itself wrong: handing 38KB of notes
+to the compacted learning session compacted it again (s102), and the
+learners quoted their notes as if they were screens, which the verifier
+rejected -- the whole cohort scored near zero for want of *evidence*,
+while the answers were right (the novice's inherited-classification
+answer was word-perfect). Second version, now in the skill: the exam is
+a **fresh session** of the same persona seeded with its notes; a quote
+found only in the notes verifies with source "notes" (the notes were
+written at the screen and gatekept as written); the grader is told
+which; the report's evidence column says how many came from notes.
+c10 regraded from its saved answers under that verifier:
 
-    cd study && ./run_cohort.sh c10 "s101:novice-business-undergrad s102:traditional-intro-accounting s103:hasty-sophomore" --max-turns 260
+    de: 0.6 -> 1.87    aa post 1.9
+    aa2 why Owner's Capital  2 / 2 / 2   (c9: 0 / 2 / 2;  c7-c8: 1s)
+    de5 why it balances       2 / 2 / 2   (c9: 1 / 2 / 1)
+    aa4 inherited class.      2 / 2 / 2
+    aa6 cost flow             2 / 2 / 2   (c9: 1 / 1 / 1)
+    de1 debit/credit          2 / 1 / 1
+    aa10 asset vs expense     2 / 0 / 2   (s102 offered no evidence at all)
+
+So on an instrument that lets the learner consult its own notes, the
+platform is at ceiling on the assertive-accounting items for all three
+personas, including the two reasons that never landed in c7-c9. The
+only sub-2 items are debit/credit (the class's, by decision) and one
+learner declining to cite. Read c10's own-words section before trusting
+this; and note the caveat below.
+
+Caveat: c10's answers came from the *compacted* learning session with
+notes appended; the fresh-session exam path was validated afterwards
+by re-sitting s101's exam on a copy (`runs/s101-resit`): 2 on every item but de1 (1), evidence 58/62 with 56 from notes. The path works.
+The next cohort (c11) will be the first to run the fresh-session exam
+end to end:
+
+    cd study && ./run_cohort.sh c11 "s111:novice-business-undergrad s112:traditional-intro-accounting s113:hasty-sophomore" --max-turns 260
 
 ### c9 (on round two), what was real
 

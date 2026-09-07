@@ -235,7 +235,7 @@ That is the whole distinction. **requires** records a promise. **expects** recor
 
 **\"Do we want a probability on this?\"**
 
-*Case 1: SP promises to pay InkMasters.* SP knows whether it will pay its own bills. There is nothing to estimate, so nothing to record: **requires** only.
+*Case 1: SP promises to pay InkMasters.* SP knows whether it will pay its own bills, so there is usually nothing worth writing down: **requires** on its own will do. Nothing forbids an **expects** here — the entry is the same either way — but a number under 100% on your own promise says something about your own finances.
 
 *Case 2: a customer promises to pay SP.* Will they? Probably... and *probably* is a number. Some customers don't pay, and at year-end the business will need to say how much of what it is owed it really expects to collect. So SP records the promise (**requires**) *and* the probability (**expects**, say 92%).
 

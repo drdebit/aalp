@@ -1,5 +1,5 @@
 const { chromium } = require('playwright');
-const BASE = 'http://choochoo.dyn.gsu.edu:8081/';
+const BASE = process.env.AALP_BASE || 'http://choochoo.dyn.gsu.edu:8081/';
 async function launch() {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1400, height: 1000 } });

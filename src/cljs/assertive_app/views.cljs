@@ -1185,17 +1185,33 @@
    Under it, what the chain leaves on hand, batch by batch, so that a
    goods-out line has something visible to point at."
   [events title]
-  [:div.chain-panel
-   [:h4 title]
-   (if (seq events)
-     [:ol.chain-events
-      (doall
-        (for [[i ev] (map-indexed vector events)]
-          ^{:key (str "chain-" i)}
-          [:li.chain-event
-           (when-let [id (:has-identifier ev)] [:span.chain-id (str id " ")])
-           (event-summary ev)]))]
-     [:p.chain-empty "Nothing yet. The first thing you say starts it."])
+  ;; A walkthrough step may ask the student to point at the event that
+  ;; decided today's account. Then, and only then, the events are
+  ;; clickable; the pick lives on the walkthrough, not in the sentence.
+  (let [wt     (state/walkthrough)
+        st     (when wt (episodes/step (:episode wt) (:step wt)))
+        target (when (= :pick-event (get-in st [:do :kind]))
+                 (set (map name (get-in st [:do :event-ids]))))
+        picked (:picked wt)]
+    [:div.chain-panel
+     [:h4 title]
+     (if (seq events)
+       [:ol.chain-events
+        (doall
+          (for [[i ev] (map-indexed vector events)]
+            (let [id (some-> (:has-identifier ev) name)]
+              ^{:key (str "chain-" i)}
+              [:li.chain-event
+               {:class (clojure.string/join " "
+                         (cond-> []
+                           target (conj "pickable")
+                           (and target id (= id picked) (contains? target id)) (conj "picked")
+                           (and target id (= id picked) (not (contains? target id))) (conj "wrong")))
+                :title (when target "Is this the event that decided today's account?")
+                :on-click (when (and target id) #(state/pick-walkthrough-event! id))}
+               (when id [:span.chain-id (str id " ")])
+               (event-summary ev)])))]
+       [:p.chain-empty "Nothing yet. The first thing you say starts it."])
    (when-let [hs (seq (:holdings (state/derived-je)))]
      [:div.chain-holdings
       [:h5 "On hand, by batch"]
@@ -1204,7 +1220,7 @@
           ^{:key (str "hold-" i)}
           [:div.chain-holding
            (str (:left h) " " (name (:item h)) " from " (:id h) " (" (:date h)
-                (when (:unit-cost h) (str ", " (format-currency (:unit-cost h)) " each")) ")")]))])])
+                (when (:unit-cost h) (str ", " (format-currency (:unit-cost h)) " each")) ")")]))])]))
 
 (defn walkthrough-panel
   "One step at a time: a sentence, one thing to do, and a sentence reading
@@ -1220,7 +1236,8 @@
           ep       (episodes/episode episode)
           st       (episodes/step episode step)
           selected (state/selected-assertions)
-          done?    (episodes/step-complete? st selected)
+          wt       (state/walkthrough)
+          done?    (episodes/step-complete? st selected wt)
           last?    (and (= (inc step) (episodes/step-count episode))
                         (= (inc episode) (episodes/episode-count)))]
       ;; Keep the palette in step with the episode.
@@ -1246,7 +1263,13 @@
             :remove   (str "Switch " (some-> (:code (:do st)) name) " off to continue.")
             :read     "Have a look, then carry on."
             :assert   (str "Add " (some-> (:code (:do st)) name) " to continue.")
+            :pick-event "Click the event in the chain to continue."
             nil)])
+
+       ;; A wrong pick gets a nudge, not a reveal: the point of the step
+       ;; is that the student finds it.
+       (when (and (= :pick-event (get-in st [:do :kind])) (:picked wt) (not done?))
+         [:p.wt-miss (:miss st)])
 
        (when (and done? (:then st))
          [:p.wt-then (:then st)])
@@ -1541,6 +1564,8 @@
                                  ^{:key (str "dje-" i "-" ei)}
                                  [:div.dj-established-row
                                   (when (:date e) [:span.dj-established-date (:date e)])
+                                  ;; The event's name, so it can be found in the chain.
+                                  (when (:id e) [:span.dj-established-id (str "[" (:id e) "]")])
                                   [:span.dj-established-text
                                    (let [a (:assertions e)]
                                      (cond
@@ -1631,11 +1656,18 @@
   []
   (let [{:keys [attempted correct level round-size pass-count
                 streak streak-pass entry-path]} (state/drill-state)
-        remaining (- round-size attempted)
+        ;; A pattern missed is owed until it is got right (c7: a learner
+        ;; missed the credit sale once and passed by a streak of other
+        ;; patterns; the miss was never retested). The round can run past
+        ;; its size to collect what is owed.
+        owed (state/drill-owed)
+        remaining (max 0 (- round-size attempted))
         streak-passed? (and streak-pass (>= streak streak-pass))
-        passed? (or (>= correct pass-count) streak-passed?)
+        score-passed? (or (>= correct pass-count) streak-passed?)
+        passed? (and score-passed? (not owed))
         streak-reachable? (and streak-pass (>= (+ streak remaining) streak-pass))
-        unreachable? (and (< (+ correct remaining) pass-count)
+        unreachable? (and (not score-passed?)
+                          (< (+ correct remaining) pass-count)
                           (not streak-reachable?))]
     (cond
       passed?
@@ -1678,7 +1710,10 @@
        {:on-click #(do
                      (state/clear-feedback!)
                      (api/fetch-problem! (state/current-level)))}
-       "Next Practice Problem"])))
+       (if (and score-passed? owed)
+         (str "Nearly — " (if (= 1 (count owed)) "one pattern" (str (count owed) " patterns"))
+              " you missed still to get right →")
+         "Next Practice Problem")])))
 
 (defn worked-example-panel
   "The ALEKS Explanation semantics, adapted: the sentence builder now

@@ -207,6 +207,10 @@ class Platform:
             if isinstance(sel, list) or do["code"] in FLOW_CODES:
                 return True
             return all(str(sel.get(k)) == str(v) for k, v in (do.get("params") or {}).items())
+        if kind == "pick-event":
+            # episodes.cljs: the student points at the event in the chain that
+            # decided today's account; the pick lives on the walkthrough.
+            return self.wt.get("picked") in (do.get("event-ids") or [])
         return True
 
     # ------------------------------------------------------------ drill logic
@@ -218,9 +222,13 @@ class Platform:
         self.phase = "drill"
         self._fetch_problem()
 
+    def _owed(self):
+        """state.cljs drill :missed -- patterns missed and not since got right."""
+        return list(self.drill.get("missed") or []) if self.drill else []
+
     def _fetch_problem(self):
         served = [h.get("template") for h in self.drill["history"] if h.get("round") == self.drill["round"]] if self.drill else []
-        self.problem = self.c.generate_problem(self.level, "forward", served=served)
+        self.problem = self.c.generate_problem(self.level, "forward", served=served, missed=self._owed())
         self.peek = False
         self.selected = OrderedDict()
         self.feedback = None
@@ -238,11 +246,14 @@ class Platform:
 
     def _drill_status(self):
         d = self.drill
-        remaining = d["round_size"] - d["attempted"]
+        # views.cljs drill-next-controls: a missed pattern is owed until it
+        # is got right, and the round cannot be passed while anything is owed.
+        remaining = max(0, d["round_size"] - d["attempted"])
         streak_passed = d["streak_pass"] and d["streak"] >= d["streak_pass"]
-        passed = d["correct"] >= d["pass_count"] or streak_passed
+        score_passed = d["correct"] >= d["pass_count"] or streak_passed
+        passed = score_passed and not self._owed()
         streak_reachable = d["streak_pass"] and (d["streak"] + remaining) >= d["streak_pass"]
-        unreachable = (d["correct"] + remaining) < d["pass_count"] and not streak_reachable
+        unreachable = (not score_passed) and (d["correct"] + remaining) < d["pass_count"] and not streak_reachable
         return passed, streak_passed, unreachable
 
     def _finish_drill(self):
@@ -433,6 +444,22 @@ class Platform:
         self.log("explore_toggle", code=code)
         return msg
 
+    def act_pick_event(self, a):
+        """Click an event in the chain. Only offered when the step asks for it."""
+        if self.phase != "walkthrough":
+            raise ActionError("No such control here.")
+        ep, st = self._wt_step()
+        if (st.get("do") or {}).get("kind") != "pick-event":
+            raise ActionError("The chain is not clickable on this step.")
+        eid = a.get("id")
+        ids = [ev.get("has-identifier") for ev in self.walk_events]
+        if eid not in ids:
+            raise ActionError(f"No event [{eid}] in the chain. Events: {', '.join(ids)}.")
+        self.wt["picked"] = eid
+        ok = eid in (st["do"].get("event-ids") or [])
+        self.log("pick_event", id=eid, correct=ok)
+        return "Picked." if ok else st.get("miss", "Not that one.")
+
     def act_open_line(self, a):
         if not self.derived or not self.derived.get("lines"):
             raise ActionError("There are no entry lines to open.")
@@ -475,6 +502,7 @@ class Platform:
             self.wt = None
             self._next_stage()
             return "Walkthrough finished."
+        self.wt.pop("picked", None)
         if self.wt["step"] + 1 < nsteps:
             self.wt["step"] += 1
             self.expanded = None
@@ -659,6 +687,8 @@ class Platform:
         if not correct:
             for m in missing:
                 d["miss_assertions"][m] = d["miss_assertions"].get(m, 0) + 1
+        owed = [t for t in (d.get("missed") or []) if t != p.get("template")]
+        d["missed"] = owed if correct else owed + [p.get("template")]
         d["history"].append({"round": d["round"], "template": p.get("template"), "correct": correct,
                              "status": status, "selected": self._sel_payload(),
                              "correct_assertions": p.get("correct-assertions"),
@@ -840,7 +870,8 @@ class Platform:
                 if code == "requires":
                     params = {k: v for k, v in params.items() if k != "action"}
                 if code == "expects":
-                    params = dict(params, unit={"type": "dropdown", "label": "what", "options": [{"value": "monetary-unit", "label": "cash"}, {"value": "physical-unit", "label": "goods or services"}]})
+                    # views.cljs expects unit dropdown: cash / goods / services
+                    params = dict(params, unit={"type": "dropdown", "label": "what", "options": [{"value": "monetary-unit", "label": "cash"}, {"value": "physical-unit", "label": "goods"}, {"value": "service-unit", "label": "services"}]})
                 for k, spec in params.items():
                     desc = spec.get("type", "")
                     if spec.get("options"):
@@ -893,7 +924,7 @@ class Platform:
                         txt = f"you said this turns {' and '.join(a_['allows'].get('consumes-items') or [a_['allows'].get('consumes-item')])} into {a_['allows'].get('creates-item')}"
                     else:
                         txt = "recorded as " + ", ".join(a_.keys())
-                    out.append(f"        Decided earlier: {e.get('date') or ''} {txt}")
+                    out.append(f"        Decided earlier: {e.get('date') or ''} {('[' + e['id'] + '] ') if e.get('id') else ''}{txt}")
                 if ln.get("unresolved-reason"):
                     out.append(f"        {ln['unresolved-reason']}")
         for p in ph:
@@ -949,8 +980,11 @@ class Platform:
             kind = do.get("kind")
             todo = {"set-date": "Add the date to continue.", "read": "Have a look, then carry on.",
                     "remove": f"Switch {do.get('code')} off to continue.",
-                    "assert": f"Add {do.get('code')} to continue."}.get(kind, "")
+                    "assert": f"Add {do.get('code')} to continue.",
+                    "pick-event": "Click the event in the chain to continue."}.get(kind, "")
             out.append(f"  → {todo}")
+            if kind == "pick-event" and self.wt.get("picked"):
+                out.append("  " + st.get("miss", "Not that one."))
         if done and st.get("then"):
             out.append(st["then"])
         last = self.wt["step"] + 1 == n and self.wt["episode"] + 1 == len(self.episodes)
@@ -965,6 +999,7 @@ class Platform:
         out.append("")
         acts = self._builder_actions() + ['{"type":"next"}' + ("" if done else " (disabled until the step is done)"),
                                           '{"type":"leave_walkthrough"}',
+                                          *(['{"type":"pick_event","id":"<event id in [brackets] in the chain>"}  (the chain is clickable on this step)'] if (do or {}).get("kind") == "pick-event" else []),
                                           '{"type":"explore"} toggles Explore; while exploring: {"type":"toggle_assertion","code":"<code>"}']
         out.append("Actions available: " + " | ".join(acts))
         return "\n".join(out)
@@ -1033,6 +1068,20 @@ class Platform:
         out += ["", "[button: Try Again]", 'Actions available: {"type":"try_again"}']
         return "\n".join(out)
 
+    def _party_context(self, p):
+        """views.cljs customer-context-display / vendor-context-display: the
+        payment history the browser shows beside the confidence slider, so a
+        learner asked for a probability has something to base it on."""
+        v = p.get("variables") or {}
+        out = []
+        cp = (p.get("customer-profiles") or {}).get(v.get("customer") or "")
+        if cp:
+            out.append(f"Customer Payment History: {v.get('customer')} has paid on time for {cp.get('total-orders')} orders. Historical payment rate: {cp.get('history-rate')}%. Industry average: {cp.get('industry-avg')}%.")
+        vp = (p.get("vendor-profiles") or {}).get(v.get("vendor") or "")
+        if vp:
+            out.append(f"Vendor Reliability: {v.get('vendor')} has been in business for {vp.get('years-in-business')} years. Historical reliability rate: {vp.get('reliability-rate')}%. Industry average: {vp.get('industry-avg')}%.")
+        return out
+
     def render_drill(self):
         d = self.drill
         p = self.problem or {}
@@ -1040,7 +1089,7 @@ class Platform:
         out = [f"=== Practice round {d['round']} ===",
                f"Other people's businesses, not SP's: each problem is a different company with its own books, and nothing carries over between problems. Mistakes here are free. Get {d['pass_count']} of {d['round_size']} right — or {d['streak_pass']} in a row — to start recording.",
                f"This round: {d['correct']} correct of {d['attempted']} attempted{streak_note}   [button: Review Tutorial]",
-               "", "--- Transaction ---"] + ([p["company-blurb"]] if p.get("company-blurb") else []) + [p.get("narrative", ""), "",
+               "", "--- Transaction ---"] + ([p["company-blurb"]] if p.get("company-blurb") else []) + [p.get("narrative", "")] + self._party_context(p) + ["",
                self._chain_text(f"The chain — {p.get('company', 'this company')}'s books so far"),
                "--- Your sentence (the sentence builder) ---", self._sentence()]
         acts = []
@@ -1081,7 +1130,12 @@ class Platform:
                     out.append(f"[button: Not quite ({d['correct']} of {d['attempted']}) — try a fresh round]")
                     acts.append('{"type":"fresh_round"}')
             else:
-                out.append("[button: Next Practice Problem]")
+                score_passed = d["correct"] >= d["pass_count"] or streak_passed
+                if score_passed and self._owed():
+                    n = len(self._owed())
+                    out.append(f"[button: Nearly — {'one pattern' if n == 1 else str(n) + ' patterns'} you missed still to get right →]")
+                else:
+                    out.append("[button: Next Practice Problem]")
                 acts.append('{"type":"next_problem"}')
             acts += ['{"type":"open_line","index":<n>}',
                      '{"type":"explore"} then {"type":"toggle_assertion","code":"<code>"}']
@@ -1177,3 +1231,4 @@ def _linkage_for(linkages, account, effect):
         if l.get("account") == account and l.get("effect") == effect:
             return code
     return None
+

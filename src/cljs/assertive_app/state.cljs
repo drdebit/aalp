@@ -140,10 +140,19 @@
 (defn advance-step! [step-count episode-count]
   (swap! app-state update :walkthrough
          (fn [{:keys [episode step] :as w}]
-           (cond
-             (< (inc step) step-count) (assoc w :step (inc step))
-             (< (inc episode) episode-count) {:episode (inc episode) :step 0}
-             :else w))))
+           ;; A pick belongs to the step that asked for it.
+           (let [w (dissoc w :picked)]
+             (cond
+               (< (inc step) step-count) (assoc w :step (inc step))
+               (< (inc episode) episode-count) {:episode (inc episode) :step 0}
+               :else w)))))
+
+(defn pick-walkthrough-event!
+  "The student points at an event in the chain -- the one a step asked
+   them to find. Kept on the walkthrough, not in the sentence: it is a
+   reading of the chain, not an assertion about today."
+  [event-id]
+  (swap! app-state assoc-in [:walkthrough :picked] event-id))
 
 (defn walkthrough-palette
   "Assertions the student may add right now, or nil for no restriction.
@@ -686,10 +695,19 @@
                              freqs
                              (reduce (fn [m a] (update m a (fnil inc 0)))
                                      freqs missing-assertions))))
+                 ;; A pattern missed is owed until it is got right. The
+                 ;; round cannot be passed while anything is owed, and
+                 ;; the server serves owed patterns first.
                  (update :missed (fn [ms]
-                                   (if correct?
-                                     ms
-                                     (conj (or ms []) (:template (:current-problem @app-state)))))))))))
+                                   (let [t (:template (:current-problem @app-state))]
+                                     (if correct?
+                                       (vec (remove #{t} (or ms [])))
+                                       (vec (distinct (conj (or ms []) t))))))))))))
+
+(defn drill-owed
+  "Patterns missed this drill and not yet got right."
+  []
+  (seq (get-in @app-state [:drill :missed])))
 
 (defn reset-drill-round! []
   (swap! app-state update :drill

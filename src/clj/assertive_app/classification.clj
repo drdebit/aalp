@@ -3432,9 +3432,13 @@ The printed t-shirts are now finished goods ready for sale."
         ;; failed the last one. Prefer, in order: patterns the student
         ;; missed and has not met again this round; patterns not served
         ;; this round; then everything.
+        ;; A missed pattern is owed until the client reports it got right
+        ;; (the client drops it from :missed then). It comes back soon but
+        ;; not as the very next problem: one other problem intervenes.
+        last-served (some-> served last keyword)
         served (set (map keyword (or served [])))
         missed (set (map keyword (or missed [])))
-        owed (filter #(and (contains? missed (key %)) (not (contains? served (key %)))) available-templates)
+        owed (filter #(and (contains? missed (key %)) (not= last-served (key %))) available-templates)
         unserved (remove #(contains? served (key %)) available-templates)
         [template-key template] (rand-nth (seq (cond (seq owed) owed (seq unserved) unserved :else available-templates)))
         ;; Use indexed selection for same-length variable arrays to keep values paired

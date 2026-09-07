@@ -254,6 +254,13 @@ Near-term (small, pre-pilot candidates):
    offers "skip to the practice round"; a dead round routes to the
    reading (fresh round as alternative); entry path recorded per
    attempt as `:attempt/drill-entry` for the pilot analytics.
+2b. **Owed patterns** — shipped 2026-09-05 after cohort c7. A pattern
+   missed is owed until it is got right: the server serves owed
+   patterns first (not as the very next problem), and neither the
+   ratio bar nor the streak passes the round while anything is owed;
+   the round runs past its size to collect it. Before this a learner
+   missed the credit sale once and passed on a streak of other
+   patterns, and the miss was never retested (c7, s73).
 2. **Streak early-pass** (§4) — shipped 2026-08-07. `:streak-pass 5`
    in drill-config; a dead-by-ratio round stays alive while a streak
    remains reachable.

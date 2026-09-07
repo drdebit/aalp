@@ -30,14 +30,17 @@ const nextEnabled = async p => p.getByRole('button', { name: /^(next|finish)$/i 
   check('ep1 next disabled before date', !(await nextEnabled(p)));
   await add(p, 'has date'); await date(p, '2026-01-01'); check('ep1 next enabled after date', await nextEnabled(p)); await next(p);
   await add(p, 'receives', 'cash'); await qty(p, 'receives', 20000);
-  let d = await derived(p); check('ep1 Cash + Owner\'s Capital 20,000', /Cash\s+\$20,000/.test(d) && /Owner's Capital\s+\$20,000/.test(d), d);
-  check('ep1 then-text shows after the step', /Two lines appeared/.test(await T(p, '.walkthrough')));
+  let d = await derived(p); check('ep1 Cash alone before the who; no Owner\'s Capital yet', /Cash\s+\$20,000/.test(d) && !/Owner's Capital/.test(d), d);
+  check('ep1 then-text shows after the step', /One line: Cash/.test(await T(p, '.walkthrough')));
+  await next(p);
+  await add(p, 'has counterparty'); await party(p, 'SP');
+  d = await derived(p); check('ep1 Owner\'s Capital 20,000 once the who is said', /Owner's Capital\s+\$20,000/.test(d) && /Balanced/.test(d), d);
+  check('ep1 balance reason in the then-text', /why an entry balances/i.test(await T(p, '.walkthrough')));
   await next(p);
   await add(p, 'provides', 'ownership units'); await qty(p, 'provides', 200);
   d = await derived(p); check('ep1 ownership units in the strip', /IN THE CHAIN, NOT ON THE ENTRY/i.test(d) && /count|monetary unit/i.test(d), d.slice(-300));
   check('ep1 sentence subject is the business', /the business/.test(await T(p, '.main-sentence')), await T(p, '.main-sentence'));
-  await next(p); await next(p);
-  await add(p, 'has counterparty'); await party(p, 'SP'); await next(p); await p.waitForTimeout(1200);
+  await next(p); await next(p); await p.waitForTimeout(1200);
 
   // ---- Episode 2: printer
   check('ep2 chain has the funding event', /funding/.test(await T(p, '.chain-panel')), await T(p, '.chain-panel'));
@@ -96,8 +99,15 @@ const nextEnabled = async p => p.getByRole('button', { name: /^(next|finish)$/i 
   d = await derived(p); check('ep4 Raw Materials Inventory', /Raw Materials Inventory/.test(d), d);
   await next(p);
   await p.locator('tr.dj-line').filter({ hasText: /Raw Materials/ }).first().click(); await p.waitForTimeout(800);
-  d = await derived(p); check('ep4 Decided earlier names the printer event', /Decided earlier/i.test(d) && /blank-tshirts and ink-cartridges/i.test(d), d.slice(0, 400));
+  d = await derived(p); check('ep4 Decided earlier names the printer event', /Decided earlier/i.test(d) && /\[printer\]/.test(d) && /blank-tshirts and ink-cartridges/i.test(d), d.slice(0, 400));
   await L.shot(p, '12-decided-earlier');
+  // the pick step: a wrong event first, then the printer
+  check('ep4 next disabled until the event is picked', !(await nextEnabled(p)));
+  await p.locator('li.chain-event').filter({ hasText: /\bfunding\b/ }).first().click(); await p.waitForTimeout(500);
+  check('ep4 wrong pick nudges, stays disabled', /Not that one/.test(await T(p, '.walkthrough')) && !(await nextEnabled(p)));
+  await p.locator('li.chain-event').filter({ hasText: /\bprinter\b/ }).first().click(); await p.waitForTimeout(500);
+  check('ep4 picking the printer completes the step', await nextEnabled(p) && /put your finger on it/.test(await T(p, '.walkthrough')));
+  await L.shot(p, '12b-picked-printer');
   await next(p);
   await add(p, 'has counterparty'); await party(p, 'TextileDirect'); await next(p); await p.waitForTimeout(1200);
 
@@ -136,7 +146,7 @@ const nextEnabled = async p => p.getByRole('button', { name: /^(next|finish)$/i 
   await add(p, 'provides', 'physical units'); await item(p, 'provides', 'printed-tshirts'); await qty(p, 'provides', 4); await next(p);
   await add(p, 'receives', 'cash'); await qty(p, 'receives', 100); await next(p);
   await add(p, 'has counterparty'); await party(p, 'Campus Boutique');
-  d = await derived(p); check('ep7 Revenue and COGS $24', /Revenue\s+\$100/.test(d) && /Cost of Goods Sold\s+\$24/.test(d), d);
+  d = await derived(p); check('ep7 Revenue and COGS $24', /Revenue[^$]*\$100/.test(d) && /Cost of Goods Sold[^$]*\$24/.test(d), d); // the account cell carries an entry label ("Revenue Recognition") with no space before the amount
   await next(p);
   const fromSel = p.locator('.assertion-fragment.provides select').nth(1);
   check('ep7 batch picker offered on the sale', (await fromSel.count()) === 1);

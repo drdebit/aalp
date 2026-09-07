@@ -60,30 +60,42 @@ but on its own it doesn't say much.*
 
 **5.** *The business received $20,000. Say so.*
 → add `receives` → money → 20000
-*Two lines appeared at once. Cash on the debit side — money arriving is a
-debit. And Owner's Capital on the credit side.*
-*Why that second one? Money came in and nothing went out with it. The
-business gave up no goods and took on no debt. What is left is a claim by
-whoever put the money in. That is what equity is — not a kind of
-transaction, but the part left over.*
+*One line: Cash, $20,000, on the left. DR is short for debit, the left
+side; CR for credit, the right. Cash is an asset — money the business
+holds. And on the right, a gap with a question in it: money arrived, but
+the record does not yet know who from, so it cannot say whose claim this
+is.*
 
-**6.** *The business didn't get that money for nothing. SP received 200
+**6.** *So say who. The money came from SP.*
+→ add `has-counterparty` → SP
+*Owner's Capital, and the entry balances. Why that account? Money came in
+and nothing went out with it — no goods, no promise to pay it back. Had a
+customer paid this for shirts, shirts would have gone out: Revenue. Had a
+bank lent it, a promise to repay would sit beside it: a loan. Neither did.
+What is left is a claim by the one who put the money in — equity, the part
+left over. The who didn't pick the account; nothing going out did. The
+who says whose claim it is, and never gets a line of its own.*
+*Both lines say $20,000 and always will: an entry is one event measured
+once, in money, from two sides — what the business now has, and where it
+came from. That is why an entry balances.*
+
+This is the cohort-c7 change (2026-09-05). The residual rule now needs a
+counterparty before it fires — a claim is a claim BY somebody — so a lone
+`receives` money no longer reads as Owner's Capital halfway through a
+sale, and the reasons a novice said were "never explained" (DR/CR, why it
+balances, why equity rather than revenue or a loan) are said once, as
+reasons, where the entry first balances.
+
+**7.** *The business didn't get that money for nothing. SP received 200
 ownership units in return. Say that too.*
 → add `provides` → ownership units → 200
 *Now look carefully. **Nothing changed.** The entry is the same.*
 
-**7.** *Scroll down to "Recorded — but not reflected".*
-*There they are. Double-entry has no line for who owns the business. The
-200 units are in the record, and later we will work out percentages from
-them — but the journal entry cannot say it.*
-*This is worth noticing early: the record holds more than the entry shows.*
-
-**8.** *One more: who.*
-→ add `has-counterparty` → SP
-*The entry didn't change again. Counterparty doesn't get a line of its own
-— it tells you which account fits, without ever appearing on one.*
-*Later, when a second person invests, this is what keeps the two of them
-apart.*
+**8.** *Look under the entry, at "In the chain, not on the entry".*
+*There they are. 200 units is a count, not an amount of money, so no line
+can carry it — the monetary unit assumption. The units stay in the chain,
+and when a second person invests, the who on each event is what keeps the
+two of them apart.*
 
 ---
 
@@ -140,7 +152,13 @@ materials" is plainly about the role and not about shirts.
 
 The step to write carefully is the one that asks *why* it said Raw
 Materials Inventory, and sends the student to the drill-down to find an
-answer that lives four days earlier.
+answer that lives two days earlier. Since cohort c7 (2026-09-05) that step
+is active: "Decided earlier" names the events (`[printer]`, `[design]`),
+and the student has to find one in the chain and click it before Next
+enables. A
+wrong pick gets a nudge, not the answer. The reason: in c7 every reason
+the learner had to DO something with (find the batch) landed for all
+three; the reasons only told did not land for the novice.
 
 ## Episode 4 — SP prints shirts
 

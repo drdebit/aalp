@@ -26,18 +26,28 @@
 
 (defn step-complete?
   "Has the student done what this step asked? Steps with no :do are
-   complete as soon as they are read."
-  [step selected]
-  (let [{:keys [kind code params]} (:do step)]
-    (case kind
-      nil        true
-      :read      true
-      :set-date  (contains? selected :has-date)
-      ;; Switching an assertion off is the step: the explanation is about
-      ;; what disappears, and it makes no sense until it has.
-      :remove    (not (contains? selected code))
-      :assert    (boolean (has-params? selected code (or params {})))
-      true)))
+   complete as soon as they are read.
+
+   `wt` is the walkthrough's own state (state/walkthrough): a step that
+   asks for something other than an assertion -- pointing at an event in
+   the chain -- is completed there, not in the sentence."
+  ([step selected] (step-complete? step selected nil))
+  ([step selected wt]
+   (let [{:keys [kind code params event-ids]} (:do step)]
+     (case kind
+       nil        true
+       :read      true
+       :set-date  (contains? selected :has-date)
+       ;; Switching an assertion off is the step: the explanation is about
+       ;; what disappears, and it makes no sense until it has.
+       :remove    (not (contains? selected code))
+       :assert    (boolean (has-params? selected code (or params {})))
+       ;; Pointing at the event in the chain that decided today's account.
+       ;; Cohort c7: the reasons that landed for every learner were the
+       ;; ones they had to DO something with (find the batch); the ones
+       ;; only told ("decided earlier") did not land for the novice.
+       :pick-event (contains? (set (map name event-ids)) (:picked wt))
+       true))))
 
 (defn event-id-for
   "The identifier the event built in this episode gets when it joins the
@@ -67,7 +77,11 @@
 
      {:say "The business received $20,000. Say so."
       :do {:kind :assert :code :receives :params {:unit "monetary-unit"}}
-      :then "Two lines appeared at once. Cash, an asset, on the left — the debit side. And Owner's Capital on the right — the credit side. Why that account? Money came in and nothing went out with it. The business gave up no goods and took on no debt. What's left is a claim by whoever put the money in. That's what equity is — not a kind of transaction, but the part left over. As for left and right: that is a convention the rest of the course covers. Assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."}
+      :then "One line: Cash, $20,000, on the left. DR is short for debit, the left side; CR for credit, the right. Cash is an asset — money the business holds, which it can put to any future use. And on the right, a gap with a question in it. Money arrived, but the record does not yet know who from, so it cannot say whose claim this is."}
+
+     {:say "So say who. The money came from SP."
+      :do {:kind :assert :code :has-counterparty}
+      :then "Owner's Capital, on the right, and the entry balances. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. Had a customer paid this for shirts, shirts would have gone out: Revenue. Had a bank lent it, a promise to repay would sit beside it: a loan. Neither did. What is left is a claim by the one who put the money in, and that is what equity is — not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and it never gets a line of its own. Now the balance. Both lines say $20,000, and they always will: an entry is one event measured once, in money, from two sides — what the business now has, and where it came from. That is why an entry balances, and the ✓ is checking that you described one event. Left and right are a convention the rest of the course covers: assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."}
 
      {:say "The business didn't get that money for nothing. SP received 200 ownership units in return — the certificate, the stake, the thing that says how much of the business is theirs. Say that too."
       :do {:kind :assert :code :provides :params {:unit "ownership-units"}}
@@ -75,11 +89,7 @@
 
      {:say "Look under the entry, at \"In the chain, not on the entry\". The chain is everything the business has said — the list on the left is it, and it grows with every episode. The entry is what double-entry can measure of the chain, in money."
       :do {:kind :read}
-      :then "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later. The entry is doing exactly what it should; the chain simply holds more than the entry measures."}
-
-     {:say "One more: who."
-      :do {:kind :assert :code :has-counterparty}
-      :then "The entry didn't change again. Counterparty doesn't get a line of its own — it tells you which account fits, without ever appearing on one. Later, when a second person invests, this is what keeps them apart."}]}
+      :then "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later — and when a second person invests, the who on each event is what keeps the two of them apart. The entry is doing exactly what it should; the chain simply holds more than the entry measures."}]}
 
    {:id :printer
     :title "SP buys a printer"
@@ -107,7 +117,7 @@
       :do {:kind :assert :code :has-counterparty}
       :then "Good. It balances, and every line came from something you said."}
 
-     {:say "Try something. Take `allows` off — the × beside it — and watch the entry."
+     {:say "Try something. Take `allows` off — the × beside it — and leave it off for a moment. Watch the entry."
       :do {:kind :remove :code :allows}
       :then "Equipment disappears. The record stopped saying what the machine is for, so it stopped knowing what to call it."}
 
@@ -176,9 +186,12 @@
       :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
       :then "Raw Materials Inventory. Notice you didn't say that — you never told the record these were materials."}
 
-     {:say "So where did it come from? Open that line and look under \"Decided earlier\"."
-      :do {:kind :read}
-      :then "There's January 2nd. The shirts are an input because you said the printer turns blank t-shirts and ink into printed ones. The reason for today's entry was written down two days ago."}
+     {:say "So where did it come from? Open that line and look under \"Decided earlier\": it names dates and events. Now find one of those events in the chain on the left, and click it."
+      ;; Both the printer and the design say what blank shirts are for;
+      ;; either is the right answer, and the printer came first.
+      :do {:kind :pick-event :event-ids #{:printer :design}}
+      :miss "Not that one. Look for an event that says what blank t-shirts are for."
+      :then "The printer, on January 2nd — and the design, the day after, said the same. The shirts are an input because the record already says what turns blank t-shirts into printed ones; you said so when you bought the things that do it. The reason for today's account was written down days ago, and you have just put your finger on it. Every account name works like this: the record says what a thing is for, and everything that comes in afterwards is read against that."}
 
      {:say "Finish it off: who sold them? TextileDirect."
       :do {:kind :assert :code :has-counterparty}

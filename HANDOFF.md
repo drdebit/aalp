@@ -5,34 +5,78 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
-The question on the table: **what to change based on cohort c7**, the
-first cohort run through the learner-lab knowledge firewall
-(`study/runs/report-c7.md`; the section "Cohort c7" below has the
-reading). In short: every learner finished the path and the drill; the
-things a learner had to *do* (find the batch, take `allows` off and put
-it back) landed for everyone; the reasons that are only *told* (why
-Owner's Capital, how the record knew shirts were materials, why an
-entry balances) did not land for the novice, who said "the screens
-never explained why". Candidates, in the order I would take them:
+**2026-09-05, late.** The changes cohort c7 pointed at are built, verified
+locally, and **not yet committed, pushed or deployed** -- the session
+stopped there so Matt could look first. `git status` shows the 14 files;
+`git diff` is the review. Once committed and pulled on choochoo, the
+backend needs `./restart-backend.sh` (two `.clj` files changed), and the
+browser needs a hard refresh for the CSS.
 
-1. An active step for "decided earlier" in episode 4: the learner picks,
-   in the chain, the event that decided today's account (the batch-link
-   move, which made cost flow 2/2 for everyone).
-2. Decide whether "why an entry balances" is the class's (as debits and
-   credits are) or the platform's; if the platform's, episode 1 needs a
-   sentence that says it as a reason, not an observation.
-3. Rerun one cohort after either change:
-   `cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting s83:hasty-sophomore" --max-turns 260`
-   (about an hour; read the report's Firewall line first).
+What changed, and why (each traces to `study/runs/report-c7.md`):
+
+1. **"Decided earlier" is an active step.** Episode 4's read step is now
+   `:pick-event`: the drill-down names the enabling events (`[printer]`,
+   `[design]`), and the learner has to find one in the chain and click
+   it before Next enables; a wrong pick gets a nudge, not the answer.
+   In c7 the reasons a learner had to DO something with landed for all
+   three; the told ones did not land for the novice. New step kind in
+   `episodes.cljs`, the chain becomes clickable in `views.cljs`
+   (`chain-panel`), the pick lives on `:walkthrough :picked`, and
+   `je_derive/established-elsewhere` now carries the event `:id`.
+2. **The residual needs a who.** `:owner-capital` requires
+   `has-counterparty`. A lone `receives money` -- the first assertion of
+   a sale -- read as a finished Owner's Capital entry; two c7 learners
+   flagged it. Now it shows Cash and a placeholder that asks who was on
+   the other side. Conformance unchanged: 24 match, 0 conflict.
+3. **Episode 1 says the reasons as reasons, once**, where the entry first
+   balances: DR/CR spelled out; owner vs customer vs lender (equity vs
+   Revenue vs a loan); why an entry balances (one event, measured once,
+   from two sides); the who names whose claim, it does not pick the
+   account. Step order is now date, receives, who, provides units, read
+   the chain. Decision taken here: the *reason for balance* is the
+   platform's (it is the monetary unit assumption doing its work);
+   debit/credit as a convention stays the class's.
+4. **Owed patterns in the drill.** A pattern missed is owed until got
+   right; neither the ratio bar nor the streak passes the round while
+   anything is owed, and the round runs past its size to collect it
+   (button reads "Nearly -- one pattern you missed still to get right").
+   The server serves owed patterns first but not as the very next
+   problem. c7's hasty learner missed the credit sale once and passed on
+   a streak of other patterns; the miss was never retested. Also the
+   text client never sent `missed` at all (the API took it; the caller
+   did not pass it) -- fixed. Documented in ALEKS-DERIVED-MECHANICS.md.
+5. **Smaller copy and mirror fixes.** ep2's remove step says to leave
+   `allows` off; the level-1 tutorial's "Case 1" no longer contradicts
+   quiz l1-q4 (expects on your own promise is allowed, not forbidden);
+   the counterparty context line no longer says it "decides WHICH
+   account fits"; the text client's `expects` unit menu has the
+   browser's three options (a c7 learner had no service option for a
+   prepaid); the text client prints the customer/vendor payment history
+   the browser shows, so a probability has a basis.
+
+Verified: `npx shadow-cljs compile app` clean; conformance 24/11/12/0;
+`smoke_walk.py` end to end against a local in-memory backend (run it with
+`AALP_BASE=http://localhost:3000/api`, or it goes to choochoo); the browser
+pass run **locally** for the first time -- Playwright is now installed
+under `study/browser/` (gitignored) and `lib.js` takes `AALP_BASE` --
+walkthrough 40/40, drill 9/9.
+
+Not done, deliberately: a c8 cohort (an hour and ~$15 of subscription;
+it runs against choochoo, so it needs the deploy first):
+
+    cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting s83:hasty-sophomore" --max-turns 260
+
+What to watch in c8: aa2 (why Owner's Capital) and de5 (why it balances)
+for the novice, which were 1 and 0->1; aa4 (inherited classification),
+which was 0 for the novice and is what the active step is for; and
+whether anyone hits the owed-pattern button.
+
+Left alone from the c7 report, on purpose: the post-test's novel item
+(an accountant's bill on credit) is not drilled -- it is meant to be a
+transfer item, and s72 scoring 1 on it is the item working.
 
 Matt has a TODO (org, Research, scheduled 2026-09-07) to walk the whole
-tutorial in the browser himself and make final changes. The browser
-regression pass is `study/browser/` (Playwright); last result 34/35 and
-9/9.
-
-Everything is committed and pushed; choochoo runs the latest commit; the
-`learner-lab` skill is committed in system-configs and symlinked into
-`~/.claude/skills/`. Nothing is running.
+tutorial in the browser himself and make final changes.
 
 ## Running it
 

@@ -98,15 +98,21 @@
     :text "Money the business holds is Cash -- an asset. Some went out."}
 
    ;; -------- Money in with nothing going out: the residual ----------
+   ;; The residual is a claim BY somebody, so the record has to know who
+   ;; before it can name it. Without this, money in with nothing else said
+   ;; yet -- the first assertion of a sale, say -- read as Owner's Capital,
+   ;; a finished-looking answer to a question the record had not been
+   ;; asked (cohort c7, two learners).
    {:id :owner-capital
     :when {:assertion :receives :params {:unit "monetary-unit"}}
-    :context {:none-of [{:assertion :provides :params {:unit "physical-unit"}}
+    :context {:all-of  [{:assertion :has-counterparty}]
+              :none-of [{:assertion :provides :params {:unit "physical-unit"}}
                         {:assertion :requires}
                         {:assertion :modifies}
                         {:assertion :consumes}]}
     :line {:side :credit :account "Owner's Capital"}
     :amount :monetary
-    :text "Money came in and nothing went out with it. SP gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by whoever put the money in, against whatever the business has -- and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so -- provides, and who -- and this line becomes Revenue.)"}
+    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in -- the counterparty says who -- against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so -- provides -- and this line becomes Revenue.)"}
 
    ;; -------- Goods received: the account is the item's POSITION -------
    ;; Not three rules keyed on which item it is. One rule that asks where
@@ -323,7 +329,7 @@
 
 (def context-roles
   {:has-date "stamps the entry's date"
-   :has-counterparty "identifies the other party -- it decides WHICH account fits, without appearing on any line"})
+   :has-counterparty "names the other party -- whose claim, whose debt, who was paid -- without appearing on any line. It never decides what a thing IS; the chain does that"})
 
 ;; ---------------------------------------------------------------------------
 ;; Amount resolution
@@ -472,6 +478,8 @@
            (remove #(= current (:event %)))
            (mapv (fn [{:keys [role event]}]
                    {:role role
+                    ;; Named, so the student can find it in the chain.
+                    :id (some-> (:has-identifier event) name)
                     :date (get-in event [:has-date :date])
                     :assertions (select-keys event [:allows :is-allowed-by :receives
                                                     :consumes :creates :provides])}))
@@ -678,10 +686,10 @@
         placeholders (cond-> []
                        (and has-debit? (not has-credit?))
                        (conj {:side :credit
-                              :prompt "Something must balance this. What did SP give up, or come to owe? The assertions do not say yet."})
+                              :prompt "Something must balance this. What did the business give up, or come to owe -- and who was on the other side? The assertions do not say yet."})
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
-                              :prompt "Something must balance this. What did SP get, or settle? The assertions do not say yet."}))]
+                              :prompt "Something must balance this. What did the business get, or settle -- and who from? The assertions do not say yet."}))]
     {:holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
                                                             (:events chain-ctx))))
                           ;; Only what can go out: materials and goods. A

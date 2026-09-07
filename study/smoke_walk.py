@@ -12,9 +12,9 @@ script = {
  "funding": [{"type":"next"},{"type":"next"},
      {"type":"add_assertion","code":"has-date","params":{"date":"2026-01-01"}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":20000}},{"type":"next"},
+     {"type":"add_assertion","code":"has-counterparty","params":{"name":"SP"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"ownership-units","quantity":200}},{"type":"next"},
-     {"type":"next"},
-     {"type":"add_assertion","code":"has-counterparty","params":{"name":"SP"}},{"type":"next"}],
+     {"type":"next"}],
  "printer": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":3000}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"t-shirt-printer","quantity":1}},{"type":"next"},
@@ -35,7 +35,7 @@ script = {
  "materials": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":100}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"physical-unit","physical-item":"blank-tshirts","quantity":20}},{"type":"next"},
-     {"type":"open_line","index":0},{"type":"next"},
+     {"type":"open_line","index":1},{"type":"pick_event","id":"funding"},{"type":"pick_event","id":"printer"},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"TextileDirect"}},{"type":"next"}],
  "ink": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-03"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"monetary-unit","quantity":20}},{"type":"next"},
@@ -51,7 +51,7 @@ script = {
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"Customer"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"from-event":"production"}},{"type":"open_line","index":2},{"type":"next"},{"type":"next"}],
 }
-show = {("design",3),("design",7),("materials",3),("production",3),("sale",4)}
+show = {("funding",4),("design",3),("design",7),("materials",3),("production",3),("sale",4)}
 while p.phase == "walkthrough":
     ep = p.episodes[p.wt["episode"]]["id"]
     for a in script[ep]:

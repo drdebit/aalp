@@ -4288,3 +4288,17 @@ header {
 }
 .add-flow:hover { border-color: #7fa8c4; color: #24405c; }
 .remove-flow { background: none; border: 0; color: #b0392b; cursor: pointer; font-size: 1rem; line-height: 1; }
+
+/* ---- The chain: pointing at an event -------------------------------
+   A walkthrough step may ask the student to find, in the chain, the
+   event that decided today's account. Only then are events clickable. */
+.chain-event.pickable { cursor: pointer; border-left: 3px solid transparent; padding-left: .35rem; }
+.chain-event.pickable:hover { background: #f3f7fa; border-left-color: #7fa8c4; }
+.chain-event.picked { background: #eaf5ea; border-left-color: #4f9d69; }
+.chain-event.wrong { background: #fbf1ee; border-left-color: #d08a78; }
+.wt-miss {
+  margin: 0 0 .5rem; font-size: .82rem; color: #8a4a3b;
+  background: #fbf1ee; border-left: 3px solid #d08a78;
+  padding: .35rem .5rem; border-radius: 2px;
+}
+.dj-established-id { font-family: monospace; font-size: .8em; color: #24405c; }

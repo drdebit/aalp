@@ -24,7 +24,14 @@
           "unit" : "monetary-unit"
         }
       },
-      "then" : "Two lines appeared at once. Cash, an asset, on the left — the debit side. And Owner's Capital on the right — the credit side. Why that account? Money came in and nothing went out with it. The business gave up no goods and took on no debt. What's left is a claim by whoever put the money in. That's what equity is — not a kind of transaction, but the part left over. As for left and right: that is a convention the rest of the course covers. Assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."
+      "then" : "One line: Cash, $20,000, on the left. DR is short for debit, the left side; CR for credit, the right. Cash is an asset — money the business holds, which it can put to any future use. And on the right, a gap with a question in it. Money arrived, but the record does not yet know who from, so it cannot say whose claim this is."
+    }, {
+      "say" : "So say who. The money came from SP.",
+      "do" : {
+        "kind" : "assert",
+        "code" : "has-counterparty"
+      },
+      "then" : "Owner's Capital, on the right, and the entry balances. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. Had a customer paid this for shirts, shirts would have gone out: Revenue. Had a bank lent it, a promise to repay would sit beside it: a loan. Neither did. What is left is a claim by the one who put the money in, and that is what equity is — not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and it never gets a line of its own. Now the balance. Both lines say $20,000, and they always will: an entry is one event measured once, in money, from two sides — what the business now has, and where it came from. That is why an entry balances, and the ✓ is checking that you described one event. Left and right are a convention the rest of the course covers: assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."
     }, {
       "say" : "The business didn't get that money for nothing. SP received 200 ownership units in return — the certificate, the stake, the thing that says how much of the business is theirs. Say that too.",
       "do" : {
@@ -40,14 +47,7 @@
       "do" : {
         "kind" : "read"
       },
-      "then" : "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later. The entry is doing exactly what it should; the chain simply holds more than the entry measures."
-    }, {
-      "say" : "One more: who.",
-      "do" : {
-        "kind" : "assert",
-        "code" : "has-counterparty"
-      },
-      "then" : "The entry didn't change again. Counterparty doesn't get a line of its own — it tells you which account fits, without ever appearing on one. Later, when a second person invests, this is what keeps them apart."
+      "then" : "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later — and when a second person invests, the who on each event is what keeps the two of them apart. The entry is doing exactly what it should; the chain simply holds more than the entry measures."
     } ]
   }, {
     "id" : "printer",
@@ -96,7 +96,7 @@
       },
       "then" : "Good. It balances, and every line came from something you said."
     }, {
-      "say" : "Try something. Take `allows` off — the × beside it — and watch the entry.",
+      "say" : "Try something. Take `allows` off — the × beside it — and leave it off for a moment. Watch the entry.",
       "do" : {
         "kind" : "remove",
         "code" : "allows"
@@ -214,11 +214,13 @@
       },
       "then" : "Raw Materials Inventory. Notice you didn't say that — you never told the record these were materials."
     }, {
-      "say" : "So where did it come from? Open that line and look under \"Decided earlier\".",
+      "say" : "So where did it come from? Open that line and look under \"Decided earlier\": it names dates and events. Now find one of those events in the chain on the left, and click it.",
       "do" : {
-        "kind" : "read"
+        "kind" : "pick-event",
+        "event-ids" : [ "printer", "design" ]
       },
-      "then" : "There's January 2nd. The shirts are an input because you said the printer turns blank t-shirts and ink into printed ones. The reason for today's entry was written down two days ago."
+      "miss" : "Not that one. Look for an event that says what blank t-shirts are for.",
+      "then" : "The printer, on January 2nd — and the design, the day after, said the same. The shirts are an input because the record already says what turns blank t-shirts into printed ones; you said so when you bought the things that do it. The reason for today's account was written down days ago, and you have just put your finger on it. Every account name works like this: the record says what a thing is for, and everything that comes in afterwards is read against that."
     }, {
       "say" : "Finish it off: who sold them? TextileDirect.",
       "do" : {
@@ -419,7 +421,7 @@
         "content" : "**requires** — records an obligation: someone MUST do something in the future.\n\nWhen SP buys ink cartridges on 30-day credit for $100, here's the full description of what happened that day:\n\n::assertions\nhas-date: the purchase date\nhas-counterparty: InkMasters\nreceives: 50 ink cartridges (physical-unit)\nrequires: SP must provide $100 (monetary-unit) by the due date\n::\n\nCompare that to a cash purchase, and notice **what changed**:\n\n- **provides is GONE** — SP hasn't given anything yet. Nothing went out today. Don't select it!\n- **requires is NEW** — it records the promise: money must go out later, by a due date.\n\nWhen you select **requires** in the platform, you'll fill in what must be provided (money), how much ($100), and by when (the due date). All three are in the transaction description.\n\nThe journal entry follows the same in/out logic as before, with one new account:\n\n::journal\nDR Raw Materials Inventory $100\nCR Accounts Payable $100\n::\n\nCartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."
       }, {
         "heading" : "The Second Question: Do We Want a Probability?",
-        "content" : "There's a second future-looking assertion:\n\n**expects** — records a *probability*: how sure the business is that something will actually happen, as a confidence level.\n\nThat is the whole distinction. **requires** records a promise. **expects** records a probability. So the question to ask of any promise is not \"whose fault is it if this fails\" but:\n\n**\"Do we want a probability on this?\"**\n\n*Case 1: SP promises to pay InkMasters.* SP knows whether it will pay its own bills. There is nothing to estimate, so nothing to record: **requires** only.\n\n*Case 2: a customer promises to pay SP.* Will they? Probably... and *probably* is a number. Some customers don't pay, and at year-end the business will need to say how much of what it is owed it really expects to collect. So SP records the promise (**requires**) *and* the probability (**expects**, say 92%).\n\n*Case 3: SP pays a vendor in advance.* The contract requires the vendor to deliver — so **requires** is perfectly reasonable, and a company sure of its vendor might record it. But the thing SP really wants on the record is how confident it is of getting what it paid for: **expects**. You may record both; the entry is the same either way.\n\nMemorize the question, not a list of cases: *is there a probability here I want written down?* If yes, **expects** carries it."
+        "content" : "There's a second future-looking assertion:\n\n**expects** — records a *probability*: how sure the business is that something will actually happen, as a confidence level.\n\nThat is the whole distinction. **requires** records a promise. **expects** records a probability. So the question to ask of any promise is not \"whose fault is it if this fails\" but:\n\n**\"Do we want a probability on this?\"**\n\n*Case 1: SP promises to pay InkMasters.* SP knows whether it will pay its own bills, so there is usually nothing worth writing down: **requires** on its own will do. Nothing forbids an **expects** here — the entry is the same either way — but a number under 100% on your own promise says something about your own finances.\n\n*Case 2: a customer promises to pay SP.* Will they? Probably... and *probably* is a number. Some customers don't pay, and at year-end the business will need to say how much of what it is owed it really expects to collect. So SP records the promise (**requires**) *and* the probability (**expects**, say 92%).\n\n*Case 3: SP pays a vendor in advance.* The contract requires the vendor to deliver — so **requires** is perfectly reasonable, and a company sure of its vendor might record it. But the thing SP really wants on the record is how confident it is of getting what it paid for: **expects**. You may record both; the entry is the same either way.\n\nMemorize the question, not a list of cases: *is there a probability here I want written down?* If yes, **expects** carries it."
       }, {
         "heading" : "Selling on Credit: The Other Chair",
         "content" : "Now flip the pizza situation around: this time, **SP is the pizza place.** A customer takes SP's t-shirts today and promises to pay later.\n\n**Example: SP sells 10 printed t-shirts to CampusBoutique on 30-day credit for $250.**\n\nWalk through the four questions plus the new one:\n\n- When? The sale date. (**has-date**)\n- Who? CampusBoutique. (**has-counterparty**)\n- What went out? 10 printed t-shirts. (**provides** — yes, provides! SP gave up real shirts today.)\n- What came in? *Nothing yet* — no receives.\n- Any promise? Yes: the customer must pay $250 by the due date. (**requires** — recorded from SP's side, as what SP *is to receive*. Provides and receives are always SP's own actions; SP never \"provides\" something a customer hands over.)\n\nAnd now the probability question: is there a number SP wants on the record? Yes — will this customer actually pay? So SP also records:\n\n- How confident is SP of actually getting paid? (**expects**, with a confidence level — say 92%)\n\n::assertions\nhas-date: the sale date\nhas-counterparty: CampusBoutique\nprovides: 10 printed t-shirts (physical-unit)\nrequires: SP is to receive $250 (monetary-unit) by the due date — the customer's promise\nexpects: 92% confident of receiving that $250\n::\n\nThe confidence number isn't busywork — at year-end it feeds directly into estimating how much of what customers owe will actually arrive (accountants call this *bad debt*). You're doing real accounting judgment when you set it.\n\n**The journal entry:** a promise from a customer is money SP is owed — accountants call that an **asset** named **Accounts Receivable**. And giving up goods in exchange for a payment promise? Double-entry calls that **Revenue**:\n\n::journal\nDR Accounts Receivable $250\nCR Revenue $250\n::\n\nNotice something important: \"revenue\" was never one of your assertions. You just described what happened — goods out, payment promised — and *revenue is the name double-entry gives that pattern*. Categories come from patterns of facts. That's the deepest idea in this course, arriving quietly."

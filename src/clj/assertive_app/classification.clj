@@ -2235,9 +2235,14 @@
                    (clojure.string/join ", " (for [[param-key param-value] params]
                                                (if (= param-value :any)
                                                  (str (format-param-key param-key) " needs a value")
-                                                 (str (format-param-key param-key)
-                                                      " should be "
-                                                      (format-param-value param-key param-value)))))))))))
+                                                 ;; "action should be receives" read as a
+                                                 ;; rule fragment (c9); say whose action it is.
+                                                 (if (and (= param-key :action) (contains? #{:requires :expects} assertion-code))
+                                                   (str "the business is the one to " (get {"receives" "receive" "provides" "provide"} (name param-value) (name param-value))
+                                                        " here -- set action to " (name param-value))
+                                                   (str (format-param-key param-key)
+                                                        " should be "
+                                                        (format-param-value param-key param-value))))))))))))
 
 (defn augment-journal-entry
   "Attach each journal entry line's amount, taken from the derivation.

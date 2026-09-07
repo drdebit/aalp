@@ -365,8 +365,10 @@ class Platform:
         # Mirror views.cljs auto-populate-assertion!: the verb is fixed and
         # the unit defaults to the other side of the present exchange.
         if code == "requires":
-            clean["action"] = "receives" if self.selected.get("provides", {}).get("unit") == "physical-unit" else "provides"
-            clean.setdefault("unit", "physical-unit" if self.selected.get("receives", {}).get("unit") == "monetary-unit" else "monetary-unit")
+            owed_to_us = "provides" in self.selected and "receives" not in self.selected
+            clean["action"] = "receives" if owed_to_us else "provides"
+            other = self.selected.get("provides" if owed_to_us else "receives", {}).get("unit")
+            clean.setdefault("unit", "physical-unit" if other == "monetary-unit" else "monetary-unit")
         if code == "expects":
             owes = self.selected.get("requires", {}).get("action") == "provides"
             clean["action"] = "provides" if owes else "receives"

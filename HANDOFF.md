@@ -5,70 +5,89 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
-**2026-09-07, later.** Cohort c8 ran on the c7 changes
-(`study/runs/report-c8.md`), and a second round of changes is built from
-it -- verified locally, committed and deployed (see the git log for the
-commit; if `git status` on choochoo is not at it, pull and
-`./restart-backend.sh`). Next is cohort **c9** on this:
+**2026-09-07, evening.** Three cohorts ran today (c7 -> c8 -> c9), two
+rounds of platform changes are deployed, and c9 turned up a fault in the
+**measuring instrument** that colours every post-test since c7. Read
+that first, then the round summaries.
 
-    cd study && ./run_cohort.sh c9 "s91:novice-business-undergrad s92:traditional-intro-accounting s93:hasty-sophomore" --max-turns 260
+### The instrument: the walkthrough was gone before the post-test
 
-**What c8 said.** All three finished; calibration clean; gate rewrites
-6/185, 4/178, 5/169. The active "decided earlier" step did its job:
-inherited classification (aa4) went 0 -> 2 for the novice, 2/2 for all.
-Why-it-balances (de5) rose to 1.67 mean (novice 2). Cost flow and
-asset-vs-expense stayed 2/2 except where noted. What did not move:
+Every learner in c7, c8 and c9 is a `claude -p --resume` session of ~180
+turns of screens. Each one **compacted once, during the first drill**:
+Claude Code replaced the walkthrough turns with a model-written summary
+(the c9 novice's summary even says equipment "doesn't get allows",
+which is wrong). At the post-test the learner answered from that
+summary. So a learner who at turn 8 wrote "Owner's Capital ... the
+account name is determined by what didn't go out", answered the quick
+check right first time, and at turn 11 wrote "a journal entry is one
+event measured in money from two sides ... that's why it balances",
+wrote at the post-test "I never saw a funding transaction's journal
+entry displayed on a screen" -- and scored 0. c8's traditional learner
+"never saw a cash sale" the same way.
 
-- **aa2, why Owner's Capital: 1, 1, 1** (c7: 1, 1, 0). The reason was
-  now on screen, once, in a long paragraph; the traditional learner had
-  it at turn 10 ("nothing went out ... goods out would be Revenue") and
-  could not give it back at the post-test; the hasty one skimmed it
-  ("Ok, skimming... next"). Told once is not enough, even when said well.
-- **The traditional learner scored 0 on the cash sale with COGS (de4)
-  and on cost flow (aa6)**, saying she had never seen a cash sale. She
-  had, in episode 7 -- once, passively. The drill never served one:
-  `:cash-sale` was **level 3**, so no level-0 round ever had a sale, and
-  at level 1 a five-streak covers five of nine patterns, so two of three
-  learners never met the credit sale either.
-- Copy: "the same day's decision" in the ink episode was wrong (a learner
-  caught it); the `allows` remove step still had two learners re-adding
-  it reflexively; a reseller was paying PrinterWorld to service a printer
-  it does not own; "journal entry" was never said on screen; the batch
-  rule when no batch is named was never stated.
+Consequences: the episode-1 items (de1, de5, aa2) and anything taught
+once early were **systematically under-scored** in c7-c9; late and
+drilled material (aa4-aa7, aa10, the sale) was not. The c7 reading
+"told reasons don't land for the novice" is partly this artifact. The
+round-one and round-two changes are still good pedagogy (the active
+step and the check both produced clean clicks in the transcripts), but
+the post-test numbers behind them are not the evidence they seemed.
 
-**Round two, built from that:**
+Fixed in the learner-lab skill (system-configs, `learnerlab/`):
+`Session.compactions()` counts compactions from the session file and the
+report's Firewall line now says "session compacted n time(s)"; and the
+learner is handed its **own think-aloud notes** back before the exam
+(`--no-notes` turns it off), so the post-test is open-notes -- the
+honest version of a student re-reading their notebook. c7-c9 summaries
+were back-filled (all 1 compaction; regenerated reports say so).
 
-1. **A `:choose` step** -- a one-question check, three buttons, wrong
-   answer nudges, right answer completes -- right after Owner's Capital
-   appears: "What would have made that credit Revenue?" The who-step's
-   paragraph is split: equity on the who step, the check, then a short
-   balance step that also names the journal entry. Mirrored in the text
-   client (`{"type":"choose","index":n}`) and the browser pass.
-2. **`:cash-sale` is level 0** and the drill draws the **current level's
-   own unserved patterns first**, then inherited ones. Verified by API:
-   60 level-0 draws included 13 cash sales; a reseller's sale grades
-   correct and derives Revenue + COGS at the record's cost.
-3. **Resellers get shop services** (electrician, door, stockroom), not
-   printer servicing.
-4. Copy: ink episode says "the same two-day-old decision"; the remove
-   step's todo reads "switch allows off -- and leave it off"; the sale
-   episode says the no-batch rule (average cost of what is on hand).
+**Cohort c10** is the first run on the fixed instrument; read
+`study/runs/report-c10.md` and compare the episode-1 items with c9. The
+platform is unchanged between c9 and c10 except two small fixes below,
+so c10 vs c9 is mostly the instrument.
 
-Verified: compile clean; conformance 24/11/12/0; `smoke_walk.py` end to
-end locally; browser pass 44/44 and 9/9.
+    cd study && ./run_cohort.sh c10 "s101:novice-business-undergrad s102:traditional-intro-accounting s103:hasty-sophomore" --max-turns 260
 
-**What to watch in c9:** aa2 (does the check make the reason stick --
-target 2 for at least the novice and traditional), de4/aa6 for the
-traditional learner now that sales are drilled, and whether the level-1
-round serves the credit sale to everyone. If aa2 still sits at 1, the
-next move is a second check at the sale episode ("why is this Revenue
-and not Owner's Capital?") -- the same reason from the other side.
+### c9 (on round two), what was real
+
+- Every learner met the cash sale in level 0 and the credit sale in
+  level 1; the owed-pattern gate retested every miss before passing
+  (the novice missed two in one round and got both back). Sale with
+  COGS (de4) went 2/2/2 (c8: 2/2/0).
+- The quick check was answered right, first time, by all three, and the
+  transcripts show the reason articulated on the spot. What the
+  post-test then said about it is the instrument (above).
+- Two real platform faults, fixed in this commit: the `requires`
+  direction defaulted from "goods out" alone, so a prepaid rendered
+  "the business must provide a service to InsuranceCo" (now: provided
+  and not received -> still to receive; received and not provided ->
+  still to provide, both clients); and the parameter hint "For Expects:
+  Action should be Receive" read as a rule fragment (now: "the business
+  is the one to receive here").
+- Cost flow (aa6) was 1/1/1 because all three answered only the sale
+  half of a two-part question; the item could be split. Not changed.
+- Both the novice and hasty personas failed their "known" calibration
+  probes this run (0/2, 0/1): haiku variance in the persona, worth
+  watching but not a platform matter.
+
+### Round two (from c8), deployed as 8a6a3be
+
+A `:choose` micro-check after Owner's Capital; `:cash-sale` at level 0
+and the level's own unserved patterns first; resellers get shop
+services; ink-episode copy, "leave allows off", the no-batch rule.
+
+### Round one (from c7), deployed as 2ac5479
+
+The active "decided earlier" step (`:pick-event`); Owner's Capital
+requires a who; episode-1 reasons said once; owed drill patterns;
+smaller copy and text-client fixes. Verified by API, smoke walk and
+the browser pass (44/44, 9/9) at each round.
+
+Verified this round: compile clean; smoke walk end to end locally; the requires direction and the new hint wording checked by API.
 
 Left alone on purpose: the post-test's novel item is not drilled (it is
-a transfer item); counterparty names are free text and not validated
-(c8 flagged it; the classification does not depend on the name);
-the "expects" direction complaint traces to a `requires` built the
-wrong way round on a prepaid, which the tutorial's Case 3 covers.
+a transfer item); counterparty names are free text and not validated;
+service quantity is not validated.
 
 Matt has a TODO (org, Research, scheduled 2026-09-07) to walk the whole
 tutorial in the browser himself and make final changes.

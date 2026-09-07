@@ -361,10 +361,16 @@
         ;; "requires: receives money"; a purchase on credit "requires:
         ;; provides money".
         :requires
+        ;; Direction: if the business has provided and not received (a sale
+        ;; on credit, a prepayment to a vendor) it is still to RECEIVE;
+        ;; if it has received and not provided (a purchase on credit, a
+        ;; customer's advance) it is still to PROVIDE. Cohort c9: keyed on
+        ;; physical goods out, a prepaid read "the business must provide".
         (let [sel (state/selected-assertions)
-              sale? (= "physical-unit" (get-in sel [:provides :unit]))
-              unit (if (= "monetary-unit" (get-in sel [:receives :unit])) "physical-unit" "monetary-unit")]
-          (state/update-assertion-parameter! :requires :action (if sale? "receives" "provides"))
+              owed-to-us? (and (contains? sel :provides) (not (contains? sel :receives)))
+              unit (if (= "monetary-unit" (get-in sel (if owed-to-us? [:provides :unit] [:receives :unit])))
+                     "physical-unit" "monetary-unit")]
+          (state/update-assertion-parameter! :requires :action (if owed-to-us? "receives" "provides"))
           (when-not (get-in sel [:requires :unit])
             (state/update-assertion-parameter! :requires :unit unit)))
 

@@ -4302,3 +4302,12 @@ header {
   padding: .35rem .5rem; border-radius: 2px;
 }
 .dj-established-id { font-family: monospace; font-size: .8em; color: #24405c; }
+.wt-choices { display: flex; flex-direction: column; gap: .35rem; margin: 0 0 .6rem; }
+.wt-choice {
+  text-align: left; background: #fff; border: 1px solid #c3ccd4; border-radius: 3px;
+  padding: .4rem .6rem; font-size: .9rem; cursor: pointer; color: #22303c;
+}
+.wt-choice:hover:not(:disabled) { border-color: #7fa8c4; background: #f3f7fa; }
+.wt-choice.right { border-color: #4f9d69; background: #eaf5ea; }
+.wt-choice.wrong { border-color: #d08a78; background: #fbf1ee; }
+.wt-choice:disabled { cursor: default; }

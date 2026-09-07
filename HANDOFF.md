@@ -5,75 +5,70 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
-**2026-09-07.** The changes cohort c7 pointed at are built, committed
-(`2ac5479`), and **deployed on choochoo**: pulled, backend restarted,
-shadow watch recompiled, and `smoke_walk.py` run against choochoo end to
-end (pick step, `[printer]` in Decided earlier, the who-placeholder all
-seen). A browser that had the page open needs a hard refresh for the CSS.
-Next: the c8 cohort below.
+**2026-09-07, later.** Cohort c8 ran on the c7 changes
+(`study/runs/report-c8.md`), and a second round of changes is built from
+it -- verified locally, committed and deployed (see the git log for the
+commit; if `git status` on choochoo is not at it, pull and
+`./restart-backend.sh`). Next is cohort **c9** on this:
 
-What changed, and why (each traces to `study/runs/report-c7.md`):
+    cd study && ./run_cohort.sh c9 "s91:novice-business-undergrad s92:traditional-intro-accounting s93:hasty-sophomore" --max-turns 260
 
-1. **"Decided earlier" is an active step.** Episode 4's read step is now
-   `:pick-event`: the drill-down names the enabling events (`[printer]`,
-   `[design]`), and the learner has to find one in the chain and click
-   it before Next enables; a wrong pick gets a nudge, not the answer.
-   In c7 the reasons a learner had to DO something with landed for all
-   three; the told ones did not land for the novice. New step kind in
-   `episodes.cljs`, the chain becomes clickable in `views.cljs`
-   (`chain-panel`), the pick lives on `:walkthrough :picked`, and
-   `je_derive/established-elsewhere` now carries the event `:id`.
-2. **The residual needs a who.** `:owner-capital` requires
-   `has-counterparty`. A lone `receives money` -- the first assertion of
-   a sale -- read as a finished Owner's Capital entry; two c7 learners
-   flagged it. Now it shows Cash and a placeholder that asks who was on
-   the other side. Conformance unchanged: 24 match, 0 conflict.
-3. **Episode 1 says the reasons as reasons, once**, where the entry first
-   balances: DR/CR spelled out; owner vs customer vs lender (equity vs
-   Revenue vs a loan); why an entry balances (one event, measured once,
-   from two sides); the who names whose claim, it does not pick the
-   account. Step order is now date, receives, who, provides units, read
-   the chain. Decision taken here: the *reason for balance* is the
-   platform's (it is the monetary unit assumption doing its work);
-   debit/credit as a convention stays the class's.
-4. **Owed patterns in the drill.** A pattern missed is owed until got
-   right; neither the ratio bar nor the streak passes the round while
-   anything is owed, and the round runs past its size to collect it
-   (button reads "Nearly -- one pattern you missed still to get right").
-   The server serves owed patterns first but not as the very next
-   problem. c7's hasty learner missed the credit sale once and passed on
-   a streak of other patterns; the miss was never retested. Also the
-   text client never sent `missed` at all (the API took it; the caller
-   did not pass it) -- fixed. Documented in ALEKS-DERIVED-MECHANICS.md.
-5. **Smaller copy and mirror fixes.** ep2's remove step says to leave
-   `allows` off; the level-1 tutorial's "Case 1" no longer contradicts
-   quiz l1-q4 (expects on your own promise is allowed, not forbidden);
-   the counterparty context line no longer says it "decides WHICH
-   account fits"; the text client's `expects` unit menu has the
-   browser's three options (a c7 learner had no service option for a
-   prepaid); the text client prints the customer/vendor payment history
-   the browser shows, so a probability has a basis.
+**What c8 said.** All three finished; calibration clean; gate rewrites
+6/185, 4/178, 5/169. The active "decided earlier" step did its job:
+inherited classification (aa4) went 0 -> 2 for the novice, 2/2 for all.
+Why-it-balances (de5) rose to 1.67 mean (novice 2). Cost flow and
+asset-vs-expense stayed 2/2 except where noted. What did not move:
 
-Verified: `npx shadow-cljs compile app` clean; conformance 24/11/12/0;
-`smoke_walk.py` end to end against a local in-memory backend (run it with
-`AALP_BASE=http://localhost:3000/api`, or it goes to choochoo); the browser
-pass run **locally** for the first time -- Playwright is now installed
-under `study/browser/` (gitignored) and `lib.js` takes `AALP_BASE` --
-walkthrough 40/40, drill 9/9.
+- **aa2, why Owner's Capital: 1, 1, 1** (c7: 1, 1, 0). The reason was
+  now on screen, once, in a long paragraph; the traditional learner had
+  it at turn 10 ("nothing went out ... goods out would be Revenue") and
+  could not give it back at the post-test; the hasty one skimmed it
+  ("Ok, skimming... next"). Told once is not enough, even when said well.
+- **The traditional learner scored 0 on the cash sale with COGS (de4)
+  and on cost flow (aa6)**, saying she had never seen a cash sale. She
+  had, in episode 7 -- once, passively. The drill never served one:
+  `:cash-sale` was **level 3**, so no level-0 round ever had a sale, and
+  at level 1 a five-streak covers five of nine patterns, so two of three
+  learners never met the credit sale either.
+- Copy: "the same day's decision" in the ink episode was wrong (a learner
+  caught it); the `allows` remove step still had two learners re-adding
+  it reflexively; a reseller was paying PrinterWorld to service a printer
+  it does not own; "journal entry" was never said on screen; the batch
+  rule when no batch is named was never stated.
 
-Not yet run: the c8 cohort (an hour and ~$15 of subscription; runs
-against choochoo, which now has the code):
+**Round two, built from that:**
 
-    cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting s83:hasty-sophomore" --max-turns 260
+1. **A `:choose` step** -- a one-question check, three buttons, wrong
+   answer nudges, right answer completes -- right after Owner's Capital
+   appears: "What would have made that credit Revenue?" The who-step's
+   paragraph is split: equity on the who step, the check, then a short
+   balance step that also names the journal entry. Mirrored in the text
+   client (`{"type":"choose","index":n}`) and the browser pass.
+2. **`:cash-sale` is level 0** and the drill draws the **current level's
+   own unserved patterns first**, then inherited ones. Verified by API:
+   60 level-0 draws included 13 cash sales; a reseller's sale grades
+   correct and derives Revenue + COGS at the record's cost.
+3. **Resellers get shop services** (electrician, door, stockroom), not
+   printer servicing.
+4. Copy: ink episode says "the same two-day-old decision"; the remove
+   step's todo reads "switch allows off -- and leave it off"; the sale
+   episode says the no-batch rule (average cost of what is on hand).
 
-What to watch in c8: aa2 (why Owner's Capital) and de5 (why it balances)
-for the novice, which were 1 and 0->1; aa4 (inherited classification),
-which was 0 for the novice and is what the active step is for; and
-whether anyone hits the owed-pattern button.
+Verified: compile clean; conformance 24/11/12/0; `smoke_walk.py` end to
+end locally; browser pass 44/44 and 9/9.
 
-Left alone from the c7 report, on purpose: the post-test's novel item
-(an accountant's bill on credit) is not drilled -- it is meant to be a
-transfer item, and s72 scoring 1 on it is the item working.
+**What to watch in c9:** aa2 (does the check make the reason stick --
+target 2 for at least the novice and traditional), de4/aa6 for the
+traditional learner now that sales are drilled, and whether the level-1
+round serves the credit sale to everyone. If aa2 still sits at 1, the
+next move is a second check at the sale episode ("why is this Revenue
+and not Owner's Capital?") -- the same reason from the other side.
+
+Left alone on purpose: the post-test's novel item is not drilled (it is
+a transfer item); counterparty names are free text and not validated
+(c8 flagged it; the classification does not depend on the name);
+the "expects" direction complaint traces to a `requires` built the
+wrong way round on a prepaid, which the tutorial's Case 3 covers.
 
 Matt has a TODO (org, Research, scheduled 2026-09-07) to walk the whole
 tutorial in the browser himself and make final changes.

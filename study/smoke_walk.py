@@ -13,6 +13,8 @@ script = {
      {"type":"add_assertion","code":"has-date","params":{"date":"2026-01-01"}},{"type":"next"},
      {"type":"add_assertion","code":"receives","params":{"unit":"monetary-unit","quantity":20000}},{"type":"next"},
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"SP"}},{"type":"next"},
+     {"type":"choose","index":0},{"type":"choose","index":1},{"type":"next"},
+     {"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"unit":"ownership-units","quantity":200}},{"type":"next"},
      {"type":"next"}],
  "printer": [{"type":"add_assertion","code":"has-date","params":{"date":"2026-01-02"}},{"type":"next"},
@@ -51,7 +53,7 @@ script = {
      {"type":"add_assertion","code":"has-counterparty","params":{"name":"Customer"}},{"type":"next"},
      {"type":"add_assertion","code":"provides","params":{"from-event":"production"}},{"type":"open_line","index":2},{"type":"next"},{"type":"next"}],
 }
-show = {("funding",4),("design",3),("design",7),("materials",3),("production",3),("sale",4)}
+show = {("funding",4),("funding",5),("design",3),("design",7),("materials",3),("production",3),("sale",4)}
 while p.phase == "walkthrough":
     ep = p.episodes[p.wt["episode"]]["id"]
     for a in script[ep]:

@@ -1256,19 +1256,34 @@
 
        [:p.wt-say (:say st)]
 
+       ;; A one-question check: the options are buttons, the pick lives on
+       ;; the walkthrough like an event pick does.
+       (when (= :choose (get-in st [:do :kind]))
+         [:div.wt-choices
+          (doall
+            (for [[i o] (map-indexed vector (get-in st [:do :options]))]
+              ^{:key (str "wtc-" i)}
+              [:button.wt-choice
+               {:class (cond (and (= i (:picked wt)) done?) "right"
+                             (= i (:picked wt)) "wrong")
+                :disabled done?
+                :on-click #(state/pick-walkthrough-event! i)}
+               o]))])
+
        (when (and (:do st) (not done?))
          [:p.wt-todo
           (case (:kind (:do st))
             :set-date "Add the date to continue."
-            :remove   (str "Switch " (some-> (:code (:do st)) name) " off to continue.")
+            :remove   (str "Switch " (some-> (:code (:do st)) name) " off -- and leave it off -- to continue.")
             :read     "Have a look, then carry on."
             :assert   (str "Add " (some-> (:code (:do st)) name) " to continue.")
             :pick-event "Click the event in the chain to continue."
+            :choose   "Pick an answer to continue."
             nil)])
 
        ;; A wrong pick gets a nudge, not a reveal: the point of the step
        ;; is that the student finds it.
-       (when (and (= :pick-event (get-in st [:do :kind])) (:picked wt) (not done?))
+       (when (and (contains? #{:pick-event :choose} (get-in st [:do :kind])) (some? (:picked wt)) (not done?))
          [:p.wt-miss (:miss st)])
 
        (when (and done? (:then st))

@@ -211,6 +211,8 @@ class Platform:
             # episodes.cljs: the student points at the event in the chain that
             # decided today's account; the pick lives on the walkthrough.
             return self.wt.get("picked") in (do.get("event-ids") or [])
+        if kind == "choose":
+            return self.wt.get("picked") == do.get("answer")
         return True
 
     # ------------------------------------------------------------ drill logic
@@ -459,6 +461,24 @@ class Platform:
         ok = eid in (st["do"].get("event-ids") or [])
         self.log("pick_event", id=eid, correct=ok)
         return "Picked." if ok else st.get("miss", "Not that one.")
+
+    def act_choose(self, a):
+        """Answer a one-question check in the walkthrough."""
+        if self.phase != "walkthrough":
+            raise ActionError("No such control here.")
+        ep, st = self._wt_step()
+        do = st.get("do") or {}
+        if do.get("kind") != "choose":
+            raise ActionError("There is no question to answer on this step.")
+        try:
+            i = int(a.get("index"))
+            do["options"][i]
+        except (TypeError, ValueError, IndexError):
+            raise ActionError(f"Options are numbered 0 to {len(do.get('options') or []) - 1}.")
+        self.wt["picked"] = i
+        ok = i == do.get("answer")
+        self.log("choose", index=i, correct=ok)
+        return "Right." if ok else st.get("miss", "Not that.")
 
     def act_open_line(self, a):
         if not self.derived or not self.derived.get("lines"):
@@ -976,14 +996,21 @@ class Platform:
             out.append("(previous step's note, still here) " + ep["steps"][self.wt["step"] - 1]["then"])
         out.append(st["say"])
         do = st.get("do")
+        if do and do.get("kind") == "choose":
+            for i, o in enumerate(do.get("options") or []):
+                mark = ""
+                if self.wt.get("picked") == i:
+                    mark = "  ✓" if done else "  ✗"
+                out.append(f"  [{i}] {o}{mark}")
         if do and not done:
             kind = do.get("kind")
             todo = {"set-date": "Add the date to continue.", "read": "Have a look, then carry on.",
-                    "remove": f"Switch {do.get('code')} off to continue.",
+                    "remove": f"Switch {do.get('code')} off -- and leave it off -- to continue.",
                     "assert": f"Add {do.get('code')} to continue.",
-                    "pick-event": "Click the event in the chain to continue."}.get(kind, "")
+                    "pick-event": "Click the event in the chain to continue.",
+                    "choose": "Pick an answer to continue."}.get(kind, "")
             out.append(f"  → {todo}")
-            if kind == "pick-event" and self.wt.get("picked"):
+            if kind in ("pick-event", "choose") and self.wt.get("picked") is not None:
                 out.append("  " + st.get("miss", "Not that one."))
         if done and st.get("then"):
             out.append(st["then"])
@@ -1000,6 +1027,7 @@ class Platform:
         acts = self._builder_actions() + ['{"type":"next"}' + ("" if done else " (disabled until the step is done)"),
                                           '{"type":"leave_walkthrough"}',
                                           *(['{"type":"pick_event","id":"<event id in [brackets] in the chain>"}  (the chain is clickable on this step)'] if (do or {}).get("kind") == "pick-event" else []),
+                                          *(['{"type":"choose","index":<n>}  (answer the question)'] if (do or {}).get("kind") == "choose" else []),
                                           '{"type":"explore"} toggles Explore; while exploring: {"type":"toggle_assertion","code":"<code>"}']
         out.append("Actions available: " + " | ".join(acts))
         return "\n".join(out)

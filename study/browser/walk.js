@@ -35,7 +35,16 @@ const nextEnabled = async p => p.getByRole('button', { name: /^(next|finish)$/i 
   await next(p);
   await add(p, 'has counterparty'); await party(p, 'SP');
   d = await derived(p); check('ep1 Owner\'s Capital 20,000 once the who is said', /Owner's Capital\s+\$20,000/.test(d) && /Balanced/.test(d), d);
-  check('ep1 balance reason in the then-text', /why an entry balances/i.test(await T(p, '.walkthrough')));
+  await next(p);
+  // the quick check: a wrong answer nudges, the right one completes
+  check('ep1 quick check offers three answers', (await p.locator('button.wt-choice').count()) === 3);
+  check('ep1 next disabled before answering', !(await nextEnabled(p)));
+  await p.locator('button.wt-choice').nth(0).click(); await p.waitForTimeout(400);
+  check('ep1 wrong answer nudges', /Not that/.test(await T(p, '.walkthrough')) && !(await nextEnabled(p)));
+  await p.locator('button.wt-choice').nth(1).click(); await p.waitForTimeout(400);
+  check('ep1 right answer completes the check', await nextEnabled(p) && /Shirts going out/.test(await T(p, '.walkthrough')));
+  await next(p);
+  check('ep1 balance reason in the then-text', /why an entry balances/i.test(await T(p, '.walkthrough')) && /journal entry/.test(await T(p, '.walkthrough')));
   await next(p);
   await add(p, 'provides', 'ownership units'); await qty(p, 'provides', 200);
   d = await derived(p); check('ep1 ownership units in the strip', /IN THE CHAIN, NOT ON THE ENTRY/i.test(d) && /count|monetary unit/i.test(d), d.slice(-300));

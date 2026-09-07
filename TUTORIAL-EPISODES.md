@@ -75,9 +75,18 @@ bank lent it, a promise to repay would sit beside it: a loan. Neither did.
 What is left is a claim by the one who put the money in — equity, the part
 left over. The who didn't pick the account; nothing going out did. The
 who says whose claim it is, and never gets a line of its own.*
-*Both lines say $20,000 and always will: an entry is one event measured
-once, in money, from two sides — what the business now has, and where it
-came from. That is why an entry balances.*
+**6b.** *Quick check. What would have made that credit Revenue instead of
+Owner's Capital?* — three answers, buttons; a wrong one nudges ("Look at
+what the record says went out — nothing did"), the right one (shirts going
+out to them) completes the step. Cohort c8 (2026-09-07): the reason had
+been said once in a paragraph and none of the three could give it back at
+the post-test; one skimmed it, one called it roundabout. A reason the
+learner has to answer for is one they have to read.
+
+**6c.** *Now the balance. Both lines say $20,000, and they always will.*
+*An entry is one event measured once, in money, from two sides — what the
+business now has, and where it came from. That is why an entry balances.
+This two-line record is what accountants call a journal entry.*
 
 This is the cohort-c7 change (2026-09-05). The residual rule now needs a
 counterparty before it fires — a claim is a claim BY somebody — so a lone

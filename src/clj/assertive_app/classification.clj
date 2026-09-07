@@ -2642,7 +2642,11 @@
                           :receives {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :customer}}
     :correct-classification :cash-sale
-    :level 3
+    ;; Level 0, not 3: the walkthrough ends on a cash sale, and cohort c8's
+    ;; traditional learner could not reproduce one at the post-test having
+    ;; never been drilled on it. The practice company's record supplies
+    ;; the goods and their cost, so nothing here needs a later level.
+    :level 0
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["LocalSportsTeam" "CampusBoutique" "EventPlannersCo"]
                 :quantity [10 25 50]
@@ -3440,7 +3444,14 @@ The printed t-shirts are now finished goods ready for sale."
         missed (set (map keyword (or missed [])))
         owed (filter #(and (contains? missed (key %)) (not= last-served (key %))) available-templates)
         unserved (remove #(contains? served (key %)) available-templates)
-        [template-key template] (rand-nth (seq (cond (seq owed) owed (seq unserved) unserved :else available-templates)))
+        ;; The level's own patterns before the ones inherited from below: a
+        ;; five-streak covers five patterns, and at level 1 two of three c8
+        ;; learners never met the credit sale.
+        unserved-here (filter #(= level (:level (val %))) unserved)
+        [template-key template] (rand-nth (seq (cond (seq owed) owed
+                                                     (seq unserved-here) unserved-here
+                                                     (seq unserved) unserved
+                                                     :else available-templates)))
         ;; Use indexed selection for same-length variable arrays to keep values paired
         ;; A reseller can only be handed problems that make sense for a
         ;; shop with no press: buying or selling its shirts, paying for a
@@ -3453,6 +3464,14 @@ The printed t-shirts are now finished goods ready for sale."
                  (practice-variables backstory)
                  (as-> v (if (= kind :reseller)
                            (assoc v :inventory-type "blank t-shirts" :physical-item "blank-tshirts")
+                           v))
+                 ;; A shop with no press does not pay for printer servicing
+                 ;; (c8: a learner noticed, twice). Services fit the shop.
+                 (as-> v (if (and (= kind :reseller) (= template-key :cash-service-purchase))
+                           (let [[vendor service] (rand-nth [["the landlord's electrician" "rewire the shop's lighting"]
+                                                             ["QuickFix Repairs" "fix the stockroom door"]
+                                                             ["CleanSweep" "deep-clean the stockroom"]])]
+                             (assoc v :vendor vendor :service service))
                            v)))
         ;; For a reseller the goods bought are merchandise, and what is
         ;; sold is blank shirts; the classification follows the chain.

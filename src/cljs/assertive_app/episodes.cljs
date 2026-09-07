@@ -33,7 +33,7 @@
    the chain -- is completed there, not in the sentence."
   ([step selected] (step-complete? step selected nil))
   ([step selected wt]
-   (let [{:keys [kind code params event-ids]} (:do step)]
+   (let [{:keys [kind code params event-ids answer]} (:do step)]
      (case kind
        nil        true
        :read      true
@@ -47,6 +47,11 @@
        ;; ones they had to DO something with (find the batch); the ones
        ;; only told ("decided earlier") did not land for the novice.
        :pick-event (contains? (set (map name event-ids)) (:picked wt))
+       ;; A one-question check on a reason just given. Cohort c8: the
+       ;; equity-vs-revenue reason, said once in a paragraph, was skimmed
+       ;; or forgotten by all three learners; a reason the learner has to
+       ;; answer for is one they have to read.
+       :choose     (= answer (:picked wt))
        true))))
 
 (defn event-id-for
@@ -81,7 +86,19 @@
 
      {:say "So say who. The money came from SP."
       :do {:kind :assert :code :has-counterparty}
-      :then "Owner's Capital, on the right, and the entry balances. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. Had a customer paid this for shirts, shirts would have gone out: Revenue. Had a bank lent it, a promise to repay would sit beside it: a loan. Neither did. What is left is a claim by the one who put the money in, and that is what equity is — not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and it never gets a line of its own. Now the balance. Both lines say $20,000, and they always will: an entry is one event measured once, in money, from two sides — what the business now has, and where it came from. That is why an entry balances, and the ✓ is checking that you described one event. Left and right are a convention the rest of the course covers: assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."}
+      :then "Owner's Capital, on the right. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. What is left is a claim by the one who put the money in. That is what equity is: not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and never gets a line of its own."}
+
+     {:say "Quick check. What would have made that credit Revenue instead of Owner's Capital?"
+      :do {:kind :choose
+           :options ["Saying who the money came from"
+                     "Shirts going out to them in exchange for it"
+                     "A bigger amount"]
+           :answer 1}
+      :miss "Not that. Look at what the record says went out — nothing did."
+      :then "Shirts going out. Revenue is goods or services out to somebody for money; you will see it appear in the last episode, and you won't have to ask for it. A loan would be money in with a promise to pay it back beside it. Neither is here, so what's left is the owner's claim."}
+
+     {:say "Now the balance. Both lines say $20,000, and they always will."
+      :then "An entry is one event measured once, in money, from two sides — what the business now has, and where it came from. That is why an entry balances, and the ✓ is checking that you described one event. This two-line record is what accountants call a journal entry. Left and right are a convention the rest of the course covers: assets and expenses live on the left, claims and revenue on the right, and a thing grows on its own side. The platform applies it for you, and every line will say how it did."}
 
      {:say "The business didn't get that money for nothing. SP received 200 ownership units in return — the certificate, the stake, the thing that says how much of the business is theirs. Say that too."
       :do {:kind :assert :code :provides :params {:unit "ownership-units"}}
@@ -119,7 +136,7 @@
 
      {:say "Try something. Take `allows` off — the × beside it — and leave it off for a moment. Watch the entry."
       :do {:kind :remove :code :allows}
-      :then "Equipment disappears. The record stopped saying what the machine is for, so it stopped knowing what to call it."}
+      :then "Equipment disappears. The record stopped saying what the machine is for, so it stopped knowing what to call it. Leave it off; the next step puts it back."}
 
      {:say "Now put it back: + Add Assertion, Allows, the same two inputs and output."
       :do {:kind :assert :code :allows}
@@ -214,7 +231,7 @@
 
      {:say "And received two ink cartridges."
       :do {:kind :assert :code :receives :params {:unit "physical-unit"}}
-      :then "Raw Materials Inventory again. Not because ink is like a shirt — because when you bought the printer you said it takes ink as well as shirts. Open the line: the reason is the same day's decision."}
+      :then "Raw Materials Inventory again. Not because ink is like a shirt — because when you bought the printer you said it takes ink as well as shirts. Open the line: the same two-day-old decision that classified the shirts."}
 
      {:say "And who sold it — InkMasters."
       :do {:kind :assert :code :has-counterparty}
@@ -258,7 +275,7 @@
 
      {:say "Look at the other two lines: Cost of Goods Sold, and Finished Goods going back down, $24. You never typed that number. Where did it come from? Which four shirts were these? Look in the chain for shirts the business can sell, and on the provides line pick the batch they came from."
       :do {:kind :assert :code :provides :params {:from-event "production"}}
-      :then "Four of the ten printed on January 5th, at $6 each: $24. And the $6 was $5 of blank shirt bought on the 4th and $1 of ink. Open the Cost of Goods Sold line and the batch is named there. Nothing was typed; the cost was carried forward, event by event, from what the business paid. No new assertions again — same vocabulary, new arrangement, two accounts you hadn't met."}
+      :then "Four of the ten printed on January 5th, at $6 each: $24. And the $6 was $5 of blank shirt bought on the 4th and $1 of ink. Open the Cost of Goods Sold line and the batch is named there. Nothing was typed; the cost was carried forward, event by event, from what the business paid. (If you don't name a batch, the record prices the shirts at the average cost of what is on hand.) No new assertions again — same vocabulary, new arrangement, two accounts you hadn't met."}
 
      {:say "That was SP's first week, as a lesson. What comes next is practice, on other people's businesses — each problem is a different company with its own chain, and nothing carries over. SP's own books start after that."
       :then "Same vocabulary throughout. Go and use it."}]}])

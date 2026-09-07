@@ -261,6 +261,12 @@ Near-term (small, pre-pilot candidates):
    the round runs past its size to collect it. Before this a learner
    missed the credit sale once and passed on a streak of other
    patterns, and the miss was never retested (c7, s73).
+2c. **The level's own patterns first** -- shipped 2026-09-07 after c8. A
+   five-streak covers five patterns; at level 1 nine are available, and
+   two of three c8 learners never met the credit sale. Unserved patterns
+   of the current level are drawn before unserved inherited ones. The
+   cash sale moved from level 3 to level 0 at the same time: the
+   walkthrough ends on one and nobody had been drilled on it.
 2. **Streak early-pass** (§4) — shipped 2026-08-07. `:streak-pass 5`
    in drill-config; a dead-by-ratio round stays alive while a streak
    remains reachable.

@@ -5,12 +5,12 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
-**2026-09-05, late.** The changes cohort c7 pointed at are built, verified
-locally, and **not yet committed, pushed or deployed** -- the session
-stopped there so Matt could look first. `git status` shows the 14 files;
-`git diff` is the review. Once committed and pulled on choochoo, the
-backend needs `./restart-backend.sh` (two `.clj` files changed), and the
-browser needs a hard refresh for the CSS.
+**2026-09-07.** The changes cohort c7 pointed at are built, committed
+(`2ac5479`), and **deployed on choochoo**: pulled, backend restarted,
+shadow watch recompiled, and `smoke_walk.py` run against choochoo end to
+end (pick step, `[printer]` in Decided earlier, the who-placeholder all
+seen). A browser that had the page open needs a hard refresh for the CSS.
+Next: the c8 cohort below.
 
 What changed, and why (each traces to `study/runs/report-c7.md`):
 
@@ -61,8 +61,8 @@ pass run **locally** for the first time -- Playwright is now installed
 under `study/browser/` (gitignored) and `lib.js` takes `AALP_BASE` --
 walkthrough 40/40, drill 9/9.
 
-Not done, deliberately: a c8 cohort (an hour and ~$15 of subscription;
-it runs against choochoo, so it needs the deploy first):
+Not yet run: the c8 cohort (an hour and ~$15 of subscription; runs
+against choochoo, which now has the code):
 
     cd study && ./run_cohort.sh c8 "s81:novice-business-undergrad s82:traditional-intro-accounting s83:hasty-sophomore" --max-turns 260
 

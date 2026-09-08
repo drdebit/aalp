@@ -77,6 +77,16 @@ end to end:
 
     cd study && ./run_cohort.sh c11 "s111:novice-business-undergrad s112:traditional-intro-accounting s113:hasty-sophomore" --max-turns 260
 
+**Where Matt left it (2026-09-08).** He is walking the whole tutorial
+himself in choochoo's checkout over Tramp, editing `episodes.cljs` with
+choochoo's shadow watch hot-reloading the page (a fresh test user at the
+gate shows "Walk me through it"; a compile error shows as a red overlay;
+`.clj` text needs `./restart-backend.sh` there). When done: commit and
+push **from choochoo**, `git pull --ff-only` here, then
+`bb study/dump_content.clj` here so the headless learners see the same
+words, and update `TUTORIAL-EPISODES.md` by hand. Then c11 (command
+above) if a change needs measuring. Nothing is running anywhere.
+
 ### c9 (on round two), what was real
 
 - Every learner met the cash sale in level 0 and the credit sale in

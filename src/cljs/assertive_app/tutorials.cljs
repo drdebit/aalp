@@ -24,7 +24,7 @@
   "Tutorial content and quiz questions keyed by level (0-7)."
   {0
    {:title "Level 0: Cash Transactions"
-    :subtitle "Learn the basics of recording business exchanges"
+    :subtitle "Learn the basics of recording business exchanges."
     :sections
     [{:heading "Your Story: You Run a T-Shirt Company"
       :content "Welcome! In this course, **you** run SP's T-Shirt Company. You'll buy a printer, stock up on blank shirts and ink, print designs, and sell them.
@@ -33,22 +33,22 @@ Every business keeps a record of what happens — every purchase, every sale. Th
 
 Your job in Year 1 is to be the company's bookkeeper: things will happen in the business, and you will record them.
 
-Don't worry if you've never done anything like this. We'll go one small step at a time, and you'll get plenty of practice — with full feedback — before anything counts."}
+Don't worry if you've never done anything like this. We'll go one small step at a time, and you'll get plenty of practice."} 
 
      {:heading "Recording = Describing What Happened"
-      :content "Here's the whole idea of this course in one sentence:
+      :content "Here's the whole idea in one sentence:
 
-**To record a transaction, you describe what happened — in a structured way.**
+**To record a transaction, you describe what happened in a structured way.**
 
 Think about how you'd tell a friend about buying a coffee this morning:
 
 *\"This morning I paid $5 at Campus Coffee and got a latte.\"*
 
 That one sentence contains four facts:
-- **When** it happened (this morning)
-- **Who** the other party was (Campus Coffee)
-- **What you gave** ($5)
-- **What you got** (a latte)
+**When** it happened (this morning);
+**Who** the other party was (Campus Coffee);
+**What you gave** ($5);
+**What you got** (a latte)
 
 That's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."}
 
@@ -61,10 +61,10 @@ That's it. That's a complete record of a transaction. In this platform, each of 
 **has-counterparty** — *who* was the other party?
 (Campus Coffee. In business: the vendor you buy from, or the customer you sell to.)
 
-**provides** — *what did your company give up?*
+**provides** — *what did you give up?*
 (The $5. \"Provides\" always describes what goes OUT of your company.)
 
-**receives** — *what did your company get?*
+**receives** — *what did you get?*
 (The latte. \"Receives\" always describes what comes IN to your company.)
 
 ::assertions
@@ -76,20 +76,20 @@ receives: 1 latte (a thing coming in)
 
 Every cash purchase you record at this level uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?
 
-One exception, and it matters: a machine bought to *make* things needs a fifth fact — what it is for. That is **allows** (\"this printer turns blank t-shirts into printed ones\"). Without it the record has a printer and no idea whether it is equipment or stock to resell, and it will say so. Shirts and ink don't need it; the printer does."}
+One exception, and it matters: something bought to *serve a purpose* needs a fifth assertion to indicate what it is for. That assertion is **allows**. For example, a t-shirt printer turns blank t-shirts into printed ones. Without the **allows** assertion, the record cannot tell if the printer is equipment or stock to resell. Shirts and ink are used. The printer produces. The **allows** assertion indicates that capacity."}
 
      {:heading "Two Kinds of Stuff: Money and Things"
       :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:
 
-**monetary-unit** — money. Dollars. Cash.
+A **monetary-unit**. That is, money. Dollars. Cash.
 
-**physical-unit** — things. Blank t-shirts, ink cartridges, a t-shirt printer.
+A **physical-unit** That is, things. Blank t-shirts, ink cartridges, a t-shirt printer.
 
 In a cash purchase, the pattern is always the same:
-- Your company **provides** money (monetary-unit)
-- Your company **receives** things (physical-unit)
+Your company **provides** money (monetary-unit), and
+**receives** things (physical-unit)
 
-You'll also enter *how much*: the dollar amount for the money, and the quantity (how many) for the things. Both numbers are right there in the transaction description — you never have to guess."}
+You'll also enter *quantities*: the dollar amount for the money, and the quantity of the things."}
 
      {:heading "Worked Example, Step by Step"
       :content "Let's record one together. Suppose you see this transaction:
@@ -100,7 +100,7 @@ Here is exactly what you'd do, click by click:
 
 **Step 1.** Read the sentence slowly. Find the four facts: the date (January 8), the other party (TextileDirect), what went out ($150), what came in (50 blank t-shirts).
 
-**Step 2.** **Has Date** is usually already selected with the date filled in — just check that it matches.
+**Step 2.** **Has Date** is usually already filled in by the system with the current date. Just check that it matches.
 
 **Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.
 
@@ -120,20 +120,20 @@ receives: 50 blank t-shirts (physical-unit)
 That's the entire skill at this level. Every problem is this same pattern with different details."}
 
      {:heading "Where the Journal Entry Comes From"
-      :content "Accountants summarize every transaction in a two-line format called a **journal entry**, using the words **debit** (DR) and **credit** (CR). You do NOT need to build these yourself — the platform builds them *from your assertions* and shows you the result.
+      :content "Double-entry accountants record a transaction in a **journal entry** consisting of **debits** (DR) and **credits** (CR). For the purposes of this platform, you do NOT need to build these journal entries yourself: the platform builds them *from your assertions* and shows you the result. 
 
-What the entry adds to your sentence is a **name for each thing** — an account — and the name says what that thing *is* to the business:
+A journal entry places the monetary value of the transaction into two or more accounts that indicate what the transaction means to the business. 
 
 ::journal
 DR Raw Materials Inventory $150
 CR Cash $150
 ::
 
-Cash is money the business holds; it is an **asset** because it can be put to any future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts, and that future use is what \"Raw Materials Inventory\" means. A printer is held to *make* things and is still there afterwards, so it is \"Equipment\". Money spent on a repair buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterwards?*
+In this example, cash is money the business holds. It is an **asset** because it can be put to future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts. That future use is what \"Raw Materials Inventory\" indicates. A printer is held to *make* things and is still there afterwards, so it is \"Equipment.\" Money spent on maintenance buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterwards?* 
 
-That is where your assertions come in. The record can only name a thing once it knows what it is for — and you are the one who says so. Which side each name goes on (debit or credit) is the accounting equation's job, and the rest of the course covers it; here, the platform fills that in for you.
+That is where your assertions come in. The system can only choose the accounts for your journal entry by knowing the effect of the transaction on the business, and you are the one who specifies that effect. Whether the amounts are recorded as debits or credits is based on the accounting equation. The platform fills in that part for you.
 
-Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says \"(not yet classified)\", the record is telling you it doesn't know yet what the thing is for."}
+Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says '(not yet classified)', the record is telling you it doesn't yet know the meaning of the transaction."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
@@ -142,9 +142,9 @@ Practice problems are a sandbox: they do **not** go into your company's books, a
 
 Two things to remember once you ARE keeping the books:
 
-1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong — errors sit in the records until someone finds them. (You'll do that finding yourself, later, at year-end.)
+1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong: errors sit in the records until someone finds them. (You'll look for errors yourself, later, at year-end.)
 
-2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this — including during practice. Using it is smart, not cheating."}]
+2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this, including during practice. Using the tutorial is smart, not cheating."}]
 
     :quiz
     [{:id :l0-q0a

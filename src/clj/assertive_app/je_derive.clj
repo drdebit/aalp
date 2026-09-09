@@ -1,11 +1,11 @@
 (ns assertive-app.je-derive
-  "Live journal-entry derivation from selected assertions -- the firm
+  "Live journal-entry derivation from selected assertions — the firm
    rulebook made executable.
 
    Dual-fluency principle (platform design notes): students see which
    assertions are load-bearing for which line of the journal entry.
    Each rule maps an assertion pattern (possibly context-dependent) to
-   one JE line, with plain-language rule text -- so every derived line
+   one JE line, with plain-language rule text — so every derived line
    can answer 'which rule produced you?', and every selected assertion
    that produces no line is surfaced as RECORDED BUT NOT REFLECTED:
    the recording-vs-reporting distinction as a UI element.
@@ -30,6 +30,21 @@
     (number? v) v
     (string? v) (parse-num v)
     :else nil))
+
+(defn- item-phrase
+  "An item id as it reads inside a sentence: printed-tshirts becomes
+   \"printed t-shirts\". Labels are a translation, never data, so this
+   falls back to the id with its hyphens opened out rather than failing
+   on an item it has not been told about."
+  [item]
+  (let [id (some-> item name)]
+    (case id
+      "blank-tshirts"   "blank t-shirts"
+      "printed-tshirts" "printed t-shirts"
+      "ink-cartridges"  "ink cartridges"
+      "t-shirt-printer" "t-shirt printers"
+      "logo-design"     "logo designs"
+      (some-> id (str/replace "-" " ")))))
 
 (defn as-flows
   "A flow assertion's value as a sequence.
@@ -89,13 +104,13 @@
     :when {:assertion :receives :params {:unit "monetary-unit"}}
     :line {:side :debit :account "Cash"}
     :amount :flow
-    :text "Money the business holds is Cash -- an asset, because it can be turned to any future use the business has. More came in."}
+    :text "Money the business holds is Cash — an asset, because it can be turned to any future use the business has. More came in."}
 
    {:id :cash-out
     :when {:assertion :provides :params {:unit "monetary-unit"}}
     :line {:side :credit :account "Cash"}
     :amount :flow
-    :text "Money the business holds is Cash -- an asset. Some went out."}
+    :text "Money the business holds is Cash — an asset. Some went out."}
 
    ;; -------- Money in with nothing going out: the residual ----------
    ;; The residual is a claim BY somebody, so the record has to know who
@@ -112,7 +127,7 @@
                         {:assertion :consumes}]}
     :line {:side :credit :account "Owner's Capital"}
     :amount :monetary
-    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in -- the counterparty says who -- against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so -- provides -- and this line becomes Revenue.)"}
+    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue.)"}
 
    ;; -------- Goods received: the account is the item's POSITION -------
    ;; Not three rules keyed on which item it is. One rule that asks where
@@ -151,13 +166,13 @@
     :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
     :line {:side :credit :account "Allowance for Doubtful Accounts"}
     :amount :reported
-    :text "The receivable is not reduced directly -- no particular customer has failed yet. The doubt sits beside it as an allowance."}
+    :text "The receivable is not reduced directly — no particular customer has failed yet. The doubt sits beside it as an allowance."}
    {:id :accrued-expense
     :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
     :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
     :line {:side :debit :account "Accrued Expense"}
     :amount :reported
-    :text "A cost has been incurred -- work done for the business, or interest run up -- before any money moved. The expense belongs to the period it was incurred."}
+    :text "A cost has been incurred — work done for the business, or interest run up — before any money moved. The expense belongs to the period it was incurred."}
    {:id :accrued-liability
     :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
     :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
@@ -168,7 +183,7 @@
     :when {:assertion :reports :params {:category "expense" :basis "time-based"}}
     :line {:side :debit :account "Insurance Expense"}
     :amount :reported
-    :text "Part of what was paid for in advance has now been used -- time has passed. That part is an expense of this period."}
+    :text "Part of what was paid for in advance has now been used — time has passed. That part is an expense of this period."}
    {:id :prepaid-down
     :when {:assertion :reports :params {:category "expense" :basis "time-based"}}
     :line {:side :credit :account "Prepaid Expense"}
@@ -183,7 +198,7 @@
     :when {:assertion :reports :params {:category "revenue" :basis "earned"}}
     :line {:side :credit :account "Revenue"}
     :amount :reported
-    :text "And that part is revenue now -- earned by providing, not by being paid."}
+    :text "And that part is revenue now — earned by providing, not by being paid."}
 
    ;; -------- Paid ahead: a right to something still to come -----------
    {:id :prepaid
@@ -193,7 +208,7 @@
               :none-of [{:assertion :receives}]}
     :line {:side :debit :account "Prepaid Expense"}
     :amount :monetary
-    :text "SP paid, and expects to receive what it paid for later. Nothing has been used up yet; what SP holds is a right to something still to come, kept for a future use -- an asset, Prepaid Expense, until the service is received and used."}
+    :text "SP paid, and expects to receive what it paid for later. Nothing has been used up yet; what SP holds is a right to something still to come, kept for a future use — an asset, Prepaid Expense, until the service is received and used."}
 
    ;; -------- A service received --------------------------------------
    {:id :service-expense
@@ -201,7 +216,7 @@
            :params {:unit "service-unit"}}
     :line {:side :debit :account "Services Expense"}
     :amount :monetary
-    :text "SP received a service -- work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What SP paid or owes for it is the money side of the same exchange."}
+    :text "SP received a service — work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What SP paid or owes for it is the money side of the same exchange."}
 
    ;; -------- Labour received ------------------------------------------
    {:id :wage-expense
@@ -209,7 +224,7 @@
            :params {:unit #{"effort" "effort-unit"}}}
     :line {:side :debit :account "Wage Expense"}
     :amount :monetary
-    :text "SP received effort -- someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What SP owes or paid for it is the money side of the same exchange."}
+    :text "SP received effort — someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What SP owes or paid for it is the money side of the same exchange."}
 
    ;; -------- Goods provided: revenue needs a counterparty ------------
    ;; Revenue is providing FINISHED GOODS to a counterparty -- goods the
@@ -235,7 +250,7 @@
     :line {:side :debit :account "Cost of Goods Sold"}
     :amount :cost-basis
     :entry-label "Cost Recognition"
-    :text "The shirts SP gave up had a cost. That cost leaves inventory and becomes an expense -- at cost, which the assertions about THIS exchange do not carry. (It lives in the production events.)"}
+    :text "The shirts SP gave up had a cost. That cost leaves inventory and becomes an expense — at cost, which the assertions about THIS exchange do not carry. (It lives in the production events.)"}
 
    {:id :cogs-inventory
     :when {:assertion :provides
@@ -258,7 +273,7 @@
     :context {:all-of [{:assertion :provides :params {:unit "physical-unit"}}]}
     :line {:side :debit :account "Accounts Receivable"}
     :amount :flow
-    :text "SP provided goods and someone is now required to provide money: a right to collect. SP's rulebook calls that Accounts Receivable -- an asset. The SAME 'requires' assertion becomes a liability when the goods flow the other way."}
+    :text "SP provided goods and someone is now required to provide money: a right to collect. SP's rulebook calls that Accounts Receivable — an asset. The SAME 'requires' assertion becomes a liability when the goods flow the other way."}
 
    {:id :payable
     :when {:assertion :requires
@@ -267,7 +282,7 @@
               :none-of [{:assertion :provides :params {:unit "physical-unit"}}]}
     :line {:side :credit :account "Accounts Payable"}
     :amount :flow
-    :text "SP received goods and is required to provide money later: an obligation. SP's rulebook calls that Accounts Payable -- a liability. The SAME 'requires' assertion becomes an asset when the goods flow the other way."}
+    :text "SP received goods and is required to provide money later: an obligation. SP's rulebook calls that Accounts Payable — a liability. The SAME 'requires' assertion becomes an asset when the goods flow the other way."}
 
    ;; -------- Cash in advance of goods --------------------------------
    {:id :deferred-revenue
@@ -276,7 +291,7 @@
     :context {:all-of [{:assertion :receives :params {:unit "monetary-unit"}}]}
     :line {:side :credit :account "Deferred Revenue (Liability)"}
     :amount :monetary
-    :text "SP took the money first and still owes the goods. Until the goods are provided, the cash is a liability -- Deferred Revenue -- not earned revenue."}
+    :text "SP took the money first and still owes the goods. Until the goods are provided, the cash is a liability — Deferred Revenue — not earned revenue."}
 
    ;; -------- Production -----------------------------------------------
    {:id :production-out
@@ -302,10 +317,10 @@
   ;; Each says what the thing IS to the business and why -- its future
   ;; use -- which is what the account name stands for. Why an asset sits
   ;; on the debit side is the accounting equation's business, not ours.
-  {:raw-materials      "The record says this will be used up making something to sell -- the capability it feeds names it as an input. A thing held for a future use is an asset, and one held to be used up in production is Raw Materials Inventory."
-   :work-in-process    "This item was created by one transformation and consumed by another: it is caught between stages. Nobody asserted that -- it is true because of what the record shows happened next, and it would stop being true if nothing further consumed it."
+  {:raw-materials      "The record says this will be used up making something to sell — the capability it feeds names it as an input. A thing held for a future use is an asset, and one held to be used up in production is Raw Materials Inventory."
+   :work-in-process    "This item was created by one transformation and consumed by another: it is caught between stages. Nobody asserted that — it is true because of what the record shows happened next, and it would stop being true if nothing further consumed it."
    :finished-goods     "The record says this was made (or bought) to be sold as it stands. An asset held for sale is Finished Goods Inventory."
-   :capital            "The record says this is what makes production possible -- it turns inputs into products -- and it is not used up doing so. A thing kept for a future use, and still there after that use, is a long-lived asset: Equipment when it is a machine, an intangible asset when it is a design."
+   :capital            "The record says this is what makes production possible — it turns inputs into products — and it is not used up doing so. A thing kept for a future use, and still there after that use, is a long-lived asset: Equipment when it is a machine, an intangible asset when it is a design."
    :service            "A service consumed rather than a thing held: it is a cost of the period, not an asset."})
 
 (def not-reflected-texts
@@ -322,14 +337,14 @@
    double-entry intends, and the rest of what SP knows stays with it."
   {:expects "In the chain, not on the entry. Double-entry records what has happened, measured in money, and an expectation is neither settled nor a money amount. It stays in your record, and it is what lets you compare later what you expected with what occurred."
    :is-allowed-by "In the chain, not on the entry. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
-   :allows "In the chain, not on the entry. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified -- you have seen it do that."
+   :allows "In the chain, not on the entry. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
    :is-required-by "In the chain, not on the entry. The framework requiring an event is not an exchange, so no account carries it."
-   :requires "In the chain, not on the entry. A promise is recorded here; it reaches the entry as a claim in money -- something owed, or owing -- when the pattern says so. This one does not add a line of its own."
+   :requires "In the chain, not on the entry. A promise is recorded here; it reaches the entry as a claim in money — something owed, or owing — when the pattern says so. This one does not add a line of its own."
    :reports "In the chain, not on the entry here. Reporting assertions drive calculations rather than journal-entry lines."})
 
 (def context-roles
   {:has-date "stamps the entry's date"
-   :has-counterparty "names the other party -- whose claim, whose debt, who was paid -- without appearing on any line. It never decides what a thing IS; the chain does that"})
+   :has-counterparty "names the other party — whose claim, whose debt, who was paid — without appearing on any line. It never decides what a thing IS; the chain does that"})
 
 ;; ---------------------------------------------------------------------------
 ;; Amount resolution
@@ -418,9 +433,70 @@
 
        ;; What the goods COST -- not what they sold for. Recovered from
        ;; the events that acquired or produced them (see cost-basis).
-       :cost-basis (let [p matched-params]
-                     (priced (:physical-item p) (:quantity p)
-                             "These goods have no recorded cost yet -- nothing in the ledger records acquiring or producing them."))
+       ;;
+       ;; The matching is the student's to make. Recognizing revenue is
+       ;; what raises the question of which goods went out to earn it,
+       ;; and only the record can answer it -- so where the chain holds
+       ;; lots to choose between, the cost stays unpriced until one is
+       ;; named. Pricing it silently by weighted average would perform
+       ;; the matching on the student's behalf and teach that it is not
+       ;; a decision. Where the record holds nothing, the honest answer
+       ;; is still that there is no cost to find.
+       :cost-basis (let [p    matched-params
+                         item (:physical-item p)
+                         ;; Every lot the business holds, not only lots of
+                         ;; the item sold: naming the wrong one is a thing a
+                         ;; student can do, and the record has to be able to
+                         ;; say so rather than quietly matching on item first.
+                         lots (seq (for [it (keys (chain/on-hand (:events context)))
+                                         b  (chain/batches (:events context) it)
+                                         :when (pos? (:left b))]
+                                     (assoc b :item it)))]
+                     (cond
+                       (nil? lots)
+                       {:quantity nil :unresolved? true
+                        :unresolved-reason "These goods have no recorded cost yet — nothing in the ledger records acquiring or producing them."}
+
+                       (nil? (:from-event p))
+                       {:quantity nil :unresolved? true
+                        :needs-lot? true
+                        :unresolved-reason (str "Which goods went out? Revenue is recognized, so its cost has to be "
+                                                "matched against it — name the batch these came from and the cost "
+                                                "follows from what the record says they cost.")}
+
+                       :else
+                       ;; The lot named has to be able to bear the sale.
+                       ;; Two ways it cannot, and the record knows both:
+                       ;; it holds something else, or it does not hold
+                       ;; enough. Pricing anyway would let a student
+                       ;; cost 25 shirts out of a batch of 20 and call
+                       ;; the entry finished.
+                       (let [id  (name (:from-event p))
+                             lot (first (filter #(= id (:id %)) lots))
+                             n   (num-or-nil (:quantity p))]
+                         (cond
+                           (nil? lot)
+                           {:quantity nil :unresolved? true
+                            :needs-lot? true
+                            :unresolved-reason (str id " is not a batch this business holds.")}
+
+                           (not= (some-> (:item lot) name) (name item))
+                           {:quantity nil :unresolved? true
+                            :needs-lot? true
+                            :unresolved-reason (str id " holds " (item-phrase (:item lot))
+                                                    ", which is not what was sold. The goods that went out were "
+                                                    (item-phrase item) " — find the batch those came from.")}
+
+                           (and n (< (:left lot) n))
+                           {:quantity nil :unresolved? true
+                            :needs-lot? true
+                            :unresolved-reason (str id " holds only " (:left lot) " of " (item-phrase item)
+                                                    ", and " n " went out. A batch cannot supply more than it has"
+                                                    " — check what each one has left.")}
+
+                           :else
+                           (priced item (:quantity p)
+                                   "These goods have no recorded cost yet — nothing in the ledger records acquiring or producing them.")))))
 
        ;; A transformation is worth what went into it. For a consumed
        ;; line that is this input's own cost; for the created line it is
@@ -428,14 +504,14 @@
        ;; sum of what made it.
        :input-cost (let [p matched-params]
                      (priced (:physical-item p) (:quantity p)
-                             "The consumed materials have no recorded cost yet -- nothing in the ledger records acquiring them."))
+                             "The consumed materials have no recorded cost yet — nothing in the ledger records acquiring them."))
        :total-input-cost
        (let [inputs (as-flows (:consumes selections))
              costs  (map #(cost/cost-of basis (:physical-item %) (:quantity %) (:from-event %)) inputs)]
          (if (and (seq costs) (every? some? costs))
            {:quantity (q/monetary (reduce + costs)) :unresolved? false}
            {:quantity nil :unresolved? true
-            :unresolved-reason "The materials consumed have no recorded cost yet -- nothing in the ledger records acquiring them."}))
+            :unresolved-reason "The materials consumed have no recorded cost yet — nothing in the ledger records acquiring them."}))
 
        :unknown  {:quantity nil :unresolved? true
                   :unresolved-reason "The assertions of this event do not carry this figure."}
@@ -534,7 +610,7 @@
           noun   (case kind :asset "an asset" :expense "an expense" :liability "a claim on the business"
                             :equity "the owners' claim" :revenue "revenue")
           home   (if left? "left" "right")]
-      (str (if more? "More of " "Less of ") noun " -- home side " home ": "
+      (str (if more? "More of " "Less of ") noun " — home side " home ": "
            (if debit? "debit" "credit") "."))))
 
 (defn- chain-physicals
@@ -595,7 +671,7 @@
                                   hits))))
                       rulebook)
         lines (mapv (fn [{:keys [line amount matched matched-params context-used id text entry-label]}]
-                      (let [{:keys [quantity unresolved? unresolved-reason]}
+                      (let [{:keys [quantity unresolved? unresolved-reason needs-lot?]}
                             (resolve-amount amount matched matched-params selections variables context)
                             prov (vec (distinct (cons matched context-used)))]
                         {:side (:side line)
@@ -610,6 +686,9 @@
                          :amount-unit (get-in quantity [:unit :unit-type])
                          :unresolved? unresolved?
                          :unresolved-reason unresolved-reason
+                         ;; This line is not merely unpriced: there is
+                         ;; something the student can go and do about it.
+                         :needs-lot? (boolean needs-lot?)
                          :provenance prov
                          ;; Drill-down payload: the assertions themselves,
                          ;; so a student opening this line finds assertions
@@ -640,6 +719,24 @@
                                                      :assertions (select-keys ev [:receives :consumes :creates :provides :allows])}])))))
                          :entry-label entry-label}))
                     fired)
+        ;; Debits before credits, within each entry.
+        ;;
+        ;; Lines come out in rulebook order, which is an artefact of how
+        ;; the rules happen to be written: a cash purchase fired
+        ;; `:cash-out` before `:goods-in` and so presented the credit
+        ;; first. A sale posts TWO entries -- the revenue recognition and
+        ;; the cost recognition -- and they must not be interleaved, so
+        ;; the grouping is by `:entry-label`, in the order each label
+        ;; first appears, and only the sides are ordered within a group.
+        lines (let [group-order (reduce (fn [m l]
+                                          (let [g (:entry-label l)]
+                                            (if (contains? m g)
+                                              m
+                                              (assoc m g (count m)))))
+                                        {} lines)]
+                (vec (sort-by (juxt #(get group-order (:entry-label %))
+                                    #(if (= :debit (:side %)) 0 1))
+                              lines)))
         line-producing (set (mapcat :provenance lines))
         ;; Context assertions that shaped lines (or always-context ones)
         context (vec (keep (fn [[code role]]
@@ -671,7 +768,7 @@
                                               ;; say -- the ownership schedule is computed
                                               ;; from the record instead.
                                               (claim? code)
-                                              "In the chain, not on the entry. Double-entry measures in money, and 200 units is a count rather than an amount -- that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
+                                              "In the chain, not on the entry. Double-entry measures in money, and 200 units is a count rather than an amount — that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
 
                                               :else
                                               (get not-reflected-texts code
@@ -686,10 +783,10 @@
         placeholders (cond-> []
                        (and has-debit? (not has-credit?))
                        (conj {:side :credit
-                              :prompt "Something must balance this. What did the business give up, or come to owe -- and who was on the other side? The assertions do not say yet."})
+                              :prompt "Something must balance this. What did the business give up, or come to owe — and who was on the other side? The assertions do not say yet."})
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
-                              :prompt "Something must balance this. What did the business get, or settle -- and who from? The assertions do not say yet."}))]
+                              :prompt "Something must balance this. What did the business get, or settle — and who from? The assertions do not say yet."}))]
     {:holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
                                                             (:events chain-ctx))))
                           ;; Only what can go out: materials and goods. A

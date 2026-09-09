@@ -116,13 +116,27 @@
           ;; are read off SP's ledger. A request with no record at all is
           ;; graded as a sentence with no paragraph.
           prior (vec (or (:prior-events body) []))
+          ctx (if (seq prior)
+                {:events prior
+                 :item-kinds simulation/item-kinds
+                 :cost-basis (cost/cost-basis prior)}
+                {:standalone? true})
           result (classification/classify-transaction selected-assertions
                                                      :correct-classification correct-classification
-                                                     :context (if (seq prior)
-                                                                {:events prior
-                                                                 :item-kinds simulation/item-kinds
-                                                                 :cost-basis (cost/cost-basis prior)}
-                                                                {:standalone? true}))
+                                                     :context ctx)
+          ;; What each journal-entry line rests on, read from the
+          ;; derivation rather than guessed from the account name.
+          ;; `build-assertion-linkages` maps one assertion to one
+          ;; account, so a line no single assertion produces -- cost of
+          ;; goods sold, which is `provides` read against the chain --
+          ;; came back with nothing under it. je_derive already knows
+          ;; which rule fired and which assertions it used.
+          result (if (and (map? selected-assertions) (:feedback result))
+                   (assoc-in result [:feedback :derived-lines]
+                             (:lines (je-derive/derive-je selected-assertions
+                                                          (or (:variables body) {})
+                                                          ctx)))
+                   result)
           correct? (= :correct (get-in result [:feedback :status]))]
 
       ;; Return response - include progress if authenticated
@@ -261,6 +275,15 @@
                 result (classification/classify-transaction selected-assertions
                                                            :correct-classification correct-classification
                                                            :context context)
+                ;; Same as the practice route: the line annotations come
+                ;; from the derivation, which knows what produced a cost
+                ;; line, rather than from one-assertion-one-account.
+                result (if (and (map? selected-assertions) (:feedback result))
+                         (assoc-in result [:feedback :derived-lines]
+                                   (:lines (je-derive/derive-je selected-assertions
+                                                                (or (:variables body) {})
+                                                                context)))
+                         result)
                 correct? (= :correct (get-in result [:feedback :status]))]
 
             ;; Increment attempts

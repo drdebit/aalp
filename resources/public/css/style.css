@@ -4150,6 +4150,17 @@ header {
 }
 .dj-assertion-params { font-size: .78rem; color: #55606b; }
 .dj-unpriced { color: #9aa4ae; font-style: italic; cursor: help; }
+
+/* A line the assertions do not price, saying so on the face of the
+   entry. Asking rather than scolding: it marks work still to do. */
+.dj-needs td { background: #fdf6e3; border-bottom: 1px solid #f4f6f7; }
+.dj-needs-cell { padding: 6px 10px; }
+.dj-needs-mark {
+  display: inline-block; width: 1.1em; height: 1.1em; line-height: 1.1em;
+  margin-right: .45rem; text-align: center; border-radius: 50%;
+  background: #d8c48a; color: #4a3f1a; font-size: .78rem; font-weight: 700;
+}
+.dj-needs-text { font-size: .84em; color: #7a6a3a; }
 .dj-unpriced-note {
   margin-top: .45rem; font-size: .78rem; color: #7a6a3a;
   background: #fdf6e3; border-left: 3px solid #d8c48a;
@@ -4292,6 +4303,88 @@ header {
 /* ---- The chain: pointing at an event -------------------------------
    A walkthrough step may ask the student to find, in the chain, the
    event that decided today's account. Only then are events clickable. */
+/* ==================== Narrative paragraphs ====================
+   The global `* { margin: 0 }` reset means paragraphs have no spacing of
+   their own, so a narrative's turns run together. The standing backstory
+   is a different kind of sentence from today's event -- give it a rule
+   as well as air, so the break is unmistakable. */
+.narrative p + p,
+.construct-problem .narrative p + p,
+.narrative-reveal p + p { margin-top: .85em; }
+
+.company-blurb {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #d3dade;
+  color: #4a5a68;
+}
+.narrative .company-blurb + p { margin-top: 14px; }
+
+/* ==================== Costing step ====================
+   The second act of a sale: identify the lot the goods came out of.
+   Presented as work still to do, not as an error. */
+.costing-step {
+  margin: 16px 0;
+  background: #fff;
+  border: 1px solid #d8c48a;
+  border-left: 4px solid #d8c48a;
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+.costing-header h4 { margin: 0 0 6px; font-size: 1em; color: #6b5a24; }
+.costing-why { margin: 0 0 12px; font-size: .86em; line-height: 1.55; color: #6a6152; }
+.costing-lots { width: 100%; border-collapse: collapse; font-size: .88em; }
+.costing-lots th {
+  text-align: left; padding: 4px 8px; font-size: .82em; font-weight: 600;
+  color: #8a8069; border-bottom: 1px solid #ece4cf;
+}
+.costing-lot { cursor: pointer; }
+.costing-lot td { padding: 6px 8px; border-bottom: 1px solid #f4f0e4; }
+.costing-lot:hover td { background: #fdf9ef; }
+.costing-lot.picked td { background: #f6efd9; }
+.costing-radio { width: 1.4em; color: #b39a58; }
+.costing-id { font-family: 'JetBrains Mono', Menlo, monospace; font-size: .92em; }
+.costing-num { text-align: right; font-variant-numeric: tabular-nums; }
+.costing-empty, .costing-verdict { margin: 10px 0 0; font-size: .86em; color: #7a6a3a; }
+.costing-verdict {
+  background: #fdf6e3; border-left: 3px solid #d8c48a;
+  padding: .4rem .6rem; border-radius: 2px;
+}
+.actions-blocked {
+  margin: 14px 0 0; font-size: .88em; color: #7a6a3a;
+  background: #fdf6e3; border-left: 3px solid #d8c48a;
+  padding: .5rem .7rem; border-radius: 2px;
+}
+
+/* ==================== Chain panel ====================
+   The company's books so far. A card of its own rather than part of the
+   narrative block: standing context, not today's transaction. In the
+   drill it starts collapsed, so the transaction reads first. */
+.chain-panel {
+  margin-top: 16px;
+  background: #fff;
+  border: 1px solid #dfe4e8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.chain-toggle {
+  display: flex; align-items: center; gap: .5rem;
+  width: 100%; padding: 10px 14px;
+  background: #f7f9fa; border: none; border-bottom: 1px solid transparent;
+  font: inherit; font-size: .92rem; font-weight: 600; color: #2c3e50;
+  text-align: left; cursor: pointer;
+}
+.chain-toggle:hover { background: #eef3f6; }
+.chain-panel.open .chain-toggle { border-bottom-color: #dfe4e8; }
+.chain-toggle-marker { color: #7f8c8d; width: 1em; }
+.chain-toggle-title { flex: 1; }
+.chain-toggle-count { font-weight: 400; font-size: .8rem; color: #7f8c8d; }
+.chain-contents { padding: 12px 14px; }
+.chain-events { margin: 0; padding-left: 1.2rem; font-size: .9rem; line-height: 1.5; }
+.chain-event { margin-bottom: .3rem; }
+.chain-empty { margin: 0; font-size: .9rem; color: #7f8c8d; }
+.chain-holdings { margin-top: 12px; padding-top: 10px; border-top: 1px solid #eef1f3; }
+.chain-holdings h5 { margin: 0 0 6px; font-size: .85rem; color: #2c3e50; }
+.chain-holding { font-size: .85rem; color: #4a5a68; }
 .chain-event.pickable { cursor: pointer; border-left: 3px solid transparent; padding-left: .35rem; }
 .chain-event.pickable:hover { background: #f3f7fa; border-left-color: #7fa8c4; }
 .chain-event.picked { background: #eaf5ea; border-left-color: #4f9d69; }

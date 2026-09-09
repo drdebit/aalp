@@ -2626,7 +2626,7 @@
    :cash-service-purchase
    {:narrative-template "On {date}, {company} pays {vendor} ${amount} to {service}."
     :narrative-templates ["On {date}, {company} pays {vendor} ${amount} to {service}."
-                          "Something needed doing. On {date} {vendor} came out to {service}, and {company} paid the ${amount} bill in cash."]
+                          "{vendor} came out on {date} to {service}. {company} paid the ${amount} bill in cash."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "service-unit" :quantity 1}
@@ -2639,9 +2639,9 @@
                 :amount [60 90 150]}}
 
    :cash-sale
-   {:narrative-template "On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash. It {sourced} those shirts earlier at ${unit-cost} each."
-    :narrative-templates ["On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash. It {sourced} those shirts earlier at ${unit-cost} each."
-                          "{customer} comes by on {date} and takes {quantity} {product}, paying {company} ${amount} in cash. The shirts had cost {company} ${unit-cost} each when it {sourced} them."]
+   {:narrative-template "On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash."
+    :narrative-templates ["On {date}, {company} sells {quantity} {product} to {customer} for ${amount} cash."
+                          "{customer} comes by on {date} and takes {quantity} {product}, paying {company} ${amount} in cash."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :receives {:unit "monetary-unit" :quantity :amount}
@@ -2696,7 +2696,7 @@
                 :due-date :calculated}}
 
    :credit-sale
-   {:narrative-template "On {date}, {company} provides {quantity} {product} to {customer}, {sourced} earlier at ${unit-cost} each. {customer} agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, {company} provides {quantity} {product} to {customer}. {customer} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
@@ -3220,16 +3220,31 @@ The printed t-shirts are now finished goods ready for sale."
       (str (nth month-names month-idx) " " day-num ", " year))
     iso-date))
 
+(defn- capitalize-first
+  "Upper-case the opening letter, leaving the rest of the string alone.
+
+   A template may begin with a variable, and a value is not always a
+   proper noun -- \"the landlord's electrician\" is one of the vendors --
+   so the sentence would otherwise open in lower case. `str/capitalize`
+   is not the function wanted here: it downcases everything after the
+   first character, which would flatten every company name in the
+   sentence."
+  [s]
+  (if (seq s)
+    (str (clojure.string/upper-case (subs s 0 1)) (subs s 1))
+    s))
+
 (defn apply-template
   "Replace {variables} in template string with actual values.
    Dates in ISO format are converted to readable format."
   [template vars]
-  (reduce (fn [s [k v]]
-            (let [display-value (if (= k :date) (format-iso-date v) v)]
-              (clojure.string/replace s (str "{" (name k) "}") (str display-value))))
-          template
-          ;; The Guided Year and the simulation are SP's own books.
-          (merge {:company "SP"} vars)))
+  (capitalize-first
+    (reduce (fn [s [k v]]
+              (let [display-value (if (= k :date) (format-iso-date v) v)]
+                (clojure.string/replace s (str "{" (name k) "}") (str display-value))))
+            template
+            ;; The Guided Year and the simulation are SP's own books.
+            (merge {:company "SP"} vars))))
 
 (defn resolve-assertion-values
   "Resolve variable references in required-assertions.
@@ -3343,7 +3358,14 @@ The printed t-shirts are now finished goods ready for sale."
   (if (= kind :reseller)
     (let [shirt-cost (rand-nth [3 4 5])
           shirts     (rand-nth [100 150 200])
-          sold       (rand-nth [30 40 50])]
+          sold       (rand-nth [30 40 50])
+          ;; A second lot, bought later at a different price and
+          ;; deliberately small. Which batch the goods came out of is
+          ;; then a real question with a different answer in money, and
+          ;; the small lot cannot always bear the sale -- so "enough of
+          ;; it?" is a real question too.
+          small      (rand-nth [10 15 20])
+          small-cost (+ shirt-cost 2)]
       {:company name :kind :reseller :blurb blurb
        :sale-item "blank-tshirts"
        :events
@@ -3361,7 +3383,12 @@ The printed t-shirts are now finished goods ready for sale."
          :has-date {:date "2026-01-06"}
          :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity sold}
          :receives {:unit "monetary-unit" :quantity (* sold (+ shirt-cost 4))}
-         :has-counterparty {:name "the chess club"}}]})
+         :has-counterparty {:name "the chess club"}}
+        {:has-identifier "Shirts-002"
+         :has-date {:date "2026-01-08"}
+         :provides {:unit "monetary-unit" :quantity (* small small-cost)}
+         :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity small}
+         :has-counterparty {:name "TextileDirect"}}]})
   (let [shirt-cost (rand-nth [3 4 5 6])
         shirts     (rand-nth [60 80 100 120])
         ink        (rand-nth [6 8 10])
@@ -3369,7 +3396,13 @@ The printed t-shirts are now finished goods ready for sale."
         ;; Two cartridges print the batch and together cost as much as
         ;; one dollar a shirt, so a printed shirt costs a whole dollar
         ;; more than a blank one and the narrative can say so exactly.
-        ink-cost   (/ printed 2)]
+        ink-cost   (/ printed 2)
+        ;; A second printing run, smaller and costed differently: the
+        ;; same two cartridges spread over fewer shirts, so a printed
+        ;; shirt out of this batch is worth more than one out of the
+        ;; first. Bounded by the blanks actually on hand -- the record
+        ;; cannot print shirts it never bought.
+        printed2   (min (rand-nth [15 20 25]) (- shirts printed))]
     {:company name :kind :printer :blurb blurb
      :sale-item "printed-tshirts"
      :unit-costs {:blank-tshirts shirt-cost :ink-cartridges ink-cost}
@@ -3400,6 +3433,12 @@ The printed t-shirts are now finished goods ready for sale."
        :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed}
                   {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed}
+       :is-allowed-by {:capacity "Printer-001"}}
+      {:has-identifier "Printing-002"
+       :has-date {:date "2026-02-11"}
+       :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed2}
+                  {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
+       :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed2}
        :is-allowed-by {:capacity "Printer-001"}}]})))
 
 (defn- practice-variables
@@ -3412,7 +3451,13 @@ The printed t-shirts are now finished goods ready for sale."
         held     (chain/on-hand events)
         basis    (cost/cost-basis events)
         item     (or (:sale-item backstory) "printed-tshirts")
-        printed  (long (get held item 0))
+        ;; The sale has to be costable out of ONE batch, not merely
+        ;; covered by the total on hand: the goods that went out came
+        ;; from somewhere, and a student asked to say where must have a
+        ;; true answer available. Two lots of 20 and 15 hold 35 between
+        ;; them and can bear a sale of 20, not of 25.
+        biggest  (long (reduce max 0 (map :left (chain/batches events item))))
+        printed  (min (long (get held item 0)) biggest)
         unit     (get-in basis [item :unit-cost])
         vars     (assoc vars :company (:company backstory)
                              :product (if (= item "blank-tshirts") "blank t-shirts" "printed t-shirts")

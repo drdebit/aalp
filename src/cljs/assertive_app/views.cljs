@@ -217,6 +217,17 @@
 
 (declare chain-panel)
 
+(defn- narrative-paragraphs
+  "A narrative as paragraphs. Templates carry blank lines where the story
+   turns -- the standing backstory, then what happened today -- and HTML
+   collapses those to a single space unless they are made into real
+   elements. The break is the point, so make it one."
+  [text]
+  (into [:<>]
+        (for [[i para] (map-indexed vector (str/split (or text "") #"\n\n+"))
+              :when (not (str/blank? para))]
+          ^{:key i} [:p (str/trim para)])))
+
 (defn narrative-panel []
   (let [problem (state/current-problem)
         is-reverse? (= (:problem-type problem) "reverse")
@@ -252,17 +263,20 @@
          ;; Construct problem: Show narrative only (JE constructor moved to feedback panel)
          [:div.construct-problem
           [:div.narrative
-           [:p (:narrative problem)]]]
+           (narrative-paragraphs (:narrative problem))]]
 
          :else
-         ;; Forward problem: the narrative, then the company's chain,
-         ;; because the entry will be read against it.
-         [:div.narrative
-          (when-let [blurb (:company-blurb problem)]
-            [:p.company-blurb blurb])
-          [:p (:narrative problem)]
+         ;; Forward problem: the narrative, and beside it the company's
+         ;; books, because the entry will be read against them. Its own
+         ;; card, folded shut, so the transaction is what is being read.
+         [:<>
+          [:div.narrative
+           (when-let [blurb (:company-blurb problem)]
+             [:p.company-blurb blurb])
+           (narrative-paragraphs (:narrative problem))]
           (when-let [ev (seq (:prior-events problem))]
-            [chain-panel ev (str "The chain — " (or (:company problem) "this company") "'s books so far")])])
+            [chain-panel ev (str (or (:company problem) "This company") "'s books so far")
+             {:collapsed? true}])])
        [:p.loading "Loading problem..."])]))
 
 (defn parameter-input [assertion-code param-key param-spec current-value]
@@ -1184,13 +1198,11 @@
                (:is-allowed-by ev) (conj (str "enabled by " (get-in ev [:is-allowed-by :capacity]))))]
     (str (or (get-in ev [:has-date :date]) "—") ": " (clojure.string/join "; " bits))))
 
-(defn chain-panel
-  "The chain: everything the business has said so far. This is the
-   record the entry is a reading of, and the place a later event's
-   reason lives -- shown, so that \"in the chain\" points at something.
-   Under it, what the chain leaves on hand, batch by batch, so that a
-   goods-out line has something visible to point at."
-  [events title]
+(defn- chain-contents
+  "The chain itself: everything the business has said so far, then what
+   that leaves on hand, batch by batch, so that a goods-out line has
+   something visible to point at."
+  [events]
   ;; A walkthrough step may ask the student to point at the event that
   ;; decided today's account. Then, and only then, the events are
   ;; clickable; the pick lives on the walkthrough, not in the sentence.
@@ -1199,8 +1211,7 @@
         target (when (= :pick-event (get-in st [:do :kind]))
                  (set (map name (get-in st [:do :event-ids]))))
         picked (:picked wt)]
-    [:div.chain-panel
-     [:h4 title]
+    [:div.chain-contents
      (if (seq events)
        [:ol.chain-events
         (doall
@@ -1218,15 +1229,39 @@
                (when id [:span.chain-id (str id " ")])
                (event-summary ev)])))]
        [:p.chain-empty "Nothing yet. The first thing you say starts it."])
-   (when-let [hs (seq (:holdings (state/derived-je)))]
-     [:div.chain-holdings
-      [:h5 "On hand, by batch"]
-      (doall
-        (for [[i h] (map-indexed vector hs)]
-          ^{:key (str "hold-" i)}
-          [:div.chain-holding
-           (str (:left h) " " (name (:item h)) " from " (:id h) " (" (:date h)
-                (when (:unit-cost h) (str ", " (format-currency (:unit-cost h)) " each")) ")")]))])]))
+     (when-let [hs (seq (:holdings (state/derived-je)))]
+       [:div.chain-holdings
+        [:h5 "On hand, by batch"]
+        (doall
+          (for [[i h] (map-indexed vector hs)]
+            ^{:key (str "hold-" i)}
+            [:div.chain-holding
+             (str (:left h) " " (name (:item h)) " from " (:id h) " (" (:date h)
+                  (when (:unit-cost h) (str ", " (format-currency (:unit-cost h)) " each")) ")")]))])]))
+
+(defn chain-panel
+  "The business's books so far, as a panel of its own: the record the
+   entry is a reading of, and the place a later event's reason lives.
+
+   Its own card rather than another paragraph of the narrative, because
+   it is a different kind of thing from the transaction being read --
+   standing context, not today's news. Pass {:collapsed? true} where it
+   is reference the student opens when they want it; the drill does, so
+   that the transaction reads first."
+  [_events _title & [{:keys [collapsed?]}]]
+  (let [open? (r/atom (not collapsed?))]
+    (fn [events title & _]
+      (let [n (count events)]
+        [:div.chain-panel {:class (when @open? "open")}
+         [:button.chain-toggle
+          {:type "button"
+           :on-click #(swap! open? not)
+           :aria-expanded (str @open?)}
+          [:span.chain-toggle-marker (if @open? "▾" "▸")]
+          [:span.chain-toggle-title title]
+          [:span.chain-toggle-count (str n " event" (when (not= 1 n) "s"))]]
+         (when @open?
+           [chain-contents events])]))))
 
 (defn walkthrough-panel
   "One step at a time: a sentence, one thing to do, and a sentence reading
@@ -1475,6 +1510,37 @@
       (str assertion-name " " param-str)
       assertion-name)))
 
+(defn- format-provenance-code
+  "One assertion in a line's provenance, with the parameters that made it
+   apply: `provides (physical-unit, printed-tshirts)`."
+  [code params]
+  (let [parts (cond-> []
+                (:unit params)          (conj (:unit params))
+                (:physical-item params) (conj (:physical-item params))
+                (:name params)          (conj (:name params)))]
+    (if (seq parts)
+      (str (name code) " (" (str/join ", " parts) ")")
+      (name code))))
+
+(defn- line-provenance
+  "The assertions a journal-entry line actually rests on, read from the
+   derivation.
+
+   The display used to match one assertion to one account and then stamp
+   the counterparty onto every line. A cost-of-goods line is produced by
+   `provides` read against the chain -- no single assertion resolves to
+   that account -- so it came back annotated with nothing but the
+   customer's name, which decided none of it. je_derive knows which rule
+   fired and which assertions it used; ask it."
+  [derived-lines account side]
+  (let [account (strip-amount account)
+        side    (name side)]
+    (when-let [line (first (filter #(and (= (:account %) account)
+                                         (= (:side %) side))
+                                   derived-lines))]
+      (seq (for [code (:provenance line)]
+             (format-provenance-code code (get (:assertions line) (keyword code))))))))
+
 (defn- format-counterparty-linkage
   "Format the counterparty info for display"
   [linkages]
@@ -1546,7 +1612,26 @@
                         (if-let [a (:amount line)]
                           (format-currency a)
                           "—")]
-                       [:td.dj-from "← " (clojure.string/join " + " (:provenance line))]]
+                       ;; With the parameters that made each assertion
+                       ;; apply, so this column says the same thing as
+                       ;; the entry above it rather than an abbreviation.
+                       [:td.dj-from "← "
+                        (clojure.string/join
+                          " + "
+                          (for [code (:provenance line)]
+                            (format-provenance-code code (get (:assertions line) (keyword code)))))]]
+                      ;; A line the assertions do not price says so on
+                      ;; the face of the entry, not in a tooltip. The
+                      ;; cost of goods sold is the case that matters:
+                      ;; the student has to go to the record and say
+                      ;; which goods went out, and they cannot be asked
+                      ;; to hover over an em dash to find that out.
+                      (when (:unresolved? line)
+                        [:tr.dj-needs
+                         [:td]
+                         [:td.dj-needs-cell {:colSpan 3}
+                          [:span.dj-needs-mark "?"]
+                          [:span.dj-needs-text (:unresolved-reason line)]]])
                       (when open?
                         [:tr.dj-rule
                          [:td {:colSpan 4}
@@ -1610,8 +1695,9 @@
                                             " into " (:creates-item al))
                                        (str "recorded as " (clojure.string/join ", "
                                                              (map name (keys a)))))))]]))])
-                          (when (:unresolved-reason line)
-                            [:div.dj-unpriced-note (:unresolved-reason line)])]])])))
+                          ;; The reason is on the face of the entry now
+                          ;; (dj-needs), so it is not repeated here.
+                          ]])])))
                (doall
                  (for [[i p] (map-indexed vector placeholders)]
                    ^{:key (str "dj-ph-" i)}
@@ -1645,6 +1731,56 @@
                   [:div.dj-nr-item
                    [:span.dj-nr-chip (:code nr)]
                    [:span.dj-nr-text (:text nr)]]))])])))))
+
+(defn costing-step
+  "The second act of a sale: cost the goods that went out.
+
+   Recognizing revenue is what raises the question -- GAAP requires the
+   merchandise to be costed at the point of sale -- and the record is the
+   only thing that can answer it. So the student asserts nothing here.
+   They go to the chain and identify the lot: the right goods, and enough
+   of them. Naming it prices both cost lines, from what the record says
+   those units cost, and the entry completes.
+
+   Wrong picks are free. This is a query, and a query you got wrong is
+   answered by looking again, not by losing the problem."
+  []
+  (let [d        (state/derived-je)
+        needed   (first (filter :needs-lot? (:lines d)))
+        holdings (:holdings d)
+        provided (:provides (state/selected-assertions))
+        picked   (:from-event provided)]
+    (when needed
+      [:div.costing-step
+       [:div.costing-header
+        [:h4 "Now cost what went out"]
+        [:p.costing-why
+         "You have recognized the revenue. The goods that earned it had a cost, and "
+         "that cost belongs against this sale — which means saying which goods went out. "
+         "The record is the only place that can answer it."]]
+       (if (seq holdings)
+         [:table.costing-lots
+          [:thead [:tr [:th ""] [:th "Batch"] [:th "Date"] [:th "What it holds"] [:th "Left"] [:th "Each"]]]
+          [:tbody
+           (doall
+             (for [h holdings]
+               ^{:key (:id h)}
+               [:tr.costing-lot
+                {:class (when (= (:id h) picked) "picked")
+                 :on-click #(do (state/update-assertion-parameter! :provides :from-event (:id h))
+                                (api/derive-je!))}
+                [:td.costing-radio (if (= (:id h) picked) "●" "○")]
+                [:td.costing-id (:id h)]
+                [:td (:date h)]
+                [:td (name (:item h))]
+                [:td.costing-num (:left h)]
+                [:td.costing-num (when (:unit-cost h) (format-currency (:unit-cost h)))]]))]]
+         [:p.costing-empty "This business's record holds no goods to cost this against."])
+       ;; The refusal, in the student's own terms. It is the derivation
+       ;; talking -- the same text the entry shows -- so there is one
+       ;; account of what is wrong, not two.
+       (when picked
+         [:p.costing-verdict (:unresolved-reason needed)])])))
 
 (defn drill-stuck-nudge
   "Stuck detection: after consecutive misses, point at the tutorial
@@ -1856,36 +1992,48 @@
         (when (and (not is-reverse?) (some? (:classification feedback)))
           (let [classification (:classification feedback)
                 linkages (:assertion-linkages feedback)
+                derived-lines (:derived-lines feedback)
                 counterparty-str (format-counterparty-linkage linkages)
-                is-incorrect? (= (:status feedback) :incorrect)
+                ;; The status arrives from JSON as a string, as the
+                ;; heading above already knows. Compared raw against a
+                ;; keyword this was permanently false, which silently
+                ;; withheld the "correct entry should be" comparison.
+                is-incorrect? (= :incorrect (keyword (:status feedback)))
                 correct-class (:correct-classification feedback)]
             [:div.je-comparison
-             ;; Student's answer (incorrect or correct)
-             (when-let [journal-entries (:journal-entry classification)]
-               (when (seq journal-entries)
-                 [:div.journal-entry {:class (when is-incorrect? "incorrect-je")}
-                  [:h4 (if is-incorrect?
-                         "Your assertions would produce this (incorrect) entry:"
-                         "Journal Entry:")]
+             ;; The student's own entry, when it was wrong -- half of a
+             ;; comparison against the correct one below.
+             ;;
+             ;; When the answer is RIGHT this block was the derived
+             ;; panel's entry a second time, line for line, a few
+             ;; centimetres above it. The derivation is the authority and
+             ;; carries the rule behind each line, so the copy goes.
+             (when (and is-incorrect? (seq (:journal-entry classification)))
+               (let [journal-entries (:journal-entry classification)]
+                 [:div.journal-entry.incorrect-je
+                  [:h4 "Your assertions would produce this (incorrect) entry:"]
                   (for [entry journal-entries]
-                    (let [debit-linkage (find-linkage-for-account linkages (:debit entry) :debit)
-                          credit-linkage (find-linkage-for-account linkages (:credit entry) :credit)]
+                    ;; Prefer what the derivation says produced the line;
+                    ;; fall back to the account-name match only where the
+                    ;; derivation has nothing to say about it.
+                    (let [debit-prov  (or (line-provenance derived-lines (:debit entry) :debit)
+                                          (some-> (find-linkage-for-account linkages (:debit entry) :debit)
+                                                  format-linkage vector))
+                          credit-prov (or (line-provenance derived-lines (:credit entry) :credit)
+                                          (some-> (find-linkage-for-account linkages (:credit entry) :credit)
+                                                  format-linkage vector))]
                       ^{:key (str (:debit entry) "-" (:credit entry))}
                       [:div.entry
                        [:div.entry-line
                         [:span.debit "DR: " (:debit entry)]
                         [je-amount (:amount entry)]
-                        (when debit-linkage
-                          [:span.linkage " ← " (format-linkage debit-linkage)])
-                        (when counterparty-str
-                          [:span.linkage "← " counterparty-str])]
+                        (when (seq debit-prov)
+                          [:span.linkage " ← " (str/join " + " debit-prov)])]
                        [:div.entry-line
                         [:span.credit "CR: " (:credit entry)]
                         [je-amount (:amount entry)]
-                        (when credit-linkage
-                          [:span.linkage " ← " (format-linkage credit-linkage)])
-                        (when counterparty-str
-                          [:span.linkage "← " counterparty-str])]]))]))
+                        (when (seq credit-prov)
+                          [:span.linkage " ← " (str/join " + " credit-prov)])]]))]))
 
              ;; For incorrect answers, also show what the correct JE should be
              (when (and is-incorrect? correct-class)
@@ -1910,7 +2058,7 @@
         (when (and is-reverse? (:narrative problem))
           [:div.narrative-reveal
            [:h4 "Transaction:"]
-           [:p (:narrative problem)]])
+           (narrative-paragraphs (:narrative problem))])
 
         ;; Hints come after the JE comparison
         (when-let [hints (:hints feedback)]
@@ -1926,18 +2074,33 @@
         ;; assertions, rule by rule, with explore mode
         [derived-je-panel]
 
+        ;; A correct sale is not finished until its cost is matched
+        ;; against it. The step appears only once the assertions are
+        ;; right, because it is revenue recognition that licenses it.
+        (when (and (= :correct (keyword (:status feedback)))
+                   (some :needs-lot? (:lines (state/derived-je))))
+          [costing-step])
+
         (when (state/drill-active?)
           [drill-stuck-nudge])
 
-        [:div.actions
-         (if (state/drill-active?)
-           [drill-next-controls]
-           [:button.primary
-            {:on-click #(do
-                          (api/fetch-problem! (state/current-level))
-                          (state/clear-feedback!)
-                          (when is-construct? (state/clear-je-fields!)))}
-            "Next Problem"])]]
+        ;; A sale whose cost is not yet matched is not a finished
+        ;; entry, so there is nowhere to go on to. Holding the advance
+        ;; here rather than disabling a button keeps the reason visible:
+        ;; the work left is up in the costing step.
+        (if (and (= :correct (keyword (:status feedback)))
+                 (some :needs-lot? (:lines (state/derived-je))))
+          [:p.actions-blocked
+           "This entry is not finished: name the batch the goods came out of, above."]
+          [:div.actions
+           (if (state/drill-active?)
+             [drill-next-controls]
+             [:button.primary
+              {:on-click #(do
+                            (api/fetch-problem! (state/current-level))
+                            (state/clear-feedback!)
+                            (when is-construct? (state/clear-je-fields!)))}
+              "Next Problem"])])]
 
        :else
        [:div.instructions
@@ -2417,6 +2580,19 @@
   (let [{:keys [results missed]} (grade-quiz questions answers)]
     (state/set-quiz-results! results missed)))
 
+(defn- scroll-to-top!
+  "Reagent :ref callback for a tutorial scroll container.
+
+   Paging sections swaps new text into a container that keeps its old
+   scrollTop, so a student who read to the bottom of one section lands at
+   the bottom of the next. The container is keyed on the section index so
+   this fires on every section change, whatever navigated there."
+  [el]
+  (when el
+    (set! (.-scrollTop el) 0)
+    (when-let [body (.closest el ".tutorial-body")]
+      (set! (.-scrollTop body) 0))))
+
 (defn tutorial-reader
   "Paginated section reader for tutorial content."
   [sections section-index on-prev on-next on-take-quiz review-only?]
@@ -2428,6 +2604,7 @@
      [:div.tutorial-reader-header
       [:span.section-indicator (str "Section " (inc section-index) " of " total)]]
      [:div.tutorial-reader-content
+      {:key section-index :ref scroll-to-top!}
       [:h2.tutorial-section-heading (:heading current-section)]
       [render-markdown (:content current-section)]]
      [:div.tutorial-reader-footer
@@ -2596,7 +2773,7 @@
      [:div.gate-content
       [:h2 (str "Welcome to " (:title tutorial))]
       [:p (:subtitle tutorial)]
-      [:p "Learn the assertions, pass a short practice round (mistakes there are free), and start recording in your books."]
+      [:p "Learn the assertions, pass a short practice round, and start recording in your books."]
       [:button.gate-start-btn
        {:on-click #(state/start-tutorial-quiz! level)}
        "Start Tutorial"]
@@ -2672,6 +2849,7 @@
         (str "Section " (inc section-idx) " of " total-sections)]]
 
       [:div.tutorial-content
+       {:key section-idx :ref scroll-to-top!}
        [:h2 (:heading current-section)]
        [render-markdown (:content current-section)]]
 

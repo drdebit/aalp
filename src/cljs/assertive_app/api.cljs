@@ -133,6 +133,28 @@
 
 ;; ==================== The Guided Year ====================
 
+(defn submit-costing!
+  "Identify the goods that went out of a sale already recorded.
+
+   Not a submission in the graded sense -- nothing is asserted about the
+   exchange that was not asserted when it was booked. Either the record
+   can price the lot named, or it says why it cannot, and says so in its
+   own words rather than ours."
+  [entry-id batch on-refused]
+  (state/set-loading! true)
+  (POST (str api-base "/guided/cost")
+    {:params {:entry-id entry-id :batch batch}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-loading! false)
+                (if (:ok? response)
+                  (fetch-guided-state!)
+                  (on-refused (:reason response))))
+     :error-handler (make-error-handler {:message "Could not record which goods went out"})}))
+
 (defn fetch-guided-state!
   "Entry point for the two-act arc. Loads the current Guided Year day
    and routes: Year 1 -> guided view (narrative + sentence builder),

@@ -3520,6 +3520,54 @@
           [:p.gate-bounds-hint
            (str "Between " (:min gate) " and " (:max gate) ".")]]]))))
 
+(defn guided-costing-view
+  "The year does not move on with a sale half-recorded.
+
+   The sale is already in the books -- it committed when the student
+   asserted it, because a sale can be booked without its cost and
+   pretending otherwise would make the two acts one again. What is owed
+   is the matching, and the books are held here until it is done. This
+   is enforcement at the close rather than at the keystroke, which is
+   where real systems put it."
+  []
+  (let [day     (state/guided-day)
+        refused (r/atom nil)]
+    (fn []
+      (let [day (state/guided-day)]
+        [:div.guided-costing
+         [:div.costing-step
+          [:div.costing-header
+           [:h4 "Before the year moves on: cost this sale"]
+           [:p.costing-why
+            "You recorded this sale, and the revenue is in your books. The goods that "
+            "earned it had a cost, and GAAP requires that cost to sit against this sale "
+            "rather than drift to some later period. Your record is the only thing that "
+            "can say what they cost — so say which goods went out."]]
+          [:p.costing-narrative (:narrative day)]
+          [:p.costing-asked
+           (str "You provided " (:quantity day) " " (str/replace (str (:item day)) "-" " ")
+                " on " (:date day) ". Which did they come out of?")]
+          (if (seq (:holdings day))
+            [:table.costing-lots
+             [:thead [:tr [:th ""] [:th "Batch"] [:th "Date"] [:th "What it holds"] [:th "Left"] [:th "Each"]]]
+             [:tbody
+              (doall
+                (for [h (:holdings day)]
+                  ^{:key (:id h)}
+                  [:tr.costing-lot
+                   {:on-click #(do (reset! refused nil)
+                                   (api/submit-costing! (:entry-id day) (:id h)
+                                                        (fn [why] (reset! refused why))))}
+                   [:td.costing-radio "○"]
+                   [:td.costing-id (:id h)]
+                   [:td (:date h)]
+                   [:td (str/replace (str (name (:item h))) "-" " ")]
+                   [:td.costing-num (:left h)]
+                   [:td.costing-num (when (:unit-cost h) (format-currency (:unit-cost h)))]]))]]
+            [:p.costing-empty "Your record holds no goods to cost this against."])
+          (when-let [why @refused]
+            [:p.costing-verdict why])]]))))
+
 (defn guided-app-content []
   (let [day (state/guided-day)
         level (:level day 0)
@@ -3601,6 +3649,10 @@
          [:div.two-column-layout
           [narrative-panel]
           [guided-result-panel]])
+
+       ;; The books are held until a recorded sale has its cost matched
+       (= "costing" (:entry-type day))
+       [guided-costing-view]
 
        ;; Corridor decision
        (= "gate" (:entry-type day))

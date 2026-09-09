@@ -1,9 +1,91 @@
-# AALP — where things stand (2026-09-05, end of day)
+# AALP — where things stand (2026-09-09)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
 
 ## Start here (next session)
+
+**2026-09-09.** A walkthrough of the platform as a new user, and what it
+changed. The headline: **cost of goods sold is now the student's own
+act.** Everything below about cohorts c7-c9 still stands and is still
+the reason the instrument is what it is; read this section first, then
+the instrument note, then the round summaries.
+
+### Cost matching is a second act (2026-09-09)
+
+Recognizing revenue does not cost the goods. It raises the question, and
+only the record can answer it.
+
+- **The cost lines do not price themselves.** `resolve-amount`'s
+  `:cost-basis` branch leaves cost of goods sold and its inventory
+  credit unresolved until the student names the lot the goods came out
+  of. It refuses a lot that cannot bear the sale: wrong item, too few
+  units, no such batch. Each refusal is the record's own sentence, shown
+  on the face of the entry rather than in a tooltip. Pricing silently by
+  weighted average performed the matching on the student's behalf and
+  taught that it was not a decision.
+- **In the drill**, a costing step appears once the sale assertions are
+  correct, lists every lot the practice company holds, and holds the
+  advance until one is named. The student asserts nothing there; they
+  identify the lot.
+- **In the Guided Year**, the sale commits as it always did — a sale can
+  be booked without its cost, which is what a periodic system does — and
+  the unmatched cost is carried as an obligation. `guided/day-payload`
+  will not serve the next day while `guided/unmatched-costs` returns
+  anything; the student gets a costing view instead, and clears it via
+  `POST /api/guided/cost`. Enforcement at the close, not at the
+  keystroke, which is where real systems put it.
+- **The obligation is derived, never stored.** `unmatched-costs` scans
+  the ledger and re-derives; there is no flag to set or to get out of
+  sync. Same principle as positions and costs.
+- **Practice backstories carry two lots** of the sale item at different
+  costs, so the pick changes the money: resellers a smaller later
+  purchase, printers a smaller run spreading the same two cartridges
+  over fewer shirts. Of 131 sampled sales, 128 offer two lots at
+  differing costs and 78 include one too small to bear the sale.
+- **Sale quantities clamp to the largest single lot**, not to total
+  on-hand. Two lots of 20 and 15 hold 35 between them and cannot cost a
+  sale of 25 out of either — which would have made the step unsolvable.
+- **The sale narratives no longer quote the unit cost.** The record is
+  the only place it can be found.
+- **Backstory outflows name their batches** (`Sale-001` its purchase,
+  each printing run its shirts and ink). An outflow that names no batch
+  draws none down, so the picker used to offer shirts the company had
+  already sold. Batch `:left` now agrees with `on-hand` across every
+  sampled problem. The rule itself is unchanged and deliberate
+  (`chain.clj:242`): only a named outflow depletes a lot.
+
+Not built: the **simulation** (Year 2) still commits a sale server-side
+the moment the classification is correct, before any costing step is
+reachable, so its ledger can hold an unpriced cost line. The Guided Year
+pattern — commit, carry the obligation, enforce at the close — is what
+it wants.
+
+### Faults found and fixed in the same pass (2026-09-09)
+
+- `is-incorrect?` in the feedback panel compared a JSON string to a
+  keyword and was **permanently false**. The "(incorrect)" heading, the
+  incorrect-entry styling, and the entire "The correct entry should be"
+  comparison had never rendered, for anyone. Now they do — worth
+  looking at deliberately, since nobody has seen that comparison.
+- Journal-entry line annotations came from a one-assertion-one-account
+  map that resolved nothing for cost lines, then stamped the
+  counterparty onto every line. They now come from the derivation's
+  provenance, so a cost line reads `provides + has-counterparty`.
+- Derived lines sort debits before credits within each entry, grouped by
+  `:entry-label` so a sale's revenue and cost entries stay paired.
+  Rulebook order had put the credit first on every cash purchase.
+- Tutorial sections scroll to the top when paged.
+- Narrative blank lines render as real paragraphs; the global
+  `* { margin: 0 }` reset had collapsed them to a space.
+- The chain is its own collapsible panel, not part of the narrative
+  block.
+- Student-facing strings use em dashes, not double hyphens.
+- `apply-template` capitalizes the opening letter, so a template may
+  begin with a variable ("the landlord's electrician came out…").
+
+Deployed to choochoo and committed (`fcf3bde` and the commit after it);
+local, choochoo and origin were in sync at the end of the session.
 
 **2026-09-07, evening.** Three cohorts ran today (c7 -> c8 -> c9), two
 rounds of platform changes are deployed, and c9 turned up a fault in the
@@ -208,7 +290,13 @@ assertions, and nothing else is a source of truth.**
 - **The record refuses what it cannot bear.** You can only provide what
   you have — present tense only; nested under `expects`/`allows` it is a
   claim about the future and constrains nothing. Production needs
-  materials and a capability. Every refusal carries a message.
+  materials and a capability. A lot cannot supply more than it has, or
+  goods it does not hold. Every refusal carries a message.
+- **Matching is an act, not a consequence.** Recognizing revenue raises
+  the question of what the goods cost; it does not answer it. The cost
+  lines stay unpriced until the student identifies the lot, and in the
+  Guided Year the books do not move on until they have. The obligation
+  is read off the ledger, never stored.
 - **Labels are a translation, not data.** Renaming an account changes
   nothing about what was asserted.
 
@@ -477,7 +565,24 @@ against choochoo by `study/smoke_walk.py` (fresh user, empty ledger) on
    becomes the student's actual Year 1 recording, that changes.
 6. **The simulation/"game" is set aside** for the pilot, by decision.
    Its ledger and statements have never been exercised end to end since
-   the derivation rework.
+   the derivation rework. It is also the one place cost matching is not
+   enforced: `server.clj`'s simulation classify path calls
+   `complete-transaction!` the moment the classification is correct, so
+   an unpriced cost line can reach the ledger. The Guided Year pattern —
+   commit the sale, carry the obligation, enforce at the close — is what
+   it wants.
+7. **The Guided Year costing view has not been driven by hand.** Its
+   logic is verified against a stubbed ledger (wrong lot refused with
+   the record's reason and nothing persisted; correct lot priced and
+   `:from-event` written back), and the route answers 401 unauthenticated
+   on choochoo. But no one has yet played a Year 1 sale through the
+   browser and watched the day be withheld and then released. That is
+   the first thing to do next session.
+8. **Cost-flow policy is still weighted average**, in one named place
+   (`cost_basis.clj`), with specific identification available when a lot
+   is named — which is now always, for student sales. FIFO would collect
+   the same events and report a different figure. Worth deciding whether
+   students should ever meet more than one policy.
 
 ## Things that look like bugs and are not
 

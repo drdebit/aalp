@@ -903,6 +903,20 @@
                   (assoc :ledger-entry/engine-event-id (:engine-event-id entry)))]
     @(d/transact (schema/get-conn) [tx-data])))
 
+(defn update-ledger-entry!
+  "Rewrite the assertions and journal entry of one ledger entry.
+
+   Used when an entry is completed after the fact -- a sale whose goods
+   are identified later, so its cost lines can finally be priced. The
+   entry is the same event; what changed is that the record now says
+   which units went out, which is an assertion being added to it rather
+   than a correction of one."
+  [entry-id assertions journal-entry]
+  @(d/transact (schema/get-conn)
+     [{:ledger-entry/id entry-id
+       :ledger-entry/assertions (pr-str assertions)
+       :ledger-entry/journal-entry (pr-str journal-entry)}]))
+
 (defn get-ledger
   "Get all ledger entries for a user, sorted by date."
   [user-id]

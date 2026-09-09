@@ -3381,7 +3381,13 @@ The printed t-shirts are now finished goods ready for sale."
          :has-counterparty {:name "TextileDirect"}}
         {:has-identifier "Sale-001"
          :has-date {:date "2026-01-06"}
-         :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity sold}
+         ;; Names the lot it drew on, as a student's sale now must. An
+         ;; outflow that names no batch draws none down, so an unnamed
+         ;; one here would leave the picker offering shirts this company
+         ;; has already sold -- a history that binds the student and is
+         ;; visibly wrong.
+         :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity sold
+                    :from-event "Shirts-001"}
          :receives {:unit "monetary-unit" :quantity (* sold (+ shirt-cost 4))}
          :has-counterparty {:name "the chess club"}}
         {:has-identifier "Shirts-002"
@@ -3430,14 +3436,18 @@ The printed t-shirts are now finished goods ready for sale."
        :has-counterparty {:name "InkMasters"}}
       {:has-identifier "Printing-001"
        :has-date {:date "2026-01-05"}
-       :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed}
-                  {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
+       :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed
+                   :from-event "Shirts-001"}
+                  {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2
+                   :from-event "Ink-001"}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed}
        :is-allowed-by {:capacity "Printer-001"}}
       {:has-identifier "Printing-002"
        :has-date {:date "2026-02-11"}
-       :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed2}
-                  {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2}]
+       :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity printed2
+                   :from-event "Shirts-001"}
+                  {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2
+                   :from-event "Ink-001"}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed2}
        :is-allowed-by {:capacity "Printer-001"}}]})))
 

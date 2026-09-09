@@ -402,6 +402,16 @@
           {:status 409 :body {:error "Current entry is not a transaction"}}))
       {:status 401 :body {:error "Authentication required"}}))
 
+  (POST "/api/guided/cost" {body :body :as request}
+    ;; Identify the goods that went out of a sale already recorded. The
+    ;; student asserts nothing new about the exchange, so this is not a
+    ;; classification and is not graded -- the derivation either can
+    ;; price the lot or says why it cannot.
+    (if-let [user (:user request)]
+      (response/response
+        (guided/submit-costing! (:db/id user) (:entry-id body) (:batch body)))
+      {:status 401 :body {:error "Authentication required"}}))
+
   (POST "/api/guided/gate" {body :body :as request}
     (if-let [user (:user request)]
       (let [user-id (:db/id user)

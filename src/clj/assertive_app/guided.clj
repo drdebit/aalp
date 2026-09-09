@@ -111,14 +111,105 @@
         affordable (int (quot cash (:unit-price entry)))]
     (min (:max entry) affordable)))
 
+(declare day-payload)
+
+(defn- provides-flows
+  "The provides flows of an assertion map, always as a vector."
+  [assertions]
+  (let [v (:provides assertions)]
+    (cond (nil? v) [] (sequential? v) v :else [v])))
+
+(defn unmatched-costs
+  "Sales already recorded whose cost the record cannot yet price, because
+   nothing says which goods went out.
+
+   Derived, never stored. A sale can be booked without its cost -- that
+   is what happens in a periodic system, and pretending otherwise would
+   make the two acts one again. So the obligation is not a flag somebody
+   remembered to set; it is read off the ledger, the same way positions
+   and costs are, and it clears when the record answers the question.
+
+   -> [{:entry-id :date :narrative :item :quantity :reason}]"
+  [user-id]
+  (let [entries (simulation/get-ledger user-id)
+        ctx     (simulation/derivation-context-for user-id)]
+    (vec
+      (for [e entries
+            :let [d    (je-derive/derive-je (:assertions e) (:variables e) ctx)
+                  line (first (filter :needs-lot? (:lines d)))]
+            :when line
+            :let [flow (first (filter :physical-item (provides-flows (:assertions e))))]]
+        {:entry-id  (str (:id e))
+         :date      (:date e)
+         :narrative (:narrative e)
+         :item      (:physical-item flow)
+         :quantity  (:quantity flow)
+         :reason    (:unresolved-reason line)}))))
+
+(defn costing-payload
+  "What the student must settle before the year moves on: the oldest
+   unmatched sale, and the lots its business holds to answer it with."
+  [user-id]
+  (when-let [owed (first (unmatched-costs user-id))]
+    (let [ctx (simulation/derivation-context-for user-id)
+          d   (je-derive/derive-je {} {} ctx)]
+      (assoc owed :entry-type "costing"
+                  :phase "year1"
+                  :holdings (:holdings d)))))
+
+(defn submit-costing!
+  "Identify the goods that went out of a recorded sale.
+
+   The student asserts nothing new about the exchange; they say which
+   units it drew on. That is an assertion added to the event, so the
+   entry is rewritten rather than corrected -- and the derivation is
+   what decides whether the lot can bear it. A lot that cannot is
+   refused with the record's own reason."
+  [user-id entry-id batch]
+  (let [entries (simulation/get-ledger user-id)
+        entry   (first (filter #(= entry-id (str (:id %))) entries))]
+    (if-not entry
+      {:ok? false :reason "That entry is not in your ledger."}
+      (let [ctx    (simulation/derivation-context-for user-id)
+            named  (update (:assertions entry) :provides
+                           (fn [v]
+                             (cond
+                               (sequential? v) (mapv #(if (:physical-item %)
+                                                        (assoc % :from-event batch) %) v)
+                               (map? v)        (if (:physical-item v)
+                                                 (assoc v :from-event batch) v)
+                               :else v)))
+            d      (je-derive/derive-je named (:variables entry) ctx)
+            still  (first (filter :needs-lot? (:lines d)))]
+        (if still
+          {:ok? false :reason (:unresolved-reason still)}
+          (let [priced (mapv (fn [l] {:debit  (when (= :debit (:side l)) (:account l))
+                                      :credit (when (= :credit (:side l)) (:account l))
+                                      :amount (:amount l)})
+                             (:lines d))]
+            (simulation/update-ledger-entry! (:id entry) named
+                                             (or (:journal-entry entry) priced))
+            {:ok? true
+             :entry-id entry-id
+             :lines (:lines d)
+             :next (day-payload user-id)}))))))
+
 (defn day-payload
   "The current script entry rendered for the client. Never includes
    correct assertions or classification — those stay server-side."
   [user-id]
   (let [pos (get-position user-id)
         total (count script)]
-    (if (>= pos total)
+    (cond
+      ;; The books do not move on with a sale half-recorded. Enforcement
+      ;; at the close rather than at the keystroke: the sale committed,
+      ;; and what is owed is the cost matched against it.
+      (seq (unmatched-costs user-id))
+      (assoc (costing-payload user-id) :total total)
+
+      (>= pos total)
       {:phase "year2" :total total}
+      :else
       (let [entry (nth script pos)
             base {:phase "year1"
                   :day (:day entry)

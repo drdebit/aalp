@@ -133,6 +133,24 @@
 
 ;; ==================== The Guided Year ====================
 
+(defn submit-simulation-costing!
+  "The simulation's matching step. Same act as the Guided Year's: name
+   the lot, and let the record price it or refuse it."
+  [entry-id batch on-refused]
+  (state/set-loading! true)
+  (POST (str api-base "/simulation/cost")
+    {:params {:entry-id entry-id :batch batch}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [response]
+                (state/set-loading! false)
+                (if (:ok? response)
+                  (fetch-simulation-state!)
+                  (on-refused (:reason response))))
+     :error-handler (make-error-handler {:message "Could not record which goods went out"})}))
+
 (defn submit-costing!
   "Identify the goods that went out of a sale already recorded.
 
@@ -480,6 +498,12 @@
                 ;; Dual fluency: show the JE the student's assertions produce
                 (derive-je!)
                 (state/update-simulation-after-classify! response)
+                ;; A correct sale may leave the books owing a cost match.
+                ;; The classify response cannot know that -- the
+                ;; obligation is derived from the ledger the sale has
+                ;; just joined -- so ask the server what it now says.
+                (when (:correct? response)
+                  (fetch-simulation-state!))
                 ;; If correct, handle success and stage progression
                 (when (:correct? response)
                   (let [current-stage (state/current-stage)

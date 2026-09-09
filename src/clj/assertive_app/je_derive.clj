@@ -448,10 +448,20 @@
                          ;; the item sold: naming the wrong one is a thing a
                          ;; student can do, and the record has to be able to
                          ;; say so rather than quietly matching on item first.
+                         ;; Emptied lots stay in the list. The event being
+                         ;; priced is itself an outflow, so a lot exactly
+                         ;; consumed by this very sale has nothing left --
+                         ;; dropping it would make the sale that emptied it
+                         ;; unpriceable, and permanently so.
                          lots (seq (for [it (keys (chain/on-hand (:events context)))
-                                         b  (chain/batches (:events context) it)
-                                         :when (pos? (:left b))]
-                                     (assoc b :item it)))]
+                                         b  (chain/batches (:events context) it)]
+                                     (assoc b :item it)))
+                         ;; What this event itself took out of a lot, added
+                         ;; back when asking whether that lot could bear it.
+                         own-draw (fn [lot-id]
+                                    (if (= lot-id (some-> (:from-event p) name))
+                                      (or (num-or-nil (:quantity p)) 0)
+                                      0))]
                      (cond
                        (nil? lots)
                        {:quantity nil :unresolved? true
@@ -487,10 +497,10 @@
                                                     ", which is not what was sold. The goods that went out were "
                                                     (item-phrase item) " — find the batch those came from.")}
 
-                           (and n (< (:left lot) n))
+                           (and n (< (+ (:left lot) (own-draw id)) n))
                            {:quantity nil :unresolved? true
                             :needs-lot? true
-                            :unresolved-reason (str id " holds only " (:left lot) " of " (item-phrase item)
+                            :unresolved-reason (str id " holds only " (+ (:left lot) (own-draw id)) " of " (item-phrase item)
                                                     ", and " n " went out. A batch cannot supply more than it has"
                                                     " — check what each one has left.")}
 

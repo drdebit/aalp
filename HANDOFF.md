@@ -61,6 +61,40 @@ reachable, so its ledger can hold an unpriced cost line. The Guided Year
 pattern — commit, carry the obligation, enforce at the close — is what
 it wants.
 
+### Driven in the browser, and what that found (2026-09-09)
+
+A Year 1 sale was played end to end on choochoo as
+`costing-test@test.com`. Three things only a live run would have shown:
+
+- **Year 1 has no sale.** The script is eight days of purchases and
+  gates (`guided.clj`), so the costing gate cannot fire there at all.
+  Everything below was therefore exercised in Year 2. If the Guided Year
+  should teach the matching, it needs a sale day — and cohort notes
+  already say learners reached the post-test never having met one.
+- **No ledger event carried `:has-identifier`.** `chain/batches` skips
+  any event without one, so a student's own books held *no lots at all*:
+  specific identification was impossible on their own record, the lot
+  dropdown was always empty in both ledger modes, and the costing gate
+  could never fire. Practice worked only because `practice-backstory`
+  names every event. `save-ledger-entry!` now assigns a readable id
+  (`Buy-002`, `Make-004`, `Sell-011`) covering both modes.
+- **A lot exactly consumed by its own sale deadlocked.** Naming it drew
+  it to zero, it fell out of the `pos? :left` filter, and the sale that
+  emptied it became permanently unpriceable. Emptied lots now stay
+  visible to validation, and a lot's capacity is `:left` plus whatever
+  this event itself drew from it.
+
+Verified live: the panel lists every lot; picking ink is refused with
+"Buy-003 holds ink cartridges, which is not what was sold"; picking
+Make-005 prices the entry at 10 x $4.92 = $49.21 (Make-004 would have
+given $75.00); the obligation clears and actions start again.
+
+Note on which path rendered: in Year 2 `guided/day-payload` intercepts
+with the costing payload before its year2 branch, so the shared panel
+renders through the guided route. The simulation's own server-side
+enforcement (`/api/simulation/state` reporting `:costing`,
+`start-action` and `advance-period` refusing) was verified by API.
+
 ### Faults found and fixed in the same pass (2026-09-09)
 
 - `is-incorrect?` in the feedback panel compared a JSON string to a
@@ -563,21 +597,17 @@ against choochoo by `study/smoke_walk.py` (fresh user, empty ledger) on
 5. **Episodes are not recorded to the ledger.** The walkthrough carries
    its own chain and sends it as `:prior-events`. If the walkthrough
    becomes the student's actual Year 1 recording, that changes.
-6. **The simulation/"game" is set aside** for the pilot, by decision.
-   Its ledger and statements have never been exercised end to end since
-   the derivation rework. It is also the one place cost matching is not
-   enforced: `server.clj`'s simulation classify path calls
-   `complete-transaction!` the moment the classification is correct, so
-   an unpriced cost line can reach the ledger. The Guided Year pattern —
-   commit the sale, carry the obligation, enforce at the close — is what
-   it wants.
-7. **The Guided Year costing view has not been driven by hand.** Its
-   logic is verified against a stubbed ledger (wrong lot refused with
-   the record's reason and nothing persisted; correct lot priced and
-   `:from-event` written back), and the route answers 401 unauthenticated
-   on choochoo. But no one has yet played a Year 1 sale through the
-   browser and watched the day be withheld and then released. That is
-   the first thing to do next session.
+6. **The simulation/"game" is set aside** for the pilot, by decision,
+   but it now enforces cost matching like the Guided Year: one shared
+   implementation (`simulation/unmatched-costs`, `costing-payload`,
+   `submit-costing!`), reported by `/api/simulation/state` and refused
+   by `start-action` and `advance-period`. Its statements have still not
+   been exercised end to end since the derivation rework.
+7. **Year 1 has no sale, so the Guided Year gate is unreachable as
+   scripted.** The mechanism is proven in Year 2 (see above), but the
+   eight-day script never sells anything. Adding a sale day would both
+   exercise the gate and close the gap cohort notes keep reporting —
+   learners reaching the post-test having never met a sale.
 8. **Cost-flow policy is still weighted average**, in one named place
    (`cost_basis.clj`), with specific identification available when a lot
    is named — which is now always, for student sales. FIFO would collect

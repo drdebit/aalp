@@ -12,6 +12,7 @@
   (:require [datomic.api :as d]
             [assertive-app.schema :as schema]
             [assertive-app.classification :as classification]
+            [assertive-app.je-derive :as je-derive]
             [assertive-app.engine :as engine]
             [clojure.edn :as edn]
             [clojure.string :as str]
@@ -885,10 +886,46 @@
 
 ;; ==================== Ledger Operations ====================
 
+;; get-ledger is defined below; the identifier needs the count.
+(declare get-ledger)
+
+(defn- flows-of
+  "The flows under one assertion, always as a vector."
+  [v]
+  (cond (nil? v) [] (sequential? v) v :else [v]))
+
+(defn- event-identifier
+  "A name for an event in the student's own chain.
+
+   Every event needs one, because a later event points at it: the shirts
+   sold are the ones printed on the 5th. `chain/batches` skips an event
+   with no identifier, so without this a student's own books hold no
+   lots at all -- nothing to draw on, nothing to cost against, and
+   specific identification impossible on their own record even though it
+   works on the practice companies', whose backstories name every event.
+
+   Readable rather than a UUID, because the student reads these in the
+   lot picker."
+  [assertions n]
+  (let [physical? (fn [v] (some :physical-item (flows-of v)))]
+    (str (cond
+           (:creates assertions)          "Make"
+           (physical? (:receives assertions)) "Buy"
+           (physical? (:provides assertions)) "Sell"
+           :else                          "Event")
+         "-"
+         (format "%03d" n))))
+
 (defn save-ledger-entry!
   "Save a correctly-classified transaction to the ledger."
   [user-id entry]
-  (let [tx-data (cond-> {:ledger-entry/id (java.util.UUID/randomUUID)
+  (let [entry (update entry :assertions
+                      (fn [a]
+                        (if (:has-identifier a)
+                          a
+                          (assoc a :has-identifier
+                                 (event-identifier a (inc (count (get-ledger user-id))))))))
+        tx-data (cond-> {:ledger-entry/id (java.util.UUID/randomUUID)
                           :ledger-entry/user user-id
                           :ledger-entry/date (:date entry)
                           :ledger-entry/period (:period entry)
@@ -1069,6 +1106,79 @@
     {:events     events
      :item-kinds item-kinds
      :cost-basis (cost/cost-basis events)}))
+
+(defn- provides-flows
+  "The provides flows of an assertion map, always as a vector."
+  [assertions]
+  (let [v (:provides assertions)]
+    (cond (nil? v) [] (sequential? v) v :else [v])))
+
+(defn unmatched-costs
+  "Sales already recorded whose cost the record cannot yet price, because
+   nothing says which goods went out.
+
+   Derived, never stored. A sale can be booked without its cost -- that is
+   what happens in a periodic system, and pretending otherwise would make
+   the two acts one again. So the obligation is not a flag somebody
+   remembered to set; it is read off the ledger, the same way positions
+   and costs are, and it clears when the record answers the question.
+
+   Shared by the Guided Year and the simulation: one implementation, so
+   the two modes cannot drift on what counts as owed.
+
+   -> [{:entry-id :date :narrative :item :quantity :reason}]"
+  [user-id]
+  (let [entries (get-ledger user-id)
+        ctx     (derivation-context-for user-id)]
+    (vec
+      (for [e entries
+            :let [d    (je-derive/derive-je (:assertions e) (:variables e) ctx)
+                  line (first (filter :needs-lot? (:lines d)))]
+            :when line
+            :let [flow (first (filter :physical-item (provides-flows (:assertions e))))]]
+        {:entry-id  (str (:id e))
+         :date      (:date e)
+         :narrative (:narrative e)
+         :item      (:physical-item flow)
+         :quantity  (:quantity flow)
+         :reason    (:unresolved-reason line)}))))
+
+(defn costing-payload
+  "What must be settled before the books move on: the oldest unmatched
+   sale, and the lots the business holds to answer it with."
+  [user-id]
+  (when-let [owed (first (unmatched-costs user-id))]
+    (assoc owed :entry-type "costing"
+                :holdings (:holdings (je-derive/derive-je {} {} (derivation-context-for user-id))))))
+
+(defn submit-costing!
+  "Identify the goods that went out of a recorded sale.
+
+   The student asserts nothing new about the exchange; they say which
+   units it drew on. That is an assertion added to the event, so the entry
+   is rewritten rather than corrected -- and the derivation is what
+   decides whether the lot can bear it. A lot that cannot is refused with
+   the record's own reason, and nothing is written."
+  [user-id entry-id batch]
+  (let [entries (get-ledger user-id)
+        entry   (first (filter #(= entry-id (str (:id %))) entries))]
+    (if-not entry
+      {:ok? false :reason "That entry is not in your ledger."}
+      (let [ctx   (derivation-context-for user-id)
+            named (update (:assertions entry) :provides
+                          (fn [v]
+                            (cond
+                              (sequential? v) (mapv #(if (:physical-item %)
+                                                       (assoc % :from-event batch) %) v)
+                              (map? v)        (if (:physical-item v)
+                                                (assoc v :from-event batch) v)
+                              :else v)))
+            d     (je-derive/derive-je named (:variables entry) ctx)
+            still (first (filter :needs-lot? (:lines d)))]
+        (if still
+          {:ok? false :reason (:unresolved-reason still)}
+          (do (update-ledger-entry! (:id entry) named (:journal-entry entry))
+              {:ok? true :entry-id entry-id :lines (:lines d)}))))))
 
 (defn- process-ledger-entries
   "Process all ledger entries and compute account balances.

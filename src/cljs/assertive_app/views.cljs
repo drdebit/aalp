@@ -216,6 +216,9 @@
               account)]))]]]))
 
 (declare chain-panel)
+;; The cost-matching panel is shared by the Guided Year and the
+;; simulation, and defined after both mount points.
+(declare costing-owed-panel)
 
 (defn- narrative-paragraphs
   "A narrative as paragraphs. Templates carry blank lines where the story
@@ -3349,6 +3352,12 @@
      ;; Gate simulation content behind tutorial completion
      (if tutorial-done?
        [:<>
+        ;; A sale with no cost against it stops the simulation the same
+        ;; way it stops the Guided Year: nothing new begins, and no
+        ;; period closes, until the record says which goods went out.
+        (when-let [owed (state/simulation-costing)]
+          [:div.simulation-costing
+           [costing-owed-panel owed api/submit-simulation-costing!]])
         [:div.simulation-top
          [business-dashboard]
          ;; When no pending transaction, show ledger directly below dashboard
@@ -3520,53 +3529,57 @@
           [:p.gate-bounds-hint
            (str "Between " (:min gate) " and " (:max gate) ".")]]]))))
 
-(defn guided-costing-view
-  "The year does not move on with a sale half-recorded.
+(defn costing-owed-panel
+  "The books owe a cost match. Same panel either side of the year
+   boundary: the sale is already recorded, and what is outstanding is
+   saying which goods went out.
 
-   The sale is already in the books -- it committed when the student
-   asserted it, because a sale can be booked without its cost and
-   pretending otherwise would make the two acts one again. What is owed
-   is the matching, and the books are held here until it is done. This
-   is enforcement at the close rather than at the keystroke, which is
-   where real systems put it."
+   `submit!` takes (entry-id batch on-refused) and differs only in which
+   endpoint it posts to."
+  [owed submit!]
+  (let [refused (r/atom nil)]
+    (fn [owed submit!]
+      [:div.costing-step
+       [:div.costing-header
+        [:h4 "Before the books move on: cost this sale"]
+        [:p.costing-why
+         "You recorded this sale, and the revenue is in your books. The goods that "
+         "earned it had a cost, and GAAP requires that cost to sit against this sale "
+         "rather than drift into a later period. Your record is the only thing that "
+         "can say what they cost — so say which goods went out."]]
+       [:p.costing-narrative (:narrative owed)]
+       [:p.costing-asked
+        (str "You provided " (:quantity owed) " "
+             (str/replace (str (:item owed)) "-" " ")
+             " on " (:date owed) ". Which did they come out of?")]
+       (if (seq (:holdings owed))
+         [:table.costing-lots
+          [:thead [:tr [:th ""] [:th "Batch"] [:th "Date"] [:th "What it holds"] [:th "Left"] [:th "Each"]]]
+          [:tbody
+           (doall
+             (for [h (:holdings owed)]
+               ^{:key (:id h)}
+               [:tr.costing-lot
+                {:on-click #(do (reset! refused nil)
+                                (submit! (:entry-id owed) (:id h)
+                                         (fn [why] (reset! refused why))))}
+                [:td.costing-radio "○"]
+                [:td.costing-id (:id h)]
+                [:td (:date h)]
+                [:td (str/replace (str (name (:item h))) "-" " ")]
+                [:td.costing-num (:left h)]
+                [:td.costing-num (when (:unit-cost h) (format-currency (:unit-cost h)))]]))]]
+         [:p.costing-empty "Your record holds no goods to cost this against."])
+       (when-let [why @refused]
+         [:p.costing-verdict why])])))
+
+(defn guided-costing-view
+  "The year does not move on with a sale half-recorded. The sale is
+   already in the books -- it committed when the student asserted it,
+   because a sale can be booked without its cost -- and what is owed is
+   the matching. Enforcement at the close, where real systems put it."
   []
-  (let [day     (state/guided-day)
-        refused (r/atom nil)]
-    (fn []
-      (let [day (state/guided-day)]
-        [:div.guided-costing
-         [:div.costing-step
-          [:div.costing-header
-           [:h4 "Before the year moves on: cost this sale"]
-           [:p.costing-why
-            "You recorded this sale, and the revenue is in your books. The goods that "
-            "earned it had a cost, and GAAP requires that cost to sit against this sale "
-            "rather than drift to some later period. Your record is the only thing that "
-            "can say what they cost — so say which goods went out."]]
-          [:p.costing-narrative (:narrative day)]
-          [:p.costing-asked
-           (str "You provided " (:quantity day) " " (str/replace (str (:item day)) "-" " ")
-                " on " (:date day) ". Which did they come out of?")]
-          (if (seq (:holdings day))
-            [:table.costing-lots
-             [:thead [:tr [:th ""] [:th "Batch"] [:th "Date"] [:th "What it holds"] [:th "Left"] [:th "Each"]]]
-             [:tbody
-              (doall
-                (for [h (:holdings day)]
-                  ^{:key (:id h)}
-                  [:tr.costing-lot
-                   {:on-click #(do (reset! refused nil)
-                                   (api/submit-costing! (:entry-id day) (:id h)
-                                                        (fn [why] (reset! refused why))))}
-                   [:td.costing-radio "○"]
-                   [:td.costing-id (:id h)]
-                   [:td (:date h)]
-                   [:td (str/replace (str (name (:item h))) "-" " ")]
-                   [:td.costing-num (:left h)]
-                   [:td.costing-num (when (:unit-cost h) (format-currency (:unit-cost h)))]]))]]
-            [:p.costing-empty "Your record holds no goods to cost this against."])
-          (when-let [why @refused]
-            [:p.costing-verdict why])]]))))
+  [costing-owed-panel (state/guided-day) api/submit-costing!])
 
 (defn guided-app-content []
   (let [day (state/guided-day)

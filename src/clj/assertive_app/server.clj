@@ -230,7 +230,11 @@
           {:business-state business-state
            :pending-transaction pending
            :available-actions available
-           :user-level user-level}))
+           :user-level user-level
+           ;; A sale booked without its cost matched. The books do not
+           ;; move on until it is: same rule as the Guided Year, same
+           ;; implementation behind it.
+           :costing (simulation/costing-payload user-id)}))
       {:status 401 :body {:error "Authentication required"}}))
 
   (GET "/api/simulation/action-schemas" []
@@ -244,9 +248,17 @@
             ;; Student-provided variables (optional)
             student-vars (or (:variables body) {})
             user-level (or (:current-level (progress/get-user-progress user-id)) 0)
-            result (simulation/start-action! user-id action-key user-level student-vars)]
+            ;; Enforcement at the close rather than the keystroke: the
+            ;; sale committed, and what is owed is the cost matched
+            ;; against it. Nothing new begins until it is.
+            owed (simulation/costing-payload user-id)
+            result (if owed
+                     {:error "A sale in your books has no cost against it yet. Say which goods went out before starting anything new."
+                      :costing owed}
+                     (simulation/start-action! user-id action-key user-level student-vars))]
         (if (:error result)
           {:status 400 :body {:error (:error result)
+                              :costing (:costing result)
                               :pending-transaction (:pending-transaction result)}}
           (response/response result)))
       {:status 401 :body {:error "Authentication required"}}))
@@ -421,15 +433,31 @@
           {:status 409 :body {:error "Current entry is not a gate"}}))
       {:status 401 :body {:error "Authentication required"}}))
 
+  (POST "/api/simulation/cost" {body :body :as request}
+    ;; The simulation's half of the matching step. Nothing new is
+    ;; asserted about the exchange, so this is not graded: the
+    ;; derivation prices the lot named or says why it cannot.
+    (if-let [user (:user request)]
+      (response/response
+        (simulation/submit-costing! (:db/id user) (:entry-id body) (:batch body)))
+      {:status 401 :body {:error "Authentication required"}}))
+
   (POST "/api/simulation/advance-period" request
     (if-let [user (:user request)]
       (let [user-id (:db/id user)
-            state (simulation/get-business-state user-id)
-            new-state (-> state
-                          (update :current-period inc)
-                          (assoc :moves-remaining simulation/MOVES_PER_PERIOD))]
-        (simulation/save-business-state! user-id new-state)
-        (response/response {:business-state new-state}))
+            ;; A period does not close over a sale with no cost against
+            ;; it. This is the close the enforcement was always meant
+            ;; for; starting an action is merely the nearer gate.
+            owed (simulation/costing-payload user-id)]
+        (if owed
+          {:status 400 :body {:error "This period has a sale with no cost matched against it. Say which goods went out before closing."
+                              :costing owed}}
+          (let [state (simulation/get-business-state user-id)
+                new-state (-> state
+                              (update :current-period inc)
+                              (assoc :moves-remaining simulation/MOVES_PER_PERIOD))]
+            (simulation/save-business-state! user-id new-state)
+            (response/response {:business-state new-state}))))
       {:status 401 :body {:error "Authentication required"}}))
 
   (POST "/api/simulation/cancel" request

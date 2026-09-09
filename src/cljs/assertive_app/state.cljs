@@ -373,7 +373,15 @@
          {:business-state (:business-state sim-state)
           :pending-transaction (:pending-transaction sim-state)
           :available-actions (:available-actions sim-state)
-          :user-level (:user-level sim-state)}))
+          :user-level (:user-level sim-state)
+          ;; A sale in the books with no cost against it. Nothing new
+          ;; starts, and no period closes, until it is settled.
+          :costing (:costing sim-state)}))
+
+(defn simulation-costing
+  "The outstanding cost match, if the books owe one."
+  []
+  (get-in @app-state [:simulation :costing]))
 
 (defn set-business-state! [state]
   (swap! app-state assoc-in [:simulation :business-state] state))

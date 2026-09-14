@@ -2133,16 +2133,21 @@
                 ^{:key hint}
                 [:li hint])]]))
 
-        ;; Dual fluency: the entry derived from the student's own
-        ;; assertions, rule by rule, with explore mode
-        [derived-je-panel]
-
         ;; A correct sale is not finished until its cost is matched
         ;; against it. The step appears only once the assertions are
         ;; right, because it is revenue recognition that licenses it.
+        ;;
+        ;; Above the entry, not below it. The student meets the question
+        ;; -- which goods went out? -- before meeting the two unpriced
+        ;; cost lines it explains, so the em dashes read as the thing
+        ;; being asked about rather than as a fault in the entry.
         (when (and (= :correct (keyword (:status feedback)))
                    (some :needs-lot? (:lines (state/derived-je))))
           [costing-step])
+
+        ;; Dual fluency: the entry derived from the student's own
+        ;; assertions, rule by rule, with explore mode
+        [derived-je-panel]
 
         (when (state/drill-active?)
           [drill-stuck-nudge])

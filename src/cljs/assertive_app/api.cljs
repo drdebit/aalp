@@ -198,6 +198,11 @@
                     (state/stamp-problem-served!)
                     (state/set-current-level! level)
                     (fetch-assertions! level)
+                    ;; Year 1 needs its own ledger too: the parties the
+                    ;; student has already dealt with are what make the
+                    ;; counterparty dropdown a question rather than a
+                    ;; single answer handed over.
+                    (fetch-ledger!)
                     (when (= "transaction" (:entry-type response))
                       (state/set-current-problem!
                         {:id (str "guided-day-" (:day response))
@@ -423,6 +428,9 @@
                     {:narrative (:narrative pending)
                      :id (:problem-id pending)
                      :template (:template-key pending)
+                     ;; The transaction's own parties, so the sentence
+                     ;; builder can offer them rather than ask for typing.
+                     :variables (:variables pending)
                      :correct-assertions (:correct-assertions pending)})
                   (state/stamp-problem-served!))
                 (state/set-loading! false))

@@ -649,13 +649,45 @@
                            "cash")])
      [remove-assertion-button :receives]]))
 
+(defn- counterparty-options
+  "The parties this problem could plausibly name.
+
+   Gathered from what the student can already see: the transaction's own
+   variables, the record of the company it belongs to, and their own
+   ledger. Several names, so the narrative still has to be read -- the
+   question \"which party?\" survives; only the typing goes.
+
+   A dropdown rather than a free-text field because the name is data
+   entry, not the thing being assessed. A misspelt vendor was failing a
+   classification for a reason that has nothing to do with accounting."
+  [current]
+  (let [problem    (state/current-problem)
+        vars       (:variables problem)
+        from-vars  (map #(get vars %)
+                        [:customer :vendor :employee :owner :counterparty :party :supplier])
+        events     (concat (:prior-events problem)
+                           (state/walkthrough-events)
+                           (map :assertions (state/ledger)))
+        from-chain (map #(get-in % [:has-counterparty :name]) events)]
+    (->> (concat from-vars from-chain [current])
+         (filter string?)
+         (remove str/blank?)
+         distinct
+         sort
+         (mapv (fn [n] {:value n :label n})))))
+
 (defn- render-counterparty-fragment
   "Render the counterparty part of the sentence."
   [params connector]
-  [:span.assertion-fragment.counterparty
-   [:span.connector (str " " connector " ")]
-   [inline-text-input :has-counterparty :name (:name params) "party name"]
-   [remove-assertion-button :has-counterparty]])
+  (let [opts (counterparty-options (:name params))]
+    [:span.assertion-fragment.counterparty
+     [:span.connector (str " " connector " ")]
+     ;; Where the record offers no names at all, typing is still the
+     ;; only way to say who.
+     (if (seq opts)
+       [inline-dropdown :has-counterparty :name opts (:name params) "which party?"]
+       [inline-text-input :has-counterparty :name (:name params) "party name"])
+     [remove-assertion-button :has-counterparty]]))
 
 (defn- render-requires-section
   "Render the 'requires' obligation section.

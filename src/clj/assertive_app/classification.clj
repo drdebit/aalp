@@ -1370,10 +1370,14 @@
      "Cash purchase of a design (provide cash, receive an intangible asset)"
      [{:debit "Design (Intangible Asset)" :credit "Cash"}]
      :provides-unit "monetary-unit"
-     :receives-unit "physical-unit"
+     ;; Intellectual property, not a physical unit. A design is an asset
+     ;; for the same reason a printer is -- the record says what it is
+     ;; for, and it is not used up by that use -- and it is an INTANGIBLE
+     ;; one for the only reason 2101 gives: no physical substance. That
+     ;; is what this denomination asserts, and it is why the entry can
+     ;; tell a design from a press when their `allows` are identical.
+     :receives-unit "intellectual-property"
      :physical-item "logo-design"
-     ;; A design is an asset for the same reason a printer is: the record
-     ;; says what it is for, and it is not used up by that use.
      :permits #{:allows}
      :also-required #{:allows}
      :requires-position {:receives :capital}
@@ -2614,11 +2618,18 @@
    {:narrative-template "On {date}, {company} pays {vendor} ${amount} for a logo design it will print on its blank t-shirts."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
-                          :receives {:unit "physical-unit" :physical-item "logo-design" :quantity 1}
+                          ;; A right, not a thing. The denomination is the
+                          ;; assertion that says so, and it is what makes
+                          ;; the entry book to an intangible rather than to
+                          ;; equipment -- the same `allows` sits on both.
+                          :receives {:unit "intellectual-property" :physical-item "logo-design" :quantity 1}
                           :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
                           :has-counterparty {:name :vendor}}
     :correct-classification :design-purchase
-    :level 0
+    ;; Intangibles are Topic 7 in ACCT 2101 -- after merchandising,
+    ;; inventories and receivables -- and are taught at "identify the
+    ;; basic issues" depth. Level 0 put them before the first cash sale.
+    :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :vendor ["Ada Okafor, designer" "Pixel & Thread Studio" "a freelance illustrator"]
                 :amount [300 400 500]}}

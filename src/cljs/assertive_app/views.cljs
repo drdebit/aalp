@@ -638,9 +638,22 @@
      [:span.verb "receives "]
      [inline-number-input :receives :quantity (:quantity params) "qty"]
      " "
-     (if (= (:unit params) "physical-unit")
+     ;; An intangible still has to be named -- the record needs to know
+     ;; WHICH right was acquired to say anything about it later -- so it
+     ;; gets an item too. What it does not get is a physical denomination.
+     (cond
+       (= (:unit params) "physical-unit")
        [:span
         [inline-dropdown :receives :physical-item item-options (:physical-item params) "item"]]
+
+       (= (:unit params) "intellectual-property")
+       [:span
+        [inline-dropdown :receives :physical-item
+         [{:value "logo-design" :label "Logo Design"}]
+         (:physical-item params) "which right?"]
+        [:span.unit-label " (no physical substance)"]]
+
+       :else
        [:span.unit-label (case (:unit params)
                            "service-unit" "a service"
                            "effort-unit" "labour"
@@ -1204,7 +1217,17 @@
                                (add-assertion! assertion-code "service-unit")
                                (reset! sub-menu nil)
                                (reset! show-menu? false))}
-                  "a service"])])
+                  "a service"])
+               ;; A right with no physical substance. Its own
+               ;; denomination, because that absence is the whole of what
+               ;; makes an asset intangible rather than equipment.
+               (when (= "receives" (name assertion-code))
+                 [:button.menu-item
+                  {:on-click #(do
+                               (add-assertion! assertion-code "intellectual-property")
+                               (reset! sub-menu nil)
+                               (reset! show-menu? false))}
+                  "intellectual property"])])
 
             ;; Main menu: list available assertions
             (when-not @sub-menu

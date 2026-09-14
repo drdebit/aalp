@@ -25,12 +25,25 @@
    thing cost."
   (:require [clojure.string :as str]))
 
-(defn- physical
-  "The item and count of a physical flow, if this is one."
+(defn- held
+  "The item, count and denomination of a flow that brings a thing into
+   the business or sends one out.
+
+   Physical units and intellectual property are both things the business
+   holds, and both can be capital. What separates them is the
+   denomination -- which is exactly what double-entry means by physical
+   substance, and the only thing 2101 uses to tell the two apart. Reading
+   both here is what lets a design be capital without being equipment.
+
+   Formerly `physical`, and named for the only denomination it read."
   [params]
-  (when (= "physical-unit" (some-> (:unit params) name))
+  (when-let [denom (case (some-> (:unit params) name)
+                     "physical-unit"         :physical
+                     "intellectual-property" :intangible
+                     nil)]
     (when-let [item (some-> (:physical-item params) name)]
       {:item item
+       :denomination denom
        :units (let [q (:quantity params)]
                 (cond (number? q) q
                       (string? q) (try (Double/parseDouble (str/trim q))
@@ -46,7 +59,7 @@
   (let [cap (name cap)
         by-id (into {} (for [e events
                              :let [id (some-> (:has-identifier e) name)
-                                   it (:item (physical (:receives e)))]
+                                   it (:item (held (:receives e)))]
                              :when (and id it)]
                          [id it]))]
     (get by-id cap cap)))
@@ -62,12 +75,12 @@
        (keep #(when (and % (not= "" %)) (name %)))
        vec))
 
-(defn- physicals
-  "Every physical flow under an assertion. A transformation consumes more
+(defn- helds
+  "Every held thing under an assertion. A transformation consumes more
    than one thing -- a blank shirt AND ink -- so a flow assertion may
    hold a list; a single map is the one-element case."
   [v]
-  (keep physical (cond (nil? v) [] (sequential? v) v :else [v])))
+  (keep held (cond (nil? v) [] (sequential? v) v :else [v])))
 
 (defn item-roles
   "What the chain says about each item, as a set of roles.
@@ -89,7 +102,7 @@
                                 (reduce (fn [acc {:keys [item]}]
                                           (update acc item (fnil conj #{}) role))
                                         acc
-                                        (physicals (get assertions assertion-key))))
+                                        (helds (get assertions assertion-key))))
                               acc
                               {:receives :acquired
                                :consumes :consumed
@@ -110,7 +123,7 @@
                   ;; which is why the pair is worth asking for and the
                   ;; full recipe is not.
                   allows (:allows assertions)
-                  acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
+                  acc (if-let [{:keys [item]} (and allows (held (:receives assertions)))]
                         (update acc item (fnil conj #{}) :enables)
                         acc)
                   acc (reduce (fn [acc i] (update acc i (fnil conj #{}) :consumable))
@@ -188,16 +201,40 @@
    :capital         "Equipment (Fixed Asset)"
    :service         "Service Cost"})
 
+(defn item-denomination
+  "What kind of thing the record says this is -- :physical or
+   :intangible -- read from the events that brought it in or made it.
+
+   This is the assertion that carries physical substance. A student who
+   records a design as intellectual property has SAID it has none; that
+   is the whole of the distinction 2101 draws, and it belongs in the
+   record rather than in a catalogue. nil means nothing has said."
+  [events item]
+  (let [item (some-> item name)]
+    (->> events
+         (mapcat (fn [e] (concat (helds (:receives e)) (helds (:creates e)))))
+         (filter #(= item (:item %)))
+         (some :denomination))))
+
 (defn position-account
-  "The label for a position. The position itself is read off the record;
-   only the word chosen for it consults the catalogue, and only to tell a
-   machine from a design -- both are capital, kept for future use and not
-   used up by it, and double-entry files them under different names."
-  [position item item-kinds]
-  (if (and (= :capital position)
-           (= :intangible (get item-kinds (keyword (or item "")))))
-    "Design (Intangible Asset)"
-    (position-accounts position)))
+  "The label for a position.
+
+   Both a press and a design are capital -- kept for use, not used up by
+   it -- and double-entry files them under different names. What
+   separates them is physical substance, and the record says that: a
+   thing denominated in intellectual property has none.
+
+   The catalogue is consulted only where the record is silent, for
+   entries made before the denomination was asserted. It is a fallback,
+   not the answer."
+  ([position item item-kinds] (position-account position item item-kinds nil))
+  ([position item item-kinds denomination]
+   (if (and (= :capital position)
+            (or (= :intangible denomination)
+                (and (nil? denomination)
+                     (= :intangible (get item-kinds (keyword (or item "")))))))
+     "Design (Intangible Asset)"
+     (position-accounts position))))
 
 (defn inventory-account
   "The account an item's movements hit, given the chain and the firm's
@@ -232,7 +269,7 @@
                       (reduce (fn [acc {:keys [item units]}]
                                 (update acc item (fnil + 0) (* sign (or units 0))))
                               acc
-                              (physicals (get assertions assertion-key))))
+                              (helds (get assertions assertion-key))))
                     acc
                     {:receives 1 :creates 1 :consumes -1 :provides -1}))
           {} events))
@@ -249,7 +286,7 @@
         drawn (reduce (fn [acc assertions]
                         (reduce (fn [acc {:keys [from-event] :as f}]
                                   (if (and from-event (= item (some-> (:physical-item f) name)))
-                                    (update acc (name from-event) (fnil + 0) (or (:units (physical f)) 0))
+                                    (update acc (name from-event) (fnil + 0) (or (:units (held f)) 0))
                                     acc))
                                 acc
                                 (mapcat #(let [v (get assertions %)]
@@ -259,7 +296,7 @@
     (vec (for [assertions events
                :let [id (some-> (:has-identifier assertions) name)]
                :when id
-               in (concat (physicals (:receives assertions)) (physicals (:creates assertions)))
+               in (concat (helds (:receives assertions)) (helds (:creates assertions)))
                :when (= item (:item in))]
            {:id id
             :date (get-in assertions [:has-date :date])
@@ -296,7 +333,7 @@
                (let [allows  (:allows assertions)
                      inputs  (allows-inputs allows)
                      creates (:creates-item allows)
-                     enabler (:item (physical (:receives assertions)))]
+                     enabler (:item (held (:receives assertions)))]
                  (when (and (seq inputs) creates)
                    {:enabler  enabler
                     :consumes (set inputs)
@@ -310,7 +347,7 @@
    `expects` or `allows` the same flow is about the future and
    constrains nothing."
   [selections events]
-  (when-let [{:keys [item units]} (physical (:provides selections))]
+  (when-let [{:keys [item units]} (held (:provides selections))]
     (let [available (get (on-hand events) item 0)
           wanted    (or units 0)]
       (when (> wanted available)
@@ -360,7 +397,7 @@
                 "SP has acquired; nothing in your record shows any.")
            (str "You have " (fmt available) " " item " on hand, but this "
                 "event consumes " (fmt wanted) "."))})))
-      (physicals (:consumes selections)))))
+      (helds (:consumes selections)))))
 
 (defn- capability-problem
   "A transformation needs something that makes it possible.
@@ -371,9 +408,9 @@
    exactly the gap a student should meet, and fill themselves, rather
    than be told about in advance."
   [selections events]
-  (let [ins (vec (physicals (:consumes selections)))
+  (let [ins (vec (helds (:consumes selections)))
         in  (first ins)
-        out (first (physicals (:creates selections)))]
+        out (first (helds (:creates selections)))]
     (when (and in out)
       (let [caps  (capabilities events)
             held  (on-hand events)
@@ -444,14 +481,14 @@
                   (update-in acc [item role] (fnil conj []) assertions))
             acc (reduce (fn [acc [assertion-key role]]
                           (reduce (fn [acc {:keys [item]}] (add acc item role))
-                                  acc (physicals (get assertions assertion-key))))
+                                  acc (helds (get assertions assertion-key))))
                         acc
                         {:receives :acquired :consumes :consumed
                          :creates  :created  :provides :provided})
             acc (if-let [cap (get-in assertions [:is-allowed-by :capacity])]
                   (add acc (capacity-item cap events) :enables) acc)
             allows (:allows assertions)
-            acc (if-let [{:keys [item]} (and allows (physical (:receives assertions)))]
+            acc (if-let [{:keys [item]} (and allows (held (:receives assertions)))]
                   (add acc item :enables) acc)
             acc (reduce (fn [acc i] (add acc i :consumable)) acc (allows-inputs allows))
             acc (if-let [i (:creates-item allows)]  (add acc (name i) :producible) acc)]

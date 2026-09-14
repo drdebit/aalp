@@ -141,6 +141,16 @@
     :amount :monetary
     :text :position}
 
+   ;; The same rule for a thing with no physical substance. A separate
+   ;; rule rather than a relaxed one, because the denomination is the
+   ;; assertion doing the work and it should be visible in the rulebook
+   ;; that this is a different thing being said.
+   {:id :intangible-in
+    :when {:assertion :receives :params {:unit "intellectual-property"}}
+    :line {:side :debit :account :position}
+    :amount :monetary
+    :text :position}
+
    ;; -------- Adjusting entries: a calculation recorded as an event ------
    ;; `reports` carries a category, a basis, and the amount the
    ;; calculation builder produced. Each basis is a different reason to
@@ -372,6 +382,11 @@
       ;; never price a journal-entry line. Units are recorded; what they
       ;; are worth is a different question with a different answer.
       ("ownership-units" "ownership-unit") (q/quantity v :claim :ownership-unit)
+      ;; A right, not a thing: countable and held, with no physical
+      ;; substance. Its own denomination, because that absence is the
+      ;; whole of what separates an intangible from equipment -- and
+      ;; because a design must never be addable to a pile of shirts.
+      "intellectual-property" (q/quantity v :intangible :intellectual-property)
       nil)))
 
 (defn monetary-quantity?
@@ -578,7 +593,12 @@
   [account flow context]
   (if (= :position account)
     (or (some-> (resolve-position flow context)
-                (chain/position-account (:physical-item flow) (:item-kinds context)))
+                (chain/position-account
+                  (:physical-item flow)
+                  (:item-kinds context)
+                  (chain/item-denomination
+                    (concat (:events context) [(:current context)])
+                    (:physical-item flow))))
         ;; Not an account. The record has not said what this thing is,
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.

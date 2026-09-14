@@ -3559,7 +3559,15 @@
      [:p.guided-hint
       "Record what happened using assertions. Your entry goes into the
        ledger exactly as you record it — the journal entry it produces
-       appears once it's in the books."]]))
+       appears once it's in the books."]
+     ;; The record button lives here because this panel is what the
+     ;; guided day renders. It used to live only in `feedback-panel`,
+     ;; which the guided layout does not use -- so Year 1 could be
+     ;; written but never committed.
+     [:button.primary.guided-record-btn
+      {:on-click #(api/submit-guided-answer!)
+       :disabled (empty? (keys (state/selected-assertions)))}
+      "Record Transaction"]]))
 
 (defn guided-result-panel
   "After recording: neutral confirmation, the posted ledger line, and

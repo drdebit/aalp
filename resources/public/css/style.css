@@ -4324,6 +4324,9 @@ header {
 .dj-interleave td { background: transparent; border: none; padding: 0; }
 .dj-interleave-cell .costing-step { margin: 10px 0; }
 
+.guided-record-btn { margin-top: 16px; width: 100%; }
+.guided-record-btn:disabled { opacity: .5; cursor: not-allowed; }
+
 /* ==================== Costing step ====================
    The second act of a sale: identify the lot the goods came out of.
    Presented as work still to do, not as an error. */

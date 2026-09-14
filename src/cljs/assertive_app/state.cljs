@@ -736,6 +736,23 @@
 (defn drill-worked-example? []
   (boolean (get-in @app-state [:drill :worked-example?])))
 
+(defn resume-drill!
+  "Pick a practice round back up where it stopped.
+
+   The keys arrive from the server as the client stored them, so this is
+   a restore rather than a re-derivation: attempted, correct, streak and
+   -- the one that matters -- the patterns still owed. Anything missing
+   from an older saved round falls back to a sane start."
+  [drill]
+  (swap! app-state assoc :drill
+         (merge {:active? true :attempted 0 :correct 0 :streak 0 :round 1
+                 :served [] :missed [] :miss-streak 0 :miss-assertions {}
+                 :entry-path :tutorial :worked-example? false}
+                ;; JSON gives back strings where keywords went in.
+                (-> drill
+                    (update :entry-path #(if % (keyword %) :tutorial))
+                    (assoc :active? true)))))
+
 (defn end-drill! []
   (swap! app-state assoc :drill nil))
 

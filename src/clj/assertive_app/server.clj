@@ -67,7 +67,20 @@
 
   (GET "/api/progress" request
     (if-let [user (:user request)]
-      (response/response (progress/get-user-progress (:db/id user)))
+      (response/response
+        (assoc (progress/get-user-progress (:db/id user))
+               ;; The practice round this student left unfinished, so
+               ;; closing the app costs them their place and not the
+               ;; round.
+               :drill-state (progress/get-drill-state (:db/id user))))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/drill/state" {body :body :as request}
+    ;; Save or clear the round in progress. Sent after each attempt and
+    ;; when a round ends; a null drill clears it.
+    (if-let [user (:user request)]
+      (do (progress/save-drill-state! (:db/id user) (:drill body))
+          (response/response {:saved true}))
       {:status 401 :body {:error "Authentication required"}}))
 
   (GET "/api/history" request

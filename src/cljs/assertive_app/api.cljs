@@ -123,8 +123,20 @@
                            :current-level user-level
                            :completed-tutorials (set (:completed-tutorials response [])))
                     (state/update-progress! response)
-                    ;; Enter the two-act arc (Guided Year -> simulation)
+                    ;; A practice round left unfinished is picked up where
+                    ;; it stopped. Restored BEFORE the guided state is
+                    ;; fetched, because that is what decides which view
+                    ;; renders -- and a student mid-round belongs in the
+                    ;; drill, not at the day they have not reached yet.
+                    ;; The guided state is fetched either way -- it is
+                    ;; what sets the mode and the day the student is on.
+                    ;; Resuming the drill first means fetch-guided-state!
+                    ;; can see it and leave the drill's problem alone.
+                    (when-let [drill (:drill-state response)]
+                      (state/resume-drill! drill))
                     (fetch-guided-state!)
+                    (when-let [drill (:drill-state response)]
+                      (fetch-problem! (:level drill user-level)))
                     (state/set-loading! false)))
        :error-handler (fn [_]
                         ;; Invalid session - clear it
@@ -203,7 +215,11 @@
                     ;; counterparty dropdown a question rather than a
                     ;; single answer handed over.
                     (fetch-ledger!)
-                    (when (= "transaction" (:entry-type response))
+                    ;; A student mid-practice-round belongs in the round,
+                    ;; not at the day they have not reached yet: leave
+                    ;; their problem and their selections alone.
+                    (when (and (= "transaction" (:entry-type response))
+                               (not (state/drill-active?)))
                       (state/set-current-problem!
                         {:id (str "guided-day-" (:day response))
                          :narrative (:narrative response)
@@ -328,6 +344,20 @@
 
 ;; ==================== Answer Submission ====================
 
+(defn save-drill-state!
+  "Keep the round in progress on the server, so closing the app costs a
+   student their place and not the round. Fire-and-forget: a failure
+   here must never interrupt the drill, it only costs a resume point."
+  [drill]
+  (POST (str api-base "/drill/state")
+    {:params {:drill drill}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [_])
+     :error-handler (silent-error-handler "Could not save the practice round:")}))
+
 (defn submit-answer!
   "Submit assertion-based answer. Includes problem metadata for tracking."
   []
@@ -371,7 +401,9 @@
                                     (set/difference
                                       (set (keys (:correct-assertions problem)))
                                       (set (keys (state/selected-assertions)))))]
-                      (state/record-drill-result! correct? missing)))
+                      (state/record-drill-result! correct? missing)
+                      ;; ...and keep it, so leaving now does not undo it.
+                      (save-drill-state! (state/drill-state))))
                   ;; Update progress if included in response
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))

@@ -1,6 +1,7 @@
 (ns assertive-app.progress
   "Progress tracking and level unlocking for AALP."
   (:require [assertive-app.schema :as schema]
+            [clojure.edn :as edn]
             [datomic.api :as d]))
 
 ;; Number of correct answers needed at a level to unlock the next level
@@ -276,3 +277,25 @@
   [user-id level]
   @(d/transact (schema/get-conn)
      [[:db/add user-id :user/completed-tutorials (long level)]]))
+
+(defn save-drill-state!
+  "Keep the practice round in progress, so closing the app does not mean
+   redoing it. `nil` clears it -- the round was passed, or abandoned.
+
+   Stored as EDN rather than modelled: this is a resume point, not a
+   record of anything. What the round MEANT is already in the attempt
+   history, which is what analytics reads."
+  [user-id drill]
+  @(d/transact (schema/get-conn)
+     (if (nil? drill)
+       [[:db/retract user-id :user/drill-state]]
+       [[:db/add user-id :user/drill-state (pr-str drill)]])))
+
+(defn get-drill-state
+  "The practice round this student left unfinished, or nil."
+  [user-id]
+  (try
+    (some-> (d/pull (schema/db) [:user/drill-state] user-id)
+            :user/drill-state
+            edn/read-string)
+    (catch Exception _ nil)))

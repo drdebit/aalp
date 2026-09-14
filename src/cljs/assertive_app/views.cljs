@@ -1947,6 +1947,7 @@
        {:on-click #(do
                      (api/complete-tutorial! level)
                      (state/end-drill!)
+                     (api/save-drill-state! nil)
                      (state/clear-feedback!)
                      (state/set-current-problem! nil)
                      (api/fetch-guided-state!))}
@@ -1960,6 +1961,7 @@
          [:button.primary.drill-retry-btn
           {:on-click #(do
                         (state/end-drill!)
+                     (api/save-drill-state! nil)
                         (state/clear-feedback!)
                         (state/set-current-problem! nil)
                         (state/start-tutorial-quiz! level))}
@@ -1997,6 +1999,7 @@
           {:on-click #(do
                         (api/complete-tutorial! level)
                         (state/end-drill!)
+                     (api/save-drill-state! nil)
                         (state/clear-feedback!)
                         (state/set-current-problem! nil)
                         (api/fetch-guided-state!))}

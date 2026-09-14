@@ -37,6 +37,15 @@
     :db/cardinality :db.cardinality/many
     :db/doc "Set of tutorial level numbers the user has completed (0-7)"}
 
+   {:db/ident :user/drill-state
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN of the practice round in progress, so a student who
+             closes the app resumes where they stopped rather than
+             redoing the round. Cleared when the round is passed or
+             abandoned. Browser-only state before this, and lost on
+             every reload."}
+
    ;; ==================== Progress Entity ====================
    ;; One per user, tracks overall progress
    {:db/ident :progress/user

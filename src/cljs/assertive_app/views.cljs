@@ -1110,6 +1110,43 @@
      (when selected-basis
        [calculation-builder selected-basis])]))
 
+(defn- focus-new-assertion-input!
+  "Put the cursor where the student is about to type.
+
+   Adding an assertion appends a fragment whose fields are empty, so the
+   first empty control in the sentence is the one just added. A number
+   field is preferred over a dropdown, because the quantity is what
+   actually has to be typed -- everything else can be picked.
+
+   Tried twice: once after the render that adds the fragment, and again
+   shortly after, because closing the menu is a second render and the
+   field may not exist for the first attempt. Only ever moves TO an
+   empty field, and never moves when the cursor is already on the field
+   it would choose -- so it cannot interrupt someone mid-number."
+  []
+  (let [move! (fn []
+                (when-let [root (.querySelector js/document ".sentence-container")]
+                  (let [controls (array-seq (.querySelectorAll root "input, select"))
+                        empty?   (fn [c] (str/blank? (.-value c)))
+                        number?  (fn [c] (= "number" (.-type c)))
+                        target   (or (first (filter #(and (empty? %) (number? %)) controls))
+                                     (first (filter empty? controls)))]
+                    (when (and target (not (identical? target (.-activeElement js/document))))
+                      (.focus target)))))]
+    (r/after-render move!)
+    (js/setTimeout move! 60)))
+
+(defn- add-assertion!
+  "Add an assertion to the sentence and put the cursor in its first
+   empty field. Every route into the menu goes through here so none of
+   them can forget the focus."
+  ([code] (add-assertion! code nil))
+  ([code unit]
+   (state/toggle-assertion! code)
+   (when unit (state/update-assertion-parameter! code :unit unit))
+   (auto-populate-assertion! code)
+   (focus-new-assertion-input!)))
+
 (defn- add-assertion-menu
   "Menu to add new assertions to the sentence."
   [_selected-assertions _available-assertions]
@@ -1144,25 +1181,19 @@
                 (str "\u2190 " (if (= assertion-code "provides") "Provides" "Receives"))]
                [:button.menu-item
                 {:on-click #(do
-                             (state/toggle-assertion! assertion-code)
-                             (state/update-assertion-parameter! assertion-code :unit "monetary-unit")
-                             (auto-populate-assertion! assertion-code)
+                             (add-assertion! assertion-code "monetary-unit")
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
                 "cash"]
                [:button.menu-item
                 {:on-click #(do
-                             (state/toggle-assertion! assertion-code)
-                             (state/update-assertion-parameter! assertion-code :unit "physical-unit")
-                             (auto-populate-assertion! assertion-code)
+                             (add-assertion! assertion-code "physical-unit")
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
                 "physical units"]
                [:button.menu-item
                 {:on-click #(do
-                             (state/toggle-assertion! assertion-code)
-                             (state/update-assertion-parameter! assertion-code :unit "ownership-units")
-                             (auto-populate-assertion! assertion-code)
+                             (add-assertion! assertion-code "ownership-units")
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
                 "ownership units"]
@@ -1170,9 +1201,7 @@
                (when (= "receives" (name assertion-code))
                  [:button.menu-item
                   {:on-click #(do
-                               (state/toggle-assertion! assertion-code)
-                               (state/update-assertion-parameter! assertion-code :unit "service-unit")
-                               (auto-populate-assertion! assertion-code)
+                               (add-assertion! assertion-code "service-unit")
                                (reset! sub-menu nil)
                                (reset! show-menu? false))}
                   "a service"])])
@@ -1186,8 +1215,7 @@
                   {:on-click (if (needs-unit-sub? (:code assertion))
                                #(reset! sub-menu (:code assertion))
                                #(do
-                                 (state/toggle-assertion! (:code assertion))
-                                 (auto-populate-assertion! (:code assertion))
+                                 (add-assertion! (:code assertion))
                                  (reset! show-menu? false)))
                    :title (:description assertion)}
                   (:label assertion)])))])]))))

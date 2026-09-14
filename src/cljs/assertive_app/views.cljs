@@ -1621,12 +1621,25 @@
    side is a prompt, not an error), and honest about what double-entry
    cannot see (recorded -- but not reflected). Clicking a line reveals
    the rulebook rule that produced it and highlights the producing
-   assertions."
-  []
+   assertions.
+
+   Takes an optional {:costing component}. A sale derives two entries --
+   the revenue recognition, which balances on its own, and the cost
+   recognition, which cannot be priced until the student says which
+   goods went out. Given a costing component, it is placed BETWEEN them:
+   the revenue entry stands complete, then the question, then the lines
+   the question is about. Its presence also silences the per-line notes
+   on those lines, which would otherwise repeat the panel's own text
+   twice, a centimetre below it."
+  [& _]
   (let [expanded (r/atom nil)]
-    (fn []
+    (fn [& [{:keys [costing]}]]
       (when-let [d (state/derived-je)]
-        (let [{:keys [lines placeholders context not-reflected totals unsupported]} d]
+        (let [{:keys [lines placeholders context not-reflected totals unsupported]} d
+              ;; Where the cost entry begins: the first line the record
+              ;; cannot price until a lot is named.
+              costing-at (when costing
+                           (first (keep-indexed #(when (:needs-lot? %2) %1) lines)))]
           [:div.derived-je
            ;; You can only provide what you have. Said before the entry,
            ;; because no journal entry is the right answer to giving away
@@ -1657,6 +1670,12 @@
                    (let [open? (= @expanded i)]
                      ^{:key (str "dj-" i)}
                      [:<>
+                      ;; The revenue entry above is finished and balances.
+                      ;; What follows is the part that does not, and this
+                      ;; is the question standing between them.
+                      (when (= i costing-at)
+                        [:tr.dj-interleave
+                         [:td.dj-interleave-cell {:colSpan 4} costing]])
                       [:tr.dj-line
                        {:class (str (:side line) (when open? " open"))
                         :on-click #(let [now (if open? nil i)]
@@ -1689,7 +1708,10 @@
                       ;; the student has to go to the record and say
                       ;; which goods went out, and they cannot be asked
                       ;; to hover over an em dash to find that out.
-                      (when (:unresolved? line)
+                      (when (and (:unresolved? line)
+                                 ;; ...unless the costing panel directly
+                                 ;; above is already saying it.
+                                 (not (and costing (:needs-lot? line))))
                         [:tr.dj-needs
                          [:td]
                          [:td.dj-needs-cell {:colSpan 3}
@@ -2133,21 +2155,19 @@
                 ^{:key hint}
                 [:li hint])]]))
 
-        ;; A correct sale is not finished until its cost is matched
-        ;; against it. The step appears only once the assertions are
-        ;; right, because it is revenue recognition that licenses it.
-        ;;
-        ;; Above the entry, not below it. The student meets the question
-        ;; -- which goods went out? -- before meeting the two unpriced
-        ;; cost lines it explains, so the em dashes read as the thing
-        ;; being asked about rather than as a fault in the entry.
-        (when (and (= :correct (keyword (:status feedback)))
-                   (some :needs-lot? (:lines (state/derived-je))))
-          [costing-step])
-
         ;; Dual fluency: the entry derived from the student's own
-        ;; assertions, rule by rule, with explore mode
-        [derived-je-panel]
+        ;; assertions, rule by rule, with explore mode.
+        ;;
+        ;; A correct sale is not finished until its cost is matched
+        ;; against it, and the question goes INSIDE the entry: after the
+        ;; revenue lines, which balance on their own, and before the
+        ;; cost lines, which are what it is about. The step appears only
+        ;; once the assertions are right, because it is revenue
+        ;; recognition that licenses it.
+        [derived-je-panel
+         (when (and (= :correct (keyword (:status feedback)))
+                    (some :needs-lot? (:lines (state/derived-je))))
+           {:costing [costing-step]})]
 
         (when (state/drill-active?)
           [drill-stuck-nudge])

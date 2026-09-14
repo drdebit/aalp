@@ -4319,6 +4319,11 @@ header {
 }
 .narrative .company-blurb + p { margin-top: 14px; }
 
+/* The costing question, standing inside the entry between the revenue
+   lines and the cost lines it is about. Full width, no table chrome. */
+.dj-interleave td { background: transparent; border: none; padding: 0; }
+.dj-interleave-cell .costing-step { margin: 10px 0; }
+
 /* ==================== Costing step ====================
    The second act of a sale: identify the lot the goods came out of.
    Presented as work still to do, not as an error. */

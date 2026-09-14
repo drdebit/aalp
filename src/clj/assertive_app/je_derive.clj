@@ -159,14 +159,35 @@
    ;; a prepaid used up, an advance earned.
    {:id :depreciation
     :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :denomination :physical
     :line {:side :debit :account "Depreciation Expense"}
     :amount :reported
     :text "A long-lived asset is used up a little each period. The part used this period is an expense; the calculation is the assertion, and the record keeps how it was worked out."}
    {:id :depreciation-contra
     :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :denomination :physical
     :line {:side :credit :account "Accumulated Depreciation"}
     :amount :reported
     :text "The asset is not written down directly: what has been used up so far accumulates beside it, so the original cost stays visible."}
+
+   ;; The same calculation, spread the same way, over a thing with no
+   ;; physical substance. 2101: intangibles are amortised "in the same
+   ;; way that plant assets are depreciated" -- so the arithmetic is
+   ;; identical and only the denomination of the asset differs. Nothing
+   ;; here is looked up; the record said what kind of thing it was when
+   ;; it was acquired.
+   {:id :amortization
+    :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :denomination :intangible
+    :line {:side :debit :account "Amortization Expense"}
+    :amount :reported
+    :text "An intangible is used up over its life just as a machine is, and the part used this period is an expense. It is called amortisation rather than depreciation only because the thing has no physical substance -- which is what you said when you recorded acquiring it."}
+   {:id :amortization-contra
+    :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
+    :denomination :intangible
+    :line {:side :credit :account "Accumulated Amortization"}
+    :amount :reported
+    :text "What has been used up so far accumulates beside the asset, so its original cost stays visible -- the same treatment a machine gets."}
    {:id :bad-debt
     :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
     :line {:side :debit :account "Bad Debt Expense"}
@@ -690,7 +711,19 @@
                                                    ;; read off the chain, not just what
                                                    ;; the flow says about it.
                                                    (or (nil? (:position rule))
-                                                       (= (:position rule) (resolve-position % context))))
+                                                       (= (:position rule) (resolve-position % context)))
+                                                   ;; ...and whether it has physical
+                                                   ;; substance, which is what separates
+                                                   ;; depreciation from amortisation.
+                                                   ;; Silence is read as physical: the
+                                                   ;; ordinary case, and what every entry
+                                                   ;; written before this assumed.
+                                                   (or (nil? (:denomination rule))
+                                                       (= (:denomination rule)
+                                                          (or (chain/item-denomination
+                                                                (concat (:events context) [(:current context)])
+                                                                (:physical-item %))
+                                                              :physical))))
                                              flows)
                               {:keys [ok? used]} (context-satisfied? selections (or (:context rule) {}))]
                           (when (and ok? (seq hits))

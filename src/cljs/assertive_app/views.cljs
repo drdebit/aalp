@@ -1060,7 +1060,14 @@
                         (state/set-calculation-result! response)
                         ;; Also update the assertion parameter with calculated value
                         (when-let [amount (:value response)]
-                          (state/update-assertion-parameter! :reports :amount amount))))}
+                          (state/update-assertion-parameter! :reports :amount amount))
+                        ;; ...and WHICH asset was written down, where the
+                        ;; calculation asked. Depreciation and amortisation
+                        ;; are the same arithmetic; only the asset differs,
+                        ;; and the record already knows whether that asset
+                        ;; has physical substance.
+                        (when-let [item (:physical-item inputs)]
+                          (state/update-assertion-parameter! :reports :physical-item item))))}
          "Calculate"]]
 
        ;; Result display
@@ -1971,14 +1978,29 @@
          (str "Not quite (" correct " of " attempted ") — try a fresh round")])
 
       :else
-      [:button.primary
-       {:on-click #(do
-                     (state/clear-feedback!)
-                     (api/fetch-problem! (state/current-level)))}
-       (if (and score-passed? owed)
-         (str "Nearly — " (if (= 1 (count owed)) "one pattern" (str (count owed) " patterns"))
-              " you missed still to get right →")
-         "Next Practice Problem")])))
+      [:<>
+       [:button.primary
+        {:on-click #(do
+                      (state/clear-feedback!)
+                      (api/fetch-problem! (state/current-level)))}
+        (if (and score-passed? owed)
+          (str "Nearly — " (if (= 1 (count owed)) "one pattern" (str (count owed) " patterns"))
+               " you missed still to get right →")
+          "Next Practice Problem")]
+       ;; The bar has been cleared; what is left is a recommendation, not
+       ;; a gate. Retesting a missed pattern is there because a c7
+       ;; learner passed on a streak and was never asked the pattern they
+       ;; got wrong -- worth nudging, not worth trapping someone who has
+       ;; already met the standard the round sets.
+       (when (and score-passed? owed)
+         [:button.secondary.drill-skip-btn
+          {:on-click #(do
+                        (api/complete-tutorial! level)
+                        (state/end-drill!)
+                        (state/clear-feedback!)
+                        (state/set-current-problem! nil)
+                        (api/fetch-guided-state!))}
+          "Start recording Year 1 anyway →"])])))
 
 (defn worked-example-panel
   "The ALEKS Explanation semantics, adapted: the sentence builder now

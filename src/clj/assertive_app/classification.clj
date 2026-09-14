@@ -256,11 +256,22 @@
    - :data-driven? - If true, calculation uses data from prior assertions (e.g., bad debt)
    - :data-source - For data-driven calcs, describes what data is needed"
   {:systematic-allocation
-   {:label "Systematic Allocation (Depreciation)"
+   {:label "Systematic Allocation (Depreciation or Amortisation)"
     :description "Spreads the cost of a long-term asset over its useful life"
     :formula [:divide [:subtract :asset-cost :salvage-value] :useful-life]
     :formula-display "(Asset Cost - Salvage Value) ÷ Useful Life"
-    :inputs [{:key :asset-cost
+    ;; Which asset is being written down. The calculation is identical
+    ;; either way -- 2101 says intangibles are amortised "in the same way
+    ;; that plant assets are depreciated" -- so naming the asset is the
+    ;; only thing that can tell the entry which it is. The record already
+    ;; says whether that asset has physical substance.
+    :inputs [{:key :physical-item
+              :label "Asset being written down"
+              :type :dropdown
+              :options [{:value "t-shirt-printer" :label "T-Shirt Printer"}
+                        {:value "logo-design" :label "Logo Design"}]
+              :required true}
+             {:key :asset-cost
               :label "Asset Cost"
               :type :currency
               :placeholder "Original cost of asset"
@@ -894,7 +905,7 @@
                                     {:value "service-value" :label "Equal to value of service performed"}
                                     {:value "earned" :label "Performance obligation satisfied"}
                                     ;; Adjusting entries (Level 5+)
-                                    {:value "systematic-allocation" :label "Systematic allocation over time (depreciation)"}
+                                    {:value "systematic-allocation" :label "Systematic allocation over time (depreciation or amortisation)"}
                                     {:value "estimation" :label "Estimation of future amounts (bad debt)"}
                                     {:value "time-based" :label "Passage of time (prepaid expenses)"}
                                     {:value "accrual" :label "Accrual over time (interest)"}

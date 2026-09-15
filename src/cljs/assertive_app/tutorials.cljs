@@ -190,9 +190,9 @@ Two things to remember once you ARE keeping the books:
     [{:heading "Buying Now, Paying Later"
       :content "In Level 0, everything happened at once: you handed over cash, you got your stuff, done. But think about how life actually works:
 
-*You order a pizza online. The pizza arrives now — your card gets charged at the end of the month.*
+*The garage fixes your car this morning and hands you an invoice: payable within 30 days. You drive away owing them money.*
 
-The pizza place gave you something today and trusts you to pay later. Businesses do this constantly — it's called buying **on credit** (or \"on account\").
+The garage did the work today and trusts you to pay later. Note who you owe: **the garage itself**, the very people who did the work. That is what makes it credit. (A credit card is a different animal — there the card company pays the garage on the spot, and you end up owing the card company instead. Two promises, two counterparties.) Businesses extend credit to each other constantly — it's called buying **on credit** (or \"on account\").
 
 Here's the recording puzzle: on the day the ink cartridges arrive, what actually happened? You RECEIVED cartridges... but you didn't provide anything yet. No money moved!
 
@@ -243,7 +243,7 @@ That is the whole distinction. **requires** records a promise. **expects** recor
 
 Memorize the question, not a list of cases: *is there a probability here I want written down?* If yes, **expects** carries it."}
      {:heading "Selling on Credit: The Other Chair"
-      :content "Now flip the pizza situation around: this time, **SP is the pizza place.** A customer takes SP's t-shirts today and promises to pay later.
+      :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid** — the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
 
 **Example: SP sells 10 printed t-shirts to CampusBoutique on 30-day credit for $250.**
 

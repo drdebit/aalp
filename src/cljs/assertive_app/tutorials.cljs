@@ -451,7 +451,9 @@ These are the same assertions as a cash purchase — just reversed:
 → **Journal Entry:** DR Cash $250, CR Revenue $250"}
 
      {:heading "Revenue: From Assertions to Journal Entry"
-      :content "Here's an important insight: **revenue is not an assertion.** There's no 'reports revenue' assertion you need to select.
+      :content "Level 1 settled *when* revenue is recorded: the day the goods go out, because providing them is what earns it. Here is a different question — *where the word comes from at all*.
+
+**Revenue is not an assertion.** There's no 'reports revenue' assertion you need to select.
 
 Instead, revenue **emerges from the assertion pattern.** In assertive accounting, the assertions record *what happened*: SP provided goods and received cash from a customer. The journal entry system then maps this to the appropriate accounts.
 
@@ -485,7 +487,7 @@ The revenue credit follows from the *meaning* of the exchange: when you provide 
 | **requires** | — | Customer must pay |
 | **expects** | — | Confidence level |
 
-Both types provide goods to a customer. The difference is whether payment is immediate (**receives**) or deferred (**requires** + **expects**). In both cases, revenue emerges from the exchange pattern — not from a separate assertion."}]
+Both types provide goods to a customer. The difference is whether payment is immediate (**receives**) or deferred (**requires** + **expects**). The revenue is the same in both, and recorded at the same moment — providing the goods earned it. All the deferred case changes is how long SP waits for the money."}]
 
     :quiz
     [{:id :l3-q1
@@ -519,9 +521,11 @@ Both types provide goods to a customer. The difference is whether payment is imm
     [{:heading "End-of-Period Adjustments"
       :content "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.
 
+You have already done this once. In Level 1 a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply that same rule to everything else.
+
 Adjusting entries ensure:
 - Expenses are recognized when incurred (not just when paid)
-- Revenues are recognized when earned (not just when received)
+- Revenues are recognized when earned (not just when received) — the Level 1 rule, now applied where no exchange marks the moment
 - Assets reflect their current value"}
 
      {:heading "The 'Reports' Assertion"
@@ -781,7 +785,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 |-----------|----------|---------------------|
 | **reports** | Calculated recognitions (adjustments) | Debit/Credit per type |
 
-**Key insight:** Revenue doesn't need its own assertion. When you provide goods and receive (or are owed) payment, revenue emerges from that exchange pattern. But adjusting entries like depreciation and accruals have no exchange — they need `reports` to explicitly recognize calculated amounts."}
+**Key insight, recalled from Levels 1 and 3:** providing the goods earns the revenue, which fixes *when* it is recorded; and revenue needs no assertion of its own, because it emerges from the exchange pattern. Adjusting entries have no exchange to emerge from — so they need `reports` to say what is being recognised, and how it was worked out."}
 
      {:heading "Transaction Categories"
       :content "Every transaction falls into one of these categories:

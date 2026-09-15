@@ -484,20 +484,26 @@
                          ;; the item sold: naming the wrong one is a thing a
                          ;; student can do, and the record has to be able to
                          ;; say so rather than quietly matching on item first.
-                         ;; Emptied lots stay in the list. The event being
-                         ;; priced is itself an outflow, so a lot exactly
-                         ;; consumed by this very sale has nothing left --
-                         ;; dropping it would make the sale that emptied it
-                         ;; unpriceable, and permanently so.
-                         lots (seq (for [it (keys (chain/on-hand (:events context)))
-                                         b  (chain/batches (:events context) it)]
-                                     (assoc b :item it)))
-                         ;; What this event itself took out of a lot, added
-                         ;; back when asking whether that lot could bear it.
-                         own-draw (fn [lot-id]
-                                    (if (= lot-id (some-> (:from-event p) name))
-                                      (or (num-or-nil (:quantity p)) 0)
-                                      0))]
+                         ;; The lots as they stood BEFORE this event.
+                         ;;
+                         ;; The event being priced is itself an outflow, and
+                         ;; whether it is already in `:events` depends on
+                         ;; where the derivation was called from: a drill
+                         ;; problem is not in its company's record, while a
+                         ;; recorded sale is in the student's ledger. So
+                         ;; `:left` meant two different things, and the
+                         ;; check that added this event's own draw back was
+                         ;; right in one case and double-counted in the
+                         ;; other -- letting a lot of 20 bear a sale of 30.
+                         ;; Excluding the event by its own identifier makes
+                         ;; the question the same one either way: what did
+                         ;; this lot have to give?
+                         cur-id (some-> (get-in context [:current :has-identifier]) name)
+                         evs (cond->> (:events context)
+                               cur-id (remove #(= cur-id (some-> (:has-identifier %) name))))
+                         lots (seq (for [it (keys (chain/on-hand evs))
+                                         b  (chain/batches evs it)]
+                                     (assoc b :item it)))]
                      (cond
                        (nil? lots)
                        {:quantity nil :unresolved? true
@@ -533,10 +539,10 @@
                                                     ", which is not what was sold. The goods that went out were "
                                                     (item-phrase item) " — find the batch those came from.")}
 
-                           (and n (< (+ (:left lot) (own-draw id)) n))
+                           (and n (< (:left lot) n))
                            {:quantity nil :unresolved? true
                             :needs-lot? true
-                            :unresolved-reason (str id " holds only " (+ (:left lot) (own-draw id)) " of " (item-phrase item)
+                            :unresolved-reason (str id " holds only " (:left lot) " of " (item-phrase item)
                                                     ", and " n " went out. A batch cannot supply more than it has"
                                                     " — check what each one has left.")}
 

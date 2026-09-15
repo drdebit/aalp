@@ -1947,10 +1947,19 @@
     :level 7}
 
    :notes-receivable-creation
-   {:required #{:has-date :provides :has-counterparty :expects}
+   ;; What makes this a loan rather than a credit sale is WHAT SP GAVE:
+   ;; money, not merchandise. `sale-on-credit` asks for provides
+   ;; physical-unit; this asks for monetary. The two cannot be confused,
+   ;; so nothing here needs to forbid `requires` -- and forbidding it was
+   ;; suppressing a real promise. The borrower is bound to repay, exactly
+   ;; as a credit customer is, and `requires` is how a promise is
+   ;; recorded whichever way it runs. `expects` sits beside it because
+   ;; repayment is the borrower's decision, not SP's.
+   {:required #{:has-date :provides :has-counterparty :requires :expects}
     :required-parameters {:provides {:unit "monetary-unit"}
-                          :expects {:action "receives" :unit "monetary-unit"}}
-    :prohibited #{:receives :requires}
+                          :requires {:action "receives" :unit "monetary-unit"}
+                          :expects {:confidence :any}}
+    :prohibited #{:receives}
     :description "Lend money to another party"
     :journal-entry [{:debit "Notes Receivable" :credit "Cash"}]
     :note "Notes receivable are amounts owed to the business, usually with interest."
@@ -3226,14 +3235,20 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :borrower}
-                          :expects {:action "receives" :unit "monetary-unit"}}
+                          ;; The borrower's promise, recorded as what SP is
+                          ;; to receive -- the same shape a credit sale
+                          ;; uses. What tells the two apart is that SP gave
+                          ;; money here, not goods.
+                          :requires {:action "receives" :unit "monetary-unit" :quantity :amount}
+                          :expects {:confidence :confidence}}
     :correct-classification :notes-receivable-creation
     :level 7
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-19" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [2000 5000 10000 25000]
                 :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]
                 :months [3 6 12 24]
-                :rate [6 8 10 12]}}
+                :rate [6 8 10 12]
+                :confidence [80 85 90 95]}}
 
    :accrue-interest-revenue
    {:narrative-template "On {date}, {company} accrues ${amount} of interest revenue on the ${principal} note receivable from {borrower}. The note carries {rate}% annual interest."

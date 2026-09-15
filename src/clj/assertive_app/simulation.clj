@@ -1387,19 +1387,42 @@
   (let [ledger (get-ledger user-id)
         business-state (get-business-state user-id)
         current-ar (:accounts-receivable business-state {})
-        ;; Find credit sale entries
+        ;; What makes an entry a receivable is what it ASSERTED -- a
+        ;; promise that the business is to receive money -- not which
+        ;; button produced it.
+        ;;
+        ;; This used to filter on :action-type :sell-tshirts-credit, so a
+        ;; credit sale recorded anywhere else (the Guided Year, the
+        ;; drill) had its confidence silently ignored and defaulted to
+        ;; 100%: it contributed nothing to bad debt. The student was
+        ;; taught the number mattered and then it did not.
+        receivable? (fn [assertions]
+                      (let [r (:requires assertions)
+                            rs (cond (nil? r) [] (sequential? r) r :else [r])]
+                        (some #(and (= "receives" (some-> (:action %) name))
+                                    (= "monetary-unit" (some-> (:unit %) name)))
+                              rs)))
         credit-sales (->> ledger
-                          (filter #(= (:action-type %) :sell-tshirts-credit))
+                          (filter #(receivable? (:assertions %)))
                           (map (fn [entry]
                                  (let [vars (:variables entry)
-                                       assertions (:assertions entry)]
+                                       assertions (:assertions entry)
+                                       r (let [v (:requires assertions)]
+                                           (if (sequential? v) (first v) v))]
                                    {:entry-id (:id entry)
                                     :date (:date entry)
-                                    :customer (:customer vars)
-                                    :amount (:amount vars)
-                                    ;; Get confidence from expects assertion
+                                    ;; The counterparty is who owes, and it
+                                    ;; is on the assertion; :variables is a
+                                    ;; display convenience that not every
+                                    ;; route fills in the same way.
+                                    :customer (or (get-in assertions [:has-counterparty :name])
+                                                  (:customer vars))
+                                    :amount (or (:quantity r) (:amount vars))
+                                    ;; Confidence as asserted, wherever the
+                                    ;; sale was recorded.
                                     :confidence (or (get-in assertions [:expects :confidence])
-                                                    ;; Fallback to 100% if not found
+                                                    ;; No expectation recorded: the record
+                                                    ;; does not doubt it, so 100%.
                                                     100)}))))
         ;; Filter to only include customers who still have outstanding balances
         ;; and match the amounts (in case of partial payments in future)
@@ -1418,11 +1441,17 @@
         ;; Calculate expected loss for each receivable
         with-expected-loss
         (map (fn [r]
-               (let [confidence (or (:confidence r) 100)
-                     expected-loss (* (:amount r) (/ (- 100 confidence) 100))]
+               ;; Doubles throughout. An integer amount and an integer
+               ;; confidence give a Ratio, which the "$%.2f" below cannot
+               ;; format -- it throws rather than rounding, and takes the
+               ;; whole bad-debt calculation with it.
+               (let [confidence (double (or (:confidence r) 100))
+                     amount (double (or (:amount r) 0))
+                     expected-loss (* amount (/ (- 100.0 confidence) 100.0))]
                  (assoc r
+                        :amount amount
                         :expected-loss expected-loss
-                        :non-collection-rate (- 100 confidence))))
+                        :non-collection-rate (- 100.0 confidence))))
              receivables)
         total-receivables (reduce + 0 (map :amount receivables))
         total-bad-debt (reduce + 0 (map :expected-loss with-expected-loss))]

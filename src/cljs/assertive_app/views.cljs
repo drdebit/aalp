@@ -895,7 +895,7 @@
   (let [context-label (cond (= "provides" (:action params)) "The business expects to provide what it owes with"
                             is-prepaid? "The business expects to receive what it paid for with"
                             :else "The business expects to receive what it is owed with")]
-    [sentence-section :expectation "Expectation of fulfillment:"
+    [sentence-section :expectation "What SP is not sure of:"
      [:div.expects-content
       ;; Show appropriate context based on transaction type
       (cond

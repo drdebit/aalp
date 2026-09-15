@@ -616,15 +616,20 @@
 
     {:code :expects
      :label "Expects"
-     :description "Anticipates fulfillment of an obligation (with confidence level)"
+     :description "Records uncertainty about a future event, with how likely it is"
      :level 1
      :domain :forward-looking
      :parameterized true
-     ;; Sentence: section break, then "SP expects fulfillment with [confidence]% confidence"
-     :sentence {:fragment "SP expects fulfillment with"
+     ;; Sentence: section break, then "SP expects this with [confidence]% confidence"
+     ;;
+     ;; Not "fulfillment": an expectation need not be about anyone's
+     ;; promise. Three templates assert `expects` with no `requires` at
+     ;; all, and the prepaid rule derives a line from `expects` alone.
+     ;; What it records is uncertainty, whatever its source.
+     :sentence {:fragment "SP expects this with"
                 :pattern [:confidence "% confidence"]
                 :section-break true
-                :section-label "Expectation of fulfillment:"
+                :section-label "What SP is not sure of:"
                 :position :new-section}
      ;; References the requires event via fulfills - auto-linked
      ;; Maps to: {:expects {:has-confidence-level 0.95

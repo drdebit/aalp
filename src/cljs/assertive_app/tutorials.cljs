@@ -227,9 +227,7 @@ CR Accounts Payable $100
 Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
 
      {:heading "The Second Assertion: What You Don't Control"
-      :content "**expects** — records how likely an outcome is, when that outcome is not the business's to decide.
-
-The two future-looking assertions divide by **whose hands it is in**:
+      :content "The two future-looking assertions divide by **whose hands it is in**:
 
 **requires** — the promise itself: who must do what, how much, by when. SP's own promises live here. SP agreed to them and means to keep them.
 

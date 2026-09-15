@@ -192,7 +192,7 @@ Two things to remember once you ARE keeping the books:
 
 *The garage fixes your car this morning and hands you an invoice: payable within 30 days. You drive away owing them money.*
 
-The garage did the work today and trusts you to pay later. Note who you owe: **the garage itself**, the very people who did the work. That is what makes it credit. (A credit card is a different animal — there the card company pays the garage on the spot, and you end up owing the card company instead. Two promises, two counterparties.) Businesses extend credit to each other constantly — it's called buying **on credit** (or \"on account\").
+The garage did the work today and trusts you to pay later. Note who you owe: **the garage itself**, the very people who did the work. That is what makes it credit. Businesses extend credit to each other constantly — it's called buying **on credit** (or \"on account\").
 
 Here's the recording puzzle: on the day the ink cartridges arrive, what actually happened? You RECEIVED cartridges... but you didn't provide anything yet. No money moved!
 

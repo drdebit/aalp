@@ -631,12 +631,17 @@
                 :section-break true
                 :section-label "What SP is not sure of:"
                 :position :new-section}
-     ;; References the requires event via fulfills - auto-linked
-     ;; Maps to: {:expects {:has-confidence-level 0.95
-     ;;                     :event {:fulfills "auto-uuid-from-requires"}}}
-     :references-requires true  ; Auto-link to preceding requires
+     ;; May reference a promise recorded in the same event, via
+     ;; fulfills. Optional, and absent when there is no promise:
+     ;;   with a requires:  {:expects {:has-confidence-level 0.92
+     ;;                                :event {:fulfills "Obligation-..."}}}
+     ;;   without one:      {:expects {:has-confidence-level 0.92}}
+     ;; A prepaid, a contract sale and a note lent all assert `expects`
+     ;; with no `requires` anywhere, so the link cannot be required.
+     :references-requires :optional
      :structure {:expects
                  {:has-confidence-level :confidence
+                  ;; Only when the event records a promise.
                   :event {:fulfills :linked-requires-id}}}
      ;; Contextual data for informed decision-making
      :show-context true
@@ -1033,9 +1038,18 @@
                                  action-key (build-unit-structure params)}}})
 
                             :expects
+                            ;; The link is OPTIONAL. An expectation is
+                            ;; often about a promise recorded in the same
+                            ;; event -- a credit sale expects the payment
+                            ;; the customer is required to make -- and
+                            ;; then it says so. But an expectation need
+                            ;; not be about anyone's promise at all, and
+                            ;; where there is none, emitting a `fulfills`
+                            ;; pointing at nothing would assert a link
+                            ;; that does not exist.
                             {:expects
-                             {:has-confidence-level (/ (:confidence params 95) 100.0)
-                              :event {:fulfills requires-id}}}
+                             (cond-> {:has-confidence-level (/ (:confidence params 95) 100.0)}
+                               requires-id (assoc :event {:fulfills requires-id}))}
 
                             :consumes
                             {:consumes (build-unit-structure params)}

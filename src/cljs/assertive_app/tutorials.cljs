@@ -226,20 +226,20 @@ CR Accounts Payable $100
 
 Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
 
-     {:heading "The Second Assertion: What You Don't Control"
-      :content "The two future-looking assertions divide by **whose hands it is in**:
+     {:heading "Promises and Probabilities"
+      :content "**requires** records a promise. **expects** records a probability. They are different kinds of statement, not two halves of one choice — a transaction may carry one, the other, both, or neither.
 
-**requires** — the promise itself: who must do what, how much, by when. SP's own promises live here. SP agreed to them and means to keep them.
+**requires** — a named party must do a specific thing by a specific date. Either direction: SP owes, or SP is owed.
 
-**expects** — how likely that is to actually happen, for outcomes SP cannot decide. Someone else may control it perfectly well — a customer can choose to pay — but SP cannot.
+**expects** — how likely an outcome is, as a confidence level.
 
-*SP owes InkMasters $100.* SP's own promise. SP agreed to it and intends to keep it, so there is nothing to estimate: **requires** alone. That promise is what accountants call Accounts Payable.
+*A customer owes SP $250.* Both. **requires** records the promise — that is where Accounts Receivable comes from — and **expects** records how likely the money is to arrive: say 92%.
 
-*A customer owes SP $250.* The promise is just as real, and it is what makes the money collectable — **requires** records it, and that is where Accounts Receivable comes from. But whether the money arrives is the customer's decision, not SP's. So SP adds **expects**: say 92%.
+*SP owes InkMasters $100.* The promise: **requires**. That is Accounts Payable.
 
-*SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing. **expects** carries how sure SP is of receiving them.
+*SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing, so SP records how sure it is: **expects**.
 
-That asymmetry is the point. A business does not doubt its own intention to pay; it does doubt whether it will be paid. So a payable stands at its face value, and a receivable carries a number beside it — and a business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
+Notice what is missing from the second one. Nothing stops SP putting a probability on its own promise, but by convention it does not: SP decides whether it pays its own bills, it agreed to pay, and it means to. There is nothing to estimate. That is the one exception, and it comes down to control — everywhere else, if the outcome is not yours to decide, the number belongs on the record. A business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
      {:heading "Selling on Credit: The Other Chair"
       :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid** — the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
 
@@ -314,7 +314,7 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 | Customer pays in advance | SP owes delivery | Yes — SP decides whether it delivers | **requires** (expects optional) |
 | SP pays in advance | Vendor owes delivery | No — the vendor delivers, not SP | **expects** (+ **requires** if you like) |
 
-One question solves all four rows: **is the outcome in SP's hands?** If it is, the promise is the whole story — **requires**. If it is not, **requires** still records the promise, and **expects** records how likely it is to be kept."}
+Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, there is nothing to estimate. If it is not, **expects** carries how likely the promise is to be kept."}
 
      {:heading "How to Approach Every Level 1 Problem"
       :content "A recipe you can follow every single time:

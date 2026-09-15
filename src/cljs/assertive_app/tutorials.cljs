@@ -188,15 +188,15 @@ Two things to remember once you ARE keeping the books:
     :subtitle "Obligations, expectations, and the time dimension"
     :sections
     [{:heading "Buying Now, Paying Later"
-      :content "In Level 0, everything happened at once: you handed over cash, you got your stuff, done. But think about how life actually works:
+      :content "In Level 0 everything happened at once: cash out, goods in, done.
 
-*The garage fixes your car this morning and hands you an invoice: payable within 30 days. You drive away owing them money.*
+*The garage fixes your car this morning and hands you an invoice, payable in 30 days. You drive away owing them money.*
 
-The garage did the work today and trusts you to pay later. Note who you owe: **the garage itself**, the very people who did the work. That is what makes it credit. Businesses extend credit to each other constantly — it's called buying **on credit** (or \"on account\").
+You owe **the garage** — the people who did the work. That is what makes it credit, and businesses do it constantly: buying **on credit**, or \"on account\".
 
-Here's the recording puzzle: on the day the ink cartridges arrive, what actually happened? You RECEIVED cartridges... but you didn't provide anything yet. No money moved!
+So on the day the ink cartridges arrive, what happened? You received cartridges and provided nothing. No money moved — and yet something real did, something the books have to carry: **you now owe money**.
 
-Something did happen, though — something real that must be recorded: **you now owe money**. A promise to pay was created. Level 1 is about recording promises."}
+Level 1 is about recording promises."}
 
      {:heading "New Assertion: 'Requires' (a Promise Someone Must Keep)"
       :content "**requires** — records an obligation: someone MUST do something in the future.

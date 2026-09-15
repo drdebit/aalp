@@ -274,7 +274,7 @@ DR Accounts Receivable $250
 CR Revenue $250
 ::
 
-Notice something important: \"revenue\" was never one of your assertions. You just described what happened — goods out, payment promised — and *revenue is the name double-entry gives that pattern*. Categories come from patterns of facts. That's the deepest idea in this course, arriving quietly."}
+Notice *when* the revenue appears: today, the day the shirts went out — not next month when the money arrives. SP has done its part, and what is left is a claim on the customer. Recording revenue when it is earned rather than when it is collected is what accrual accounting means, and a credit sale is the first place you can see the difference."}
 
      {:heading "Paying in Advance (Both Directions)"
       :content "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same question about who controls the outcome.

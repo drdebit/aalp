@@ -199,7 +199,7 @@ So on the day the ink cartridges arrive, what happened? You received cartridges 
 Level 1 is about recording promises."}
 
      {:heading "New Assertion: 'Requires' (a Promise Someone Must Keep)"
-      :content "**requires** — records an obligation: someone MUST do something in the future.
+      :content "**requires** — records a promise: a named party must do a specific thing by a specific date. Most often it is the business's own promise.
 
 When SP buys ink cartridges on 30-day credit for $100, here's the full description of what happened that day:
 
@@ -227,21 +227,21 @@ CR Accounts Payable $100
 Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
 
      {:heading "The Second Assertion: What You Don't Control"
-      :content "**expects** — records an outcome the business does not control, and how likely it thinks that outcome is.
+      :content "**expects** — records how likely an outcome is, when that outcome is not the business's to decide.
 
-The two future-looking assertions divide by **control**:
+The two future-looking assertions divide by **whose hands it is in**:
 
-**requires** — someone is bound. A named party must do a specific thing by a specific date.
+**requires** — the promise itself: who must do what, how much, by when. SP's own promises live here. SP agreed to them and means to keep them.
 
-**expects** — nobody can make it happen. You record how likely it is instead.
+**expects** — how likely that is to actually happen, for outcomes SP cannot decide. Someone else may control it perfectly well — a customer can choose to pay — but SP cannot.
 
-*SP owes InkMasters $100.* Paying its own bills is SP's decision, so the promise is the whole story: **requires**.
+*SP owes InkMasters $100.* SP's own promise. SP agreed to it and intends to keep it, so there is nothing to estimate: **requires** alone. That promise is what accountants call Accounts Payable.
 
-*A customer owes SP $250.* The promise is just as binding — **requires** records it — but SP cannot make the customer pay, and some customers don't. So SP records the odds as well: **expects**, say 92%.
+*A customer owes SP $250.* The promise is just as real, and it is what makes the money collectable — **requires** records it, and that is where Accounts Receivable comes from. But whether the money arrives is the customer's decision, not SP's. So SP adds **expects**: say 92%.
 
-*SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing, not SP's. **expects** carries how sure SP is of receiving them.
+*SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing. **expects** carries how sure SP is of receiving them.
 
-Why it matters: a business owed $50,000 that expects to collect 92% of it stands somewhere different from one expecting 60%. Same promise on paper, different money coming in — and the books should say which."}
+That asymmetry is the point. A business does not doubt its own intention to pay; it does doubt whether it will be paid. So a payable stands at its face value, and a receivable carries a number beside it — and a business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
      {:heading "Selling on Credit: The Other Chair"
       :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid** — the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
 

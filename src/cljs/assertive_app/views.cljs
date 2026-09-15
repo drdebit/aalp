@@ -636,8 +636,12 @@
                       {:value "logo-design" :label "Logo Design"}]]
     [:span.assertion-fragment.receives
      [:span.verb "receives "]
-     [inline-number-input :receives :quantity (:quantity params) "qty"]
-     " "
+     ;; A service is not counted. There is one of it, the record says so,
+     ;; and asking how many only invites 1 as noise in the sentence.
+     ;; Everything else -- hours, units, shares -- is genuinely countable
+     ;; and keeps its box.
+     (when-not (= (:unit params) "service-unit")
+       [:span [inline-number-input :receives :quantity (:quantity params) "qty"] " "])
      ;; An intangible still has to be named -- the record needs to know
      ;; WHICH right was acquired to say anything about it later -- so it
      ;; gets an item too. What it does not get is a physical denomination.
@@ -1164,6 +1168,11 @@
   ([code unit]
    (state/toggle-assertion! code)
    (when unit (state/update-assertion-parameter! code :unit unit))
+   ;; Recorded, not asked for: a service is one service, and the
+   ;; classification wants the quantity even though the student has
+   ;; nothing to decide about it.
+   (when (= unit "service-unit")
+     (state/update-assertion-parameter! code :quantity 1))
    (auto-populate-assertion! code)
    (focus-new-assertion-input!)))
 

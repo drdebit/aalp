@@ -227,9 +227,17 @@
         entry (nth script pos)
         template (entry-template entry)
         vars (:variables entry)
+        ;; Graded against the student's own record. Without it no
+        ;; position requirement can be met, so blank shirts bought the
+        ;; day after a printer matched `merchandise-purchase` (goods to
+        ;; sell on, Finished Goods) rather than `cash-inventory-purchase`
+        ;; (an input, Raw Materials) -- the two differ by nothing except
+        ;; where the chain says the item sits.
+        ctx (simulation/derivation-context-for user-id)
         result (classification/classify-transaction
                  selected-assertions
-                 :correct-classification (:correct-classification template))
+                 :correct-classification (:correct-classification template)
+                 :context ctx)
         correct? (= :correct (get-in result [:feedback :status]))
         ;; The (amount-augmented) classification lives under :feedback —
         ;; this is the JE the student's OWN assertions produce, right or wrong.
@@ -242,7 +250,16 @@
     {:recorded true
      :narrative (:narrative persisted)
      :journal-entry student-je
-     :derived-je (je-derive/derive-je selected-assertions vars)
+     ;; Derived against the same record the grading used -- taken
+     ;; BEFORE this entry was persisted, because derive-je adds the
+     ;; event being booked as `:current`. Taking it after would count
+     ;; the event twice: once in the chain and once as itself.
+     ;;
+     ;; Without any chain there are no positions at all, which is why
+     ;; blank shirts bought the day after a printer came back "(not yet
+     ;; classified)": the derivation could not see the `allows` that
+     ;; makes them an input.
+     :derived-je (je-derive/derive-je selected-assertions vars ctx)
      :business-state (:business-state persisted)
      :next (day-payload user-id)
      ;; silent analytics payload consumed by the route handler
@@ -267,6 +284,8 @@
         assertions (classification/resolve-assertion-values
                      (:required-assertions template) vars)
         je (canonical-je entry)
+        ;; Before persisting, for the same reason as above.
+        ctx (simulation/derivation-context-for user-id)
         persisted (persist-entry! user-id entry vars assertions je
                                   {:correct? true :canonical-je je})]
     (set-position! user-id (inc pos))
@@ -275,6 +294,7 @@
      :amount amount
      :narrative (:narrative persisted)
      :journal-entry je
-     :derived-je (je-derive/derive-je assertions vars)
+     ;; Same: the corridor's auto-entry is read against the record too.
+     :derived-je (je-derive/derive-je assertions vars ctx)
      :business-state (:business-state persisted)
      :next (day-payload user-id)}))

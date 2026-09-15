@@ -385,8 +385,14 @@
         ;; physical goods out, a prepaid read "the business must provide".
         (let [sel (state/selected-assertions)
               owed-to-us? (and (contains? sel :provides) (not (contains? sel :receives)))
-              unit (if (= "monetary-unit" (get-in sel (if owed-to-us? [:provides :unit] [:receives :unit])))
-                     "physical-unit" "monetary-unit")]
+              ;; What is owed is the other side of the exchange: money
+              ;; for goods taken, goods for money taken. Money paid ahead
+              ;; is the exception -- what a prepaid buys is usually a
+              ;; service, which is the guess `expects` already makes.
+              unit (cond
+                     (and owed-to-us? (= "monetary-unit" (get-in sel [:provides :unit]))) "service-unit"
+                     (= "monetary-unit" (get-in sel (if owed-to-us? [:provides :unit] [:receives :unit]))) "physical-unit"
+                     :else "monetary-unit")]
           (state/update-assertion-parameter! :requires :action (if owed-to-us? "receives" "provides"))
           (when-not (get-in sel [:requires :unit])
             (state/update-assertion-parameter! :requires :unit unit)))

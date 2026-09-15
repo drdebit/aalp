@@ -296,7 +296,8 @@ That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP
 
 - provides: $600 cash — money went OUT today
 - expects: SP will receive coverage over the coming year, with a confidence level
-- In SP's hands? **No** — the insurer delivers, not SP, so SP records how sure it is of getting what it paid for → **expects**. (The policy binds the insurer, so **requires** is fine to add as well; the entry doesn't change.)
+- Any promise? Yes — the policy binds the insurer to provide cover, so **requires** records it, the same as any other promise.
+- In SP's hands? **No** — the insurer delivers, not SP, so SP also records how sure it is of getting what it paid for → **expects**.
 
 ::journal
 DR Prepaid Expense $600
@@ -312,7 +313,7 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 | Credit purchase | SP owes vendor | Yes — SP decides whether it pays | **requires** (expects optional) |
 | Credit sale | Customer owes SP | No — SP cannot make them pay | **requires** + **expects** |
 | Customer pays in advance | SP owes delivery | Yes — SP decides whether it delivers | **requires** (expects optional) |
-| SP pays in advance | Vendor owes delivery | No — the vendor delivers, not SP | **expects** (+ **requires** if you like) |
+| SP pays in advance | Vendor owes delivery | No — the vendor delivers, not SP | **requires** + **expects** |
 
 Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, there is nothing to estimate. If it is not, **expects** carries how likely the promise is to be kept."}
 
@@ -824,7 +825,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 - Credit purchase: **requires** (SP's own promise — a probability is optional)
 - Credit sale: **requires** + **expects** (will the customer pay? a probability worth recording)
 - Deferred revenue: **requires** (SP's own promise to deliver — a probability is optional)
-- Prepaid expense: **expects** only (vendor delivers service)
+- Prepaid expense: **requires** + **expects** (the contract binds the vendor; delivering is still the vendor's doing)
 
 **Revenue:** Emerges from providing goods/services for monetary payment — the exchange pattern itself.
 

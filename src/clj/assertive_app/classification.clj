@@ -1515,14 +1515,18 @@
     :level 1}
 
    :prepaid-expense
-   {:required #{:has-date :provides :has-counterparty :expects}
-    ;; The contract does require delivery, and a company sure of its
-    ;; vendor may well record that. What makes this a prepaid is the
-    ;; probability the business attaches to receiving what it paid for:
-    ;; `expects`. `requires` is welcome alongside it.
-    :optional #{:requires}
+   {:required #{:has-date :provides :has-counterparty :requires :expects}
     :prohibited #{:receives}
     :required-parameters {:provides {:unit "monetary-unit"}
+                          ;; The vendor IS bound to deliver -- money has
+                          ;; changed hands against a contract -- and a
+                          ;; promise is recorded whenever one is made,
+                          ;; whichever way it runs. `requires` was optional
+                          ;; here, which made the one case where SP pays
+                          ;; first an exception to that rule for no reason.
+                          :requires {:action "receives" :unit #{"physical-unit" "service-unit"}}
+                          ;; And `expects` beside it, because delivering is
+                          ;; the vendor's doing and not SP's.
                           ;; What is prepaid is usually a service (rent,
                           ;; insurance, maintenance); goods on order count too.
                           :expects {:action "receives" :unit #{"physical-unit" "service-unit"}}}
@@ -2800,7 +2804,10 @@
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :vendor}
-                          ;; SP expects to receive services - high confidence since vendor is contractually bound
+                          ;; The vendor's promise to deliver, and SP's
+                          ;; confidence that it will -- contractually bound,
+                          ;; but delivering is still the vendor's doing.
+                          :requires {:action "receives" :unit "service-unit"}
                           :expects {:action "receives" :unit "service-unit" :confidence :confidence}}
     :correct-classification :prepaid-expense
     :level 1

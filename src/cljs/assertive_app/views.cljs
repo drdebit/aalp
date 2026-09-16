@@ -1288,7 +1288,10 @@
                          (for [f fs]
                            (cond (= "monetary-unit" (:unit f)) (str "$" (:quantity f))
                                  (= "ownership-units" (:unit f)) (str (:quantity f) " ownership units")
-                                 (= "service-unit" (:unit f)) "a service"
+                                 ;; A service the record names reads better
+                                 ;; than "a service" -- and an adjusting
+                                 ;; entry points back at it by name.
+                                 (= "service-unit" (:unit f)) (or (:service-item f) "a service")
                                  :else (str (:quantity f) " " (or (:physical-item f) "?")))))))
         bits (cond-> []
                (:receives ev) (conj (str "received " (flow (:receives ev))))
@@ -1301,7 +1304,8 @@
                                                                         (some-> (get-in ev [:allows :consumes-item]) vector)))
                                        " → " (get-in ev [:allows :creates-item])))
                (:requires ev) (conj (str "requires: " (if (= "receives" (get-in ev [:requires :action])) "to receive " "to provide ")
-                                         (flow (:requires ev)) " by " (get-in ev [:requires :due-date])))
+                                         (flow (:requires ev))
+                                         (when-let [d (get-in ev [:requires :due-date])] (str " by " d))))
                (:expects ev) (conj (str "expects, " (get-in ev [:expects :confidence]) "% sure"))
                (:is-allowed-by ev) (conj (str "enabled by " (get-in ev [:is-allowed-by :capacity]))))]
     (str (or (get-in ev [:has-date :date]) "—") ": " (clojure.string/join "; " bits))))

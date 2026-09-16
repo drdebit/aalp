@@ -212,7 +212,8 @@
     :text "And what is owed for it is a claim on the business until it is paid: the `requires` says so."}
    {:id :prepaid-used
     :when {:assertion :reports :params {:category "expense" :basis "time-based"}}
-    :line {:side :debit :account "Insurance Expense"}
+    ;; Named for what was actually prepaid, which the record says.
+    :line {:side :debit :account :prepaid-service}
     :amount :reported
     :text "Part of what was paid for in advance has now been used — time has passed. That part is an expense of this period."}
    {:id :prepaid-down
@@ -614,10 +615,31 @@
            (take 2)
            vec))))
 
+(defn- open-prepaid
+  "The prepayment an adjustment is adjusting: the open one in the record."
+  [context]
+  (first (chain/promises-of (:events context) :prepaid)))
+
+(defn- prepaid-expense-account
+  "What to call the expense when a prepayment is used up. Named for what
+   was bought, which the record says -- a year of rent used up is Rent
+   Expense, and calling it Insurance Expense because insurance is the
+   usual example would contradict the narrative the student just read."
+  [context]
+  (if-let [service (some-> (open-prepaid context) :item name str/trim not-empty)]
+    (str (str/upper-case (subs service 0 1)) (subs service 1) " Expense")
+    ;; Nothing in the record says what was paid for ahead. Insurance is
+    ;; the case the classification documents, and the one every worked
+    ;; example uses.
+    "Insurance Expense"))
+
 (defn- resolve-line-account
-  "An :account of :position is resolved from the chain; anything else is
-   the literal label the rule names."
+  "An :account of :position is resolved from the chain, and so is the
+   expense a prepayment turns into; anything else is the literal label
+   the rule names."
   [account flow context]
+  (if (= :prepaid-service account)
+    (prepaid-expense-account context)
   (if (= :position account)
     (or (some-> (resolve-position flow context)
                 (chain/position-account
@@ -630,7 +652,7 @@
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.
         "(not yet classified)")
-    account))
+    account)))
 
 (defn- resolve-line-text
   [text flow context]
@@ -773,6 +795,18 @@
                          :established-by (seq (concat
                                              (when (= :position (:account line))
                                                (established-elsewhere matched-params context))
+                                             ;; And the prepayment an adjustment
+                                             ;; is adjusting: the event that
+                                             ;; decided both the amount and the
+                                             ;; name of the expense.
+                                             (when (= :prepaid-service (:account line))
+                                               (when-let [id (:id (open-prepaid context))]
+                                                 (when-let [ev (first (filter #(= id (some-> (:has-identifier %) name))
+                                                                              (:events context)))]
+                                                   [{:date (get-in ev [:has-date :date])
+                                                     :id id
+                                                     :role :prepaid
+                                                     :assertions (select-keys ev [:provides :requires :expects :has-counterparty])}])))
                                              ;; A cost line taken from a named batch
                                              ;; shows the batch: the event that made
                                              ;; or bought these units, and its price.

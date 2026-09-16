@@ -319,6 +319,136 @@
                (- (or (monetary-qty (:provides assertions)) 0))))
           0 events))
 
+;; ---------------------------------------------------------------------------
+;; Promises the record still carries
+;; ---------------------------------------------------------------------------
+
+(defn- num-qty
+  "A quantity as a number, however it was written."
+  [q]
+  (cond (number? q) q
+        (string? q) (try (Double/parseDouble (str/trim q)) (catch Exception _ nil))
+        :else nil))
+
+(defn months-between
+  "Whole months from one YYYY-MM-DD to another, counting the month the
+   later date falls in when it has run at least as far into it.
+
+   The term of a prepayment is not an assertion and does not need to be:
+   the record says when the money went out and by when the thing is due,
+   and the months between them is a reading of that, the same way a
+   position is a reading of the chain."
+  [from to]
+  (let [parse #(try (java.time.LocalDate/parse (str %)) (catch Exception _ nil))]
+    (when-let [a (parse from)]
+      (when-let [b (parse to)]
+        (let [whole (.between java.time.temporal.ChronoUnit/MONTHS a b)
+              ;; A year of cover bought on 2 January and owed through 31
+              ;; December is twelve months, not eleven and a tail; a part
+              ;; month of a fortnight or more counts as one.
+              tail  (.between java.time.temporal.ChronoUnit/DAYS (.plusMonths a whole) b)]
+          (max 1 (long (cond-> whole (>= tail 15) inc))))))))
+
+(defn- promise-kind
+  "Which of the four a promise is.
+
+   The promise alone does not say: `requires to receive money` is a
+   customer's debt after goods went out and a refund due after money went
+   out. What decides it is what moved in the SAME event -- which is the
+   Level 1 table exactly, read off the record instead of off a page.
+
+     :receivable  goods went out, money is to come back
+     :payable     goods came in, money is to go out
+     :prepaid     money went out, goods or a service are to come back
+     :advance     money came in, goods or a service are to go out"
+  [assertions requires]
+  (let [act       (some-> (:action requires) name)
+        money?    (= "monetary-unit" (some-> (:unit requires) name))
+        out-money (monetary-qty (:provides assertions))
+        in-money  (monetary-qty (:receives assertions))
+        out-goods (seq (helds (:provides assertions)))
+        in-goods  (seq (helds (:receives assertions)))]
+    (cond
+      (and money? (= "receives" act) out-goods) :receivable
+      (and money? (= "provides" act) in-goods)  :payable
+      (and (not money?) (= "receives" act) out-money) :prepaid
+      (and (not money?) (= "provides" act) in-money)  :advance)))
+
+(defn promises
+  "The promises the record still carries, one per `requires` asserted.
+
+   Sibling query to on-hand: that one asks what the business is holding,
+   this one what it owes and is owed. Both are readings, and neither is
+   a balance anyone posted.
+
+   Any `expects` asserted in the same event travels with the promise,
+   because a probability is recorded against a promise and is wanted
+   wherever the promise is -- an allowance for what customers owe is that
+   query and nothing more. A promise an event names as fulfilled is
+   settled and is not returned.
+
+   -> [{:id :kind :date :due-date :action :unit :quantity :counterparty
+        :item :confidence :months}]"
+  [events]
+  (let [settled (into #{} (keep #(some-> (get-in % [:fulfills :event]) name) events))]
+    (vec (for [a events
+               :let [req  (:requires a)
+                     id   (some-> (:has-identifier a) name)
+                     kind (when req (promise-kind a req))]
+               :when (and kind (not (contains? settled id)))]
+           (let [date (get-in a [:has-date :date])
+                 due  (:due-date req)]
+             (cond-> {:id id
+                      :kind kind
+                      :date date
+                      :due-date due
+                      :action (some-> (:action req) name)
+                      :unit (some-> (:unit req) name)
+                      :quantity (num-qty (:quantity req))
+                      ;; What the promise is worth in money. On a debt
+                      ;; that is the sum promised; on a prepayment or an
+                      ;; advance it is the money that moved in the same
+                      ;; event, since the thing promised is not money.
+                      :amount (case kind
+                                (:receivable :payable) (num-qty (:quantity req))
+                                :prepaid (monetary-qty (:provides a))
+                                :advance (monetary-qty (:receives a)))
+                      :counterparty (get-in a [:has-counterparty :name])}
+               (:physical-item req) (assoc :item (name (:physical-item req)))
+               (:service-item req)  (assoc :item (name (:service-item req)))
+               (get-in a [:expects :confidence])
+               (assoc :confidence (num-qty (get-in a [:expects :confidence])))
+               (and date due (months-between date due))
+               (assoc :months (months-between date due))))))))
+
+(defn promises-of
+  "The open promises of one kind."
+  [events kind]
+  (filterv #(= kind (:kind %)) (promises events)))
+
+(defn capital-assets
+  "What the record says the business holds to use rather than to sell,
+   and what each cost.
+
+   Read the same way everything else here is read: an item whose position
+   is :capital, and the event that brought it in. Nothing is looked up --
+   a thing is capital because the record says it enables a transformation
+   without being used up by it, which is also the reason it is the thing
+   that depreciates.
+
+   -> [{:id :date :item :denomination :cost :counterparty}]"
+  [events]
+  (vec (for [a events
+             :let [in (held (:receives a))]
+             :when (and in (= :capital (inventory-position events (:item in))))
+             :let [cost (monetary-qty (:provides a))]]
+         (cond-> {:id (some-> (:has-identifier a) name)
+                  :date (get-in a [:has-date :date])
+                  :item (:item in)
+                  :denomination (:denomination in)
+                  :counterparty (get-in a [:has-counterparty :name])}
+           cost (assoc :cost cost)))))
+
 (defn capabilities
   "The transformations the record says SP can perform, and what each one
    rests on.

@@ -3056,27 +3056,29 @@ The printed t-shirts are now finished goods ready for sale."
    ;; End-of-period adjustments to properly match revenues and expenses
 
    :record-depreciation
-   {:narrative-template "On {date}, {company} records depreciation expense on the {asset}. The {asset} cost ${cost} and has a {years}-year useful life with no salvage value. Monthly depreciation is ${depreciation}."
+   ;; The asset, its date and its cost are read off the record: what
+   ;; depreciates is what the chain calls capital, and there is exactly
+   ;; one such thing in a practice company's books.
+   {:narrative-template "On {date}, {company} records a month of depreciation on the {asset} it bought on {asset-date} for ${cost}. The {asset} has a {years}-year useful life and no salvage value, so a month of it is ${depreciation}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "systematic-allocation"}}
     :correct-classification :depreciation-expense
     :level 5
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :asset ["t-shirt printer" "delivery van" "office equipment" "production equipment"]
-                :cost [3000 12000 6000 15000]
-                :years [5 5 3 10]
-                :depreciation [50 200 167 125]}}
+                :years [3 5 10]}}
 
    :record-bad-debt
-   {:narrative-template "On {date}, {company} estimates that {percent}% of its accounts receivable totaling ${ar-balance} will be uncollectible. {company} records bad debt expense of ${bad-debt-amount}."
+   ;; Who owes what, and how sure the company said it was, are read off
+   ;; the record. The confidences multiplied here are the ones somebody
+   ;; put on `expects` when the sale was made -- which is the argument
+   ;; for recording them at all, finally landing.
+   {:narrative-template "On {date}, {company} looks at what its customers still owe: {owed}. That is ${ar-balance} outstanding, and the confidences say ${bad-debt-amount} of it will not arrive."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "estimation"}}
     :correct-classification :bad-debt-expense
+    :reads-record [:receivable]
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :percent [2 3 5 1]
-                :ar-balance [5000 10000 20000 50000]
-                :bad-debt-amount [100 300 1000 500]}}
+    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]}}
 
    :accrue-wages
    {:narrative-template "On {date}, {company} has {days} days of unpaid wages for employees. Total wages earned but not yet paid amount to ${amount}. Payday is {payday}."
@@ -3088,7 +3090,9 @@ The printed t-shirts are now finished goods ready for sale."
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
                 :days [2 3 4 5]
                 :amount [400 600 800 1000]
-                :payday ["next Monday" "February 5" "next Friday" "the 5th of next month"]}}
+                ;; Relative, so that a payday cannot fall before the date
+                ;; of the accrual it is named in.
+                :payday ["next Monday" "next Friday" "the fifth of next month"]}}
 
    :accrue-interest
    {:narrative-template "On {date}, {company} accrues interest on its ${principal} note payable at {rate}% annual interest. The note was issued {months} months ago and interest is paid quarterly. Interest accrued this period is ${interest}."
@@ -3104,29 +3108,31 @@ The printed t-shirts are now finished goods ready for sale."
                 :interest [25 133 375 200]}}
 
    :adjust-prepaid-expense
-   {:narrative-template "On {date}, {company} adjusts prepaid {expense-type}. The original prepayment of ${total} covers {months} months. One month (${monthly}) has now been used up."
+   ;; The prepayment being adjusted is the one in the record, and the
+   ;; term is read from the dates on it rather than asserted. The date of
+   ;; the adjustment follows from how many months have gone by, so the
+   ;; three numbers the calculation builder asks for -- what was paid,
+   ;; over how many periods, how many have run -- are all on the page.
+   {:narrative-template "On {date}, {company} brings its prepaid {service} up to date. It paid {vendor} ${total} on {prepaid-date} for {months} months of {service}, and has adjusted nothing since, so the expense to recognize now covers {elapsed} of those {months} months, at ${monthly} a month."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "time-based"}}
     :correct-classification :prepaid-expense-adjustment
+    :reads-record [:prepaid]
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :expense-type ["insurance" "rent" "advertising" "subscriptions"]
-                :total [1200 6000 2400 600]
-                :months [12 6 12 12]
-                :monthly [100 1000 200 50]}}
+    :variables {:elapsed [1 2 3 4 5 6]}}
 
    :recognize-unearned-revenue
-   {:narrative-template "On {date}, {company} has earned a portion of advance payments received from {customer}. Of the ${total} received in advance, {company} has now delivered ${earned} worth of {product-or-service}."
+   ;; The advance being earned is the one in the record, and what has
+   ;; been earned is the share of the order delivered -- both of which
+   ;; the promise itself carries.
+   {:narrative-template "On {date}, {company} delivers {delivered} of the {ordered} printed t-shirts {customer} paid ${total} for in advance on {advance-date}. That much of the advance has now been earned: ${earned}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "revenue" :basis "earned"}
                           :fulfills {:action "requires"}}
     :correct-classification :unearned-revenue-adjustment
+    :reads-record [:advance]
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :customer ["LocalSportsTeam" "CorporateClient" "RetailPartner"]
-                :total [2000 5000 10000]
-                :earned [500 2000 2500]
-                :product-or-service ["custom t-shirts" "printing services" "merchandise"]}}
+    :variables {:date ["2026-03-10" "2026-03-15" "2026-03-20"]}}
 
    ;; ==================== Level 6: Equity Transaction Templates ====================
    ;; Owner investments, withdrawals, and dividends
@@ -3303,7 +3309,14 @@ The printed t-shirts are now finished goods ready for sale."
   [template vars]
   (capitalize-first
     (reduce (fn [s [k v]]
-              (let [display-value (if (= k :date) (format-iso-date v) v)]
+              ;; Any date reads as a date. Narratives that point back into
+              ;; the record name the day a thing was bought or paid for,
+              ;; and those should not arrive as raw ISO beside a formatted
+              ;; one in the same sentence.
+              (let [date-key? (and (clojure.string/ends-with? (name k) "date")
+                                   (string? v)
+                                   (re-matches #"\d{4}-\d{2}-\d{2}" v))
+                    display-value (if (or (= k :date) date-key?) (format-iso-date v) v)]
                 (clojure.string/replace s (str "{" (name k) "}") (str display-value))))
             template
             ;; The Guided Year and the simulation are SP's own books.
@@ -3416,8 +3429,17 @@ The printed t-shirts are now finished goods ready for sale."
   "A practice company's record: funded, a press that turns blank shirts
    and ink into printed shirts, materials bought at known prices, and a
    batch already printed. Every position and cost a practice problem needs
-   is read off these events, the same way SP's are read off SP's."
-  [{:keys [name kind blurb] :as company}]
+   is read off these events, the same way SP's are read off SP's.
+
+   `needs` names the open promises the problem will read -- :receivable,
+   :prepaid, :advance -- and the record carries those and no others. An
+   adjusting entry has to have something to adjust, and a student asked
+   to write off part of what customers owe must be able to see who owes
+   it; equally, a Level 0 record should not be cluttered with promises
+   the student has not been taught to read. Templates say what they need
+   (:reads-record) rather than the record guessing."
+  ([company] (practice-backstory company #{}))
+  ([{:keys [name kind blurb] :as company} needs]
   (if (= kind :reseller)
     (let [shirt-cost (rand-nth [3 4 5])
           shirts     (rand-nth [100 150 200])
@@ -3462,6 +3484,20 @@ The printed t-shirts are now finished goods ready for sale."
         shirts     (rand-nth [60 80 100 120])
         ink        (rand-nth [6 8 10])
         printed    (rand-nth [20 30 40 50])
+        ;; The press costs a multiple of 360, so that a three-, five- or
+        ;; ten-year life all divide into whole dollars a month: the
+        ;; depreciation a student computes is then exactly the figure the
+        ;; narrative quotes, with no rounding to argue about.
+        press      (rand-nth [2160 2880 3600 4320])
+        ;; A shirt leaves at twenty-five dollars, the price the sale
+        ;; narratives already use.
+        price      25
+        ;; Paid ahead: a service bought for the year, priced by the month
+        ;; so the adjustment divides exactly.
+        [service vendor] (rand-nth [["insurance" "Cardinal Mutual"]
+                                    ["rent" "the landlord"]
+                                    ["maintenance" "PrinterWorld"]])
+        monthly    (rand-nth [75 100 125])
         ;; Two cartridges print the batch and together cost as much as
         ;; one dollar a shirt, so a printed shirt costs a whole dollar
         ;; more than a blank one and the narrative can say so exactly.
@@ -3471,11 +3507,58 @@ The printed t-shirts are now finished goods ready for sale."
         ;; shirt out of this batch is worth more than one out of the
         ;; first. Bounded by the blanks actually on hand -- the record
         ;; cannot print shirts it never bought.
-        printed2   (min (rand-nth [15 20 25]) (- shirts printed))]
+        printed2   (min (rand-nth [15 20 25]) (- shirts printed))
+        ;; Two customers who took shirts and have not paid, at different
+        ;; confidences: an allowance is a sum over what is owed, and a sum
+        ;; of one teaches nothing about which number moves it.
+        owed1      (rand-nth [4 5 6])
+        owed2      (rand-nth [3 4])
+        conf1      (rand-nth [90 92 95])
+        conf2      (rand-nth [60 70 75])
+        ;; Money taken for shirts not yet made.
+        ordered    (rand-nth [16 20 24])
+        ;; Events the record carries only when the problem reads them.
+        promised
+        (cond-> []
+          (contains? needs :prepaid)
+          (conj {:has-identifier "Prepaid-001"
+                 :has-date {:date "2026-01-05"}
+                 :provides {:unit "monetary-unit" :quantity (* 12 monthly)}
+                 :requires {:action "receives" :unit "service-unit"
+                            :service-item service :due-date "2027-01-04"}
+                 :expects {:action "receives" :unit "service-unit" :confidence 99}
+                 :has-counterparty {:name vendor}})
+          (contains? needs :receivable)
+          (into [{:has-identifier "CreditSale-001"
+                  :has-date {:date "2026-01-20"}
+                  :provides {:unit "physical-unit" :physical-item "printed-tshirts"
+                             :quantity owed1 :from-event "Printing-001"}
+                  :requires {:action "receives" :unit "monetary-unit"
+                             :quantity (* owed1 price) :due-date "2026-02-19"}
+                  :expects {:action "receives" :unit "monetary-unit" :confidence conf1}
+                  :has-counterparty {:name "the chess club"}}
+                 {:has-identifier "CreditSale-002"
+                  :has-date {:date "2026-02-20"}
+                  :provides {:unit "physical-unit" :physical-item "printed-tshirts"
+                             :quantity owed2 :from-event "Printing-002"}
+                  :requires {:action "receives" :unit "monetary-unit"
+                             :quantity (* owed2 price) :due-date "2026-03-22"}
+                  :expects {:action "receives" :unit "monetary-unit" :confidence conf2}
+                  :has-counterparty {:name "Ridgeway Middle School"}}])
+          (contains? needs :advance)
+          (conj {:has-identifier "Deposit-001"
+                 :has-date {:date "2026-02-01"}
+                 :receives {:unit "monetary-unit" :quantity (* ordered price)}
+                 :requires {:action "provides" :unit "physical-unit"
+                            :physical-item "printed-tshirts" :quantity ordered
+                            :due-date "2026-03-15"}
+                 :has-counterparty {:name "LocalSportsTeam"}}))]
     {:company name :kind :printer :blurb blurb
      :sale-item "printed-tshirts"
      :unit-costs {:blank-tshirts shirt-cost :ink-cartridges ink-cost}
      :events
+     (vec (sort-by #(get-in % [:has-date :date])
+       (concat promised
      [{:has-identifier "Funding-001"
        :has-date {:date "2026-01-02"}
        :receives {:unit "monetary-unit" :quantity 25000}
@@ -3483,7 +3566,7 @@ The printed t-shirts are now finished goods ready for sale."
        :has-counterparty {:name "the owner"}}
       {:has-identifier "Printer-001"
        :has-date {:date "2026-01-03"}
-       :provides {:unit "monetary-unit" :quantity 3000}
+       :provides {:unit "monetary-unit" :quantity press}
        :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
        :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
        :has-counterparty {:name "PrinterWorld"}}
@@ -3512,15 +3595,114 @@ The printed t-shirts are now finished goods ready for sale."
                   {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 2
                    :from-event "Ink-001"}]
        :creates {:unit "physical-unit" :physical-item "printed-tshirts" :quantity printed2}
-       :is-allowed-by {:capacity "Printer-001"}}]})))
+       :is-allowed-by {:capacity "Printer-001"}}])))}))))
+
+(defn- item-label
+  "An item's name as prose, for a narrative rather than a dropdown."
+  [item]
+  (if-let [l (get-in physical-items [(keyword item) :label])]
+    (clojure.string/lower-case l)
+    (clojure.string/replace (str item) "-" " ")))
+
+(defn- record-variables
+  "Fit an adjusting entry's numbers to the company's own record.
+
+   An adjusting entry is not a fresh exchange; it is a second look at
+   something the record already says. So every figure in one of these
+   narratives is read back out of the chain -- the press that is being
+   depreciated is the press the company bought, and what it cost is what
+   the record says it cost. The templates used to invent all of it, which
+   left a student adjusting a $6,000 prepayment their company had never
+   made, and the numbers the calculation builder wanted could not be
+   found anywhere on the page.
+
+   Templates that do not read the record are returned untouched."
+  [vars backstory template-key]
+  (let [events (:events backstory)]
+    (case template-key
+
+      ;; What depreciates is what the record calls capital: a thing that
+      ;; enables production without being used up by it. That is the same
+      ;; reading `inventory-position` makes, so the asset here cannot
+      ;; disagree with the asset on the balance sheet.
+      :record-depreciation
+      (if-let [{:keys [item date cost]} (first (chain/capital-assets events))]
+        (let [years (or (:years vars) 5)]
+          (assoc vars :asset (item-label item)
+                      :asset-date date
+                      :cost cost
+                      :years years
+                      :depreciation (long (Math/round (/ (double cost) years 12)))))
+        vars)
+
+      ;; The allowance is a query over what customers owe, and the
+      ;; confidences it multiplies by are the ones somebody recorded when
+      ;; the sale was made. That is the whole argument for putting a
+      ;; number on `expects`, and it is worth the student seeing it land.
+      :record-bad-debt
+      (let [rs (chain/promises-of events :receivable)]
+        (if (seq rs)
+          (let [amt   #(or (:amount %) 0)
+                conf  #(double (or (:confidence %) 100))
+                total (reduce + (map amt rs))
+                loss  (reduce + (map #(* (amt %) (- 1 (/ (conf %) 100))) rs))]
+            (assoc vars
+                   :owed (clojure.string/join
+                           "; "
+                           (for [r rs]
+                             (str (:counterparty r) " owes $" (amt r)
+                                  " from the sale on " (format-iso-date (:date r))
+                                  ", recorded at " (:confidence r) "% confidence")))
+                   :ar-balance total
+                   :bad-debt-amount (long (Math/round loss))))
+          vars))
+
+      ;; The term is not asserted and does not need to be: the record
+      ;; says when the money went out and by when the service is owed.
+      :adjust-prepaid-expense
+      (if-let [p (first (chain/promises-of events :prepaid))]
+        (let [months  (or (:months p) 12)
+              total   (or (:amount p) 0)
+              monthly (long (Math/round (/ (double total) months)))
+              elapsed (max 1 (min (dec months) (or (:elapsed vars) 1)))]
+          (assoc vars :service (:item p)
+                      :vendor (:counterparty p)
+                      :prepaid-date (:date p)
+                      :total total
+                      :months months
+                      :monthly monthly
+                      :elapsed elapsed
+                      :date (str (.plusMonths (java.time.LocalDate/parse (:date p)) elapsed))
+                      :amount (* monthly elapsed)))
+        vars)
+
+      ;; An advance is earned by delivering, so what has been earned is a
+      ;; share of what was ordered -- both of which the promise carries.
+      :recognize-unearned-revenue
+      (if-let [a (first (chain/promises-of events :advance))]
+        (let [ordered   (long (or (:quantity a) 0))
+              total     (or (:amount a) 0)
+              delivered (max 1 (quot ordered 2))]
+          (if (pos? ordered)
+            (assoc vars :customer (:counterparty a)
+                        :total total
+                        :ordered ordered
+                        :delivered delivered
+                        :advance-date (:date a)
+                        :earned (long (Math/round (* total (/ (double delivered) ordered)))))
+            vars))
+        vars)
+
+      vars)))
 
 (defn- practice-variables
   "Fit a template's numbers to the practice company's record: you can only
    sell shirts the company has, and their cost is what its record says.
    Adds :company, :unit-cost and :cogs; leaves templates that do not touch
    stock alone."
-  [vars backstory]
-  (let [events   (:events backstory)
+  [vars backstory template-key]
+  (let [vars     (record-variables vars backstory template-key)
+        events   (:events backstory)
         held     (chain/on-hand events)
         basis    (cost/cost-basis events)
         item     (or (:sale-item backstory) "printed-tshirts")
@@ -3581,10 +3763,15 @@ The printed t-shirts are now finished goods ready for sale."
         ;; service. About a third of those go to a reseller.
         reseller-ok? (contains? #{:cash-inventory-purchase :credit-inventory-purchase :cash-sale :credit-sale :cash-service-purchase} template-key)
         kind (if (and reseller-ok? (< (rand) 0.5)) :reseller :printer)
-        backstory (practice-backstory (rand-nth (filterv #(= kind (:kind %)) practice-companies)))
+        ;; The record carries the open promises this template says it
+        ;; reads, and no others: an adjusting entry must have something
+        ;; to adjust, and a Level 0 record should not be cluttered with
+        ;; promises the student has not been taught to read.
+        backstory (practice-backstory (rand-nth (filterv #(= kind (:kind %)) practice-companies))
+                                      (set (:reads-record template)))
         vars (-> (select-paired-variables (:variables template))
                  (as-> v (resolve-derived-variables template v))
-                 (practice-variables backstory)
+                 (practice-variables backstory template-key)
                  (as-> v (if (= kind :reseller)
                            (assoc v :inventory-type "blank t-shirts" :physical-item "blank-tshirts")
                            v))

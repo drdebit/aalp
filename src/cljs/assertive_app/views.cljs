@@ -623,10 +623,17 @@
    [:div.section-content children]])
 
 (defn- remove-assertion-button
-  "Small button to remove an assertion from the sentence."
+  "Small button to remove an assertion from the sentence.
+
+   Re-derives while exploring. Explore mode says `toggle assertions` on
+   its own button and was wired only to the old assertion-button panel,
+   which the drill no longer shows -- so in the sentence builder it
+   explained the lines and never changed them. Taking an assertion out is
+   how you toggle one here."
   [assertion-code]
   [:button.remove-assertion
-   {:on-click #(state/toggle-assertion! assertion-code)
+   {:on-click #(do (state/toggle-assertion! assertion-code)
+                   (when (state/je-explore?) (api/derive-je-debounced!)))
     :title "Remove this assertion"}
    "×"])
 
@@ -1258,6 +1265,8 @@
    (when (= unit "service-unit")
      (state/update-assertion-parameter! code :quantity 1))
    (auto-populate-assertion! code)
+   ;; And putting one back, for the same reason.
+   (when (state/je-explore?) (api/derive-je-debounced!))
    (focus-new-assertion-input!)))
 
 (defn- add-assertion-menu

@@ -406,7 +406,17 @@
                      :else "monetary-unit")]
           (state/update-assertion-parameter! :requires :action (if owed-to-us? "receives" "provides"))
           (when-not (get-in sel [:requires :unit])
-            (state/update-assertion-parameter! :requires :unit unit)))
+            (state/update-assertion-parameter! :requires :unit unit))
+          ;; The day of the transaction, so the picker opens in the month
+          ;; the problem is about rather than the month the student is
+          ;; sitting in. Not an answer -- a promise due the day it was
+          ;; made is visibly not what the narrative says -- just the place
+          ;; to count forward from. No classification grades this figure,
+          ;; but the record reads it: it is where the term of a prepaid
+          ;; comes from.
+          (when-not (get-in sel [:requires :due-date])
+            (when-let [d (:date vars)]
+              (state/update-assertion-parameter! :requires :due-date d))))
 
         :expects
         ;; Money out and an expectation: a prepaid, and what is prepaid is
@@ -506,16 +516,21 @@
     (or date-str "[select date]")))
 
 (defn- inline-date-input
-  "Inline date input for sentence builder."
-  [assertion-code param-key current-value]
+  "Inline date input for sentence builder.
+
+   `earliest`, where given, is the day the transaction happened: nothing
+   it promises can fall due before it, and an empty picker opens there
+   instead of on today's date, which has nothing to do with the problem."
+  ([assertion-code param-key current-value] (inline-date-input assertion-code param-key current-value nil))
+  ([assertion-code param-key current-value earliest]
   [:input.sentence-input.date-input
    {:type "date"
-    :min "2026-01-01"
-    :max "2026-12-31"
+    :min (or earliest "2026-01-01")
+    :max "2028-12-31"
     :value (or current-value "")
     :on-change #(state/update-assertion-parameter!
                  assertion-code param-key
-                 (.. % -target -value))}])
+                 (.. % -target -value))}]))
 
 (defn- inline-number-input
   "Inline number input for sentence builder."
@@ -765,19 +780,27 @@
   ;; and it is to receive what it is owed. The closing gloss names whose
   ;; promise this is, which the verb alone left ambiguous.
   (let [owes?  (not= "receives" (:action params))
-        party  (or counterparty-name "the counterparty")]
+        party  (or counterparty-name "the counterparty")
+        ;; Nothing falls due before the event that promised it, and the
+        ;; calendar should open in the month of the transaction rather
+        ;; than in whatever month the student happens to be sitting in.
+        earliest (get-in (state/current-problem) [:variables :date])]
     [sentence-section :obligation "This creates an obligation:"
      [:div.requires-content
       [:span.party-name "The business"]
       [:span (if owes? " must provide " " is to receive ")]
-      [inline-number-input :requires :quantity (:quantity params) "amount"]
-      " "
+      ;; A service is not counted, here as on `receives`. Asked how many
+      ;; services a year of maintenance is, a student reasonably answers
+      ;; 12 -- which is the number of MONTHS, and the box was never
+      ;; asking about months.
+      (when-not (= (:unit params) "service-unit")
+        [:span [inline-number-input :requires :quantity (:quantity params) "amount"] " "])
       [inline-dropdown :requires :unit [{:value "monetary-unit" :label "cash"}
                                        {:value "physical-unit" :label "goods"}
                                        {:value "service-unit" :label "services"}]
        (:unit params) "what"]
       [:span (str (if owes? " to " " from ") party " by ")]
-      [inline-date-input :requires :due-date (:due-date params)]
+      [inline-date-input :requires :due-date (:due-date params) earliest]
       [:span.obligation-gloss (if owes?
                                 " — a debt the business owes."
                                 (str " — a claim the business holds; " party " must provide it."))]

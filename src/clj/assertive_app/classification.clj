@@ -2904,8 +2904,17 @@
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :vendor ["InsuranceCo" "Landlord" "ServiceProvider"]
                 :service ["insurance coverage" "rent" "maintenance services"]
-                :amount [3000 6000 9000 12000 18000]
-                :months [3 6 12 24]
+                ;; Priced by the month, so the total is the monthly figure
+                ;; times the term. Drawn from unrelated arrays it produced
+                ;; $12,000 of maintenance for a two-person shop above a
+                ;; bakery, and the same shop's own record prices a year of
+                ;; the same thing at $900-$1,500.
+                ;; Paired with the vendor and the service, so the rent is
+                ;; a rent and the maintenance is maintenance.
+                :monthly [100 750 125]
+                ;; Four entries, so the term does NOT pair with the three
+                ;; above and every service can run for any of them.
+                :months [3 6 12 12]
                 ;; Confidence - student input, but vendors typically reliable (suggest high)
                 :confidence :student-input}
     ;; Vendor profiles - generally high reliability
@@ -3880,6 +3889,10 @@ The printed t-shirts are now finished goods ready for sale."
                                  :unit-cost (long (Math/round (double unit)))
                                  :cogs (long (Math/round (* q (double unit)))))
                   each (assoc :amount (long (Math/round (* q (double each))))))))
+
+      ;; A prepayment costs its monthly price times its term.
+      (= :prepaid-expense-transaction template-key)
+      (as-> v (assoc v :amount (* (long (:months v)) (long (:monthly v)))))
 
       ;; An advance is priced at what the shirts it is for will sell for.
       (= :prepayment template-key)

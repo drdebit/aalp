@@ -407,7 +407,12 @@
 
    Keeping those assertions is the point: the entry stays exactly as
    double-entry intends, and the rest of what SP knows stays with it."
-  {:expects "A probability is not a money amount, so nothing is posted — but this is not outside the entry either. The promise is what puts an asset on the books; this number is what lets it be recognized at all, because a promise nobody expects to be kept is not an asset worth carrying. It is also what the allowance for doubtful accounts is computed from at year end, and what lets you compare later what you expected with what occurred."
+  ;; Measurement, not recognition. ACCT 2101 recognizes the receivable at
+  ;; the sale in every case and uses the allowance to report it at what is
+  ;; expected to be collected; the word "probable" does not appear in the
+  ;; course at all, and FASB removed it from the definition of an asset in
+  ;; 2021. So nothing here gates on a confidence figure being high enough.
+  {:expects "A probability is not a money amount, so nothing is posted — but this is not outside the entry either. The promise is what puts the asset on the books; this number is what says how much of it the business will actually see. At year end the allowance for doubtful accounts is computed from these confidences, and the receivable is reported at what is expected to be collected rather than at what was promised. It is also what lets you compare later what you expected with what occurred."
    :is-allowed-by "The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
    :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
    :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."

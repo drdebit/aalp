@@ -1586,7 +1586,7 @@
                           ;; insurance, maintenance); goods on order count too.
                           :expects {:action "receives" :unit #{"physical-unit" "service-unit"}}}
     :description "Prepaid expense (provide payment now, expect to receive goods/services later)"
-    :journal-entry [{:debit "Prepaid Expense (Asset)" :credit "Cash"}]
+    :journal-entry [{:debit "Prepaid Expense" :credit "Cash"}]
     :note "A prepaid expense is an asset representing SP's expectation of receiving future benefits. SP provides cash now and expects to receive services/goods over time. Unlike credit sales, confidence is typically high since vendors are contractually bound."
     :examples ["SP pays $6,000 for 12-month insurance coverage"
                "SP prepays $3,000 for rent covering next 3 months"]
@@ -2067,17 +2067,27 @@
                     :effect :debit
                     :description "Receiving physical asset"}}
 
+   ;; Promises make the accounts, in both directions: what the business
+   ;; owes is a liability, what it is owed is an asset. This map had the
+   ;; two assets under `expects`, from before the two assertions were
+   ;; separated -- so the feedback credited a receivable and a prepaid to
+   ;; the student's confidence figure, on the same screen as the note
+   ;; saying a confidence never reaches the entry.
    :requires
    {:provides-monetary-unit {:account "Accounts Payable" :effect :credit
                              :description "Obligation to pay (liability)"}
     :provides-physical-unit {:account "Deferred Revenue (Liability)" :effect :credit
-                             :description "Obligation to deliver (liability)"}}
+                             :description "Obligation to deliver (liability)"}
+    :receives-monetary-unit {:account "Accounts Receivable" :effect :debit
+                             :description "A promise of payment (asset)"}
+    :receives-physical-unit {:account "Prepaid Expense" :effect :debit
+                             :description "A promise of goods paid for ahead (asset)"}
+    :receives-service-unit {:account "Prepaid Expense" :effect :debit
+                            :description "A promise of service paid for ahead (asset)"}}
 
-   :expects
-   {:receives-monetary-unit {:account "Accounts Receivable" :effect :debit
-                             :description "Expected to receive payment (asset)"}
-    :receives-physical-unit {:account "Prepaid Expense (Asset)" :effect :debit
-                             :description "Expected to receive goods/services (asset)"}}})
+   ;; Nothing. A probability is neither settled nor a money amount, so it
+   ;; adds no line -- which is what the entry's own note says.
+   :expects {}})
 
 ;; Derived helper - kept for backward compatibility but now derives from physical-items
 (def physical-item-accounts

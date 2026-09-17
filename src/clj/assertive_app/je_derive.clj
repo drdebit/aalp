@@ -233,14 +233,21 @@
     :text "And that part is revenue now — earned by providing, not by being paid."}
 
    ;; -------- Paid ahead: a right to something still to come -----------
+   ;; The PROMISE makes the asset, not the probability. This fired on
+   ;; `expects` and so told a student the asset came from their
+   ;; confidence figure -- on the same screen as the note saying `expects`
+   ;; never adds a line, and while `requires` was told it had added
+   ;; nothing. A receivable derives from the customer's promise; a
+   ;; prepaid derives from the vendor's, and the two are the same rule
+   ;; read in the two directions.
    {:id :prepaid
-    :when {:assertion :expects
+    :when {:assertion :requires
            :params {:action "receives" :unit #{"service-unit" "physical-unit"}}}
     :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
               :none-of [{:assertion :receives}]}
     :line {:side :debit :account "Prepaid Expense"}
     :amount :monetary
-    :text "SP paid, and expects to receive what it paid for later. Nothing has been used up yet; what SP holds is a right to something still to come, kept for a future use — an asset, Prepaid Expense, until the service is received and used."}
+    :text "SP paid, and the vendor is now bound to deliver. Nothing has been used up yet; what SP holds is that promise — a right to something still to come, kept for a future use. That is an asset, Prepaid Expense, until the service is received and used. How likely the vendor is to keep the promise is recorded beside it, in `expects`, and changes nothing here."}
 
    ;; -------- Money paid because a rule said so ------------------------
    ;; Nothing comes back. A tax or a licence fee buys no asset and no

@@ -149,11 +149,12 @@
    "Inventory" {:debit "Receives (physical-unit, inventory)"}
    "Equipment (Fixed Asset)" {:debit "Receives (physical-unit, equipment)"}
    "Accounts Payable" {:credit "Requires (provides monetary-unit)"}
-   "Accounts Receivable" {:debit "Expects (receives monetary-unit)"}
+   "Accounts Receivable" {:debit "Requires (receives monetary-unit)"}
    "Revenue" {:credit "Provides (physical-unit)"}
    "Service Revenue" {:credit "Provides (physical-unit)"}
    "Deferred Revenue (Liability)" {:credit "Requires (provides physical-unit)"}
-   "Prepaid Expense (Asset)" {:debit "Expects (receives physical-unit)"}
+   "Prepaid Expense" {:debit "Requires (receives service-unit)"}
+   "Prepaid Expense (Asset)" {:debit "Requires (receives service-unit)"}
    "Raw Materials" {:debit "Receives (physical-unit)"}
    "Work in Process" {:debit "Creates (physical-unit)"}
    "Finished Goods" {:debit "Creates (physical-unit)"}
@@ -1006,9 +1007,15 @@
   "Render the 'expects' confidence section with context.
    Context-aware: shows customer context for credit sales, vendor context for prepaid expenses."
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]
-  (let [context-label (cond (= "provides" (:action params)) "The business expects to provide what it owes with"
-                            is-prepaid? "The business expects to receive what it paid for with"
-                            :else "The business expects to receive what it is owed with")]
+  ;; Split around the unit, because "expects to receive what it paid for
+  ;; WITH services WITH 95% confidence" has two `with`s doing different
+  ;; jobs and reads as neither.
+  (let [[before after] (cond (= "provides" (:action params))
+                             ["The business expects to provide the" "it owes"]
+                             is-prepaid?
+                             ["The business expects to receive the" "it paid for"]
+                             :else
+                             ["The business expects to receive the" "it is owed"])]
     [sentence-section :expectation "What SP is not sure of:"
      [:div.expects-content
       ;; Show appropriate context based on transaction type
@@ -1020,12 +1027,12 @@
         [customer-context-display counterparty-name customer-profiles])
 
       [:div.confidence-row
-       [:span context-label " "]
+       [:span before " "]
        [inline-dropdown :expects :unit [{:value "monetary-unit" :label "cash"}
                                       {:value "physical-unit" :label "goods"}
                                       {:value "service-unit" :label "services"}]
         (:unit params) "what"]
-       " with "
+       [:span " " after ", with "]
        [confidence-slider :expects (:confidence params)]
        [:span " confidence."]
        [remove-assertion-button :expects]]]]))

@@ -62,6 +62,13 @@
           (for [a required]
             [a (let [params (get required-parameters a {})
                      params (into {} (remove (fn [[_ v]] (= :any v)) params))
+                     ;; A requirement may name a CHOICE of values -- what a
+                     ;; prepayment buys is a service or goods on order --
+                     ;; and a student picks one. Left as a set it matched
+                     ;; no rule, so prepaid-expense read as a derivation
+                     ;; gap that was really a gap in this generator.
+                     params (into {} (for [[k v] params]
+                                       [k (if (set? v) (first (sort v)) v)]))
                      unit (:unit params)]
                  (cond-> params
                    (= "monetary-unit" unit) (assoc :quantity (:monetary sample-qty))

@@ -1172,7 +1172,15 @@
 
             [:div.calc-result
              [:span.result-label "Bad Debt Expense: "]
-             [:span.result-value (str "$" (.toFixed total-bad-debt 2))]]])]))}))
+             [:span.result-value (str "$" (.toFixed total-bad-debt 2))]
+             ;; This panel used to compute a total and stop. Nothing ever
+             ;; put it on the `reports` assertion, so the entry derived
+             ;; with no amount every single time.
+             [:button.calculate-btn
+              {:on-click #(do (state/update-assertion-parameter! :reports :amount total-bad-debt)
+                              (state/update-assertion-parameter! :reports :inputs {})
+                              (api/derive-je!))}
+              "Record this amount"]]])]))}))
 
 (defn- aging-calculation-display
   "The aged schedule, with a rate against each class.
@@ -1244,7 +1252,16 @@
                                                (if (js/isNaN v) 0 v)))}]]
              [:div.calc-result
               [:span.result-label "Bad Debt Expense: "]
-              [:span.result-value (format-currency expense)]]]])]))))
+              [:span.result-value (format-currency expense)]
+              [:button.calculate-btn
+               {:on-click #(do (state/update-assertion-parameter! :reports :amount expense)
+                               ;; The rates are the judgment this method
+                               ;; asks for, so they go on the record with
+                               ;; the figure they produced.
+                               (state/update-assertion-parameter!
+                                 :reports :inputs {:rates @rates :existing-allowance @existing})
+                               (api/derive-je!))}
+               "Record this amount"]]]])]))))
 
 (defn- formula-builder
   "Interactive formula builder for calculations like depreciation."
@@ -1280,7 +1297,12 @@
                         (state/set-calculation-result! response)
                         ;; Also update the assertion parameter with calculated value
                         (when-let [amount (:value response)]
-                          (state/update-assertion-parameter! :reports :amount amount))
+                          (state/update-assertion-parameter! :reports :amount amount)
+                          ;; And what produced it. A figure nobody can
+                          ;; reconstruct is a figure nobody can audit —
+                          ;; and the derivation checks the entry against
+                          ;; these, so they have to be on the record.
+                          (state/update-assertion-parameter! :reports :inputs inputs))
                         ;; ...and WHICH asset was written down, where the
                         ;; calculation asked. Depreciation and amortisation
                         ;; are the same arithmetic; only the asset differs,
@@ -1988,6 +2010,25 @@
                          [:td.dj-needs-cell {:colSpan 3}
                           [:span.dj-needs-mark "?"]
                           [:span.dj-needs-text (:unresolved-reason line)]]])
+                      ;; The figure came from a calculation and is not the
+                      ;; figure that calculation comes to. Said on the face
+                      ;; of the entry, like an unpriced line: it is the
+                      ;; student's own method disagreeing with their own
+                      ;; number, and no hint is needed beyond saying so.
+                      (when (false? (:ok? (:check line)))
+                        [:tr.dj-needs.dj-mismatch
+                         [:td]
+                         [:td.dj-needs-cell {:colSpan 3}
+                          [:span.dj-needs-mark "≠"]
+                          [:span.dj-needs-text
+                           (str "This is not what that calculation comes to. "
+                                (case (get-in line [:check :basis])
+                                  "estimation" "The confidences on the record give "
+                                  "aging" "The rates you set against the age classes give "
+                                  "percent-of-sales" "Those sales at that rate give "
+                                  "The method you named gives ")
+                                (format-currency (get-in line [:check :expected]))
+                                ". Recompute, or say which method you are using.")]]])
                       (when open?
                         [:tr.dj-rule
                          [:td {:colSpan 4}

@@ -14,6 +14,7 @@
    wrong (or partial) journal entries without comment. Partial entries
    render missing sides as prompts, not errors."
   (:require [clojure.string :as str]
+            [assertive-app.calc :as calc]
             [assertive-engine.model.quantity :as q]
             [assertive-app.cost-basis :as cost]
             [assertive-app.chain :as chain]))
@@ -694,6 +695,53 @@
     ;; example uses.
     "Insurance Expense"))
 
+(defn- reported-check
+  "Does the figure on an adjusting entry agree with the method that
+   produced it?
+
+   The student names a basis, works the calculation, and the result goes
+   on the `reports` assertion. Until now nothing looked at the two
+   together, so a student could age the receivables, read $102.50 off the
+   schedule, and then post a percent-of-sales figure — and the entry took
+   it. With three bad-debt methods on offer that is no longer a remote
+   possibility.
+
+   What is checked is arithmetic, never judgment. The rate against an age
+   class is the student's to set and this does not second-guess it; what
+   it asks is whether the number carried to the entry is the number those
+   rates imply. Where the inputs are not recorded there is nothing to
+   check and nothing is claimed.
+
+   -> {:ok? bool :expected n :basis s} or nil"
+  [params context]
+  (let [basis  (some-> (:basis params) name)
+        inputs (:inputs params)
+        events (:events context)
+        amount (num-or-nil (:amount params))
+        as-of  (get-in context [:current :has-date :date])
+        expected
+        (case basis
+          ;; Both of these read the record rather than a typed input, so
+          ;; they can be checked even when no inputs were recorded.
+          "estimation"
+          (some-> (seq (chain/promises-of events :receivable))
+                  (->> (map #(hash-map :amount (:amount %) :confidence (:confidence %)))
+                       calc/estimation :value))
+
+          "aging"
+          (when (and as-of (seq (:rates inputs)))
+            (:value (calc/aging (chain/aging events as-of)
+                                (:rates inputs)
+                                (:existing-allowance inputs))))
+
+          (when (seq inputs) (:value (calc/result basis inputs))))]
+    (when (and amount expected)
+      {:basis basis
+       :expected expected
+       ;; To the cent. Anything looser would pass a figure that is merely
+       ;; near the right one, and an entry is not near-balanced.
+       :ok? (< (Math/abs (- (double amount) (double expected))) 0.005)})))
+
 (defn- resolve-line-account
   "An :account of :position is resolved from the chain, and so is the
    expense a prepayment turns into; anything else is the literal label
@@ -852,6 +900,10 @@
                          ;; so a student opening this line finds assertions
                          ;; underneath and nothing else.
                          :assertions (select-keys selections prov)
+                         ;; Where the figure came from a calculation, whether
+                         ;; it is the figure that calculation comes to.
+                         :check (when (= :reported amount)
+                                  (reported-check matched-params context))
                          :rule-id id
                          :rule-text (let [account (resolve-line-account (:account line) matched-params context)
                                           base    (resolve-line-text text matched-params context)

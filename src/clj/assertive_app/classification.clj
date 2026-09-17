@@ -3,6 +3,7 @@
   (:require [clojure.set]
             [clojure.string]
             [assertive-app.je-derive :as je-derive]
+            [assertive-app.calc :as calc]
             [assertive-app.cost-basis :as cost]
             [assertive-app.chain :as chain]))
 
@@ -454,89 +455,38 @@
 
 (defn calculate-result
   "Calculate the result for a given basis type and input values.
-   Returns {:value <number> :display <formatted-string>} or {:error <message>}."
+   Returns {:value <number> :display <formatted-string>} or {:error <message>}.
+
+   The arithmetic lives in assertive-app.calc, because the derivation
+   checks the student's figure against the same formulas and two copies
+   of one formula would let a wrong figure agree with itself."
   [basis inputs]
-  (let [schema (get-calculation-schema basis)]
-    (when schema
-      (try
+  (when (get-calculation-schema basis)
+    (try
+      (if-let [r (calc/result basis inputs)]
+        (assoc r :display (format "$%.2f" (double (:value r))))
         (case (keyword basis)
-          :systematic-allocation
-          (let [{:keys [asset-cost salvage-value useful-life periods-per-year]
-                 :or {salvage-value 0 periods-per-year 12}} inputs
-                annual-depreciation (/ (- asset-cost salvage-value) useful-life)
-                period-depreciation (/ annual-depreciation periods-per-year)]
-            {:value period-depreciation
-             :annual-value annual-depreciation
-             :display (format "$%.2f" period-depreciation)})
-
-          :time-based
-          (let [{:keys [original-amount total-periods periods-elapsed]} inputs
-                period-amount (/ original-amount total-periods)
-                expense (* period-amount periods-elapsed)]
-            {:value expense
-             :period-amount period-amount
-             :display (format "$%.2f" expense)})
-
-          :accrual
-          (let [{:keys [principal annual-rate time-fraction]} inputs
-                interest (* principal (/ annual-rate 100) time-fraction)]
-            {:value interest
-             :display (format "$%.2f" interest)})
-
-          :percent-of-sales
-          (let [{:keys [credit-sales bad-debt-percent]} inputs
-                expense (* (double credit-sales) (/ (double bad-debt-percent) 100.0))]
-            {:value expense
-             :display (format "$%.2f" expense)})
-
-          ;; Data-driven calculations handled separately
           (:estimation :aging)
-          {:error "Bad debt calculation requires receivables data - use calculate-bad-debt or calculate-aging"}
-
-          ;; Simple types don't need calculation
+          {:error "This one reads the record - use calculate-bad-debt or calculate-aging"}
           {:value (:amount inputs)
-           :display (format "$%.2f" (or (:amount inputs) 0))})
-        (catch Exception e
-          {:error (str "Calculation error: " (.getMessage e))})))))
+           :display (format "$%.2f" (double (or (:amount inputs) 0)))}))
+      (catch Exception e
+        {:error (str "Calculation error: " (.getMessage e))}))))
 
 (defn calculate-bad-debt
-  "Calculate bad debt expense from a list of outstanding receivables.
-   Each receivable should have :amount and :confidence (0-1 scale).
-   Returns {:value <number> :receivables <list-with-expected-loss> :display <string>}."
+  "Bad debt expense from outstanding receivables and the confidences
+   recorded on them."
   [receivables]
-  (let [with-expected-loss
-        (map (fn [r]
-               (let [confidence (or (:confidence r) 1.0)
-                     expected-loss (* (:amount r) (- 1 (/ confidence 100)))]
-                 (assoc r :expected-loss expected-loss
-                          :non-collection-rate (- 100 confidence))))
-             receivables)
-        total-bad-debt (reduce + 0 (map :expected-loss with-expected-loss))]
-    {:value total-bad-debt
-     :receivables with-expected-loss
-     :display (format "$%.2f" total-bad-debt)}))
+  (let [r (calc/estimation receivables)]
+    (assoc r :display (format "$%.2f" (:value r)))))
 
 (defn calculate-aging
-  "The allowance an aged schedule calls for: each class's total times the
-   rate the student set against it.
-
-   Note what this produces is the ALLOWANCE, not the expense. The expense
-   is the difference between it and whatever is already in the allowance
-   account -- which is the thing students most often get backwards, and
-   the reason the two balance-sheet methods are taught together."
-  [rows rates]
-  (let [priced (mapv (fn [{:keys [key total] :as row}]
-                       (let [rate (double (or (get rates key)
-                                              (get rates (name key))
-                                              0))]
-                         (assoc row :rate rate
-                                    :estimated (* (double total) (/ rate 100.0)))))
-                     rows)
-        required (reduce + 0.0 (map :estimated priced))]
-    {:value required
-     :buckets priced
-     :total-receivables (reduce + 0.0 (map (comp double :total) priced))
-     :display (format "$%.2f" required)}))
+  "The allowance an aged schedule calls for, and the expense that follows
+   from it once what is already in the allowance is taken off."
+  ([rows rates] (calculate-aging rows rates 0))
+  ([rows rates existing]
+   (let [r (calc/aging rows rates existing)]
+     (assoc r :display (format "$%.2f" (:value r))))))
 
 ;; ==================== Assertion Definitions ====================
 ;; Each assertion includes:

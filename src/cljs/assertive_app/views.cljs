@@ -362,10 +362,19 @@
         (when-let [date (:date vars)]
           (state/update-assertion-parameter! :has-date :date date))
 
-        ;; Auto-populate Has Counterparty from problem variables
-        :has-counterparty
-        (when-let [counterparty (or (:vendor vars) (:customer vars) (:employee vars))]
-          (state/update-assertion-parameter! :has-counterparty :name counterparty))
+        ;; Not the counterparty. It was filled in from the first of
+        ;; :vendor/:customer/:employee that happened to be set -- so on a
+        ;; problem naming two parties it answered with whichever the
+        ;; template listed first, whether or not that was the party to
+        ;; this transaction. It arrived in the December 2025 simulation
+        ;; commit with no reason recorded beside it.
+        ;;
+        ;; And it defeats the dropdown, which is there so that naming the
+        ;; party costs no typing while still costing a reading: the
+        ;; options are every party the student can see, and picking the
+        ;; right one is the question. Answering it for them leaves nothing
+        ;; to pick. The date is different -- a problem has one, and the
+        ;; student is not being assessed on transcribing it.
 
         ;; An obligation or expectation names a future flow. The
         ;; classification asks which verb and which unit that flow has,

@@ -2762,7 +2762,7 @@
                 :cogs [100 250 500]}}  ;; Cost of goods sold (paired with quantity)
 
    :credit-inventory-purchase
-   {:narrative-template "On {date}, {company} receives {quantity} {inventory-type} from {vendor}. {company} agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, {company} takes delivery of {quantity} {inventory-type} from {vendor}. {company} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
                           :has-counterparty {:name :vendor}
@@ -2781,7 +2781,7 @@
                 :due-date :calculated}}
 
    :credit-equipment-purchase
-   {:narrative-template "On {date}, {company} receives {equipment-type} from {vendor}, to print designs on blank t-shirts with ink. {company} agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, {company} takes delivery of {equipment-type} from {vendor}, to print designs on blank t-shirts with ink. {company} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
                           :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
@@ -2799,7 +2799,7 @@
                 :due-date :calculated}}
 
    :credit-sale
-   {:narrative-template "On {date}, {company} provides {quantity} {product} to {customer}. {customer} agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, {company} sells {quantity} {product} to {customer}. {customer} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
@@ -2830,8 +2830,8 @@
                         "RegionalRetailer" {:history-rate 65 :total-orders 8 :industry-avg 75}}}
 
    :prepayment
-   {:narrative-template "On {date}, {company} receives ${amount} in advance from {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
-    :narrative-templates ["On {date}, {company} receives ${amount} in advance from {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
+   {:narrative-template "On {date}, {company} is paid ${amount} in advance by {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
+    :narrative-templates ["On {date}, {company} is paid ${amount} in advance by {customer} for {quantity} printed t-shirts. {company} must deliver them within {days} days."
                           "{customer} pays {company} ${amount} up front on {date} for an order of {quantity} printed t-shirts, to be delivered within {days} days."]
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "monetary-unit" :quantity :amount}
@@ -2925,7 +2925,7 @@ The printed t-shirts are now finished goods ready for sale."
 
    ;; Simpler templates using generic assertions (for introductory problems)
    :production-direct
-   {:narrative-template "On {date}, {company} uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridge to produce {quantity-produced} printed t-shirts.\n\nThis production is allowed by having the t-shirt printer you purchased earlier."
+   {:narrative-template "On {date}, {company} uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridge to produce {quantity-produced} printed t-shirts.\n\nThe work is done on the t-shirt printer bought earlier."
     :required-assertions
    {:has-date {:date :date}
     ;; SP's recipe is blank shirts AND ink. The record should say so:
@@ -2952,7 +2952,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :hours [2 4 8 16 40]}}
 
    :supplies-used
-   {:narrative-template "On {date}, {company} uses {supplies} during the printing process. These supplies are consumed to produce the printed shirts."
+   {:narrative-template "On {date}, {company} uses {supplies} during the printing process. They are used up in the printing."
     :required-assertions {:has-date {:date :date}
                           :consumes {:unit "physical-unit"}
                           :creates {:unit "physical-unit"}}
@@ -2973,7 +2973,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :design-type ["t-shirt design" "logo" "artwork" "graphic design" "product concept"]}}
 
    :service-creation
-   {:narrative-template "On {date}, {company}'s team spends {hours} hours providing {service} to fulfill a customer order."
+   {:narrative-template "On {date}, {company}'s team spends {hours} hours on {service} for a customer order."
     :required-assertions {:has-date {:date :date}
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "service-output"}}
@@ -2984,7 +2984,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :service ["custom printing services" "design consultation" "rush order processing"]}}
 
    :capability-purchase
-   {:narrative-template "On {date}, {company} purchases a T-shirt Printer from {vendor} for ${amount} cash, which allows it to print custom t-shirts in the future."
+   {:narrative-template "On {date}, {company} purchases a T-shirt Printer from {vendor} for ${amount} cash, and will use it to print custom t-shirts."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
@@ -3022,7 +3022,7 @@ The printed t-shirts are now finished goods ready for sale."
    ;; "agreeing to pay $18/hour" is an agreement -- no money had moved, so
    ;; both lines came out unpriced. Hours and wage are paired with the
    ;; total, so the arithmetic in the narrative holds.
-   {:narrative-template "On {date}, {company} pays {employee}, its {position}, ${amount} for {hours} hours' work at ${wage} an hour. Employment law sets the floor under that wage and requires the payroll taxes withheld from it."
+   {:narrative-template "On {date}, {company} pays {employee}, its {position}, ${amount} for {hours} hours' work at ${wage} an hour. Employment law sets the floor under that wage and mandates the payroll taxes withheld from it."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "effort-unit" :quantity :hours}
@@ -3039,7 +3039,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :amount [300 540 800 1000]}}
 
    :copyright-design
-   {:narrative-template "On {date}, {company}'s designer spends {hours} hours creating an original {design-type}. As an original creative work, this design is automatically protected by copyright law."
+   {:narrative-template "On {date}, {company}'s designer spends {hours} hours creating an original {design-type}. Copyright attaches to an original creative work from the moment it is made, with nothing to file."
     :required-assertions {:has-date {:date :date}
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
@@ -3058,7 +3058,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :design-type ["t-shirt graphic" "logo design" "illustration" "pattern artwork"]}}
 
    :trademark-brand
-   {:narrative-template "On {date}, {company} develops a distinctive {brand-element} for the company. {company} registers this as a trademark to protect the brand identity in commerce."
+   {:narrative-template "On {date}, {company} develops a distinctive {brand-element} for the company. {company} registers it as a trademark, so no one else in the trade may use it."
     :required-assertions {:has-date {:date :date}
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}
@@ -3071,7 +3071,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
 
    :pay-taxes
-   {:narrative-template "On {date}, {company} calculates and pays ${amount} in {tax-type} as required by the tax code. Failure to pay would result in penalties and interest."
+   {:narrative-template "On {date}, {company} calculates and pays ${amount} in {tax-type}, as the tax code demands. Failure to pay would bring penalties and interest."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
                           :is-required-by {:framework "tax-code"}}
@@ -3082,7 +3082,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
 
    :business-license
-   {:narrative-template "On {date}, {company} pays ${amount} for its {license-type}, which {authority} regulations require before it may trade at all."
+   {:narrative-template "On {date}, {company} pays ${amount} for its {license-type}, which {authority} rules demand before it may trade at all."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
                           :is-required-by {:framework "industry-regs"}}
@@ -3094,7 +3094,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :authority ["city" "county" "state" "federal"]}}
 
    :form-llc
-   {:narrative-template "On {date}, {company} pays ${amount} to the state to form an LLC (Limited Liability Company). State business law enables this legal structure that protects the owner's personal assets."
+   {:narrative-template "On {date}, {company} pays ${amount} to the state to form an LLC (Limited Liability Company). State business law makes this structure available, and it keeps the owner's personal assets out of reach of the business's creditors."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
                           :is-allowed-by {:framework "state-business-law"}}
@@ -3255,7 +3255,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :payment-date ["February 1" "April 1" "July 1" "October 1"]}}
 
    :pay-dividend
-   {:narrative-template "On {date}, {company} pays the previously declared dividend of ${amount} to shareholders. This fulfills the dividend obligation declared on {declaration-date}."
+   {:narrative-template "On {date}, {company} pays the previously declared dividend of ${amount} to shareholders. This settles the dividend declared on {declaration-date}."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name "Shareholders"}
@@ -3321,7 +3321,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :period ["quarter" "6 months" "quarter" "year"]}}
 
    :lend-with-note
-   {:narrative-template "On {date}, {company} lends ${amount} to {borrower} and receives a {months}-month promissory note at {rate}% annual interest."
+   {:narrative-template "On {date}, {company} lends ${amount} to {borrower}, taking a {months}-month promissory note at {rate}% annual interest in return."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :borrower}

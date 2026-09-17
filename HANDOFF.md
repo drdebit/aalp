@@ -1,9 +1,73 @@
-# AALP — where things stand (2026-09-09)
+# AALP — where things stand (2026-09-16)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
 
 ## Start here (next session)
+
+**2026-09-16. The level numbers moved. Read this before anything that
+mentions a level above 3.**
+
+Three ladders numbered the levels and disagreed from 3 up. The tutorials
+taught Adjusting Entries at 4; the templates and the simulation both put
+adjusting entries at 5 and a legal/regulatory family at 4. The drill
+fetches problems at the tutorial's level, so a student who read about
+depreciation was served UCC sales and LLC formation — a family with no
+tutorial anywhere — and nothing above it was reachable at the level that
+taught it. Decided with Matt: write the missing tutorial rather than
+renumber the templates.
+
+| level | is now |
+|---|---|
+| 0 | Cash Transactions |
+| 1 | Credit Transactions |
+| 2 | Production and Transformation |
+| 3 | Cash Sales |
+| **4** | **Legal and Regulatory Context (new)** |
+| 5 | Adjusting Entries (was 4) |
+| 6 | Equity Transactions (was 5) |
+| 7 | Notes and Interest (was 6) |
+| 8 | Capstone Review (was 7) |
+
+Tutorial N now equals template-family N everywhere. Quiz ids moved with
+their levels (`:l4-q*` are the new legal ones). `accounts-by-level`
+gained an 8. The level selector and the progress panel are generated
+from `tutorials/all-levels` instead of hand-kept literals that stopped
+at 4.
+
+**Level 4 was not answerable before it was taught.** `is-required-by`
+and `is-protected-by` were parameterized with no `:sentence`, so
+selecting one did nothing visible; `is-allowed-by` could only point at
+equipment though every legal template asks it to name a statute. All
+three now render, and `is-allowed-by` takes either — which is the
+level's first teaching point.
+
+Four of its templates were broken in ways nobody had seen because nobody
+had been served them: `ucc-sale` named neither goods nor price,
+`hire-employee` narrated an agreement and asserted money had moved,
+`contract-sale` said payment was due in 60 days *and* asserted
+`receives monetary`. All three are fixed. `copyright-design` and
+`trademark-brand` give hours but no rate, so nothing says what the
+design cost; they carry `:derivation-pending true` and are not served.
+`generate-problem` skips any template with that flag.
+
+### Adjusting entries read the record they adjust (2026-09-16)
+
+`chain/promises` returns what the record still owes and is owed, one per
+`requires`, sorted by what moved in the same event into `:receivable`
+`:payable` `:prepaid` `:advance` `:borrowing` `:lending`. Any `expects`
+in the event travels with the promise, so the allowance for doubtful
+accounts is that query and nothing more. `chain/capital-assets` returns
+what the record says is held to be used rather than sold.
+
+A template declares what it reads (`:reads-record [:prepaid]`) and
+`practice-backstory` carries those promises and no others — a Level 0
+record stays short; an adjusting entry has something to adjust. The
+fitting lives in `classification/record-variables`.
+
+Accrued wages is the only adjusting entry that legitimately stands
+alone. Accrued interest moved to 7 with the notes and reads a loan the
+company took.
 
 **2026-09-09.** A walkthrough of the platform as a new user, and what it
 changed. The headline: **cost of goods sold is now the student's own

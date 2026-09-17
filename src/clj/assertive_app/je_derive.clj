@@ -312,7 +312,7 @@
     :line {:side :credit :account "Revenue"}
     :amount :monetary
     :entry-label "Revenue Recognition"
-    :text "SP's rulebook: providing finished goods to a counterparty is a sale. Revenue is credited for what the counterparty gives (or owes) in return. Notice: 'Revenue' is a label applied to this PATTERN of assertions, not a fact SP observed."}
+    :text "SP's rulebook: providing finished goods to a counterparty is a sale. Revenue is credited for what the counterparty gives in return — or, on credit, for what they are bound to give: the `requires` is what fixes the amount, and what makes goods going out a sale rather than a gift. How likely they are to pay does not change it. Notice: 'Revenue' is a label applied to this PATTERN of assertions, not a fact SP observed."}
 
    {:id :cogs
     :when {:assertion :provides
@@ -412,7 +412,7 @@
   ;; expected to be collected; the word "probable" does not appear in the
   ;; course at all, and FASB removed it from the definition of an asset in
   ;; 2021. So nothing here gates on a confidence figure being high enough.
-  {:expects "A probability is not a money amount, so nothing is posted — but this is not outside the entry either. The promise is what puts the asset on the books; this number is what says how much of it the business will actually see. At year end the allowance for doubtful accounts is computed from these confidences, and the receivable is reported at what is expected to be collected rather than at what was promised. It is also what lets you compare later what you expected with what occurred."
+  {:expects "A probability is not a money amount, so nothing is posted here. `requires` does the work in this entry — the promise is what makes the goods going out a sale, fixes the amount, and puts the claim on the books. What this number does is later, and in one place: at period end the allowance for doubtful accounts is estimated from these confidences, and the charge for it is Bad Debt Expense, matched against the sales that produced the debts. It is also what lets you compare later what you expected with what occurred."
    :is-allowed-by "The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
    :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
    :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."
@@ -480,6 +480,22 @@
                 (when (monetary-quantity? qty) qty)))
             [:receives :provides :requires :expects])
       (when-let [v (num-or-nil (:amount variables))] (q/monetary v))))
+
+(defn- monetary-source
+  "Which of the student's assertions the entry's money amount was taken
+   from — the same search `monetary-amount` makes, reporting the code
+   rather than the figure.
+
+   A line measured by money somebody else's assertion carries should say
+   so. On a credit sale the revenue is $625 because the customer is bound
+   to pay $625: `requires` is what fixes the amount, and what makes the
+   goods going out a sale rather than a gift. The line used to credit
+   Revenue and name only `provides` and `has-counterparty`, leaving the
+   figure with no visible source."
+  [selections]
+  (some (fn [code]
+          (when (monetary-quantity? (params->quantity (get selections code))) code))
+        [:receives :provides :requires :expects]))
 
 (defn- resolve-amount
   "Resolve one line's amount as an engine quantity.
@@ -809,7 +825,13 @@
         lines (mapv (fn [{:keys [line amount matched matched-params context-used id text entry-label]}]
                       (let [{:keys [quantity unresolved? unresolved-reason needs-lot?]}
                             (resolve-amount amount matched matched-params selections variables context)
-                            prov (vec (distinct (cons matched context-used)))]
+                            prov (vec (distinct
+                                        (concat [matched] context-used
+                                                ;; Where the money came from, when the
+                                                ;; line is measured by an amount this
+                                                ;; assertion does not itself carry.
+                                                (when (contains? #{:monetary :flow} amount)
+                                                  (keep identity [(monetary-source selections)])))))]
                         {:side (:side line)
                          :account (resolve-line-account (:account line) matched-params context)
                          ;; The typed quantity is the real value; :amount is

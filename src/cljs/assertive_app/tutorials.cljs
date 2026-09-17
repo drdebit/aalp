@@ -892,7 +892,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 | **provides** | Giving something now | Credit to asset/equity |
 | **receives** | Getting something now | Debit to asset |
 | **requires** | Legal obligation (future) | Credit to liability |
-| **expects** | How likely a future event is | No line — but it is what the claim is written down to be worth |
+| **expects** | How likely a future event is | No line — it becomes Bad Debt Expense at period end |
 
 **Transformation Assertions:**
 
@@ -947,12 +947,14 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 accounts, and the direction of the promise is the whole difference —
 that is the single fact this level is testing.
 
-**expects** appears in neither, and is not therefore idle: the promise
-puts the asset on the books, and the probability says how much of it the
-business will actually see. At year end the allowance for doubtful
-accounts is computed from those confidences, and the receivable is
-reported at what is expected to be collected rather than at what was
-promised.
+**expects** appears in neither, and reaches the books in exactly one
+place. On a credit sale the promise does all the work in the entry: it
+makes the goods going out a sale, it fixes the amount, and it puts the
+claim on the books. The confidence changes none of that. What it does
+is later — at period end the allowance for doubtful accounts is
+estimated from those confidences, and the charge for it is **Bad Debt
+Expense**, matched against the sales that produced the debts. Revenue
+is never reduced.
 
 **The requires/expects asymmetry:**
 - Credit purchase: **requires** (SP's own promise — a probability is optional)

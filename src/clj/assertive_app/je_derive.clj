@@ -189,12 +189,12 @@
     :amount :reported
     :text "What has been used up so far accumulates beside the asset, so its original cost stays visible -- the same treatment a machine gets."}
    {:id :bad-debt
-    :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
+    :when {:assertion :reports :params {:category "expense" :basis #{"estimation" "aging" "percent-of-sales"}}}
     :line {:side :debit :account "Bad Debt Expense"}
     :amount :reported
     :text "Some of what customers owe will not arrive. The probabilities recorded on those sales (expects) say how much; that shortfall is a cost of having sold on credit."}
    {:id :bad-debt-allowance
-    :when {:assertion :reports :params {:category "expense" :basis "estimation"}}
+    :when {:assertion :reports :params {:category "expense" :basis #{"estimation" "aging" "percent-of-sales"}}}
     :line {:side :credit :account "Allowance for Doubtful Accounts"}
     :amount :reported
     :text "The receivable is not reduced directly — no particular customer has failed yet. The doubt sits beside it as an allowance."}
@@ -951,6 +951,16 @@
                               :let [bs (chain/batches (:events chain-ctx) it)]
                               :when (seq bs)]
                           [it (mapv #(assoc % :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id %) :unit-cost])) bs)])))
+     ;; What customers owe, aged at the date the student is standing on.
+     ;; Sent with the derivation because the record is already here: the
+     ;; aged schedule is a reading of the same events the entry is, and
+     ;; needs no store of its own and no second round trip.
+     :aged-receivables (let [as-of (or (get-in selections [:has-date :date])
+                                       (get-in chain-ctx [:current :has-date :date]))]
+                         (when as-of
+                           (let [rows (chain/aging (:events chain-ctx) as-of)]
+                             (when (some (comp pos? :total) rows)
+                               {:as-of as-of :rows rows}))))
      :lines lines
      :placeholders placeholders
      :context context

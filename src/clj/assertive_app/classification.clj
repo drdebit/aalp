@@ -316,6 +316,44 @@
     :result-label "Bad Debt Expense"
     :educational-note "This calculation uses the confidence levels you assigned when recording each credit sale. Lower confidence = higher expected bad debt."}
 
+   ;; The two the textbook examines. ACCT 2101 Topic 6 estimates bad
+   ;; debts three ways -- percent of sales, percent of receivables, and
+   ;; aging -- all from historical rates applied to totals. The platform
+   ;; had only the confidence-driven one, which is the better estimate
+   ;; and the one nobody sits an exam on. Both are offered now, against
+   ;; the same receivables, so the student can see what each says.
+   :percent-of-sales
+   {:label "Percent of Sales (Bad Debt)"
+    :description "Estimates bad debts as a percentage of the period's credit sales"
+    :formula [:multiply :credit-sales [:divide :bad-debt-percent 100]]
+    :formula-display "Credit Sales × Bad Debt %"
+    :inputs [{:key :credit-sales
+              :label "Credit Sales This Period"
+              :type :currency
+              :placeholder "Total sales made on credit"
+              :required true}
+             {:key :bad-debt-percent
+              :label "Bad Debt Percentage"
+              :type :percentage
+              :min 0
+              :max 100
+              :placeholder "e.g. 0.6"
+              :required true}]
+    :result-label "Bad Debt Expense"
+    :educational-note "An income-statement method: it asks what share of THIS period's credit sales will not arrive, and books that as the expense. It does not look at what is already on the books, so whatever is in the allowance stays there and this is added to it."}
+
+   :aging
+   {:label "Aging of Receivables (Bad Debt)"
+    :description "Estimates bad debts by how long each receivable is past due"
+    :formula [:sum-product :buckets :rate]
+    :formula-display "Σ (Amount in each age class × that class's rate)"
+    :data-driven? true
+    :data-source :aged-receivables
+    :data-description "Outstanding receivables sorted by how far past due they are"
+    :inputs []  ;; the rates per class are entered against the schedule
+    :result-label "Allowance Required"
+    :educational-note "A balance-sheet method: it works out what the ALLOWANCE should be, not the expense. The expense is the difference between that and what is already in the allowance. The older a debt, the less of it arrives — which is the same thing a confidence says, arrived at from the record rather than from a judgment."}
+
    :time-based
    {:label "Time-Based (Prepaid Expenses)"
     :description "Recognizes expense as time passes on a prepaid asset"
@@ -445,9 +483,15 @@
             {:value interest
              :display (format "$%.2f" interest)})
 
+          :percent-of-sales
+          (let [{:keys [credit-sales bad-debt-percent]} inputs
+                expense (* (double credit-sales) (/ (double bad-debt-percent) 100.0))]
+            {:value expense
+             :display (format "$%.2f" expense)})
+
           ;; Data-driven calculations handled separately
-          :estimation
-          {:error "Bad debt calculation requires receivables data - use calculate-bad-debt function"}
+          (:estimation :aging)
+          {:error "Bad debt calculation requires receivables data - use calculate-bad-debt or calculate-aging"}
 
           ;; Simple types don't need calculation
           {:value (:amount inputs)
@@ -471,6 +515,28 @@
     {:value total-bad-debt
      :receivables with-expected-loss
      :display (format "$%.2f" total-bad-debt)}))
+
+(defn calculate-aging
+  "The allowance an aged schedule calls for: each class's total times the
+   rate the student set against it.
+
+   Note what this produces is the ALLOWANCE, not the expense. The expense
+   is the difference between it and whatever is already in the allowance
+   account -- which is the thing students most often get backwards, and
+   the reason the two balance-sheet methods are taught together."
+  [rows rates]
+  (let [priced (mapv (fn [{:keys [key total] :as row}]
+                       (let [rate (double (or (get rates key)
+                                              (get rates (name key))
+                                              0))]
+                         (assoc row :rate rate
+                                    :estimated (* (double total) (/ rate 100.0)))))
+                     rows)
+        required (reduce + 0.0 (map :estimated priced))]
+    {:value required
+     :buckets priced
+     :total-receivables (reduce + 0.0 (map (comp double :total) priced))
+     :display (format "$%.2f" required)}))
 
 ;; ==================== Assertion Definitions ====================
 ;; Each assertion includes:
@@ -950,7 +1016,9 @@
                                     {:value "earned" :label "Performance obligation satisfied"}
                                     ;; Adjusting entries (Level 5+)
                                     {:value "systematic-allocation" :label "Systematic allocation over time (depreciation or amortisation)"}
-                                    {:value "estimation" :label "Estimation of future amounts (bad debt)"}
+                                    {:value "estimation" :label "Estimation from recorded confidences (bad debt)"}
+                                    {:value "aging" :label "Aging of receivables (bad debt)"}
+                                    {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
                                     {:value "time-based" :label "Passage of time (prepaid expenses)"}
                                     {:value "accrual" :label "Accrual over time (interest)"}
                                     {:value "declared" :label "Declared by board/owners"}]}}}]
@@ -1854,7 +1922,11 @@
 
    :bad-debt-expense
    {:required #{:has-date :reports}
-    :required-parameters {:reports {:category "expense" :basis "estimation"}}
+    ;; Three ways to reach the same allowance. Which one a student uses is
+    ;; not what is being assessed here -- that it is an estimate, with no
+    ;; exchange behind it, is.
+    :required-parameters {:reports {:category "expense"
+                                    :basis #{"estimation" "aging" "percent-of-sales"}}}
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Allowance for doubtful accounts"
     :journal-entry [{:debit "Bad Debt Expense" :credit "Allowance for Doubtful Accounts"}]
@@ -3204,7 +3276,7 @@ The printed t-shirts are now finished goods ready for sale."
    ;; the record. The confidences multiplied here are the ones somebody
    ;; put on `expects` when the sale was made -- which is the argument
    ;; for recording them at all, finally landing.
-   {:narrative-template "On {date}, {company} looks at what its customers still owe: {owed}. That is ${ar-balance} outstanding, and the confidences say ${bad-debt-amount} of it will not arrive."
+   {:narrative-template "On {date}, {company} closes its books for the half-year. {count} customers still owe it ${ar-balance} between them, and some of that will not arrive. Estimate how much, and record it."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "estimation"}}
     :correct-classification :bad-debt-expense
@@ -3645,13 +3717,19 @@ The printed t-shirts are now finished goods ready for sale."
         ;; first. Bounded by the blanks actually on hand -- the record
         ;; cannot print shirts it never bought.
         printed2   (min (rand-nth [15 20 25]) (- shirts printed))
-        ;; Two customers who took shirts and have not paid, at different
-        ;; confidences: an allowance is a sum over what is owed, and a sum
-        ;; of one teaches nothing about which number moves it.
+        ;; Four customers who took shirts and have not paid, at different
+        ;; confidences and -- as importantly -- at different ages. An
+        ;; allowance is a sum over what is owed, and a sum of one teaches
+        ;; nothing about which number moves it; an aged schedule needs the
+        ;; classes to have something in them.
         owed1      (rand-nth [4 5 6])
         owed2      (rand-nth [3 4])
-        conf1      (rand-nth [90 92 95])
-        conf2      (rand-nth [60 70 75])
+        owed3      (rand-nth [3 4])
+        owed4      (rand-nth [4 5])
+        conf1      (rand-nth [55 60 65])
+        conf2      (rand-nth [70 75 80])
+        conf3      (rand-nth [85 88 90])
+        conf4      (rand-nth [92 95 97])
         ;; Money taken for shirts not yet made.
         ordered    (rand-nth [16 20 24])
         ;; Borrowed at founding. The principal is a multiple of 1,200, so
@@ -3686,7 +3764,27 @@ The printed t-shirts are now finished goods ready for sale."
                   :requires {:action "receives" :unit "monetary-unit"
                              :quantity (* owed2 price) :due-date "2026-03-22"}
                   :expects {:action "receives" :unit "monetary-unit" :confidence conf2}
-                  :has-counterparty {:name "Ridgeway Middle School"}}])
+                  :has-counterparty {:name "Ridgeway Middle School"}}
+                 ;; Later, and nearer: these two land in the younger
+                 ;; classes of the aged schedule. The confidence rises
+                 ;; with them, because a debt that is not yet late is one
+                 ;; nobody has reason to doubt.
+                 {:has-identifier "CreditSale-003"
+                  :has-date {:date "2026-04-21"}
+                  :provides {:unit "physical-unit" :physical-item "printed-tshirts"
+                             :quantity owed3 :from-event "Printing-001"}
+                  :requires {:action "receives" :unit "monetary-unit"
+                             :quantity (* owed3 price) :due-date "2026-05-21"}
+                  :expects {:action "receives" :unit "monetary-unit" :confidence conf3}
+                  :has-counterparty {:name "Fairview Running Club"}}
+                 {:has-identifier "CreditSale-004"
+                  :has-date {:date "2026-06-08"}
+                  :provides {:unit "physical-unit" :physical-item "printed-tshirts"
+                             :quantity owed4 :from-event "Printing-001"}
+                  :requires {:action "receives" :unit "monetary-unit"
+                             :quantity (* owed4 price) :due-date "2026-07-08"}
+                  :expects {:action "receives" :unit "monetary-unit" :confidence conf4}
+                  :has-counterparty {:name "Delmar Coffee Roasters"}}])
           (contains? needs :borrowing)
           (conj {:has-identifier "Loan-001"
                  :has-date {:date "2026-01-02"}
@@ -3788,22 +3886,21 @@ The printed t-shirts are now finished goods ready for sale."
       ;; confidences it multiplies by are the ones somebody recorded when
       ;; the sale was made. That is the whole argument for putting a
       ;; number on `expects`, and it is worth the student seeing it land.
+      ;; The narrative no longer lists the debts or names an answer. It
+      ;; used to recite each customer and then state what the confidences
+      ;; came to -- which settled the method before the student chose one,
+      ;; and there are three. The aged schedule and the confidence table
+      ;; are both on screen; the question is which reading to trust.
+      ;;
+      ;; The date is fixed at the half-year so the aged schedule actually
+      ;; spans its classes: drawn from a month-end at random, every debt
+      ;; fell in the same class about half the time.
       :record-bad-debt
       (let [rs (chain/promises-of events :receivable)]
         (if (seq rs)
-          (let [amt   #(or (:amount %) 0)
-                conf  #(double (or (:confidence %) 100))
-                total (reduce + (map amt rs))
-                loss  (reduce + (map #(* (amt %) (- 1 (/ (conf %) 100))) rs))]
-            (assoc vars
-                   :owed (clojure.string/join
-                           "; "
-                           (for [r rs]
-                             (str (:counterparty r) " owes $" (amt r)
-                                  " from the sale on " (format-iso-date (:date r))
-                                  ", recorded at " (:confidence r) "% confidence")))
-                   :ar-balance total
-                   :bad-debt-amount (long (Math/round loss))))
+          (assoc vars :date "2026-06-30"
+                      :count (count rs)
+                      :ar-balance (long (reduce + (map #(or (:amount %) 0) rs))))
           vars))
 
       ;; The term is not asserted and does not need to be: the record

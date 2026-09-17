@@ -1099,6 +1099,17 @@
                 :value (or current-value default "")
                 :on-change #(on-change input-key (.. % -target -value))}])]))
 
+(defn- chain-receivables
+  "The open receivables in the record the problem is about, flattened out
+   of the aged schedule the derivation sends back.
+
+   Preferred over the simulation's own receivables wherever it exists: a
+   practice problem is another company's books, and showing the student
+   THEIR ledger beside a narrative about Summit Screen Works was showing
+   two unrelated sets of debts as though they were one."
+  []
+  (vec (mapcat :items (get-in (state/derived-je) [:aged-receivables :rows]))))
+
 (defn- bad-debt-calculation-display
   "Display the data-driven bad debt calculation from receivables."
   []
@@ -1111,9 +1122,21 @@
     :reagent-render
     (fn []
       (let [summary (state/receivables-summary)
-            receivables (:receivables summary [])
-            total-ar (:total-receivables summary 0)
-            total-bad-debt (:total-bad-debt summary 0)]
+            ;; The record the problem is about, where there is one. A
+            ;; practice problem is another company's books, and this
+            ;; panel used to show the student THEIR simulation ledger
+            ;; beside a narrative about Summit Screen Works -- two
+            ;; unrelated sets of debts presented as one.
+            from-chain (chain-receivables)
+            receivables (if (seq from-chain)
+                          (mapv (fn [r] {:customer (:counterparty r)
+                                         :amount (or (:amount r) 0)
+                                         :confidence (or (:confidence r) 100)})
+                                from-chain)
+                          (:receivables summary []))
+            total-ar (reduce + 0 (map :amount receivables))
+            total-bad-debt (reduce + 0 (map (fn [r] (* (:amount r) (- 1 (/ (:confidence r) 100))))
+                                            receivables))]
         [:div.bad-debt-calculation
          [:div.calc-educational-note
           [:p "Bad debt expense is calculated from the confidence levels you assigned when recording credit sales."]
@@ -1150,6 +1173,78 @@
             [:div.calc-result
              [:span.result-label "Bad Debt Expense: "]
              [:span.result-value (str "$" (.toFixed total-bad-debt 2))]]])]))}))
+
+(defn- aging-calculation-display
+  "The aged schedule, with a rate against each class.
+
+   The rates are the student's to set — that is the judgment the method
+   asks for, and the textbook's exhibit hands them over as given. What
+   the schedule produces is the ALLOWANCE the balance sheet should show,
+   not the expense; the expense is the difference between that and what
+   is already in the allowance, which is the step most often got
+   backwards."
+  []
+  (let [rates (r/atom {:not-due 2 :d1-30 5 :d31-60 10 :d61-90 25 :over-90 40})
+        existing (r/atom 0)]
+    (fn []
+      (let [aged (get-in (state/derived-je) [:aged-receivables])
+            rows (:rows aged)
+            priced (for [r rows
+                         :let [rate (get @rates (keyword (:key r)) 0)]]
+                     (assoc r :rate rate
+                              :estimated (* (:total r) (/ rate 100))))
+            required (reduce + 0 (map :estimated priced))
+            total-ar (reduce + 0 (map :total rows))
+            expense (- required @existing)]
+        [:div.bad-debt-calculation
+         [:div.calc-educational-note
+          [:p "Sort what is owed by how late it is, and put a rate against each class. "
+              "The longer an amount is past due, the less of it arrives."]
+          [:p.formula "Formula: Σ (Amount in each class × that class's rate)"]]
+         (if (empty? rows)
+           [:div.no-receivables
+            [:p "This business's record shows nothing owed to it."]]
+           [:div.receivables-table
+            [:p.aging-asof (str "Aged at " (:as-of aged) ".")]
+            [:table
+             [:thead
+              [:tr [:th "Age class"] [:th "Amount"] [:th "Rate"] [:th "Estimated uncollectible"]]]
+             [:tbody
+              (doall
+                (for [r priced]
+                  ^{:key (str (:key r))}
+                  [:tr {:class (when (zero? (:total r)) "empty-class")}
+                   [:td (:label r)
+                    (when (seq (:items r))
+                      [:span.aging-who (str " — " (clojure.string/join ", " (map :counterparty (:items r))))])]
+                   [:td.amount (format-currency (:total r))]
+                   [:td.rate
+                    [:input.inline-number
+                     {:type "number" :min 0 :max 100 :step 1
+                      :value (get @rates (keyword (:key r)) 0)
+                      :on-change #(swap! rates assoc (keyword (:key r))
+                                         (let [v (js/parseFloat (.. % -target -value))]
+                                           (if (js/isNaN v) 0 v)))}]
+                    [:span "%"]]
+                   [:td.loss (format-currency (:estimated r))]]))
+              [:tr.total-row
+               [:td "Total"]
+               [:td.amount (format-currency total-ar)]
+               [:td ""]
+               [:td.loss.total (format-currency required)]]]]
+            [:div.aging-expense
+             [:p [:strong "That is the allowance, not the expense."]
+                 " The balance sheet should show " (format-currency required)
+                 " in Allowance for Doubtful Accounts. What you record is the difference between that and what is already there."]
+             [:div.aging-existing
+              [:span "Already in the allowance: "]
+              [:input.inline-number
+               {:type "number" :step 1 :value @existing
+                :on-change #(reset! existing (let [v (js/parseFloat (.. % -target -value))]
+                                               (if (js/isNaN v) 0 v)))}]]
+             [:div.calc-result
+              [:span.result-label "Bad Debt Expense: "]
+              [:span.result-value (format-currency expense)]]]])]))))
 
 (defn- formula-builder
   "Interactive formula builder for calculations like depreciation."
@@ -1224,6 +1319,7 @@
              [:h4 "Calculate Amount"]
              (case basis
                "estimation" [bad-debt-calculation-display]
+               "aging" [aging-calculation-display]
                ;; All others use the formula builder
                [formula-builder basis])]))))}))
 
@@ -1238,7 +1334,9 @@
                        {:value "cash-received" :label "Equal to cash received"}
                        {:value "cash-paid" :label "Equal to cash paid"}
                        {:value "systematic-allocation" :label "Systematic allocation (depreciation)"}
-                       {:value "estimation" :label "Estimation (bad debt)"}
+                       {:value "estimation" :label "Estimation from recorded confidences (bad debt)"}
+                       {:value "aging" :label "Aging of receivables (bad debt)"}
+                       {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
                        {:value "time-based" :label "Passage of time (prepaid)"}
                        {:value "accrual" :label "Accrual over time (interest)"}]
         selected-basis (:basis params)]

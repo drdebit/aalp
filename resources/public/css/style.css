@@ -4437,3 +4437,19 @@ header {
 .wt-choice.right { border-color: #4f9d69; background: #eaf5ea; }
 .wt-choice.wrong { border-color: #d08a78; background: #fbf1ee; }
 .wt-choice:disabled { cursor: default; }
+
+/* ---- Aged schedule of receivables (Level 5 bad debts) ---- */
+.aging-asof { font-size: .86em; color: #6b6b6b; margin: 0 0 8px; }
+.receivables-table tr.empty-class { opacity: .5; }
+.receivables-table td.rate { white-space: nowrap; }
+.receivables-table td.rate .inline-number { width: 5ch; text-align: right; margin-right: 2px; }
+.aging-who { color: #6b6b6b; font-size: .86em; }
+.aging-expense {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-left: 3px solid #b9cbb2;
+    background: #f7faf6;
+}
+.aging-expense p { margin: 0 0 8px; font-size: .92em; }
+.aging-existing { margin-bottom: 8px; font-size: .92em; }
+.aging-existing .inline-number { width: 8ch; text-align: right; }

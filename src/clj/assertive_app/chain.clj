@@ -434,6 +434,63 @@
   [events kind]
   (filterv #(= kind (:kind %)) (promises events)))
 
+(def aging-buckets
+  "The classes an aged schedule sorts receivables into. ACCT 2101's
+   exhibit uses these five, and the rate rises with each because the
+   longer an amount is past due, the less of it arrives."
+  [{:key :not-due   :label "Not yet due"    :from nil :to 0   :default-rate 2}
+   {:key :d1-30     :label "1 to 30 days"   :from 1   :to 30  :default-rate 5}
+   {:key :d31-60    :label "31 to 60 days"  :from 31  :to 60  :default-rate 10}
+   {:key :d61-90    :label "61 to 90 days"  :from 61  :to 90  :default-rate 25}
+   {:key :over-90   :label "Over 90 days"   :from 91  :to nil :default-rate 40}])
+
+(defn days-between
+  "Whole days from one YYYY-MM-DD to another; negative when the second
+   date is the earlier."
+  [from to]
+  (let [parse #(try (java.time.LocalDate/parse (str %)) (catch Exception _ nil))]
+    (when-let [a (parse from)]
+      (when-let [b (parse to)]
+        (.between java.time.temporal.ChronoUnit/DAYS a b)))))
+
+(defn- bucket-for [days]
+  (:key (first (filter (fn [{:keys [from to]}]
+                         (and (or (nil? from) (>= days from))
+                              (or (nil? to) (<= days to))))
+                       aging-buckets))))
+
+(defn aging
+  "What customers owe, sorted by how long it is past due at `as-of`.
+
+   The same query as `promises`, bucketed. Nothing new is asserted and
+   nothing new is stored: every open receivable already carries the day
+   it was made and the day it falls due, so how overdue it is on any
+   given date is a reading, like a position or a cost.
+
+   Worth having beside the confidence figures rather than instead of
+   them. A confidence is what somebody judged about one customer at the
+   time of one sale; an age is what the record can see now, about every
+   customer at once, without anyone having judged anything.
+
+   -> [{:key :label :days-label :items [...] :total n}] in order, empty
+   buckets included so the schedule reads like a schedule."
+  [events as-of]
+  (let [open (filter #(= :receivable (:kind %)) (promises events))
+        aged (map (fn [p]
+                    (let [d (or (some-> (:due-date p) (->> (days-between as-of))) 0)
+                          ;; days-between due->as-of: positive when the due
+                          ;; date is still ahead, so past-due is its negation.
+                          past (- d)]
+                      (assoc p :days-past-due (max 0 past)
+                               :bucket (bucket-for (max 0 past)))))
+                  open)]
+    (vec (for [{:keys [key label]} aging-buckets
+               :let [items (filterv #(= key (:bucket %)) aged)]]
+           {:key key
+            :label label
+            :items items
+            :total (reduce + 0 (keep :amount items))}))))
+
 (defn capital-assets
   "What the record says the business holds to use rather than to sell,
    and what each cost.

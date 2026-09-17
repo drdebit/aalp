@@ -1982,7 +1982,11 @@
 
            (when (seq not-reflected)
              [:div.dj-not-reflected
-              [:h5 "In the chain, not on the entry"]
+              ;; Not "not on the entry": `requires` is how a receivable or
+              ;; a prepaid gets there at all, and `expects` is what lets
+              ;; either be recognized. What these share is that none of
+              ;; them is a line.
+              [:h5 "Recorded here, but not as a line"]
               (doall
                 (for [nr not-reflected]
                   ^{:key (:code nr)}

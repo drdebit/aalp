@@ -407,12 +407,12 @@
 
    Keeping those assertions is the point: the entry stays exactly as
    double-entry intends, and the rest of what SP knows stays with it."
-  {:expects "In the chain, not on the entry. Double-entry records what has happened, measured in money, and an expectation is neither settled nor a money amount. It stays in your record, and it is what lets you compare later what you expected with what occurred."
-   :is-allowed-by "In the chain, not on the entry. The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
-   :allows "In the chain, not on the entry. Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
-   :is-required-by "In the chain, not on the entry. The framework requiring an event is not an exchange, so no account carries it."
-   :requires "In the chain, not on the entry. A promise is recorded here; it reaches the entry as a claim in money — something owed, or owing — when the pattern says so. This one does not add a line of its own."
-   :reports "In the chain, not on the entry here. Reporting assertions drive calculations rather than journal-entry lines."})
+  {:expects "A probability is not a money amount, so nothing is posted — but this is not outside the entry either. The promise is what puts an asset on the books; this number is what lets it be recognized at all, because a promise nobody expects to be kept is not an asset worth carrying. It is also what the allowance for doubtful accounts is computed from at year end, and what lets you compare later what you expected with what occurred."
+   :is-allowed-by "The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
+   :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
+   :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."
+   :requires "A promise is recorded here. It reaches the entry as a claim in money — something owed, or owing — when the pattern says so; this one does not add a line of its own."
+   :reports "Reporting assertions drive calculations rather than journal-entry lines."})
 
 (def context-roles
   {:has-date "stamps the entry's date"
@@ -901,7 +901,7 @@
                                               (and (= :expects code)
                                                    (= "provides" (get-in selections [:requires :action])))
                                               (let [conf (num-or-nil (get-in selections [:expects :confidence]))]
-                                                (str "In the chain, not on the entry. A probability on the business's own promise. The entry is the same with or without it."
+                                                (str "A probability on the business's own promise. The entry is the same with or without it — the business decides whether it delivers, so there is nothing here for recognition to turn on."
                                                      (when (and conf (< conf 100))
                                                        " Under 100% on your own promise is worth a second look: it says the business is not sure it will pay, which is about the business, not the counterparty.")))
                                               ;; A claim on the business is countable and
@@ -911,11 +911,11 @@
                                               ;; say -- the ownership schedule is computed
                                               ;; from the record instead.
                                               (claim? code)
-                                              "In the chain, not on the entry. Double-entry measures in money, and 200 units is a count rather than an amount — that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
+                                              "Double-entry measures in money, and 200 units is a count rather than an amount — that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
 
                                               :else
                                               (get not-reflected-texts code
-                                                   "In the chain, not on the entry. No rule in SP's rulebook produces a journal-entry line from this assertion as it stands."))}))
+                                                   "No rule in SP's rulebook produces a journal-entry line from this assertion as it stands."))}))
                                  (keys selections)))
         sum-side (fn [side]
                    (reduce + 0 (keep #(when (= side (:side %)) (:amount %)) lines)))

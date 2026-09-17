@@ -892,7 +892,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 | **provides** | Giving something now | Credit to asset/equity |
 | **receives** | Getting something now | Debit to asset |
 | **requires** | Legal obligation (future) | Credit to liability |
-| **expects** | Confidence in future event | Debit to asset (receivable) |
+| **expects** | How likely a future event is | No line — but an asset is only recognized because its promise is probable |
 
 **Transformation Assertions:**
 
@@ -936,12 +936,22 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 **Debit rules:**
 - receives → Debit what comes in
 - creates → Debit what's produced
-- expects → Debit the receivable
+- requires → Debit the claim (Accounts Receivable, Prepaid Expense) when the business is the one owed
 
 **Credit rules:**
 - provides → Credit what goes out
 - consumes → Credit what's used up
-- requires → Credit the payable
+- requires → Credit the obligation (Accounts Payable, Deferred Revenue) when the business is the one who owes
+
+**requires** appears in both lists on purpose. One assertion, two
+accounts, and the direction of the promise is the whole difference —
+that is the single fact this level is testing.
+
+**expects** appears in neither, and is not therefore idle: the promise
+is what puts the asset on the books, and the probability is what allows
+it to be recognized, because a promise nobody expects to be kept is not
+an asset worth carrying. At year end the same confidences are what the
+allowance for doubtful accounts is computed from.
 
 **The requires/expects asymmetry:**
 - Credit purchase: **requires** (SP's own promise — a probability is optional)

@@ -429,6 +429,36 @@
                (and date due (months-between date due))
                (assoc :months (months-between date due))))))))
 
+(defn credit-sales
+  "What the record says was sold on credit, up to and including `as-of`.
+
+   Not the same question as `promises`: that one asks what is still
+   owed, and drops a debt as soon as it is settled. The percent-of-sales
+   method asks what was SOLD on credit in the period, collected or not —
+   an income-statement question, which is why the two methods can
+   disagree and why it is worth seeing them disagree.
+
+   A credit sale is goods out with money promised back, which is the
+   same pattern the receivable is read from.
+
+   -> {:total n :items [{:id :date :counterparty :amount}]}"
+  [events as-of]
+  (let [items (vec (for [a events
+                         :let [req (:requires a)
+                               date (get-in a [:has-date :date])]
+                         :when (and req
+                                    (= "receives" (some-> (:action req) name))
+                                    (= "monetary-unit" (some-> (:unit req) name))
+                                    (seq (helds (:provides a)))
+                                    (or (nil? as-of) (nil? date)
+                                        (<= (compare (str date) (str as-of)) 0)))]
+                     {:id (some-> (:has-identifier a) name)
+                      :date date
+                      :counterparty (get-in a [:has-counterparty :name])
+                      :amount (num-qty (:quantity req))}))]
+    {:total (reduce + 0 (keep :amount items))
+     :items items}))
+
 (defn promises-of
   "The open promises of one kind."
   [events kind]

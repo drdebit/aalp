@@ -734,6 +734,12 @@
                                 (:rates inputs)
                                 (:existing-allowance inputs))))
 
+          "percent-of-sales"
+          (when-let [pct (num-or-nil (:bad-debt-percent inputs))]
+            (let [total (:total (chain/credit-sales events as-of))]
+              (when (and total (pos? total))
+                (:value (calc/percent-of-sales {:credit-sales total :bad-debt-percent pct})))))
+
           (when (seq inputs) (:value (calc/result basis inputs))))]
     (when (and amount expected)
       {:basis basis
@@ -1035,6 +1041,13 @@
                            (let [rows (chain/aging (:events chain-ctx) as-of)]
                              (when (some (comp pos? :total) rows)
                                {:as-of as-of :rows rows}))))
+     ;; And what was sold on credit up to that date, for the method that
+     ;; asks about sales rather than about what is still owed.
+     :credit-sales (let [as-of (or (get-in selections [:has-date :date])
+                                   (get-in chain-ctx [:current :has-date :date]))]
+                     (when as-of
+                       (let [cs (chain/credit-sales (:events chain-ctx) as-of)]
+                         (when (pos? (:total cs)) (assoc cs :as-of as-of)))))
      :lines lines
      :placeholders placeholders
      :context context

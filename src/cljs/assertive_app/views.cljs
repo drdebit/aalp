@@ -1263,6 +1263,68 @@
                                (api/derive-je!))}
                "Record this amount"]]]])]))))
 
+(defn- percent-of-sales-display
+  "Percent of sales, with the sales read off the record.
+
+   The student enters a rate and nothing else. What was sold on credit
+   this period is a fact the chain holds — typing it in again invited a
+   slip that was consistent with itself and so could not be checked, and
+   left this the one method of the three that did not consult the
+   record."
+  []
+  (let [pct (r/atom nil)]
+    (fn []
+      (let [cs    (get-in (state/derived-je) [:credit-sales])
+            total (:total cs 0)
+            rate  (or @pct 0)
+            expense (* total (/ rate 100))]
+        [:div.bad-debt-calculation
+         [:div.calc-educational-note
+          [:p "Ask what share of THIS period's credit sales will not arrive, and book that as the expense. "
+              "It does not look at what is already in the allowance — whatever is there stays, and this is added to it."]
+          [:p.formula "Formula: Credit Sales × Bad Debt %"]]
+         (if (or (nil? cs) (not (pos? total)))
+           [:div.no-receivables
+            [:p "This business's record shows no sales made on credit."]]
+           [:div.receivables-table
+            [:table
+             [:thead [:tr [:th "Sold on credit"] [:th "Date"] [:th "Amount"]]]
+             [:tbody
+              (doall
+                (for [i (:items cs)]
+                  ^{:key (:id i)}
+                  [:tr [:td (:counterparty i)]
+                       [:td (:date i)]
+                       [:td.amount (format-currency (:amount i))]]))
+              [:tr.total-row
+               [:td "Credit sales to " (:as-of cs)]
+               [:td ""]
+               [:td.amount.total (format-currency total)]]]]
+            [:div.aging-existing
+             ;; No worked example in the placeholder. The textbook's 0.6%
+             ;; is a figure for a company selling $400,000 on credit; on
+             ;; this shop's $400 it gives $2.40, against an aged schedule
+             ;; asking for a hundred times that. The rate comes from a
+             ;; business's own experience, and that IS the judgment.
+             [:span "Share of those sales expected not to arrive: "]
+             [:input.inline-number
+              {:type "number" :min 0 :max 100 :step 0.1
+               :placeholder "%"
+               :value (or @pct "")
+               :on-change #(reset! pct (let [v (js/parseFloat (.. % -target -value))]
+                                         (if (js/isNaN v) nil v)))}]
+             [:span "%"]]
+            [:div.calc-result
+             [:span.result-label "Bad Debt Expense: "]
+             [:span.result-value (format-currency expense)]
+             [:button.calculate-btn
+              {:disabled (nil? @pct)
+               :on-click #(do (state/update-assertion-parameter! :reports :amount expense)
+                              (state/update-assertion-parameter!
+                                :reports :inputs {:bad-debt-percent @pct})
+                              (api/derive-je!))}
+              "Record this amount"]]])]))))
+
 (defn- formula-builder
   "Interactive formula builder for calculations like depreciation."
   [basis]
@@ -1342,6 +1404,7 @@
              (case basis
                "estimation" [bad-debt-calculation-display]
                "aging" [aging-calculation-display]
+               "percent-of-sales" [percent-of-sales-display]
                ;; All others use the formula builder
                [formula-builder basis])]))))}))
 

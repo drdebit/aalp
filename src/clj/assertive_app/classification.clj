@@ -328,17 +328,21 @@
     :description "Estimates bad debts as a percentage of the period's credit sales"
     :formula [:multiply :credit-sales [:divide :bad-debt-percent 100]]
     :formula-display "Credit Sales × Bad Debt %"
-    :inputs [{:key :credit-sales
-              :label "Credit Sales This Period"
-              :type :currency
-              :placeholder "Total sales made on credit"
-              :required true}
-             {:key :bad-debt-percent
+    ;; The sales figure is read off the record, not typed. The student
+    ;; supplies the rate and nothing else: what was sold on credit is a
+    ;; fact the chain already holds, and a mistyped total produced an
+    ;; answer that was consistent with itself and wrong, which no check
+    ;; could catch. It also puts this method on the same footing as the
+    ;; other two, which have read the record all along.
+    :data-driven? true
+    :data-source :credit-sales
+    :data-description "Sales made on credit this period, read from the record"
+    :inputs [{:key :bad-debt-percent
               :label "Bad Debt Percentage"
               :type :percentage
               :min 0
               :max 100
-              :placeholder "e.g. 0.6"
+              :placeholder "%"
               :required true}]
     :result-label "Bad Debt Expense"
     :educational-note "An income-statement method: it asks what share of THIS period's credit sales will not arrive, and books that as the expense. It does not look at what is already on the books, so whatever is in the allowance stays there and this is added to it."}

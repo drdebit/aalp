@@ -555,9 +555,23 @@
      [:option {:value (:value option)} (:label option)])])
 
 (defn- confidence-slider
-  "Confidence level slider with percentage display."
+  "Confidence level slider with percentage display.
+
+   It used to read 85% before the student had touched it, while the
+   selection held no confidence at all -- so an answer that looked
+   complete was graded incomplete, and the reason given (`Confidence
+   needs a value`) contradicted the screen. Every credit sale and every
+   prepaid was gradeable wrong this way.
+
+   The handle has to sit somewhere, so it sits at the middle and says so.
+   A click writes the value even when it does not move the handle, so a
+   student who wants the number it is already showing gets it."
   [assertion-code current-value]
-  (let [value (or current-value 85)]
+  (let [set?  (number? current-value)
+        value (if set? current-value 50)
+        write #(state/update-assertion-parameter!
+                 assertion-code :confidence
+                 (js/parseInt (.. % -target -value)))]
     [:span.confidence-input
      [:input.sentence-input.slider-input
       {:type "range"
@@ -565,10 +579,12 @@
        :max 100
        :step 5
        :value value
-       :on-change #(state/update-assertion-parameter!
-                    assertion-code :confidence
-                    (js/parseInt (.. % -target -value)))}]
-     [:span.confidence-value (str value "%")]]))
+       :class (when-not set? "unset")
+       :on-change write
+       :on-click write}]
+     (if set?
+       [:span.confidence-value (str value "%")]
+       [:span.confidence-value.unset "not set — how sure?"])]))
 
 (defn- customer-context-display
   "Display customer payment history context for confidence decisions."
@@ -631,7 +647,16 @@
         ;; Which batch? The chain lists what could be sold and what each
         ;; batch cost; naming one prices the sale from it (specific
         ;; identification). Unnamed, the average prices it.
-        (when-let [bs (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item params) ""))]))]
+        ;;
+        ;; Only in the walkthrough, where episode 5 asks for it here by
+        ;; name and narrates what appears. Everywhere else costing is the
+        ;; second act: recognizing the revenue is what raises the
+        ;; question, and the costing step below the revenue lines is
+        ;; where it gets asked. Offering it inline let a student cost the
+        ;; sale before recognizing it -- and made the step that follows
+        ;; look like something they had already done.
+        (when-let [bs (and (state/walkthrough-active?)
+                           (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item params) ""))])))]
           [:span
            [:span.connector " from "]
            [inline-dropdown :provides :from-event
@@ -2211,7 +2236,16 @@
                 ;; keyword this was permanently false, which silently
                 ;; withheld the "correct entry should be" comparison.
                 is-incorrect? (= :incorrect (keyword (:status feedback)))
-                correct-class (:correct-classification feedback)]
+                correct-class (:correct-classification feedback)
+                ;; Two classifications can call for the very same accounts
+                ;; -- a contract sale and a credit sale post identically,
+                ;; which is the whole point of Level 4 -- and then the
+                ;; comparison showed the student their entry, and the
+                ;; correct entry, and they were the same four lines. It
+                ;; read as "wrong; here is the same thing again". When the
+                ;; accounts agree, what is wrong is upstream of them.
+                same-accounts? (= (map (juxt :debit :credit) (:journal-entry classification))
+                                  (map (juxt :debit :credit) (:journal-entry correct-class)))]
             [:div.je-comparison
              ;; The student's own entry, when it was wrong -- half of a
              ;; comparison against the correct one below.
@@ -2223,7 +2257,9 @@
              (when (and is-incorrect? (seq (:journal-entry classification)))
                (let [journal-entries (:journal-entry classification)]
                  [:div.journal-entry.incorrect-je
-                  [:h4 "Your assertions would produce this (incorrect) entry:"]
+                  [:h4 (if same-accounts?
+                         "Your assertions produce this entry:"
+                         "Your assertions would produce this (incorrect) entry:")]
                   (for [entry journal-entries]
                     ;; Prefer what the derivation says produced the line;
                     ;; fall back to the account-name match only where the
@@ -2247,8 +2283,13 @@
                         (when (seq credit-prov)
                           [:span.linkage " ← " (str/join " + " credit-prov)])]]))]))
 
+             (when (and is-incorrect? correct-class same-accounts?)
+               [:p.je-same-accounts
+                "The accounts are right — this is the entry the correct answer produces too. "
+                "What is wrong is behind them, in the assertions."])
+
              ;; For incorrect answers, also show what the correct JE should be
-             (when (and is-incorrect? correct-class)
+             (when (and is-incorrect? correct-class (not same-accounts?))
                (when-let [correct-entries (:journal-entry correct-class)]
                  (when (seq correct-entries)
                    [:div.journal-entry.correct-je

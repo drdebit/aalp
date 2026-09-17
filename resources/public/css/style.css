@@ -2193,6 +2193,29 @@ header {
     min-width: 45px;
 }
 
+/* Nothing has been said yet. The slider has to sit somewhere, so it says
+   so rather than showing a figure the student never chose. */
+.confidence-value.unset {
+    font-weight: 500;
+    font-style: italic;
+    color: #a2793a;
+    min-width: 0;
+}
+
+.slider-input.unset {
+    opacity: .55;
+}
+
+/* Two classifications can call for the same accounts; when they do, the
+   comparison has nothing to compare. */
+.je-same-accounts {
+    margin: 10px 0 0;
+    font-size: .9em;
+    color: #5b6b55;
+    border-left: 3px solid #b9cbb2;
+    padding-left: 10px;
+}
+
 /* Customer context display */
 .customer-context {
     background: white;

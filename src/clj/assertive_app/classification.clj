@@ -48,6 +48,11 @@
     :unlock-level 0
     ;; Simulation properties
     :unit-cost 5
+    ;; A shop that sells blanks on sells them at this. Without it every
+    ;; practice narrative priced a blank shirt at $25 -- the price of a
+    ;; PRINTED one -- while the same company's record showed it buying
+    ;; them at $5 and selling at $9.
+    :sell-price 9
     :category :raw-material
     :purchasable? true
     :sellable? false}
@@ -1320,7 +1325,15 @@
   {:missing-assertion 1.0      ;; Missing a required assertion
    :prohibited-assertion 2.0    ;; Including a prohibited assertion (serious error)
    :unrequired-assertion 0.5    ;; Including extra assertions not required
-   :parameter-mismatch 1.5})    ;; Wrong parameter value (e.g., wrong unit type)
+   :parameter-mismatch 1.5      ;; Wrong parameter value (e.g., wrong unit type)
+   ;; A parameter left empty is not the same error as a parameter filled
+   ;; in wrongly, and it is a smaller one than never making the assertion
+   ;; at all. A credit sale with every assertion right and no figure on
+   ;; the confidence used to be scored further from a credit sale than
+   ;; from a contract sale the student had said nothing about -- so the
+   ;; feedback named contract law at someone who had the sale right and
+   ;; had left one box blank.
+   :parameter-blank 0.75})
 
 ;; Template builder functions to reduce repetition in classification definitions
 
@@ -2198,6 +2211,26 @@
                            required-params))]
     (boolean (some matches? flows))))
 
+(defn- param-failure-kind
+  "Why an assertion's parameters do not satisfy a classification: :blank
+   when the student has not filled the required keys in, :wrong when they
+   filled one in with something else. nil when they match.
+
+   The two are different mistakes and should not be scored alike. Leaving
+   the confidence slider alone is not the same as saying the customer
+   owes goods."
+  [student-params required-params]
+  (when-not (parameters-match? student-params required-params)
+    (let [flows (cond (nil? student-params)        [{}]
+                      (sequential? student-params) student-params
+                      :else                        [student-params])]
+      (if (some (fn [[k wanted]]
+                  (and (some #(some? (get % k)) flows)
+                       (not (some #(param-value-ok? (get % k) wanted) flows))))
+                required-params)
+        :wrong
+        :blank))))
+
 (defn generate-dynamic-hints
   "Generate dynamic hints by comparing student assertions to a classification pattern.
    Returns a map with :missing-assertions, :incorrect-assertions, :missing-parameters."
@@ -2445,19 +2478,22 @@
                                 extra-unrequired (clojure.set/difference assertion-keys allowed-set)
                                 ;; Calculate parameter mismatches for assertions that ARE present
                                 present-assertions (clojure.set/intersection required assertion-keys)
-                                param-mismatches (if (and required-parameters (seq present-assertions))
-                                                   (count
-                                                     (filter (fn [assertion-code]
-                                                               (when-let [required-params (get required-parameters assertion-code)]
-                                                                 (not (parameters-match?
-                                                                        (get assertions-map assertion-code)
-                                                                        required-params))))
-                                                             present-assertions))
-                                                   0)
+                                param-failures (if (and required-parameters (seq present-assertions))
+                                                 (frequencies
+                                                   (keep (fn [assertion-code]
+                                                           (when-let [required-params (get required-parameters assertion-code)]
+                                                             (param-failure-kind
+                                                               (get assertions-map assertion-code)
+                                                               required-params)))
+                                                         present-assertions))
+                                                 {})
+                                param-mismatches (+ (get param-failures :wrong 0)
+                                                    (get param-failures :blank 0))
                                 distance (+ (* (:missing-assertion distance-weights) (count missing))
                                            (* (:prohibited-assertion distance-weights) (count extra-prohibited))
                                            (* (:unrequired-assertion distance-weights) (count extra-unrequired))
-                                           (* (:parameter-mismatch distance-weights) param-mismatches))
+                                           (* (:parameter-mismatch distance-weights) (get param-failures :wrong 0))
+                                           (* (:parameter-blank distance-weights) (get param-failures :blank 0)))
                                 ;; Count parameter matches for tiebreaking
                                 param-matches (if (and required-parameters (seq present-assertions))
                                                 (count
@@ -2842,8 +2878,10 @@
     :level 1
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["Customer-A" "RetailStore-X" "CorporateClient-001"]
-                :quantity [100 250 500 1000]
-                :amount [1000 2500 5000 10000]
+                ;; An order a two-person shop could actually fill, priced
+                ;; at what a printed shirt sells for. It used to run to a
+                ;; thousand shirts at $10 each.
+                :quantity [20 40 60 100]
                 :days [30 60 90 180]
                 ;; Due date derived from date + days
                 :due-date :calculated}}
@@ -3518,7 +3556,7 @@ The printed t-shirts are now finished goods ready for sale."
   ([company] (practice-backstory company #{}))
   ([{:keys [name kind blurb] :as company} needs]
   (if (= kind :reseller)
-    (let [shirt-cost (rand-nth [3 4 5])
+    (let [shirt-cost (rand-nth [4 5])
           shirts     (rand-nth [100 150 200])
           sold       (rand-nth [30 40 50])
           ;; A second lot, bought later at a different price and
@@ -3550,14 +3588,17 @@ The printed t-shirts are now finished goods ready for sale."
          ;; visibly wrong.
          :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity sold
                     :from-event "Shirts-001"}
-         :receives {:unit "monetary-unit" :quantity (* sold (+ shirt-cost 4))}
+         :receives {:unit "monetary-unit" :quantity (* sold (get-in physical-items [:blank-tshirts :sell-price] 9))}
          :has-counterparty {:name "the chess club"}}
         {:has-identifier "Shirts-002"
          :has-date {:date "2026-01-08"}
          :provides {:unit "monetary-unit" :quantity (* small small-cost)}
          :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity small}
          :has-counterparty {:name "TextileDirect"}}]})
-  (let [shirt-cost (rand-nth [3 4 5 6])
+  ;; A blank shirt costs about what the catalogue says it costs. It used
+  ;; to range $3-$6, and with a sale price drawn from an unrelated array
+  ;; the implied margin wandered from nothing to tenfold.
+  (let [shirt-cost (rand-nth [4 5])
         shirts     (rand-nth [60 80 100 120])
         ink        (rand-nth [6 8 10])
         printed    (rand-nth [20 30 40 50])
@@ -3825,17 +3866,35 @@ The printed t-shirts are now finished goods ready for sale."
       (and (:quantity vars) (:cogs vars) (pos? printed) unit)
       (as-> v (let [asked (long (:quantity v))
                     q     (min asked printed)
-                    ;; The price follows the quantity down. A sale clamped
-                    ;; from fifty shirts to twenty kept the fifty-shirt
-                    ;; price, so the narrative sold twenty shirts for
-                    ;; $1,250 -- and a student checking the arithmetic
-                    ;; found it did not work.
-                    each  (when (and (:amount v) (pos? asked))
-                            (/ (double (:amount v)) asked))]
+                    ;; What the goods sell for is the catalogue's price for
+                    ;; THESE goods, times how many went out. It used to be
+                    ;; an array drawn independently of the quantity, so a
+                    ;; sale clamped from fifty shirts to twenty kept the
+                    ;; fifty-shirt money -- and blank shirts sold at the
+                    ;; price of printed ones, in a shop whose own record
+                    ;; showed it selling them for $9.
+                    each  (or (get-in physical-items [(keyword item) :sell-price])
+                              (when (and (:amount v) (pos? asked))
+                                (/ (double (:amount v)) asked)))]
                 (cond-> (assoc v :quantity q
                                  :unit-cost (long (Math/round (double unit)))
                                  :cogs (long (Math/round (* q (double unit)))))
-                  each (assoc :amount (long (Math/round (* q each)))))))
+                  each (assoc :amount (long (Math/round (* q (double each))))))))
+
+      ;; An advance is priced at what the shirts it is for will sell for.
+      (= :prepayment template-key)
+      (as-> v (assoc v :amount (* (long (:quantity v))
+                                  (long (get-in physical-items [:printed-tshirts :sell-price] 25)))))
+
+      ;; And what goods COST is the catalogue's cost for them. A credit
+      ;; purchase drew its amount from [100 250 500 1000] and its quantity
+      ;; from [20 50 100] with nothing tying the two together, so fifty
+      ;; shirts could arrive for $100 -- $2 each, in a record that prices
+      ;; them at $5.
+      (and (:quantity vars) (:physical-item vars) (not (:cogs vars)))
+      (as-> v (if-let [each (get-in physical-items [(keyword (:physical-item v)) :unit-cost])]
+                (assoc v :amount (long (Math/round (* (long (:quantity v)) (double each)))))
+                v))
       (contains? vars :quantity-consumed)
       (as-> v (let [q (min (long (:quantity-consumed v)) (long (get held "blank-tshirts" 0)))]
                 (assoc v :quantity-consumed q :quantity-produced q

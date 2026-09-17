@@ -1,9 +1,115 @@
-# AALP — where things stand (2026-09-16)
+# AALP — where things stand (2026-09-17)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
 
 ## Start here (next session)
+
+**2026-09-17. A walkthrough as a student, and what it broke loose.**
+
+Read the level-numbering note below this one first if anything mentions
+a level above 3. Then:
+
+### The grading fault worth knowing about
+
+**The confidence slider read 85% before it had been touched, and the
+selection held no confidence at all.** Every credit sale and every
+prepaid was gradeable wrong this way, and had been since the slider was
+written: the classification failed its `:expects {:confidence :any}`
+check and told the student "Confidence needs a value" while the screen
+showed one. Fixed — the handle sits at the middle and says "not set",
+and a click writes the value even when it does not move.
+
+Two things followed from the same answer. A blank parameter scored 1.5
+against a missing assertion's 1.0, so an answer with every assertion
+right and one box empty was scored further from the right pattern than
+from one the student had never invoked; `:parameter-blank` is 0.75 now.
+And the feedback showed "your entry" and "the correct entry" as the
+same four lines whenever two classifications call for the same
+accounts — it says what is actually wrong instead.
+
+**The bad-debt entry had never had an amount.** The confidence panel
+computed a total and stopped; nothing put it on the `reports`
+assertion, so every bad debt derived unpriced, in every mode, since the
+panel was written.
+
+### What `expects` and `requires` each do (settled 2026-09-17)
+
+Checked against ACCT 2101 directly (Topics 1 and 6, slides and speaker
+notes — downloaded from iCollege).
+
+- **"Probable" appears zero times in the course.** Topic 1 teaches the
+  post-2021 CON 8 definition verbatim: "Assets = a present right of an
+  entity to an economic benefit." There is no probability threshold in
+  the course, and FASB removed the word from the asset definition in
+  2021 precisely because it was read as one. **Do not build a
+  recognition gate on confidence.** This was considered and rejected.
+- **`requires` creates assets, and governs revenue too.** On a credit
+  sale the promise makes the goods going out a sale, fixes the amount,
+  and puts the claim on the books. `monetary-source` names the
+  assertion an amount was taken from, so the revenue line says
+  `requires` rather than leaving $625 with no visible source.
+- **`expects` posts no line anywhere.** It reaches the books in one
+  place: at period end the allowance is estimated from the confidences
+  and the charge is Bad Debt Expense, matched against the sales that
+  produced the debts. Revenue is never reduced.
+
+### Three bad-debt methods, all reading the record
+
+2101 teaches percent of sales, percent of receivables and aging, all
+from historical rates. The platform had only the confidence-driven one
+— the better estimate, and the one nobody sits an exam on. All three
+are offered now and all three grade correct.
+
+- `chain/aging` is `promises` bucketed by how far past due at a date.
+- `chain/credit-sales` is a different question: what was SOLD on credit
+  in the period, settled or not. Do not merge the two.
+- Both ride back with the derivation (`:aged-receivables`,
+  `:credit-sales`), so no new endpoint and no second round trip.
+- The aged panel says the thing students get backwards: the schedule
+  gives the ALLOWANCE, the expense is that less what is already there.
+
+**The arithmetic lives in `assertive-app.calc`**, used by the
+calculation builder AND by the derivation, because the derivation now
+checks the student's figure against the method they named. The
+`reports` assertion carries the inputs that produced its figure — a
+calculation recorded with its provenance, which is the research model's
+own argument. Arithmetic only, never judgment: the rate against an age
+class is the student's and is not second-guessed.
+
+### Smaller things, all deployed
+
+- Sixteen narratives named the assertion they were testing ("provides
+  25 blank t-shirts" → `provides`). They say it in English now.
+- The counterparty was auto-filled, which defeated the dropdown added
+  the day before and picked the first of vendor/customer/employee
+  regardless of the transaction. Removed; the date is still filled in.
+- Prices are pinned to `physical-items`: sales at the item's
+  sell-price, purchases at its unit-cost, blanks gained a `:sell-price`
+  of $9. A blank shirt used to sell for $25 — the price of a printed
+  one — in a shop whose record showed it buying at $5.
+- Costing is the second act again: the inline batch picker on
+  `provides` is walkthrough-only, where episode 5 asks for it by name.
+- Explore mode was wired to the old assertion-button panel, so in the
+  sentence builder it explained lines and never changed them.
+- The due-date picker opened on today and its max was 2026-12-31, so a
+  twelve-month prepayment made in August had no expressible due date.
+
+### Open, in rough order
+
+1. `accrued-wages` and `accrued-interest-expense` have identical
+   required assertion sets — the record cannot tell wages owed from
+   interest owed. A modelling decision, not a bug.
+2. Pricing labour blocks `copyright-design` and `trademark-brand`
+   (`:derivation-pending true`, not served) and the L2 queue items
+   `production-with-labor` and `design-creation`. The honest fix is a
+   wage in the record, from a hire the practice companies do not make.
+3. `pay-dividend` narrates a declaration in the future.
+4. Test accounts on choochoo from two sessions of walkthroughs.
+
+Deliberately NOT doing: showing two bad-debt methods side by side.
+Matt's call, 2026-09-17 — it is for the student to explore, and it
+would distract from the app's purpose.
 
 **2026-09-16. The level numbers moved. Read this before anything that
 mentions a level above 3.**

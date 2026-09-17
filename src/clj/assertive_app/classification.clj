@@ -780,9 +780,23 @@
                 :section-label "This is:"
                 :position :modifier}
      :structure {:is-allowed-by :capacity}
+     ;; What made an event possible can be a machine or a statute. A
+     ;; press turns blanks into printed shirts; the UCC is what makes a
+     ;; sale of goods an enforceable exchange rather than two people
+     ;; handing each other things. Same assertion, same question, two
+     ;; kinds of answer -- and a student who has met the first meets the
+     ;; second knowing what it is for.
      :parameters {:capacity {:type :dropdown
                              :label "Enabled by"
-                             :options :derives-from-physical-items-equipment}}}
+                             :optional true
+                             :options :derives-from-physical-items-equipment}
+                  :framework {:type :dropdown
+                              :label "Enabling framework"
+                              :optional true
+                              :options [{:value "ucc" :label "Uniform Commercial Code (sales of goods)"}
+                                        {:value "state-business-law" :label "State Business Law (forming an entity)"}
+                                        {:value "employment-law" :label "Employment Law (hiring)"}
+                                        {:value "gaap" :label "GAAP (financial reporting)"}]}}}
 
     ;; Output assertion - cost is derived from sum of inputs
     {:code :creates-finished-goods
@@ -855,10 +869,19 @@
 
     {:code :is-required-by
      :label "Is Required By"
-     :description "References the legal/regulatory framework that mandates this event"
+     :description "Names the law or rule that made this event compulsory"
      :level 4
      :domain :legal-regulatory
      :parameterized true
+     ;; Sentence: "required by [framework]". Both of these were
+     ;; parameterized with no sentence at all, so a student who selected
+     ;; one watched nothing happen.
+     :sentence {:fragment "required by"
+                :pattern [:framework]
+                :section-break true
+                :section-label "The law behind this:"
+                :position :modifier}
+     :structure {:is-required-by :framework}
      :parameters {:framework {:type :dropdown
                               :label "Requiring framework"
                               :options [{:value "tax-code" :label "Tax Code (IRS/State)"}
@@ -869,10 +892,16 @@
 
     {:code :is-protected-by
      :label "Is Protected By"
-     :description "References the legal/regulatory framework that protects this event"
+     :description "Names the law that protects what this event created or agreed"
      :level 4
      :domain :legal-regulatory
      :parameterized true
+     :sentence {:fragment "protected by"
+                :pattern [:framework]
+                :section-break true
+                :section-label "The law behind this:"
+                :position :modifier}
+     :structure {:is-protected-by :framework}
      :parameters {:framework {:type :dropdown
                               :label "Protective framework"
                               :options [{:value "copyright" :label "Copyright Law"}
@@ -1253,6 +1282,19 @@
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
                 "Tax Expense" "Compliance Expense" "Reporting Expense"]}
+
+   ;; The capstone reviews everything, so it sees everything.
+   8 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
+              "Raw Materials Inventory" "Finished Goods Inventory"
+              "Equipment" "Prepaid Expense" "Prepaid Insurance" "Design Asset" "Intangible Asset"]
+      :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
+                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
+                "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
+                "Tax Expense" "Compliance Expense" "Reporting Expense" "Organization Costs"]}
 
    7 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
               "Raw Materials Inventory" "Finished Goods Inventory" "Finished Goods Inventory"
@@ -1743,11 +1785,17 @@
     :level 4}
 
    :contract-protected-agreement
-   {:required #{:provides :receives :has-counterparty :expects :is-protected-by}
-    :required-parameters {:is-protected-by {:framework "contract-law"}}
-    :prohibited #{}
+   ;; A credit sale with the law named. `receives` was required beside a
+   ;; payment due in sixty days, which said the money had both arrived and
+   ;; not arrived; the promise is what is actually held.
+   {:required #{:has-date :provides :has-counterparty :requires :expects :is-protected-by}
+    :required-parameters {:is-protected-by {:framework "contract-law"}
+                          :provides {:unit "physical-unit"}
+                          :requires {:action "receives" :unit "monetary-unit"}}
+    :prohibited #{:receives}
     :description "Agreement protected by contract law"
-    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue"}]
+    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
+                    {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "Contract law enables parties to create legally binding agreements with enforceable terms."
     :examples ["SP enters sales contract with legal protections"
                "SP signs service agreement enforceable under contract law"]
@@ -1824,7 +1872,8 @@
     :note "Interest accumulates over time on borrowed money. It must be accrued even if not yet due."
     :examples ["SP accrues interest on notes payable"
                "SP records interest expense for the month"]
-    :level 5}
+    ;; With the notes, where the student first meets one.
+    :level 7}
 
    :prepaid-expense-adjustment
    {:required #{:has-date :reports}
@@ -2952,24 +3001,31 @@ The printed t-shirts are now finished goods ready for sale."
 
    :ucc-sale
    {:narrative-template "On {date}, {company} sells {quantity} {product} to {customer} for ${amount}. This commercial transaction is conducted under the standard framework of the Uniform Commercial Code."
+    ;; The goods and their price were unnamed, so nothing could be read
+    ;; off the record: the entry came out as a bare debit to Cash with no
+    ;; revenue and no cost beside it. It is a cash sale plus the law.
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "physical-unit"}
-                          :receives {:unit "monetary-unit"}
+                          :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
+                          :receives {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :customer}
                           :is-allowed-by {:framework "ucc"}}
     :correct-classification :sale-under-ucc
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
-                :quantity [10 25 50 100]
-                :product ["printed t-shirts" "custom merchandise" "branded apparel"]
                 :customer ["RetailCo" "WholesaleBuyer" "CorporateClient"]
-                :amount [500 1000 2500 5000]}}
+                :quantity [10 25 50]
+                :amount [250 625 1250]
+                :cogs [100 250 500]}}
 
    :hire-employee
-   {:narrative-template "On {date}, {company} hires {employee} as a {position}, agreeing to pay ${wage}/hour. This employment relationship is governed by federal and state employment laws including minimum wage requirements."
+   ;; A payday, not a hiring. The classification posts wages paid, and
+   ;; "agreeing to pay $18/hour" is an agreement -- no money had moved, so
+   ;; both lines came out unpriced. Hours and wage are paired with the
+   ;; total, so the arithmetic in the narrative holds.
+   {:narrative-template "On {date}, {company} pays {employee}, its {position}, ${amount} for {hours} hours' work at ${wage} an hour. Employment law sets the floor under that wage and requires the payroll taxes withheld from it."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "monetary-unit"}
-                          :receives {:unit "effort-unit"}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "effort-unit" :quantity :hours}
                           :has-counterparty {:name :employee}
                           :is-allowed-by {:framework "employment-law"}
                           :is-required-by {:framework "employment-law"}}
@@ -2978,7 +3034,9 @@ The printed t-shirts are now finished goods ready for sale."
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :employee ["Alex" "Jordan" "Taylor" "Morgan"]
                 :position ["production assistant" "designer" "sales associate" "warehouse worker"]
-                :wage [15 18 20 25]}}
+                :hours [20 30 40 40]
+                :wage [15 18 20 25]
+                :amount [300 540 800 1000]}}
 
    :copyright-design
    {:narrative-template "On {date}, {company}'s designer spends {hours} hours creating an original {design-type}. As an original creative work, this design is automatically protected by copyright law."
@@ -2987,6 +3045,13 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "copyright"}}
     :correct-classification :copyright-protected-creation
+    ;; Held back from the drill: the narrative gives hours but no rate, so
+    ;; nothing in the event says what the design cost and the entry comes
+    ;; out with no amounts at all. Pricing labour is the open question
+    ;; behind production-with-labor and design-creation too -- the record
+    ;; would have to carry a wage, from a hire the practice companies do
+    ;; not yet make.
+    :derivation-pending true
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [8 16 24 40]
@@ -2999,6 +3064,8 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "intellectual-property"}
                           :is-protected-by {:framework "trademark"}}
     :correct-classification :trademark-protected-brand
+    ;; Same as the copyright design above: no rate, so no amounts.
+    :derivation-pending true
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
@@ -3015,7 +3082,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
 
    :business-license
-   {:narrative-template "On {date}, {company} pays ${amount} to obtain a {license-type}. This is required by {authority} regulations to operate legally."
+   {:narrative-template "On {date}, {company} pays ${amount} for its {license-type}, which {authority} regulations require before it may trade at all."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit"}
                           :is-required-by {:framework "industry-regs"}}
@@ -3037,20 +3104,28 @@ The printed t-shirts are now finished goods ready for sale."
                 :amount [100 150 250 500]}}
 
    :contract-sale
-   {:narrative-template "On {date}, {company} enters into a written contract with {customer} to provide {product} for ${amount}, with payment expected in {days} days. The contract is legally enforceable under contract law."
+   {:narrative-template "On {date}, {company} delivers {quantity} {product} to {customer} under a written contract for ${amount}, payable in {days} days. The contract is enforceable under contract law."
+    ;; Payment in sixty days is a promise. The template asserted
+    ;; `receives monetary` beside it, so the entry debited Cash the
+    ;; business had not been given -- and left out the receivable, the
+    ;; revenue and the cost. It is the Level 1 credit sale, plus the law
+    ;; that makes the promise worth having.
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "physical-unit"}
-                          :receives {:unit "monetary-unit"}
+                          :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity :quantity}
                           :has-counterparty {:name :customer}
-                          :expects {:action "receives" :unit "monetary-unit"}
+                          :requires {:action "receives" :unit "monetary-unit" :quantity :amount :due-date :due-date}
+                          :expects {:action "receives" :unit "monetary-unit" :confidence :confidence}
                           :is-protected-by {:framework "contract-law"}}
     :correct-classification :contract-protected-agreement
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]
-                :product ["custom merchandise" "bulk t-shirt order" "branded apparel"]
-                :amount [5000 10000 25000 50000]
-                :days [30 60 90]}}
+                :quantity [10 25 50]
+                :amount [250 625 1250]
+                :cogs [100 250 500]
+                :days [30 60 90]
+                :due-date :calculated
+                :confidence :student-input}}
 
    ;; ==================== Level 5: Adjusting Entry Templates ====================
    ;; End-of-period adjustments to properly match revenues and expenses
@@ -3095,17 +3170,19 @@ The printed t-shirts are now finished goods ready for sale."
                 :payday ["next Monday" "next Friday" "the fifth of next month"]}}
 
    :accrue-interest
-   {:narrative-template "On {date}, {company} accrues interest on its ${principal} note payable at {rate}% annual interest. The note was issued {months} months ago and interest is paid quarterly. Interest accrued this period is ${interest}."
+   ;; Level 7, not 5: the note the interest accrues on is a note, and a
+   ;; student met their first one here. The principal and the lender are
+   ;; read off the record; the rate is a term of the note, stated the way
+   ;; a useful life is stated.
+   {:narrative-template "On {date}, {company} accrues a month of interest on the ${principal} it borrowed from {lender} on {loan-date}. The note runs at {rate}% a year, so a month of interest is ${interest}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "accrual"}
                           :requires {:action "provides" :unit "monetary-unit"}}
     :correct-classification :accrued-interest-expense
-    :level 5
+    :reads-record [:borrowing]
+    :level 7
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :principal [5000 10000 15000 20000]
-                :rate [6 8 10 12]
-                :months [1 2 3 1]
-                :interest [25 133 375 200]}}
+                :rate [6 8 12]}}
 
    :adjust-prepaid-expense
    ;; The prepayment being adjusted is the one in the record, and the
@@ -3517,6 +3594,11 @@ The printed t-shirts are now finished goods ready for sale."
         conf2      (rand-nth [60 70 75])
         ;; Money taken for shirts not yet made.
         ordered    (rand-nth [16 20 24])
+        ;; Borrowed at founding. The principal is a multiple of 1,200, so
+        ;; that six, eight or twelve per cent a year is whole dollars a
+        ;; month and the interest a student accrues is the interest the
+        ;; record implies.
+        principal  (rand-nth [6000 9000 12000])
         ;; Events the record carries only when the problem reads them.
         promised
         (cond-> []
@@ -3545,6 +3627,13 @@ The printed t-shirts are now finished goods ready for sale."
                              :quantity (* owed2 price) :due-date "2026-03-22"}
                   :expects {:action "receives" :unit "monetary-unit" :confidence conf2}
                   :has-counterparty {:name "Ridgeway Middle School"}}])
+          (contains? needs :borrowing)
+          (conj {:has-identifier "Loan-001"
+                 :has-date {:date "2026-01-02"}
+                 :receives {:unit "monetary-unit" :quantity principal}
+                 :requires {:action "provides" :unit "monetary-unit"
+                            :quantity principal :due-date "2028-01-02"}
+                 :has-counterparty {:name "the Grange Bank"}})
           (contains? needs :advance)
           (conj {:has-identifier "Deposit-001"
                  :has-date {:date "2026-02-01"}
@@ -3676,6 +3765,20 @@ The printed t-shirts are now finished goods ready for sale."
                       :amount (* monthly elapsed)))
         vars)
 
+      ;; The note is the one the company borrowed on. The rate is not an
+      ;; assertion and does not pretend to be: it is a term of the note,
+      ;; stated the way a useful life is stated.
+      :accrue-interest
+      (if-let [b (first (chain/promises-of events :borrowing))]
+        (let [rate (or (:rate vars) 8)
+              principal (or (:amount b) 0)]
+          (assoc vars :principal principal
+                      :lender (:counterparty b)
+                      :loan-date (:date b)
+                      :rate rate
+                      :interest (long (Math/round (/ (* principal (double rate)) 1200)))))
+        vars)
+
       ;; An advance is earned by delivering, so what has been earned is a
       ;; share of what was ordered -- both of which the promise carries.
       :recognize-unearned-revenue
@@ -3720,10 +3823,19 @@ The printed t-shirts are now finished goods ready for sale."
                              :sale-item item)]
     (cond-> vars
       (and (:quantity vars) (:cogs vars) (pos? printed) unit)
-      (as-> v (let [q (min (long (:quantity v)) printed)]
-                (assoc v :quantity q
-                         :unit-cost (long (Math/round (double unit)))
-                         :cogs (long (Math/round (* q (double unit)))))))
+      (as-> v (let [asked (long (:quantity v))
+                    q     (min asked printed)
+                    ;; The price follows the quantity down. A sale clamped
+                    ;; from fifty shirts to twenty kept the fifty-shirt
+                    ;; price, so the narrative sold twenty shirts for
+                    ;; $1,250 -- and a student checking the arithmetic
+                    ;; found it did not work.
+                    each  (when (and (:amount v) (pos? asked))
+                            (/ (double (:amount v)) asked))]
+                (cond-> (assoc v :quantity q
+                                 :unit-cost (long (Math/round (double unit)))
+                                 :cogs (long (Math/round (* q (double unit)))))
+                  each (assoc :amount (long (Math/round (* q each)))))))
       (contains? vars :quantity-consumed)
       (as-> v (let [q (min (long (:quantity-consumed v)) (long (get held "blank-tshirts" 0)))]
                 (assoc v :quantity-consumed q :quantity-produced q
@@ -3735,7 +3847,15 @@ The printed t-shirts are now finished goods ready for sale."
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
   [level & {:keys [problem-type show-assertions served missed] :or {problem-type :forward show-assertions false}}]
-  (let [available-templates (filter #(<= (:level (val %)) level) transaction-templates)
+  (let [available-templates (filter #(and (<= (:level (val %)) level)
+                                          ;; Patterns whose entry cannot yet be
+                                          ;; derived are not served. A problem
+                                          ;; whose journal entry comes out empty
+                                          ;; teaches the wrong thing about the
+                                          ;; derivation, which is the point of
+                                          ;; the exercise.
+                                          (not (:derivation-pending (val %))))
+                                   transaction-templates)
         ;; A streak can end a round before a pattern has come up at all,
         ;; and a fresh round could pass without meeting the pattern that
         ;; failed the last one. Prefer, in order: patterns the student

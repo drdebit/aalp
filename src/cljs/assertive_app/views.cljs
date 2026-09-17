@@ -87,7 +87,9 @@
         current (state/current-level)]
     [:div.progress-panel
      [:div.progress-levels
-      (for [level [0 1 2 3]]
+      ;; Every level that has a tutorial, so a level added to the ladder
+      ;; shows up here without anyone remembering to widen a literal.
+      (for [level (tutorials/all-levels)]
         ^{:key level}
         [:div.progress-level-row {:class (when (= level current) "current")}
          [level-progress-bar level]
@@ -118,16 +120,16 @@
                               (swap! state/app-state assoc :current-level new-level)
                               (api/fetch-assertions! new-level)
                               (api/fetch-problem! new-level)))}
-      [:option {:value 0 :disabled (not (contains? unlocked 0))}
-       (str "0 - Cash Purchases" (when-not (contains? unlocked 0) " 🔒"))]
-      [:option {:value 1 :disabled (not (contains? unlocked 1))}
-       (str "1 - Credit Purchases" (when-not (contains? unlocked 1) " 🔒"))]
-      [:option {:value 2 :disabled (not (contains? unlocked 2))}
-       (str "2 - Transformations" (when-not (contains? unlocked 2) " 🔒"))]
-      [:option {:value 3 :disabled (not (contains? unlocked 3))}
-       (str "3 - Sales & Recognition" (when-not (contains? unlocked 3) " 🔒"))]
-      [:option {:value 4 :disabled (not (contains? unlocked 4))}
-       (str "4 - Legal/Regulatory" (when-not (contains? unlocked 4) " 🔒"))]]
+      ;; Named from the tutorials, which are the curriculum. The list was
+      ;; a hand-kept copy that stopped at 4 and disagreed with the
+      ;; tutorial titles from 3 upwards.
+      (for [level (tutorials/all-levels)]
+        ^{:key (str "lvl-" level)}
+        [:option {:value level :disabled (not (contains? unlocked level))}
+         (str level " - " (or (some-> (get-in (tutorials/get-level-tutorial level) [:title])
+                                      (str/replace #"^Level \d+: " ""))
+                              "?")
+              (when-not (contains? unlocked level) " 🔒"))])]
      [:label {:style {:margin-left "20px"}}
       "Mode: "]
      [:select {:value current-problem-type
@@ -876,8 +878,26 @@
                    (or (get-in ev [:receives :physical-item]) "capability")
                    ", allows " (clojure.string/join " and " ins) " → " (:creates-item al))})))
 
+(defn- framework-select
+  "A dropdown over the legal frameworks the server offers for this
+   assertion. The list lives on the backend beside the classifications
+   that grade against it, so nothing here keeps a copy."
+  [assertion-code value placeholder]
+  [:select.inline-select
+   {:value (or value "")
+    :on-change #(state/update-assertion-parameter! assertion-code :framework (.. % -target -value))}
+   [:option {:value ""} placeholder]
+   (for [o (assertion-param-options assertion-code :framework)]
+     ^{:key (str (name assertion-code) "-" (:value o))}
+     [:option {:value (:value o)} (:label o)])])
+
 (defn- render-is-allowed-by-section
-  "What made this event possible -- the event that granted the capability."
+  "What made this event possible: the event that granted the capability,
+   or the law that made the exchange one the business could make at all.
+
+   Both, when the record says both -- a press makes printing possible and
+   the UCC makes selling the result enforceable, and an event may rest on
+   the two of them at once."
   [params]
   (let [caps (seq (chain-capabilities))]
     [sentence-section :capability "This is:"
@@ -892,7 +912,31 @@
            ^{:key (str "cap-" (:value c))}
            [:option {:value (:value c)} (:label c)])]
         [item-select :is-allowed-by :capacity (:capacity params)])
+      (when (seq (assertion-param-options :is-allowed-by :framework))
+        [:span
+         [:span " under "]
+         [framework-select :is-allowed-by (:framework params) "which law?"]])
       [remove-assertion-button :is-allowed-by]]]))
+
+(defn- render-legal-framework-section
+  "A law that compelled this event, or protects what it made.
+
+   `requires` and `expects` record what parties promised each other;
+   these record what stands behind the promise. A student has been
+   pointing at earlier events for two levels to say why an account is
+   what it is -- this points at a statute for the same reason."
+  [assertion-code params]
+  (let [protects? (= :is-protected-by assertion-code)]
+    [sentence-section :legal "The law behind this:"
+     [:div.legal-content
+      [:span (if protects? "protected by " "required by ")]
+      [framework-select assertion-code (:framework params)
+       (if protects? "which protection?" "which rule?")]
+      [:span.obligation-gloss
+       (if protects?
+         " — the business did not have to ask; the law attaches to what it made."
+         " — the business had no choice about this one.")]
+      [remove-assertion-button assertion-code]]]))
 
 (defn- render-expects-section
   "Render the 'expects' confidence section with context.
@@ -1574,6 +1618,13 @@
       ;; What made this event possible
       (when (contains? selected :is-allowed-by)
         [render-is-allowed-by-section (:is-allowed-by selected)])
+
+      ;; And the law that compelled it, or protects what it made
+      (when (contains? selected :is-required-by)
+        [render-legal-framework-section :is-required-by (:is-required-by selected)])
+
+      (when (contains? selected :is-protected-by)
+        [render-legal-framework-section :is-protected-by (:is-protected-by selected)])
 
       ;; Reports section (recognition)
       (when (contains? selected :reports)

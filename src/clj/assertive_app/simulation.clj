@@ -175,7 +175,9 @@
    :accrue-interest
    {:label "Accrue Interest"
     :description "Accrue interest expense on notes payable"
-    :level 5
+    ;; With the notes: it already required one, and now sits where the
+    ;; student is taught what one is.
+    :level 7
     :template-key :accrue-interest
     :prerequisites {:has-notes-payable true}
     :effects {:interest-payable :add-amount}}

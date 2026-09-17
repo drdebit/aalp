@@ -516,7 +516,129 @@ Both types provide goods to a customer. The difference is whether payment is imm
       :explanation "Cash purchase: **provides** monetary-unit, **receives** physical-unit. Cash sale: **provides** physical-unit, **receives** monetary-unit. The assertions mirror each other — it's the direction of the exchange that differs."}]}
 
    4
-   {:title "Level 4: Adjusting Entries"
+   {:title "Level 4: Legal and Regulatory Context"
+    :subtitle "What stands behind a transaction, and when it changes the entry"
+    :sections
+    [{:heading "The Third Party Who Was Always There"
+      :content "Every transaction so far has been between two parties who chose to deal with each other. SP and a vendor. SP and a customer.
+
+*A customer owes SP $250 and does not pay.* What actually makes that promise worth recording? Not the customer's good intentions. Something outside the two of them: a body of law that would make the customer pay, and a court that would enforce it.
+
+That third party has been there the whole time, and the record has not mentioned it once.
+
+Level 4 gives it three assertions. Sometimes naming the law changes the journal entry. More often it does not — and the cases where it does not are the more interesting ones."}
+
+     {:heading "New Assertion: 'Is Required By' (money out because a rule said so)"
+      :content "**is-required-by** — names the law or rule that made this event compulsory.
+
+*On 12 March, Northside Tees pays $500 in quarterly estimated income taxes.*
+
+::assertions
+has-date: the payment date
+provides: $500 (monetary-unit)
+is-required-by: the tax code
+::
+
+Notice what is missing: **no receives**. Money went out and nothing came in. In Level 0 that never happened — every payment bought something, and the something was what you debited.
+
+::journal
+DR Tax Expense $500
+CR Cash $500
+::
+
+So where does the debit come from? From **is-required-by**. Money that leaves under a rule, with nothing coming back, has bought no asset the business can hold or sell. What it bought is the right to keep operating this period, and that is gone when the period is. It is an **expense**, and the rule that compelled it is what names the expense: the tax code gives Tax Expense, a regulator's licence fee gives Compliance Expense.
+
+This is the first assertion you have met that decides an account on its own, with no flow of goods to read."}
+
+     {:heading "'Is Allowed By', Again — Now Pointing at a Statute"
+      :content "You have used **is-allowed-by** before. In Level 2 it pointed at the press: the printer is what made printing possible.
+
+Now it points at a law.
+
+*Riverside Print Co. pays $150 to the state to form an LLC.*
+
+::assertions
+has-date: the filing date
+provides: $150 (monetary-unit)
+is-allowed-by: state business law
+::
+
+Same assertion, same question — *what made this event possible?* — and two kinds of answer. A machine, or a statute. A business cannot print shirts without a press, and cannot exist as an LLC without a law that provides for one.
+
+::journal
+DR Organization Costs $150
+CR Cash $150
+::
+
+Compare that with the tax payment. Both are money out under a rule, and they land in different places. The tax bought this period and nothing more. The filing fee brought the entity itself into existence, and the entity is still there next year — so its cost is **carried**, not expensed at once.
+
+The assertions say which is which. You did not have to know that formation fees are capitalised; you had to say what made the event possible, and whether anything lasting came of it."}
+
+     {:heading "'Is Protected By' — and an Entry That Does Not Change"
+      :content "**is-protected-by** — names the law that protects what this event created or agreed.
+
+*Maple Street Prints delivers 25 printed t-shirts to CorporateClient under a written contract for $625, payable in 60 days.*
+
+Work through it as a Level 1 credit sale, because that is what it is:
+
+- **provides** 25 printed t-shirts, **has-counterparty** CorporateClient
+- **requires**: the customer must pay $625 by the due date
+- **expects**: how confident is SP of collecting?
+- and now **is-protected-by**: contract law
+
+::journal
+DR Accounts Receivable $625
+CR Revenue $625
+::
+
+**The legal assertion changes nothing in the entry.** The same four lines would follow without it.
+
+That is the point, and it is worth sitting with. Double-entry has room for what a transaction is worth and no room for what stands behind it, so a signed contract and a handshake post identically. But they are not the same, and the difference is exactly what your **expects** number is about: SP is more confident of collecting from a customer it could sue than from one it could not.
+
+The record now carries the reason for the confidence, beside the confidence. Nobody has to remember it, and at year end you can ask the record which receivables are contract-backed and which are not — a question the journal entries cannot answer at all."}
+
+     {:heading "The Whole Level in One Table"
+      :content "| Assertion | Answers | Changes the entry? |
+|-----------|---------|--------------------|
+| **is-allowed-by** | What made this possible? | Sometimes — a formation fee becomes Organization Costs |
+| **is-required-by** | What compelled this? | Yes — money out under a rule is an expense |
+| **is-protected-by** | What stands behind this? | No — but it is why the confidence is what it is |
+
+**The recipe, extended:**
+
+**Step 1–4.** As before. What moved, which way, what was promised, how sure.
+
+**Step 5.** Ask what was outside the two parties. Did a rule compel this payment (**is-required-by**)? Did a law make the event possible (**is-allowed-by**)? Does one protect what was agreed or made (**is-protected-by**)?
+
+**Step 6.** If money went out and nothing came in, the legal assertion is doing the work the goods usually do. Read it before you name the account."}]
+
+    :quiz
+    [{:id :l4-q1
+      :question "SP pays $500 in quarterly taxes. Why is the debit an expense rather than an asset?"
+      :choices ["Because taxes are always expenses" "Because nothing came back that SP can hold or sell — is-required-by names money out under a rule" "Because the amount is small" "Because SP has no choice about paying"]
+      :correct 1
+      :explanation "There is no **receives**. Money left and nothing came in, so there is no asset to carry forward — what it bought was this period's right to operate. **is-required-by** is what tells the entry that, and it names the expense: tax code gives Tax Expense, a regulator's rules give Compliance Expense."}
+
+     {:id :l4-q2
+      :question "SP pays $150 to form an LLC, and $500 in taxes. Both are money out under a rule. Why do they land in different accounts?"
+      :choices ["The LLC fee is larger over time" "Formation brings the entity into existence, which lasts beyond this period, so its cost is carried; the tax buys this period only" "Taxes use is-required-by and fees use is-allowed-by, and that is the whole difference" "One is federal and one is state"]
+      :correct 1
+      :explanation "Something lasting came of the filing — the entity itself — so the cost is carried as **Organization Costs**. Nothing lasting came of the tax. The assertions differ too (**is-allowed-by** against **is-required-by**), and that difference is real, but what it records is which of the two happened."}
+
+     {:id :l4-q3
+      :question "A credit sale under a written contract. What does adding is-protected-by change?"
+      :choices ["The revenue is recognized later" "Nothing in the journal entry — but it records why SP's confidence is as high as it is" "Accounts Receivable becomes Contract Receivable" "It replaces the requires assertion"]
+      :correct 1
+      :explanation "The entry is the same credit sale: DR Accounts Receivable, CR Revenue. What the law changes is how collectible the promise is, which is what **expects** measures — and now the reason sits in the record beside the number, where it can be queried."}
+
+     {:id :l4-q4
+      :question "You used is-allowed-by in Level 2 to point at the t-shirt printer. Now it points at the UCC. Is that the same assertion?"
+      :choices ["No — they happen to share a name" "Yes — it asks what made the event possible, and the answer can be a machine or a law" "No — the Level 2 one should have been is-required-by" "Yes, but only because the platform has not separated them yet"]
+      :correct 1
+      :explanation "One question, two kinds of answer. A press makes printing possible; the UCC makes a sale of goods an enforceable exchange rather than two people handing each other things. An event can rest on both at once."}]}
+
+   5
+   {:title "Level 5: Adjusting Entries"
     :subtitle "Match revenues and expenses to the correct period"
     :sections
     [{:heading "End-of-Period Adjustments"
@@ -579,32 +701,32 @@ Like production, adjusting entries have **no counterparty** — they're internal
 In a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."}]
 
     :quiz
-    [{:id :l4-q1
+    [{:id :l5-q1
       :question "Why do adjusting entries need the 'reports' assertion when sales don't?"
       :choices ["Because adjusting entries are more important" "Because there's no exchange pattern to derive from — recognition must be explicit" "Because sales never affect expenses" "Because reports is only for the balance sheet"]
       :correct 1
       :explanation "In sales, revenue emerges from the assertion pattern (providing goods for payment). In adjusting entries, there's **no exchange** — depreciation, accruals, and prepaid consumption must be explicitly asserted through **reports** with a calculation basis."}
 
-     {:id :l4-q2
+     {:id :l5-q2
       :question "Why don't adjusting entries have a 'has-counterparty' assertion?"
       :choices ["Because they always involve cash" "Because they are estimates, not actual transactions" "Because they are internal recognitions, not exchanges with external parties" "Because they only affect the income statement"]
       :correct 2
       :explanation "Adjusting entries are **internal recognitions** of economic reality (like equipment losing value or wages being earned). No external party is involved in these entries."}
 
-     {:id :l4-q3
+     {:id :l5-q3
       :question "What is the journal entry for recording monthly depreciation on equipment?"
       :choices ["DR Equipment, CR Cash" "DR Depreciation Expense, CR Equipment" "DR Depreciation Expense, CR Accumulated Depreciation" "DR Accumulated Depreciation, CR Depreciation Expense"]
       :correct 2
       :explanation "Depreciation recognizes the expense (debit) and reduces the asset's book value through the contra-asset Accumulated Depreciation (credit), not by crediting Equipment directly."}
 
-     {:id :l4-q4
+     {:id :l5-q4
       :question "Which assertions describe accruing wages that employees have earned but not yet been paid?"
       :choices ["provides monetary-unit, has-counterparty" "reports expense (accrual), requires future payment" "receives physical-unit, reports expense" "consumes asset-value, creates liability"]
       :correct 1
       :explanation "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."}]}
 
-   5
-   {:title "Level 5: Equity Transactions"
+   6
+   {:title "Level 6: Equity Transactions"
     :subtitle "Record owner investments, withdrawals, and dividends"
     :sections
     [{:heading "Owner Transactions"
@@ -657,26 +779,26 @@ Note: Neither dividends nor withdrawals are expenses — they're returns of capi
 Equity transactions use the same assertion framework — provides, receives, requires, reports — but the accounts affected are equity accounts."}]
 
     :quiz
-    [{:id :l5-q1
+    [{:id :l6-q1
       :question "When an owner invests $10,000 cash into the business, is this revenue?"
       :choices ["Yes — the business is receiving money" "No — it's an equity investment, not earned revenue" "Yes — it increases the cash account" "No — it's an expense"]
       :correct 1
       :explanation "Owner investment is **not revenue**. Revenue is earned from business operations. An investment increases equity (Owner's Capital), not revenue. DR Cash, CR Owner's Capital."}
 
-     {:id :l5-q2
+     {:id :l6-q2
       :question "What assertions describe an owner withdrawing $1,000 from the business?"
       :choices ["receives monetary-unit, has-counterparty" "provides monetary-unit, has-counterparty" "reports expense, provides monetary-unit" "requires monetary-unit, has-counterparty"]
       :correct 1
       :explanation "The company **provides** cash (monetary-unit) to the owner (**has-counterparty**). This creates DR Owner's Drawing, CR Cash. It's not an expense."}
 
-     {:id :l5-q3
+     {:id :l6-q3
       :question "In the two-step dividend process, what happens at declaration?"
       :choices ["Cash is paid to shareholders" "Retained Earnings decreases and a payable is created" "Revenue is recorded" "Equipment is distributed to owners"]
       :correct 1
       :explanation "At declaration, the board commits to paying dividends: **Retained Earnings decreases** (debit) and **Dividends Payable is created** (credit). Cash doesn't move until the payment step."}]}
 
-   6
-   {:title "Level 6: Notes and Interest"
+   7
+   {:title "Level 7: Notes and Interest"
     :subtitle "Borrow and lend with formal promissory notes"
     :sections
     [{:heading "Formal Borrowing and Lending"
@@ -730,36 +852,36 @@ Monthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month
 Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
     :quiz
-    [{:id :l6-q1
+    [{:id :l7-q1
       :question "How does a Notes Payable differ from Accounts Payable?"
       :choices ["Notes Payable is for smaller amounts" "Notes Payable is a formal written promise, usually with interest" "Accounts Payable always involves equipment" "There is no difference"]
       :correct 1
       :explanation "Notes Payable are **formal written promises** to pay, typically involving interest and a specific maturity date. Accounts Payable are less formal obligations from routine purchases on credit."}
 
-     {:id :l6-q2
+     {:id :l7-q2
       :question "Which assertions describe SP borrowing $10,000 from a bank via a promissory note?"
       :choices ["provides monetary-unit, has-counterparty" "receives monetary-unit, requires future repayment, has-counterparty" "reports revenue, receives monetary-unit" "expects monetary-unit, has-counterparty"]
       :correct 1
       :explanation "SP **receives** cash, **requires** future repayment (creating Notes Payable), and the bank is the **counterparty**. This is like a credit purchase — receives now, pays later."}
 
-     {:id :l6-q3
+     {:id :l7-q3
       :question "When SP accrues interest expense on a loan, what is the journal entry?"
       :choices ["DR Cash, CR Interest Revenue" "DR Interest Expense, CR Interest Payable" "DR Notes Payable, CR Cash" "DR Interest Payable, CR Interest Expense"]
       :correct 1
       :explanation "Interest accrual **reports** an expense and **requires** future payment: DR Interest Expense (recognizing the cost), CR Interest Payable (creating the obligation)."}
 
-     {:id :l6-q4
+     {:id :l7-q4
       :question "When SP lends money to a supplier, which assertion creates the Notes Receivable?"
       :choices ["requires (monetary-unit)" "provides (monetary-unit)" "expects (monetary-unit)" "reports (revenue)"]
       :correct 2
       :explanation "When lending, SP **expects** future repayment — this creates Notes Receivable (an asset). SP also **provides** cash now and has a counterparty."}]}
 
-   7
-   {:title "Level 7: Capstone Review"
+   8
+   {:title "Level 8: Capstone Review"
     :subtitle "Bringing it all together — the complete assertion framework"
     :sections
     [{:heading "The Complete Framework"
-      :content "Congratulations on making it to Level 7! Let's review the complete assertion framework you've mastered:
+      :content "Congratulations on making it to Level 8! Let's review the complete assertion framework you've mastered:
 
 **Exchange Assertions:**
 
@@ -791,7 +913,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
      {:heading "Transaction Categories"
       :content "Every transaction falls into one of these categories:
 
-**Exchange Transactions** (L0-L1, L3, L5-L6):
+**Exchange Transactions** (L0-L1, L3, L6-L7):
 - Always have a counterparty
 - Use provides/receives for immediate exchanges
 - Use requires/expects for future obligations
@@ -802,7 +924,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 - Use consumes/creates for production
 - is-allowed-by links to enabling equipment
 
-**Adjusting Entries** (L4):
+**Adjusting Entries** (L5):
 - No counterparty
 - Use reports for calculated recognitions
 - May use consumes (prepaid), requires (accruals)
@@ -837,25 +959,25 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 Once you pass, you'll have demonstrated mastery of the complete assertive accounting framework. Good luck!"}]
 
     :quiz
-    [{:id :l7-q1
+    [{:id :l8-q1
       :question "Which transaction type does NOT have a counterparty?"
       :choices ["Credit purchase of inventory" "Cash sale of goods" "Monthly depreciation adjustment" "Owner investment"]
       :correct 2
       :explanation "**Depreciation** is an adjusting entry — an internal recognition of asset value declining over time. No external party is involved. Purchases, sales, and owner transactions all involve counterparties."}
 
-     {:id :l7-q2
+     {:id :l8-q2
       :question "SP sells t-shirts on credit. Which assertions are required?"
       :choices ["provides, receives, has-counterparty" "provides, requires, expects, has-counterparty" "provides, expects, has-counterparty" "provides, requires, reports, has-counterparty"]
       :correct 1
       :explanation "Credit sales need **provides** (goods delivered), **requires** (legal payment obligation), **expects** (confidence in payment), and **has-counterparty**. No receives (payment hasn't happened yet) and no reports (revenue emerges from the exchange pattern)."}
 
-     {:id :l7-q3
+     {:id :l8-q3
       :question "SP buys raw materials on credit, produces finished goods, then sells them for cash. Which step uses 'consumes' and 'creates'?"
       :choices ["Buying raw materials" "Producing finished goods" "Selling finished goods" "Paying the vendor"]
       :correct 1
       :explanation "**Production** is the step that uses consumes (raw materials used up) and creates (finished goods produced). Buying and selling are exchange transactions; paying is settling an obligation."}
 
-     {:id :l7-q4
+     {:id :l8-q4
       :question "Why do adjusting entries need the 'reports' assertion but sales don't?"
       :choices ["Because sales are less important" "Because sales have an exchange pattern that implies revenue; adjustments have no exchange to derive from" "Because reports is only for expenses" "Because sales only affect the balance sheet"]
       :correct 1
@@ -905,7 +1027,7 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
       {:index idx :heading (:heading (nth sections idx))})))
 
 (defn get-level-tutorial
-  "Returns tutorial data for the specified level (0-7)."
+  "Returns tutorial data for the specified level."
   [level]
   (get level-tutorials level))
 

@@ -360,7 +360,10 @@
      :receivable  goods went out, money is to come back
      :payable     goods came in, money is to go out
      :prepaid     money went out, goods or a service are to come back
-     :advance     money came in, goods or a service are to go out"
+     :advance     money came in, goods or a service are to go out
+     :borrowing   money came in, money is to go back -- nothing was
+                  bought, so the promise is the whole of the exchange
+     :lending     money went out, money is to come back"
   [assertions requires]
   (let [act       (some-> (:action requires) name)
         money?    (= "monetary-unit" (some-> (:unit requires) name))
@@ -372,7 +375,11 @@
       (and money? (= "receives" act) out-goods) :receivable
       (and money? (= "provides" act) in-goods)  :payable
       (and (not money?) (= "receives" act) out-money) :prepaid
-      (and (not money?) (= "provides" act) in-money)  :advance)))
+      (and (not money?) (= "provides" act) in-money)  :advance
+      ;; Money for money: no goods on either side, which is what makes
+      ;; it a loan rather than a purchase on terms.
+      (and money? (= "provides" act) in-money)  :borrowing
+      (and money? (= "receives" act) out-money) :lending)))
 
 (defn promises
   "The promises the record still carries, one per `requires` asserted.
@@ -405,14 +412,15 @@
                       :action (some-> (:action req) name)
                       :unit (some-> (:unit req) name)
                       :quantity (num-qty (:quantity req))
-                      ;; What the promise is worth in money. On a debt
-                      ;; that is the sum promised; on a prepayment or an
-                      ;; advance it is the money that moved in the same
-                      ;; event, since the thing promised is not money.
+;; What the promise is worth in money. On a debt
+                      ;; that is the sum promised; everywhere else it is
+                      ;; the money that moved in the same event -- the
+                      ;; principal of a loan, or what a prepayment or an
+                      ;; advance was paid.
                       :amount (case kind
                                 (:receivable :payable) (num-qty (:quantity req))
-                                :prepaid (monetary-qty (:provides a))
-                                :advance (monetary-qty (:receives a)))
+                                (:prepaid :lending)    (monetary-qty (:provides a))
+                                (:advance :borrowing)  (monetary-qty (:receives a)))
                       :counterparty (get-in a [:has-counterparty :name])}
                (:physical-item req) (assoc :item (name (:physical-item req)))
                (:service-item req)  (assoc :item (name (:service-item req)))

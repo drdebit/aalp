@@ -242,6 +242,39 @@
     :amount :monetary
     :text "SP paid, and expects to receive what it paid for later. Nothing has been used up yet; what SP holds is a right to something still to come, kept for a future use — an asset, Prepaid Expense, until the service is received and used."}
 
+   ;; -------- Money paid because a rule said so ------------------------
+   ;; Nothing comes back. A tax or a licence fee buys no asset and no
+   ;; service the business could resell or carry; what it buys is the
+   ;; right to keep operating this period, which is gone when the period
+   ;; is. So it is an expense, and the rule that compelled it is what
+   ;; names the expense.
+   {:id :tax-expense
+    :when {:assertion :is-required-by
+           :params {:framework #{"tax-code" "sec-regulations"}}}
+    :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :receives}]}
+    :line {:side :debit :account "Tax Expense"}
+    :amount :monetary
+    :text "The business paid because the tax code required it, and nothing came back that it could keep. `is-required-by` is what makes this an expense rather than a purchase: money went out under a rule, not in exchange for a thing."}
+
+   {:id :compliance-expense
+    :when {:assertion :is-required-by
+           :params {:framework #{"industry-regs" "environmental-regs"}}}
+    :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :receives}]}
+    :line {:side :debit :account "Compliance Expense"}
+    :amount :monetary
+    :text "A licence or a certification the regulator demands. The business is no richer for it — it is allowed to carry on, this period, which is not a thing it holds."}
+
+   {:id :organization-costs
+    :when {:assertion :is-allowed-by
+           :params {:framework "state-business-law"}}
+    :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :receives}]}
+    :line {:side :debit :account "Organization Costs"}
+    :amount :monetary
+    :text "What it cost to bring the business into existence under state law. Unlike a tax, this one buys something that lasts — the entity itself — so it is carried rather than expensed at once."}
+
    ;; -------- A service received --------------------------------------
    {:id :service-expense
     :when {:assertion :receives

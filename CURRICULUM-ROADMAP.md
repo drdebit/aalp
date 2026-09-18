@@ -204,6 +204,17 @@ against the Guided Year; full verdicts and design sketches in
   expects-vs-fulfills walks; job costing as chain traversal; goal-
   aligned budgeting (recording actions that are, and are not, aligned
   with stated goals). Same record, no new system.
+- **Measurement choice — one record, many defensible answers.** CVP and
+  break-even computed over the student's *own* chain rather than a given
+  cost table, more than once, admitting different cost sets each time;
+  granular truth deliberately withheld ("assume this isn't available —
+  what's a reasonable proxy?") and then revealed, so the cost of a proxy
+  is measured rather than asserted; and balance sheets re-cut at
+  different confidence thresholds, which the recorded per-event
+  `has-confidence-level` already supports. Which inputs you admit is the
+  judgment, and it is the thing traditional instruction hides. Report
+  Builder Stage 4; mostly assembly of shipped machinery. See
+  `MEASUREMENT-CHOICE-DESIGN.md`.
 - **AI narrative pipeline.** Instructor-side: generate large
   transaction sets and have AI transform assertion data into
   narratives and tabulated reports (structured source = controllable,
@@ -256,7 +267,11 @@ against the Guided Year; full verdicts and design sketches in
   revisited across intermediate (richer treatments: leases,
   held-to-maturity), audit (assertion-sample verification; student
   rules graded by extension against hidden ledgers), tax (second
-  compositions over the same events).
+  compositions over the same events). Also the natural home for the
+  confidence-threshold statements of `MEASUREMENT-CHOICE-DESIGN.md`
+  §Family C — a conceptual-framework exercise run over an intro-built
+  ledger, now that CON 8 Ch. 4 has taken "probable" out of the asset
+  definition and left likelihood to measurement.
 
 ## Research program
 

@@ -5,6 +5,43 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
+> **URGENT, unfixed, filed 2026-09-18 — read `ENGINE-STORE-DIVERGENCE.md`.**
+>
+> With `DATOMIC_DB_PASSWORD` set, if the `aalp-engine` database cannot be
+> opened, `init-engine!` (`server.clj:684`) falls back to an **in-memory**
+> engine store while the main database stays persistent. Ledger rows then
+> survive restarts and the assertion chains they point at do not —
+> silently. Recorded reports live in the engine *only*, so they vanish
+> entirely, despite the UI promising the student "this becomes part of
+> your record, with your name on it."
+>
+> **This has happened before.** `11f8a27` (2026-07-07) exists because
+> reports "evaporated on every backend restart"; it closed the
+> no-password door and left the open-failed door open. The engine was
+> added *alongside* the EDN blobs in April (`0df847b`) as a
+> failure-tolerant index, and became load-bearing in July when the Report
+> Builder shipped — the storage architecture was never revisited. So the
+> question is not just the fallback; it is whether to finish the
+> migration the engine was always meant to be.
+>
+> First thing to do, costs a second:
+> `grep "falling back to in-memory" /tmp/aalp.log`
+>
+> **Checked live 2026-09-18: it has not fired** in either surviving log,
+> and `aalp-engine` exists and opens. No evidence any student work has
+> been lost. The fault is unguarded and undetectable after the fact, but
+> it is not currently burning.
+>
+> Found while scoping `MEASUREMENT-CHOICE-DESIGN.md`. Read-only
+> investigation from another session; **no code was changed**. Note that
+> practice mode was checked and is clean — it writes to neither store, so
+> the one-off-problem refactor holds.
+>
+> **For everything else from that session, read
+> `SESSION-2026-09-PICKUP.md`** — what changed on disk, what to do first,
+> decisions already taken, and the cheap work items (`:level` on
+> episodes; `energy-unit` in `unit-type-options`).
+
 **2026-09-17. A walkthrough as a student, and what it broke loose.**
 
 Read the level-numbering note below this one first if anything mentions

@@ -678,8 +678,26 @@
   "Initialize the assertive-engine store. Datomic-backed (its own
    aalp-engine database on the shared transactor) when
    DATOMIC_DB_PASSWORD is set, so student-recorded reports and
-   decomposed events survive restarts. Falls back to in-memory (dev,
-   or on any failure) -- the teaching flow never depends on it."
+   decomposed events survive restarts.
+
+   With no password, both databases are in-memory together and nothing
+   is inconsistent -- that is dev mode and it is fine.
+
+   The catch branch below is NOT fine, and the sentence that used to be
+   here (\"the teaching flow never depends on it\") is why it survived.
+   That was true in April, when the engine was an index beside the
+   authoritative EDN blob and losing it cost you queries rather than
+   records. It stopped being true on 2026-07-07, when the Report Builder
+   shipped: a student's recorded report is written to the engine and
+   NOWHERE else. Fall back with the password set and the main database
+   keeps persisting while the engine does not -- ledger rows survive
+   carrying engine-event-ids that point at nothing, reports collect over
+   a partial event set, and the only signal is a println into a log that
+   the next restart truncates.
+
+   See ENGINE-STORE-DIVERGENCE.md. Whether to keep falling back at all
+   is an open decision; this docstring exists so nobody decides it from
+   a claim that expired."
   []
   (if (System/getenv "DATOMIC_DB_PASSWORD")
     (try

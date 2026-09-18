@@ -536,7 +536,11 @@ When cljs-ajax parses JSON with `keywords? true`, numeric string keys like `"0"`
 
 ### Memory Constraints
 
-The server has limited RAM (~4GB) with no swap. When running multiple Java processes (Datomic transactor, Accrue backend, AALP backend, shadow-cljs), memory can become constrained.
+The server has 15.7 GB of RAM and 4 GB of swap (checked 2026-09-18:
+9 GB available with the transactor, the AALP backend and shadow-cljs all
+running). This section used to say ~4 GB with no swap, which was wrong on
+both counts and made memory the first suspect for faults that had nothing
+to do with it. Several Java processes coexist here comfortably.
 
 **Diagnostic commands:**
 ```bash

@@ -13,8 +13,7 @@
             [assertive-app.schema :as schema]
             [assertive-app.classification :as classification]
             [assertive-app.simulation :as simulation]
-            [assertive-app.je-derive :as je-derive]
-            [assertive-app.engine :as engine]))
+            [assertive-app.je-derive :as je-derive]))
 
 ;; ==================== The script ====================
 ;; Demo script: L0 cash world -> L1 credit, two corridor gates.
@@ -187,12 +186,9 @@
                       (assoc :simulation-date (:date vars)))
         narrative (classification/apply-template
                     (:narrative-template (entry-template entry)) vars)
-        engine-event-id (engine/store-classified-event!
-                          {:assertions assertions
-                           :date (:date vars)
-                           :asserted-by (str user-id)
-                           :template-key (:template-key entry)
-                           :counterparty (:customer vars (:vendor vars))})
+        ;; One write, to the store of record. The engine was written
+        ;; here too until 2026-09-18; it now builds itself from these
+        ;; rows when a query needs it.
         ledger-entry (cond-> {:date (:date vars)
                               :period (:current-period business-state 1)
                               :action-type (:action-key entry)
@@ -203,8 +199,7 @@
                                                 :canonical-je canonical-je)
                               :assertions assertions
                               :journal-entry journal-entry
-                              :template-key (:template-key entry)}
-                       engine-event-id (assoc :engine-event-id engine-event-id))]
+                              :template-key (:template-key entry)})]
     (simulation/save-business-state! user-id new-state)
     (simulation/save-ledger-entry! user-id ledger-entry)
     {:business-state new-state

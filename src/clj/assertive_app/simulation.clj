@@ -13,7 +13,6 @@
             [assertive-app.schema :as schema]
             [assertive-app.classification :as classification]
             [assertive-app.je-derive :as je-derive]
-            [assertive-app.engine :as engine]
             [clojure.edn :as edn]
             [clojure.string :as str]
             [assertive-app.cost-basis :as cost]))
@@ -956,6 +955,53 @@
        :ledger-entry/assertions (pr-str assertions)
        :ledger-entry/journal-entry (pr-str journal-entry)}]))
 
+(defn record-events
+  "A student's record, as events ready to be loaded for computation.
+
+   The ledger row's own id is the event id, so identity is stable across
+   every rebuild: chains and recorded reports point at events by id, and
+   an id minted fresh each time would break both."
+  [user-id]
+  (vec (for [e (get-ledger user-id)
+             :let [a (:assertions e)]
+             :when (seq a)]
+         {:event-id     (str (:id e))
+          :assertions   a
+          :date         (:date e)
+          :asserted-by  (str user-id)
+          :template-key (:template-key e)
+          :counterparty (or (get-in a [:has-counterparty :name])
+                            (:customer (:variables e))
+                            (:vendor (:variables e)))})))
+
+(defn save-report!
+  "Keep a student's recorded report. It is an event they asserted, so it
+   goes in the store of record beside the transactions they recorded --
+   not in the computation cache that produced it, which is thrown away
+   with the request that built it."
+  [user-id {:keys [opts] :as record}]
+  @(d/transact (schema/get-conn)
+     [{:recorded-report/id (str (:event-id opts))
+       :recorded-report/user user-id
+       :recorded-report/date (str (:date opts))
+       :recorded-report/payload (pr-str record)}])
+  record)
+
+(defn get-reports
+  "A user's recorded reports, oldest first."
+  [user-id]
+  (let [db (schema/db)
+        rows (d/q '[:find [(pull ?r [:recorded-report/id
+                                     :recorded-report/date
+                                     :recorded-report/payload]) ...]
+                    :in $ ?user
+                    :where [?r :recorded-report/user ?user]]
+                  db user-id)]
+    (->> rows
+         (keep #(parse-edn-field (:recorded-report/payload %) nil))
+         (sort-by #(get-in % [:opts :date]))
+         vec)))
+
 (defn get-ledger
   "Get all ledger entries for a user, sorted by date."
   [user-id]
@@ -1315,7 +1361,8 @@
 (defn complete-transaction!
   "Complete a pending transaction after correct classification.
   Updates business state and records ledger entry.
-  Also stores the event in the assertive-engine for chain queries."
+  The record is the ledger row; the engine builds itself from those
+  rows when a query needs one."
   [user-id pending-tx journal-entry]
   (let [business-state (get-business-state user-id)
         action-key (:action-type pending-tx)
@@ -1325,14 +1372,9 @@
                       (apply-effects action-key variables)
                       (decrement-moves)
                       (advance-simulation-date))
-        ;; Store in assertive-engine (non-blocking, failure-tolerant)
-        engine-event-id (engine/store-classified-event!
-                          {:assertions (:correct-assertions pending-tx)
-                           :date (:date variables (:simulation-date business-state))
-                           :asserted-by (str user-id)
-                           :template-key (:template-key pending-tx)
-                           :counterparty (:customer variables (:vendor variables))})
-        ;; Create ledger entry (with engine event link)
+        ;; One write. The engine used to be written here too, which made
+        ;; two stores of the same facts with different lifetimes; it now
+        ;; builds itself from these rows when a query needs it.
         ledger-entry (cond-> {:date (:date variables (:simulation-date business-state))
                               :period (:current-period business-state)
                               :action-type action-key
@@ -1340,9 +1382,7 @@
                               :variables variables
                               :assertions (:correct-assertions pending-tx)
                               :journal-entry journal-entry
-                              :template-key (:template-key pending-tx)}
-                       engine-event-id
-                       (assoc :engine-event-id engine-event-id))]
+                              :template-key (:template-key pending-tx)})]
     ;; Save everything
     (save-business-state! user-id new-state)
     (save-ledger-entry! user-id ledger-entry)

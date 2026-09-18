@@ -381,10 +381,45 @@
     :db/cardinality :db.cardinality/one
     :db/doc "Template used for this transaction"}
 
+   ;; Vestigial. The engine no longer stores anything, so there is no
+   ;; second store to link to: a ledger entry's :ledger-entry/id IS its
+   ;; event id when the record is loaded for computation. Kept so old
+   ;; rows still read.
    {:db/ident :ledger-entry/engine-event-id
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
-    :db/doc "Event ID in the assertive-engine store (for chain linking)"}])
+    :db/doc "Historical: event ID in the old persistent engine store"}
+
+   ;; ==================== Recorded reports ====================
+   ;; A report is an event. It is asserted by the student, on a date,
+   ;; and it says what it collected, how it aggregated, and what it came
+   ;; to -- so it belongs in the store of record with every other event
+   ;; they have made, not in a computation cache.
+
+   {:db/ident :recorded-report/id
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "Event id of the recorded report"}
+
+   {:db/ident :recorded-report/user
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "Who asserted it"}
+
+   {:db/ident :recorded-report/date
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "The date the report is asserted as of"}
+
+   {:db/ident :recorded-report/payload
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN: the composition spec and operation that selected the
+             events, the figure it came to, and the ids it collected.
+             Both halves are kept on purpose -- the spec alone would
+             answer differently as the record grows, and the figure
+             alone could not be argued with."}])
 
 ;; Database connection URI
 ;; Uses existing Datomic transactor with PostgreSQL backing store
@@ -415,14 +450,11 @@
          (get-db-password))))
 
 (def engine-db-uri
-  "URI for the assertive-engine's own database on the same transactor.
-   Dedicated database (aalp-engine) so student-recorded reports and
-   decomposed events persist across backend restarts, kept separate
-   from the engine's benchmark database."
-  (if (in-memory?)
-    "datomic:mem://aalp-engine"
-    (str "datomic:sql://aalp-engine?jdbc:postgresql://localhost:5432/datomic?user=postgres&password="
-         (get-db-password))))
+  "Historical. The engine had its own database here until 2026-09-18,
+   when it stopped storing anything: see the assertive-app.engine
+   docstring. Kept only so nothing referring to it breaks on read; it is
+   no longer opened."
+  nil)
 
 (defn init-db!
   "Create database and transact schema if needed. Returns connection."

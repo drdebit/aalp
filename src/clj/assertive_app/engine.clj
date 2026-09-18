@@ -1,6 +1,26 @@
 (ns assertive-app.engine
-  "Thin wrapper around assertive-engine for storing classified events.
-   Engine failures are logged but never propagate to the teaching flow."
+  "The engine computes; it does not store.
+
+   AALP's own Datomic database is the single store of record. Every
+   event a student records lives there as assertions, and everything
+   here is built from those events on demand and thrown away with the
+   request. Nothing in an engine store is a fact that would be missed if
+   the store vanished mid-sentence.
+
+   That was the design in April 2026, when the engine was added
+   *alongside* the authoritative record as an index, and failure
+   tolerance was the right call because losing an index costs you
+   queries rather than records. It stopped being true on 2026-07-07,
+   when the Report Builder began writing student-recorded reports to the
+   engine and nowhere else: a second store of record, with a different
+   lifetime from the first, and a catch branch that silently swapped it
+   for memory. See ENGINE-STORE-DIVERGENCE.md.
+
+   A student's whole year is a few dozen events, so building a store per
+   request costs nothing worth measuring, and the failure mode is gone
+   rather than guarded. When cross-cohort analytics makes a standing
+   index worth having, it can be added as a cache over the same record
+   without changing what is authoritative."
   (:require [assertive-engine.adapter.aalp :as aalp]
             [assertive-engine.model.event :as event]
             [assertive-engine.store.protocol :as store]
@@ -10,68 +30,69 @@
             [clojure.tools.logging :as log]))
 
 ;; ---------------------------------------------------------------------------
-;; Store lifecycle
+;; Building a store for one record
 ;; ---------------------------------------------------------------------------
 
-(defonce ^:private engine-store (atom nil))
-
-(defn init!
-  "Initialize the engine store. Call once at app startup.
-   Accepts a store instance, or creates an in-memory store as default.
-
-   For Datomic:
-     (require '[assertive-engine.store.datomic :as dat])
-     (init! (dat/create-datomic-store uri))"
-  ([]
-   (init! (mem/create-memory-store)))
-  ([store]
-   (reset! engine-store store)
-   (log/info "Assertive engine initialized" {:healthy? (store/healthy? store)})))
-
-(defn store
-  "Get the current engine store, or nil if not initialized."
-  []
-  @engine-store)
-
-;; ---------------------------------------------------------------------------
-;; Failure-tolerant wrapper
-;; ---------------------------------------------------------------------------
-
-(defmacro ^:private with-engine
-  "Execute body with the engine store bound to `s`. Returns nil if the
-   store is not initialized or if body throws."
+(defmacro ^:private with-engine*
+  "Execute body against store `s`. Returns nil if there is no store or
+   if body throws: a query that fails costs the student a panel, never
+   their record, because their record is not in here."
   [s & body]
-  `(when-let [~s @engine-store]
+  `(when ~s
      (try ~@body
        (catch Exception e#
-         (log/warn e# "Engine operation failed (non-fatal)")
+         (log/warn e# "Engine query failed (non-fatal)")
          nil))))
 
-;; ---------------------------------------------------------------------------
-;; Store events
-;; ---------------------------------------------------------------------------
+(defn store-of
+  "An engine store holding one student's record and nothing else.
 
-(defn store-classified-event!
-  "Store a correctly-classified event in the assertive engine.
-   Returns event-id on success, nil on failure."
-  [params]
-  (with-engine s
-    (aalp/store-classified-event! (assoc params :store s))))
+   `events` are engine-ready maps -- :assertions, :date, :asserted-by,
+   and an explicit :event-id so that identity is stable across rebuilds.
+   That last point matters: chains and recorded reports refer to events
+   by id, and an id minted fresh on every rebuild would break both."
+  [events]
+  (let [s (mem/create-memory-store)]
+    (doseq [e events]
+      (try
+        (aalp/store-classified-event! (assoc e :store s))
+        (catch Exception ex
+          ;; One unreadable row should not cost the student the rest of
+          ;; their record.
+          (log/warn ex "Could not load an event into the engine store"
+                    {:event-id (:event-id e)}))))
+    s))
+
+(defn replay-report
+  "Put a recorded report back into a store exactly as it was recorded.
+
+   NOT by re-running its query. The spec and the figure are both part of
+   what was asserted -- the student reported THIS number on THIS date
+   from THESE events -- and recomputing would quietly replace the report
+   with what the record says today. Comparing the two is a question
+   worth asking; answering it silently is not."
+  [s {:keys [opts result count input-ids]}]
+  (try
+    (let [{:keys [event assertions]}
+          (derive/build-derived-event opts {:result result :count count} (vec input-ids))]
+      (store/store-event! s event assertions))
+    (catch Exception ex
+      (log/warn ex "Could not replay a recorded report" {:event-id (:event-id opts)})
+      nil)))
 
 ;; ---------------------------------------------------------------------------
 ;; Query helpers
 ;; ---------------------------------------------------------------------------
 
 (defn get-event
-  "Retrieve an event from the engine, or nil."
-  [event-id]
-  (with-engine s
-    (store/get-event s event-id)))
+  "Retrieve an event from a store, or nil."
+  [s event-id]
+  (with-engine* s (store/get-event s event-id)))
 
 (defn get-user-events
   "Get events asserted by a specific user, filtered by assertion type."
-  [user-id atype & {:keys [from to limit] :or {limit 100}}]
-  (with-engine s
+  [s user-id atype & {:keys [from to limit] :or {limit 100}}]
+  (with-engine* s
     (let [pattern (cond-> {:assertion-types #{atype}
                            :asserted-by (str user-id)}
                     from (assoc :date-from from)
@@ -84,20 +105,18 @@
 
 (defn traverse-chain
   "Traverse an event chain, or nil on failure."
-  [event-id & {:keys [direction depth] :or {direction :both depth 10}}]
-  (with-engine s
-    (store/traverse-chain s event-id direction depth)))
+  [s event-id & {:keys [direction depth] :or {direction :both depth 10}}]
+  (with-engine* s (store/traverse-chain s event-id direction depth)))
 
 (defn get-user-event-count
   "Count events for a user."
-  [user-id]
-  (with-engine s
-    (count (store/match-pattern s {:asserted-by (str user-id)}))))
+  [s user-id]
+  (with-engine* s (count (store/match-pattern s {:asserted-by (str user-id)}))))
 
 (defn get-user-events-by-date
   "Get all events for a user within a date range."
-  [user-id & {:keys [from to limit] :or {limit 200}}]
-  (with-engine s
+  [s user-id & {:keys [from to limit] :or {limit 200}}]
+  (with-engine* s
     (let [pattern (cond-> {:asserted-by (str user-id)}
                     from (assoc :date-from from)
                     to (assoc :date-to to))
@@ -109,8 +128,8 @@
 
 (defn get-user-summary
   "Aggregate summary of a user's events: revenue, costs, event counts by type."
-  [user-id]
-  (with-engine s
+  [s user-id]
+  (with-engine* s
     (let [user-str (str user-id)
           all-events (store/match-pattern s {:asserted-by user-str})
           type-counts (->> all-events
@@ -177,8 +196,8 @@
   "Execute a student's composition without recording it. Free iteration
    is deliberate: refining a report against counterexamples is the
    lesson. Returns {:result Q :count N :events [...]} or nil."
-  [user-id spec {:keys [aggregate-type op]}]
-  (with-engine s
+  [s user-id spec {:keys [aggregate-type op]}]
+  (with-engine* s
     (let [clean (sanitize-composition-spec user-id spec)
           atype (coerce-enum aggregate-type allowed-aggregate-types :receives)
           op*   (coerce-enum op allowed-ops :sum)
@@ -187,22 +206,44 @@
        :count  (:count agg)
        :events (mapv format-event-for-response (:events agg))})))
 
-(defn record-composition!
-  "Derive-and-record a student's composition as a first-class event in
-   their ledger. Returns {:event-id :result :count :input-ids} or nil."
-  [user-id {:keys [event-id date allowed-by category basis aggregate-type op]} spec]
-  (with-engine s
-    (derive/derive-and-record! s
-      {:event-id       (or event-id
-                           (str "Report-" user-id "-" (java.util.UUID/randomUUID)))
-       :date           (or date (str (java.time.LocalDate/now)))
-       :asserted-by    (str user-id)
-       :allowed-by     allowed-by
-       :collects-spec  (sanitize-composition-spec user-id spec)
-       :aggregate-type (coerce-enum aggregate-type allowed-aggregate-types :receives)
-       :op             (coerce-enum op allowed-ops :sum)
-       :category       (coerce-enum category allowed-categories :revenue)
-       :basis          (coerce-enum basis allowed-bases :declared)})))
+(defn compose-and-record
+  "Run a student's composition and hand back both the figure and
+   everything needed to keep it.
+
+   This does not persist. It cannot: the store it runs against is thrown
+   away with the request. `:record` is the durable form -- the spec that
+   selected the events, the operation applied, the figure it came to,
+   and the ids it collected -- for the caller to write to the store of
+   record. Spec AND figure, because a report that kept only its query
+   would answer differently every time the record grew, and one that
+   kept only its number could not be argued with."
+  [s user-id {:keys [event-id date allowed-by category basis aggregate-type op]} spec]
+  (with-engine* s
+    (let [clean (sanitize-composition-spec user-id spec)
+          opts  {:event-id       (or event-id
+                                     (str "Report-" user-id "-" (java.util.UUID/randomUUID)))
+                 :date           (or date (str (java.time.LocalDate/now)))
+                 :asserted-by    (str user-id)
+                 :allowed-by     allowed-by
+                 :collects-spec  clean
+                 :aggregate-type (coerce-enum aggregate-type allowed-aggregate-types :receives)
+                 :op             (coerce-enum op allowed-ops :sum)
+                 :category       (coerce-enum category allowed-categories :revenue)
+                 :basis          (coerce-enum basis allowed-bases :declared)}
+          agg   (collects/collect-and-aggregate s clean (:aggregate-type opts) (:op opts))
+          input-ids (mapv (comp :event/id :event) (:events agg))
+          {:keys [event assertions]} (derive/build-derived-event opts agg input-ids)]
+      ;; Into the ephemeral store as well, so this request's response
+      ;; sees the record it just added to.
+      (store/store-event! s event assertions)
+      {:event-id  (:event/id event)
+       :result    (:result agg)
+       :count     (:count agg)
+       :input-ids input-ids
+       :record    {:opts opts
+                   :result (:result agg)
+                   :count (:count agg)
+                   :input-ids input-ids}})))
 
 ;; ---------------------------------------------------------------------------
 ;; Response formatting

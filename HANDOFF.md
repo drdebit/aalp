@@ -5,42 +5,45 @@ Written to pick up cold in a new session. Read this, then
 
 ## Start here (next session)
 
-> **URGENT, unfixed, filed 2026-09-18 — read `ENGINE-STORE-DIVERGENCE.md`.**
+> **RESOLVED 2026-09-18 — the engine no longer stores anything.**
 >
-> With `DATOMIC_DB_PASSWORD` set, if the `aalp-engine` database cannot be
-> opened, `init-engine!` (`server.clj:684`) falls back to an **in-memory**
-> engine store while the main database stays persistent. Ledger rows then
-> survive restarts and the assertion chains they point at do not —
-> silently. Recorded reports live in the engine *only*, so they vanish
-> entirely, despite the UI promising the student "this becomes part of
-> your record, with your name on it."
+> The fault filed in `ENGINE-STORE-DIVERGENCE.md` was real: with the
+> password set, a failure to open `aalp-engine` dropped the engine to
+> memory while the main database kept persisting, and student-recorded
+> reports lived in the engine *only*. It never fired on the evidence
+> that survived, and it is now gone rather than guarded.
 >
-> **This has happened before.** `11f8a27` (2026-07-07) exists because
-> reports "evaporated on every backend restart"; it closed the
-> no-password door and left the open-failed door open. The engine was
-> added *alongside* the EDN blobs in April (`0df847b`) as a
-> failure-tolerant index, and became load-bearing in July when the Report
-> Builder shipped — the storage architecture was never revisited. So the
-> question is not just the fallback; it is whether to finish the
-> migration the engine was always meant to be.
+> **AALP's Datomic database is the single store of record.** The engine
+> is built from a student's events per request and thrown away with it
+> — nothing in an engine store is a fact that would be missed if the
+> store vanished. `aalp-engine` is no longer opened; `engine-db-uri` is
+> a stub kept so nothing breaks on read.
 >
-> First thing to do, costs a second:
-> `grep "falling back to in-memory" /tmp/aalp.log`
+> **A report is an event**, and lives with the others.
+> `:recorded-report/*` keeps a composition's spec AND its figure: the
+> spec alone would answer differently as the record grew, and the
+> figure alone could not be argued with. Replay reconstructs a recorded
+> report exactly as recorded rather than re-running its query, so
+> comparing what was reported against what the record now says stays a
+> question someone can ask rather than one silently answered.
 >
-> **Checked live 2026-09-18: it has not fired** in either surviving log,
-> and `aalp-engine` exists and opens. No evidence any student work has
-> been lost. The fault is unguarded and undetectable after the fact, but
-> it is not currently burning.
+> Read `ENGINE-STORE-DIVERGENCE.md` for the history — how an index
+> added *alongside* the record in April became load-bearing in July
+> without the storage architecture being revisited. It is the best
+> account we have of how this kind of drift happens.
 >
-> Found while scoping `MEASUREMENT-CHOICE-DESIGN.md`. Read-only
-> investigation from another session; **no code was changed**. Note that
-> practice mode was checked and is clean — it writes to neither store, so
-> the one-off-problem refactor holds.
+> **Still open from that session:** `:business-state` is the same
+> category error one level down — cash, A/P and A/R are stored running
+> totals that later events cannot revise, and `chain.clj`'s own
+> docstring condemns exactly that. Seven of its eleven attributes
+> already have a reader in `chain` (`cash-on-hand`, `on-hand`,
+> `capital-assets`, `promises-of`); the other four are game state
+> (period, moves, date) and should stay stored. Not yet done.
 >
 > **For everything else from that session, read
-> `SESSION-2026-09-PICKUP.md`** — what changed on disk, what to do first,
-> decisions already taken, and the cheap work items (`:level` on
-> episodes; `energy-unit` in `unit-type-options`).
+> `SESSION-2026-09-PICKUP.md`** — decisions already taken, and the
+> cheap work items (`:level` on episodes; `energy-unit` in
+> `unit-type-options`).
 
 **2026-09-17. A walkthrough as a student, and what it broke loose.**
 

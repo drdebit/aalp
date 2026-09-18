@@ -14,7 +14,6 @@
             [assertive-app.guided :as guided]
             [assertive-app.engine :as engine]
             [assertive-app.schema :as schema]
-            [assertive-engine.store.datomic :as engine-datomic]
             [assertive-app.je-derive :as je-derive]
             [assertive-app.analytics :as analytics]
             [clojure.walk :as walk]
@@ -38,6 +37,21 @@
     (let [token (get-in request [:headers "x-session-token"])
           user (when token (auth/get-user-by-token token))]
       (handler (assoc request :user user)))))
+
+(defn- record-store
+  "An engine store holding this student's record, for the length of one
+   request.
+
+   Their transactions come from the ledger; their recorded reports are
+   replayed exactly as recorded rather than re-run, because the figure
+   is part of what they asserted. Cheap enough not to think about: a
+   year is a few dozen events."
+  [user]
+  (let [uid (:db/id user)
+        s (engine/store-of (simulation/record-events uid))]
+    (doseq [r (simulation/get-reports uid)]
+      (engine/replay-report s r))
+    s))
 
 (defroutes app-routes
   ;; Serve static files
@@ -555,10 +569,13 @@
     (response/response (analytics/je-correlation)))
 
   ;; ==================== Assertive Engine Endpoints ====================
+  ;; Every one of these builds a store from the student's record, asks
+  ;; it a question, and lets it go. Nothing here is persistent, so there
+  ;; is nothing here to lose.
 
   (GET "/api/engine/event/:event-id" [event-id :as request]
     (if-let [user (:user request)]
-      (if-let [ewa (engine/get-event event-id)]
+      (if-let [ewa (engine/get-event (record-store user) event-id)]
         (response/response
           {:event (engine/format-event-for-response ewa)})
         {:status 404 :body {:error "Event not found"}})
@@ -568,7 +585,8 @@
     (if-let [user (:user request)]
       (let [direction (keyword (get-in request [:params "direction"] "both"))
             depth (Integer/parseInt (get-in request [:params "depth"] "10"))
-            chain (engine/traverse-chain event-id :direction direction :depth depth)]
+            chain (engine/traverse-chain (record-store user) event-id
+                                         :direction direction :depth depth)]
         (response/response
           {:chain (mapv engine/format-event-for-response (or chain []))}))
       {:status 401 :body {:error "Authentication required"}}))
@@ -579,9 +597,10 @@
             from (get-in request [:params "from"])
             to (get-in request [:params "to"])
             atype (some-> (get-in request [:params "type"]) keyword)
+            s (record-store user)
             events (if atype
-                     (engine/get-user-events user-id atype :from from :to to)
-                     (engine/get-user-events-by-date user-id :from from :to to))]
+                     (engine/get-user-events s user-id atype :from from :to to)
+                     (engine/get-user-events-by-date s user-id :from from :to to))]
         (response/response
           {:events (mapv engine/format-event-for-response (or events []))
            :count (count (or events []))}))
@@ -589,7 +608,7 @@
 
   (GET "/api/engine/summary" request
     (if-let [user (:user request)]
-      (let [summary (engine/get-user-summary (str (:db/id user)))]
+      (let [summary (engine/get-user-summary (record-store user) (str (:db/id user)))]
         (response/response (or summary {:error "Engine not available"})))
       {:status 401 :body {:error "Authentication required"}}))
 
@@ -641,7 +660,7 @@
   (POST "/api/engine/compose/preview" {body :body :as request}
     (if-let [user (:user request)]
       (let [{:keys [spec aggregate-type op]} body
-            result (engine/preview-composition (str (:db/id user)) spec
+            result (engine/preview-composition (record-store user) (str (:db/id user)) spec
                                                {:aggregate-type aggregate-type
                                                 :op op})]
         (if result
@@ -652,10 +671,14 @@
   (POST "/api/engine/compose/record" {body :body :as request}
     (if-let [user (:user request)]
       (let [{:keys [spec] :as opts} body
-            result (engine/record-composition! (str (:db/id user)) opts spec)]
+            result (engine/compose-and-record (record-store user) (str (:db/id user)) opts spec)]
         (if result
-          (response/response result)
-          {:status 503 :body {:error "Engine not available"}}))
+          (do
+            ;; The figure the student just recorded goes to the store of
+            ;; record. The store it was computed in is about to vanish.
+            (simulation/save-report! (:db/id user) (:record result))
+            (response/response (dissoc result :record)))
+          {:status 503 :body {:error "Could not compose over your record"}}))
       {:status 401 :body {:error "Authentication required"}}))
 
   ;; CORS preflight
@@ -674,48 +697,10 @@
       wrap-json-response
       wrap-cors))
 
-(defn- init-engine!
-  "Initialize the assertive-engine store. Datomic-backed (its own
-   aalp-engine database on the shared transactor) when
-   DATOMIC_DB_PASSWORD is set, so student-recorded reports and
-   decomposed events survive restarts.
-
-   With no password, both databases are in-memory together and nothing
-   is inconsistent -- that is dev mode and it is fine.
-
-   The catch branch below is NOT fine, and the sentence that used to be
-   here (\"the teaching flow never depends on it\") is why it survived.
-   That was true in April, when the engine was an index beside the
-   authoritative EDN blob and losing it cost you queries rather than
-   records. It stopped being true on 2026-07-07, when the Report Builder
-   shipped: a student's recorded report is written to the engine and
-   NOWHERE else. Fall back with the password set and the main database
-   keeps persisting while the engine does not -- ledger rows survive
-   carrying engine-event-ids that point at nothing, reports collect over
-   a partial event set, and the only signal is a println into a log that
-   the next restart truncates.
-
-   See ENGINE-STORE-DIVERGENCE.md. Whether to keep falling back at all
-   is an open decision; this docstring exists so nobody decides it from
-   a claim that expired."
-  []
-  (if (System/getenv "DATOMIC_DB_PASSWORD")
-    (try
-      (engine/init! (engine-datomic/create-datomic-store schema/engine-db-uri))
-      (println "Engine store: Datomic (persistent, aalp-engine)")
-      (catch Exception e
-        (println "Engine Datomic store failed; falling back to in-memory:"
-                 (.getMessage e))
-        (engine/init!)))
-    (do
-      (println "Engine store: in-memory (DATOMIC_DB_PASSWORD not set)")
-      (engine/init!))))
-
 (defn start-server
   "Start the development server on port 3000"
   [& [port]]
   (let [port (or port 3000)]
-    (init-engine!)
     (jetty/run-jetty app {:port port :join? false})
     (println (str "Server started on http://localhost:" port))))
 

@@ -4479,3 +4479,73 @@ header {
     color: #7b7b7b;
     font-weight: 400;
 }
+
+/* ---- The orientation: the gate's front page ---- */
+.orientation {
+    text-align: left;
+    margin: 18px 0 22px;
+    max-width: 640px;
+}
+.or-framing {
+    font-size: 1.06em;
+    line-height: 1.6;
+    color: #2f3b44;
+    margin: 0 0 16px;
+}
+.or-slot {
+    border-top: 1px solid #e4e4e0;
+    padding-top: 12px;
+    margin-bottom: 14px;
+}
+.or-slot h5 {
+    margin: 0 0 8px;
+    font-size: .78em;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #8a8a84;
+    font-weight: 700;
+}
+.or-label { font-weight: 700; color: #5a5a54; }
+.or-new { margin: 0 0 6px; }
+/* "No new words today" is a headline, not a gap. */
+.or-new.or-none { font-style: italic; color: #6b6b64; }
+.or-known { margin: 0; font-size: .92em; color: #6b6b64; }
+.or-protocol { margin: 0; padding-left: 20px; line-height: 1.75; }
+.or-narrative { font-style: italic; margin: 0 0 8px; color: #3a3a34; }
+
+.or-pair-same { margin: 0 0 10px; }
+.or-pair-rows { margin: 0 0 10px; }
+.or-pair-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 10px;
+    background: #f6f7f4;
+    border-left: 3px solid #b9cbb2;
+    margin-bottom: 4px;
+}
+.or-pair-when { flex: 1; }
+.or-pair-arrow { color: #8a8a84; }
+.or-pair-becomes { font-weight: 700; color: #2f3b44; white-space: nowrap; }
+.or-pair-point { margin: 0; font-size: .95em; color: #4a4a44; }
+
+.or-effect-row { display: flex; gap: 12px; margin-bottom: 8px; line-height: 1.6; }
+.or-effect-label {
+    flex: 0 0 150px;
+    font-size: .82em;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #8a8a84;
+    font-weight: 700;
+    padding-top: 2px;
+}
+.or-effect-text { flex: 1; }
+
+.or-reminder {
+    margin: 16px 0 0;
+    padding: 10px 12px;
+    background: #fbf7ec;
+    border-left: 3px solid #d8b96a;
+    font-size: .95em;
+}
+.gate-choose { margin: 4px 0 12px; color: #6b6b64; font-size: .95em; }

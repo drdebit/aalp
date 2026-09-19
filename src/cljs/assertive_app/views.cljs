@@ -3360,6 +3360,99 @@
          ;; Default fallback
          [:div "Unknown phase: " (str phase)])]]]))
 
+(defn- vocabulary-slot
+  "The cumulative lexicon, with today's additions marked.
+
+   Computed from what the server actually offers at this level, never
+   authored, so it cannot drift from the sentence builder. Each
+   assertion carries its own :level, so the ones new here are the ones
+   whose level IS this level -- and \"no new words today\" is a
+   legitimate and important thing for this panel to say."
+  [level]
+  (let [all (->> (state/available-assertions) (mapcat val)
+                 (remove #(#{:consumes-inventory :consumes-supplies :consumes-labor
+                             :creates-finished-goods} (keyword (:code %)))))
+        new? (fn [a] (= level (:level a 0)))
+        fresh (filter new? all)
+        known (remove new? all)]
+    [:div.or-slot
+     [:h5 "The words you can use"]
+     (if (seq fresh)
+       [:p.or-new
+        [:span.or-label "New here: "]
+        (str/join ", " (map :label fresh))]
+       [:p.or-new.or-none
+        "No new words at this level. Everything below, rearranged — which is where the interesting accounts come from."])
+     (when (seq known)
+       [:p.or-known
+        [:span.or-label "Already yours: "]
+        (str/join ", " (sort (map :label known)))])]))
+
+(defn orientation-panel
+  "What this level lets the business say, before the student decides
+   whether they already know it.
+
+   Six slots (CLOSING-ENTRY-STUDY.md §4). The trap is slot 3: a
+   procedure over accounts would import exactly the pedagogy this
+   platform replaces, so the protocol is a way of READING an event and
+   never resolves to an account before the assertions are made. The
+   minimal pair is the centrepiece -- two sentences differing in one
+   word, landing in two accounts -- and it is the sharpest thing we can
+   show a student who is about to ask whether they already know this."
+  [level]
+  (let [o (tutorials/orientation-for level)]
+    [:div.orientation
+     (when-let [f (:framing o)]
+       [:p.or-framing f])
+     [vocabulary-slot level]
+
+     (when-let [steps (seq (:protocol o))]
+       [:div.or-slot
+        [:h5 "How to read an event"]
+        [:ol.or-protocol
+         (doall (for [[i st] (map-indexed vector steps)]
+                  ^{:key i} [:li (process-inline st)]))]])
+
+     (when-let [ex (:example o)]
+       [:div.or-slot
+        [:h5 "One worked through"]
+        [:p.or-narrative (:narrative ex)]
+        [:div.assertion-block
+         (doall (for [[i a] (map-indexed vector (:assertions ex))]
+                  ^{:key i} [:div.assertion-line a]))]
+        [:div.journal-block
+         (doall (for [[i l] (map-indexed vector (:entry ex))]
+                  ^{:key i} [:div.journal-line l]))]])
+
+     (when-let [p (:pair o)]
+       [:div.or-slot.or-pair
+        [:h5 "The same words, a different account"]
+        [:p.or-pair-same (process-inline (:same p))]
+        [:div.or-pair-rows
+         (doall
+           (for [[k side] [[:a (:a p)] [:b (:b p)]]]
+             ^{:key k}
+             [:div.or-pair-row
+              [:span.or-pair-when (:when side)]
+              [:span.or-pair-arrow "→"]
+              [:span.or-pair-becomes (:becomes side)]]))]
+        [:p.or-pair-point (process-inline (:point p))]])
+
+     (when-let [e (:effect o)]
+       [:div.or-slot
+        [:h5 "What changes"]
+        ;; Two rows, where double-entry can only draw three boxes. The
+        ;; second is the one no journal entry anywhere records.
+        [:div.or-effect-row
+         [:span.or-effect-label "What the business holds"]
+         [:span.or-effect-text (:holds e)]]
+        [:div.or-effect-row
+         [:span.or-effect-label "What it may or must do"]
+         [:span.or-effect-text (:may-or-must e)]]])
+
+     (when-let [r (:reminder o)]
+       [:p.or-reminder r])]))
+
 (defn tutorial-gate
   "Gate overlay shown when tutorial hasn't been completed for this level."
   [level]
@@ -3368,7 +3461,13 @@
      [:div.gate-content
       [:h2 (str "Welcome to " (:title tutorial))]
       [:p (:subtitle tutorial)]
-      [:p "Learn the assertions, pass a short practice round, and start recording in your books."]
+      ;; The orientation IS this screen, not a step before or after it.
+      ;; The gate asks the student to decide whether they already know
+      ;; this level; it used to ask that over a title, a subtitle and one
+      ;; line of boilerplate, which made "do I already know this?" a
+      ;; gamble rather than a judgement. Both exits are unchanged.
+      [orientation-panel level]
+      [:p.gate-choose "Read the tutorial, or take the practice round straight away."]
       [:button.gate-start-btn
        {:on-click #(do (api/start-section-clock!)
                        (state/start-tutorial-quiz! level))}

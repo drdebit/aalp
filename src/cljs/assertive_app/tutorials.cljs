@@ -25,6 +25,38 @@
   {0
    {:title "Level 0: Cash Transactions"
     :subtitle "Learn the basics of recording business exchanges."
+    ;; The gate's front page (CLOSING-ENTRY-STUDY.md §4). Six slots; the
+    ;; vocabulary one is computed from what the server actually offers,
+    ;; so it cannot drift. Slot 3 is a way of READING the event and must
+    ;; not resolve to an account before the assertions are made -- a
+    ;; procedure over accounts is the pedagogy this platform exists to
+    ;; replace. Slot 6, the minimal pair, is the centrepiece.
+    :orientation
+    {:framing "This level lets the business say what moved today, and what it means the things that moved to be for."
+     :protocol ["What went out? — **provides**"
+                "What came in? — **receives**"
+                "Who was on the other side? — **has-counterparty**"
+                "When? — **has-date**"
+                "And if something came in: what is it FOR? — **expects**, or **allows** when the thing is a machine"]
+     :example
+     {:narrative "On January 8, SP purchases 50 blank t-shirts from TextileDirect for $150 cash, to print on."
+      :assertions ["has-date: January 8"
+                   "has-counterparty: TextileDirect"
+                   "provides: $150 (monetary-unit)"
+                   "receives: 50 blank t-shirts (physical-unit)"
+                   "expects: to use them up making printed t-shirts — 95% sure"]
+      :entry ["DR Raw Materials Inventory $150" "CR Cash $150"]}
+     :pair
+     {:same "SP **provides** money and **receives** something, from a counterparty."
+      :a {:when "Receives 50 blank t-shirts, expects to print on them"
+          :becomes "Raw Materials Inventory"}
+      :b {:when "Receives 50 blank t-shirts, expects to sell them on as they are"
+          :becomes "Finished Goods Inventory"}
+      :point "One word changed. Same shirts, same money, same vendor — and a different account falls out, because the business said a different thing about what it bought."}
+     :effect
+     {:holds "Before: $10,000 cash. After: $9,850 cash and 50 shirts. The business is no poorer — it swapped one asset for another."
+      :may-or-must "Before: nothing. After: the shirts are committed to printing. Nothing in the journal entry records that, and it is the reason they are raw materials rather than stock for sale."}
+     :reminder "An account is not a name you look up. It is what falls out of what you said."}
     :sections
     [{:heading "Your Story: You Run a T-Shirt Company"
       :content "Welcome! In this course, **you** run SP's T-Shirt Company. You'll buy a printer, stock up on blank shirts and ink, print designs, and sell them.
@@ -227,6 +259,32 @@ Two things to remember once you ARE keeping the books:
    1
    {:title "Level 1: Credit Transactions"
     :subtitle "Obligations, expectations, and the time dimension"
+    ;; One new word, six new classifications. This is the level where
+    ;; the framework's claim is most visible, so the pair does the work.
+    :orientation
+    {:framing "This level adds exactly one word — and with it the business can say what somebody still owes, in either direction."
+     :protocol ["Everything from Level 0 still applies: what moved today, and what for."
+                "Then: was a promise made about the future? — **requires**, naming who must do what, by when"
+                "Then: is the outcome in the business's hands? If not, how likely is it? — **expects**"]
+     :example
+     {:narrative "On February 3, SP sells 25 printed t-shirts to CampusBoutique. CampusBoutique agrees to pay $625 within 30 days."
+      :assertions ["has-date: February 3"
+                   "has-counterparty: CampusBoutique"
+                   "provides: 25 printed t-shirts (physical-unit)"
+                   "requires: SP is to receive $625 by March 5 — the customer's promise"
+                   "expects: 92% confident of receiving it"]
+      :entry ["DR Accounts Receivable $625" "CR Revenue $625"]}
+     :pair
+     {:same "The business makes one assertion, **requires**, about money that has not moved."
+      :a {:when "Goods came IN, and money is to go out"
+          :becomes "Accounts Payable — a debt"}
+      :b {:when "Goods went OUT, and money is to come in"
+          :becomes "Accounts Receivable — a claim"}
+      :point "The same word, in the same place in the sentence. Which way the goods went is the entire difference between owing and being owed."}
+     :effect
+     {:holds "Before: 25 shirts. After: no shirts, and a claim on CampusBoutique worth $625."
+      :may-or-must "Before: nothing owed either way. After: somebody else must pay — and SP has recorded how sure it is they will. That confidence is in no journal entry anywhere, and at year end it is what the allowance for doubtful accounts is built from."}
+     :reminder "One assertion, four accounts. Where the promise sits, and which way the goods went, decides which."}
     :sections
     [{:heading "Buying Now, Paying Later"
       :content "In Level 0 everything happened at once: cash out, goods in, done.
@@ -1090,6 +1148,15 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
           idx (min (get m assertion (get m :default 0))
                    (dec (count sections)))]
       {:index idx :heading (:heading (nth sections idx))})))
+
+(defn orientation-for
+  "The gate's front page for a level, or nil where none is authored yet.
+
+   Levels without one fall back to the vocabulary slot alone, which is
+   computed and therefore always available -- a thinner page, not a
+   broken one."
+  [level]
+  (get-in level-tutorials [level :orientation]))
 
 (defn get-level-tutorial
   "Returns tutorial data for the specified level."

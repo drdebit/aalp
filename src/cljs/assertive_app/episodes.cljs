@@ -67,6 +67,10 @@
 
 (def episodes
   [{:id :funding
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 0
     :title "The business is funded"
     :palette #{:has-date :receives :provides :has-counterparty}
     :steps
@@ -109,6 +113,10 @@
       :then "There they are. 200 units is a count, not an amount of money, so no line can carry it — that's the monetary unit assumption, and it's what keeps every entry addable and comparable. The units stay in the chain, and we work out percentages from them later — and when a second person invests, the who on each event is what keeps the two of them apart. The entry is doing exactly what it should; the chain simply holds more than the entry measures."}]}
 
    {:id :printer
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 0
     :title "SP buys a printer"
     :palette #{:has-date :provides :receives :has-counterparty :allows}
     :steps
@@ -153,6 +161,10 @@
    ;; is not used up by that use. Sits between the printer and the
    ;; shirts so `allows` is seen twice in a row on two different things.
    {:id :design
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 2
     :title "SP buys a design, and the printer is serviced"
     :palette #{:has-date :provides :receives :has-counterparty :allows}
     :steps
@@ -190,6 +202,10 @@
       :then "Services Expense, straight away — no \"not yet classified\", no allows to add. A service is used up as it is done. Nothing is left to keep for a future use, so there is nothing to call an asset. That is what an expense is. Money went out for the design and for the servicing; one bought something that stays, one something that doesn't, and the record knows which because you said what each was for."}]}
 
    {:id :materials
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 0
     :title "SP buys shirts and ink"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
@@ -220,6 +236,10 @@
    ;; never bought. Doing it twice also makes the point that raw
    ;; materials is about the role, not about shirts.
    {:id :ink
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 0
     :title "SP buys ink"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
@@ -238,6 +258,10 @@
       :then "Now the business has everything it needs to print."}]}
 
    {:id :production
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 2
     :title "SP prints shirts"
     :palette #{:has-date :consumes :creates :is-allowed-by}
     :steps
@@ -257,6 +281,10 @@
       :then "The printer. Notice there's no counterparty on this entry at all — nobody else was involved. Nothing entered or left the business; something inside it changed form."}]}
 
    {:id :sale
+    ;; Which level's vocabulary this episode draws on -- the
+    ;; orientation is level-scoped and the walkthrough is episode-scoped,
+    ;; and this is what lets one renderer serve both.
+    :level 0
     :title "SP sells shirts"
     :palette #{:has-date :provides :receives :has-counterparty}
     :steps
@@ -295,3 +323,18 @@
 (defn episode-count [] (count episodes))
 (defn step [ep-idx st-idx] (get-in episodes [ep-idx :steps st-idx]))
 (defn step-count [ep-idx] (count (:steps (episode ep-idx))))
+
+(defn new-words
+  "The assertions this episode adds to what the student could already
+   say: its palette less every earlier episode's.
+
+   Computed, never authored, so it cannot drift from what the sentence
+   builder actually offers -- the palette IS what the builder offers.
+   An empty result is the headline rather than a gap: an episode that
+   adds no words and still produces an account the student has not seen
+   is the framework's whole claim arriving as curriculum."
+  [ep]
+  (let [i (.indexOf (mapv :id episodes) (:id ep))
+        earlier (into #{} (mapcat :palette (take (max 0 i) episodes)))]
+    (vec (sort (remove earlier (:palette ep))))))
+

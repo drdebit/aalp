@@ -368,6 +368,47 @@
     :db/cardinality :db.cardinality/one
     :db/doc "Historical: event ID in the old persistent engine store"}
 
+   ;; ==================== Telemetry ====================
+   ;; What happened between serving a problem and answering it. Attempts
+   ;; are already recorded (progress.clj) and answer the question "did
+   ;; they get it right"; these answer "how did they get there" -- which
+   ;; assertion they reached for first, how many times they changed their
+   ;; mind, whether they looked at the derived entry at all, how long
+   ;; they sat on a tutorial section before moving on.
+   ;;
+   ;; Research data about students. Keep it that way: no free text a
+   ;; student typed beyond the assertion values the answer already
+   ;; records, and nothing here that is not about learning.
+
+   {:db/ident :telemetry/user
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "Who"}
+
+   {:db/ident :telemetry/at
+    :db/valueType :db.type/instant
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "When, server clock"}
+
+   {:db/ident :telemetry/kind
+    :db/valueType :db.type/keyword
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "What kind of event: :derive, :section-read, :line-opened, ..."}
+
+   {:db/ident :telemetry/problem-id
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/index true
+    :db/doc "The problem it happened during, where there is one"}
+
+   {:db/ident :telemetry/payload
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN: whatever this kind of event carries"}
+
    ;; ==================== Recorded reports ====================
    ;; A report is an event. It is asserted by the student, on a date,
    ;; and it says what it collected, how it aggregated, and what it came

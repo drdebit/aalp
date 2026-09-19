@@ -11,6 +11,7 @@
             [assertive-app.auth :as auth]
             [assertive-app.progress :as progress]
             [assertive-app.simulation :as simulation]
+            [assertive-app.telemetry :as telemetry]
             [assertive-app.guided :as guided]
             [assertive-app.engine :as engine]
             [assertive-app.schema :as schema]
@@ -649,6 +650,19 @@
                            :events events
                            :cost-basis (cost/cost-basis events))
             sel     (or selected-assertions {})]
+        ;; The construction of an answer, free. This endpoint already
+        ;; receives the whole selection every time anything changes, so
+        ;; the sequence of states a student passed through on the way to
+        ;; submitting is here for the taking -- which assertion came
+        ;; first, how often they changed their mind, whether they
+        ;; converged by many small edits (working back from an entry
+        ;; they already knew) or a few deliberate ones.
+        (telemetry/record! (:db/id user) :derive (:problem-id body)
+                           {:codes (vec (sort (map name (keys sel))))
+                            :params (into {} (for [[k v] sel] [k (dissoc v :confidence)]))
+                            :confidence (get-in sel [:expects :confidence])
+                            :level (:level body)
+                            :template (:template-key body)})
         (response/response
           (assoc (je-derive/derive-je sel (or variables {}) context)
                  ;; A sibling to the derivation, never folded into it:
@@ -657,6 +671,19 @@
                  ;; You can only provide what you have.
                  :unsupported (chain/unsupported sel (:events context)))))
       {:status 401 :body {:error "Authentication required"}}))
+
+  ;; ---- Telemetry: what the server cannot see for itself ----
+  ;; Paging a tutorial section, opening a journal-entry line, expanding
+  ;; the chain. Batched by the client, because these happen far too
+  ;; often to be worth a round trip each.
+
+  (POST "/api/telemetry" {body :body :as request}
+    (if-let [user (:user request)]
+      (response/response
+        {:recorded (telemetry/record-batch! (:db/id user) (:events body))})
+      ;; Not an error worth surfacing: a signed-out client dropping
+      ;; analytics is the correct outcome, quietly.
+      (response/response {:recorded 0})))
 
   ;; ---- Student-composed reports (calculation assembly) ----
 

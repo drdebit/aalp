@@ -6,7 +6,7 @@
             [assertive-app.tutorials :as tutorials]))
 
 ;; Forward declarations for functions used before definition
-(declare fetch-assertions! fetch-problem! fetch-ledger! derive-je!
+(declare flush-telemetry! fetch-assertions! fetch-problem! fetch-ledger! derive-je!
          fetch-guided-state! fetch-simulation-state! fetch-action-schemas!)
 
 ;; Detect if we're running under a subpath (e.g., /aalp/)
@@ -404,6 +404,9 @@
                       (state/record-drill-result! correct? missing)
                       ;; ...and keep it, so leaving now does not undo it.
                       (save-drill-state! (state/drill-state))))
+                  ;; The buffer is never more likely to be abandoned than
+                  ;; just after an answer goes in.
+                  (flush-telemetry!)
                   ;; Update progress if included in response
                   (when-let [progress (:progress response)]
                     (state/update-progress! progress))
@@ -776,6 +779,52 @@
                           (not= (:selected-assertions old)
                                 (:selected-assertions new)))
                  (derive-je-debounced!)))))
+
+;; ==================== Telemetry ====================
+;; What the server cannot see for itself: a tutorial section paged, a
+;; journal-entry line opened, the chain expanded. The derivation
+;; endpoint already records the construction of an answer, so nothing
+;; about assertions belongs here.
+;;
+;; Buffered, because these happen far too often to be worth a round trip
+;; each, and flushed on a timer and whenever an answer is submitted --
+;; the moment a buffer is most likely to be abandoned.
+
+(defonce ^:private telemetry-buffer (atom []))
+
+(defn flush-telemetry! []
+  (let [events @telemetry-buffer]
+    (when (seq events)
+      (reset! telemetry-buffer [])
+      (POST (str api-base "/telemetry")
+        {:params {:events events}
+         :format :json
+         :headers (auth-headers)
+         :response-format :json
+         :keywords? true
+         :handler (fn [_])
+         ;; Losing analytics must never cost a student anything, so a
+         ;; failed flush is dropped rather than retried into a loop.
+         :error-handler (fn [_])}))))
+
+(defn note!
+  "Note something the student did. Never blocks, never fails."
+  ([kind payload] (note! kind nil payload))
+  ([kind problem-id payload]
+   (swap! telemetry-buffer conj
+          {:kind (name kind)
+           :problem-id (when problem-id (str problem-id))
+           :at (.toISOString (js/Date.))
+           :payload payload})
+   (when (>= (count @telemetry-buffer) 25)
+     (flush-telemetry!))))
+
+(defonce ^:private telemetry-timer
+  (js/setInterval flush-telemetry! 20000))
+
+;; A closing tab should not take the last few events with it.
+(defonce ^:private telemetry-unload
+  (.addEventListener js/window "pagehide" flush-telemetry!))
 
 ;; ==================== Report Builder ====================
 ;; Students compose collects/includes/excludes reports over their own

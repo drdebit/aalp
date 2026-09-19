@@ -1738,7 +1738,10 @@
         [:div.chain-panel {:class (when @open? "open")}
          [:button.chain-toggle
           {:type "button"
-           :on-click #(swap! open? not)
+           :on-click #(do (when-not @open?
+                            (api/note! :chain-opened (:id (state/current-problem))
+                                       {:events (count events)}))
+                          (swap! open? not))
            :aria-expanded (str @open?)}
           [:span.chain-toggle-marker (if @open? "▾" "▸")]
           [:span.chain-toggle-title title]
@@ -2110,6 +2113,18 @@
                        {:class (str (:side line) (when open? " open"))
                         :on-click #(let [now (if open? nil i)]
                                      (reset! expanded now)
+                                     ;; Opening a line is a student asking
+                                     ;; WHY this account -- the single
+                                     ;; clearest signal that they are
+                                     ;; reading the derivation rather
+                                     ;; than the verdict.
+                                     (when now
+                                       (api/note! :line-opened
+                                                  (:id (state/current-problem))
+                                                  {:account (:account line)
+                                                   :side (name (:side line))
+                                                   :rule (:rule-id line)
+                                                   :provenance (mapv name (:provenance line))}))
                                      (state/set-je-highlight!
                                        (if now
                                          (set (map keyword (:provenance line)))
@@ -3304,8 +3319,14 @@
        (case phase
          :reading
          [tutorial-reader sections section-idx
-          #(state/set-tutorial-quiz-section! (dec section-idx))
-          #(state/set-tutorial-quiz-section! (inc section-idx))
+          #(do (api/note! :section-left {:level level :index section-idx
+                                         :heading (:heading (nth sections section-idx nil))
+                                         :direction "back"})
+               (state/set-tutorial-quiz-section! (dec section-idx)))
+          #(do (api/note! :section-left {:level level :index section-idx
+                                         :heading (:heading (nth sections section-idx nil))
+                                         :direction "on"})
+               (state/set-tutorial-quiz-section! (inc section-idx)))
           #(state/advance-to-quiz!)
           review-only?]
 

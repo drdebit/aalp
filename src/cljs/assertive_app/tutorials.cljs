@@ -163,7 +163,18 @@ In this example, cash is money the business holds. It is an **asset** because it
 
 That is where your assertions come in. The system can only choose the accounts for your journal entry by knowing the effect of the transaction on the business, and you are the one who specifies that effect. Whether the amounts are recorded as debits or credits is based on the accounting equation. The platform fills in that part for you.
 
-Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says '(not yet classified)', the record is telling you it doesn't yet know the meaning of the transaction."}
+**The same assertion somewhere else is a different transaction.** Nothing about a t-shirt decides anything; the arrangement does.
+
+| What you assert | What it lands in |
+|-----------------|------------------|
+| provides money, receives shirts | the shirts, in Raw Materials or Finished Goods — your **expects** picks which |
+| provides shirts, receives money | Revenue, and the cost of those shirts in Cost of Goods Sold |
+
+Same four assertions. Swap which side the shirts are on and every account changes, because a business that hands over shirts and takes money has done something different from one that hands over money and takes shirts.
+
+Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says '(not yet classified)', the record is telling you it doesn't yet know the meaning of the transaction.
+
+And when you want to see how much work a single assertion is doing, turn on **Explore** at the top of that panel and take one away. Remove **has-counterparty** from a sale and the Revenue line goes with it — because goods leaving with nobody on the other side is not a sale, and the platform will not pretend otherwise."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
@@ -349,7 +360,14 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 | Customer pays in advance | SP owes delivery | Yes — SP decides whether it delivers | **requires** (expects optional) |
 | SP pays in advance | Vendor owes delivery | No — the vendor delivers, not SP | **requires** + **expects** |
 
-Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, there is nothing to estimate. If it is not, **expects** carries how likely the promise is to be kept."}
+Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, there is nothing to estimate. If it is not, **expects** carries how likely the promise is to be kept.
+
+**And where the promise sits decides the account.** This is the same one assertion, `requires`, four times over:
+
+- In a credit purchase or a credit sale it stands **in place of** money that did not move. So the line that would have been Cash is something else instead: **Accounts Payable** when SP owes, **Accounts Receivable** when SP is owed.
+- In a prepayment it sits **beside** money that really did move. Cash is still credited — and the promise becomes the thing SP got for it: **Prepaid Expense** when SP paid ahead, **Deferred Revenue** when SP was paid ahead.
+
+Nothing here is a rule to memorise. The account follows from where the promise sits and which way the goods went, and you can watch it happen: turn on **Explore** in the derived panel and take the `requires` out of a credit sale. Accounts Receivable disappears — and so does the amount on the Revenue line, because in a credit sale the promise is the only thing that says how much money is involved. No money moved. Without the promise, the record does not know what the shirts were worth."}
 
      {:heading "How to Approach Every Level 1 Problem"
       :content "A recipe you can follow every single time:

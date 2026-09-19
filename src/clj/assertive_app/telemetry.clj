@@ -140,3 +140,92 @@
                                   (quot (- (.getTime (apply max-key #(.getTime %) times))
                                            (.getTime (apply min-key #(.getTime %) times)))
                                         1000))}]))))
+
+(defn- users-with-telemetry [db]
+  (d/q '[:find [?u ...] :where [_ :telemetry/user ?u]] db))
+
+(defn- email-of [db u]
+  (:user/email (d/pull db [:user/email] u)))
+
+(defn- median
+  "A double, always. Averaging two integers in Clojure gives a Ratio,
+   which prints as 11/2 and reads as a typo."
+  [xs]
+  (when (seq xs)
+    (let [v (vec (sort xs)) n (count v)]
+      (double (if (odd? n)
+                (nth v (quot n 2))
+                (/ (+ (nth v (dec (quot n 2))) (nth v (quot n 2))) 2))))))
+
+(defn- fmt-num [x]
+  (when x (if (== x (Math/rint x)) (str (long x)) (format "%.1f" x))))
+
+(defn- dwell-rows
+  "Every section a student left, with how long it held them."
+  [evs]
+  (for [e evs
+        :when (= :section-left (:telemetry/kind e))
+        :let [p (read-string (:telemetry/payload e))]
+        :when (:dwell-ms p)]
+    p))
+
+(defn report
+  "Where students are spending their effort, and where they are going
+   back.
+
+   Three questions, which is all this is for:
+
+   Which patterns are hard to BUILD -- many derives, many removals --
+   as distinct from hard to get right, which the attempt records already
+   answer. A pattern with a high removal count is one students cannot
+   see their way to.
+
+   Which tutorial sections hold them, and which they go back to. A
+   section paged in two seconds was skipped; one dwelt on for minutes
+   was work; one returned to was not enough the first time.
+
+   And whether anyone reads the derivation. A line opened is a student
+   asking why an account is what it is, which is the whole claim of the
+   platform actually being taken up."
+  []
+  (let [db (schema/db)
+        users (users-with-telemetry db)]
+    (println (format "telemetry: %d student(s)\n" (count users)))
+    ;; ---- per student
+    (doseq [u (sort users)]
+      (let [evs (events-for u)
+            shapes (vals (construction-shape u))
+            dwells (dwell-rows evs)]
+        (println (format "%s" (or (email-of db u) (str u))))
+        (println (format "   %d problems built · median %s derives · %d removals total · looked at a rule on %d of them"
+                         (count shapes)
+                         (fmt-num (median (map :derives shapes)))
+                         (reduce + 0 (map :removals shapes))
+                         (count (filter :looked? shapes))))
+        (when (seq dwells)
+          (println (format "   %d sections read · median %ds · %d gone back to"
+                           (count dwells)
+                           (long (quot (or (median (map :dwell-ms dwells)) 0) 1000))
+                           (count (filter #(= "back" (:direction %)) dwells)))))))
+    ;; ---- across everyone
+    (let [all (mapcat #(vals (construction-shape %)) users)
+          all-dwell (mapcat #(dwell-rows (events-for %)) users)]
+      (when (seq all-dwell)
+        (println "\nsections that held them longest")
+        (doseq [[k rows] (->> all-dwell
+                              (group-by (juxt :level :heading))
+                              (sort-by #(- (or (median (map :dwell-ms (val %))) 0)))
+                              (take 5))]
+          (println (format "   L%s  %-42s %4ds  (%d readings, %d back)"
+                           (str (first k)) (str (second k))
+                           (long (quot (or (median (map :dwell-ms rows)) 0) 1000))
+                           (count rows)
+                           (count (filter #(= "back" (:direction %)) rows))))))
+      (when (seq all)
+        (println "\nhow answers were built")
+        (println (format "   %d problems · %d built with no removals at all · %d with three or more"
+                         (count all)
+                         (count (filter #(zero? (:removals %)) all))
+                         (count (filter #(>= (:removals %) 3) all))))
+        (println (format "   a rule was opened on %d of them" (count (filter :looked? all))))))
+    :done))

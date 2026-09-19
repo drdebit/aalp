@@ -2349,9 +2349,10 @@
                     (name assertion) ". Mistakes here are free; a quick re-read might help.")
                (str "That's " miss-streak " in a row. Mistakes here are free; a quick re-read might help."))]
          [:button.secondary
-          {:on-click #(state/start-tutorial-quiz! level
-                                                  :review-only? true
-                                                  :section (:index target 0))}
+          {:on-click #(do (api/start-section-clock!)
+                          (state/start-tutorial-quiz! level
+                                                      :review-only? true
+                                                      :section (:index target 0)))}
           (if target
             (str "Review: " (:heading target))
             "Review the tutorial")]]))))
@@ -2402,6 +2403,7 @@
                      (api/save-drill-state! nil)
                         (state/clear-feedback!)
                         (state/set-current-problem! nil)
+                        (api/start-section-clock!)
                         (state/start-tutorial-quiz! level))}
           (str "Not quite (" correct " of " attempted ") — read the tutorial")]
          [:button.secondary
@@ -3319,13 +3321,13 @@
        (case phase
          :reading
          [tutorial-reader sections section-idx
-          #(do (api/note! :section-left {:level level :index section-idx
-                                         :heading (:heading (nth sections section-idx nil))
-                                         :direction "back"})
+          #(do (api/note-section-left! {:level level :index section-idx
+                                        :heading (:heading (nth sections section-idx nil))
+                                        :direction "back"})
                (state/set-tutorial-quiz-section! (dec section-idx)))
-          #(do (api/note! :section-left {:level level :index section-idx
-                                         :heading (:heading (nth sections section-idx nil))
-                                         :direction "on"})
+          #(do (api/note-section-left! {:level level :index section-idx
+                                        :heading (:heading (nth sections section-idx nil))
+                                        :direction "on"})
                (state/set-tutorial-quiz-section! (inc section-idx)))
           #(state/advance-to-quiz!)
           review-only?]
@@ -3368,7 +3370,8 @@
       [:p (:subtitle tutorial)]
       [:p "Learn the assertions, pass a short practice round, and start recording in your books."]
       [:button.gate-start-btn
-       {:on-click #(state/start-tutorial-quiz! level)}
+       {:on-click #(do (api/start-section-clock!)
+                       (state/start-tutorial-quiz! level))}
        "Start Tutorial"]
       ;; ALEKS-derived test-out (ALEKS-DERIVED-MECHANICS.md §1): the drill
       ;; is already the mastery instrument, so placement needs no new one —
@@ -3391,7 +3394,8 @@
   "Button to re-read a completed tutorial."
   [level]
   [:button.tutorial-review-btn
-   {:on-click #(state/start-tutorial-quiz! level :review-only? true)
+   {:on-click #(do (api/start-section-clock!)
+                   (state/start-tutorial-quiz! level :review-only? true))
     :title "Review this level's tutorial"}
    "Review Tutorial"])
 

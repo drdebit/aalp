@@ -819,6 +819,30 @@
    (when (>= (count @telemetry-buffer) 25)
      (flush-telemetry!))))
 
+;; ---- Dwell ----
+;; How long a student sat on a tutorial section before paging on. The
+;; client is the only thing that can answer this: the server never sees
+;; a section being read, and a section paged past in two seconds and one
+;; dwelt on for two minutes are the two ends of "where do they stumble".
+
+(defonce ^:private section-clock (atom nil))
+
+(defn note-section-left!
+  "Leaving a tutorial section, with how long it held them.
+
+   The first call of a sitting only starts the clock -- there is no
+   previous section to time -- so a tutorial opened and immediately
+   closed reports nothing rather than reporting a lie."
+  [payload]
+  (let [now (.getTime (js/Date.))
+        started @section-clock]
+    (reset! section-clock now)
+    (when started
+      (note! :section-left (assoc payload :dwell-ms (- now started))))))
+
+(defn start-section-clock! []
+  (reset! section-clock (.getTime (js/Date.))))
+
 (defonce ^:private telemetry-timer
   (js/setInterval flush-telemetry! 20000))
 

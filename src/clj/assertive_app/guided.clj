@@ -22,6 +22,11 @@
 ;; Every :template-key must exist in classification/transaction-templates
 ;; and every :action-key in simulation's actions (effects lookup).
 
+;; Every inventory purchase carries :purpose and :confidence, because
+;; the templates require `expects` since 2026-09-19: a purchase says
+;; what the goods are FOR. Without them the narrative printed a literal
+;; "{purpose}" and the canonical answer carried the unresolved keyword
+;; :confidence -- on six of these eight days.
 (def script
   [{:day 1 :level 0 :type :transaction
     :template-key :cash-equipment-purchase
@@ -34,6 +39,7 @@
     :action-key :purchase-inventory-cash
     :variables {:date "2026-01-08" :quantity 50
                 :inventory-type "blank t-shirts" :physical-item "blank-tshirts"
+                :purpose "to print on" :confidence 95
                 :vendor "TextileDirect" :amount 150}}
 
    {:day 3 :level 0 :type :transaction
@@ -41,6 +47,7 @@
     :action-key :purchase-inventory-cash
     :variables {:date "2026-01-12" :quantity 20
                 :inventory-type "ink cartridges" :physical-item "ink-cartridges"
+                :purpose "to print with" :confidence 95
                 :vendor "InkMasters" :amount 40}}
 
    {:day 4 :level 0 :type :gate
@@ -50,6 +57,7 @@
     :unit-price 3 :min 10 :max 300
     :variables {:date "2026-01-19"
                 :inventory-type "blank t-shirts" :physical-item "blank-tshirts"
+                :purpose "to print on" :confidence 95
                 :vendor "TextileDirect"}}
 
    {:day 5 :level 1 :type :transaction
@@ -57,6 +65,7 @@
     :action-key :purchase-inventory-credit
     :variables {:date "2026-02-02" :quantity 100
                 :inventory-type "blank t-shirts" :physical-item "blank-tshirts"
+                :purpose "to print on" :confidence 95
                 :vendor "PrintSupplyCo" :amount 300
                 :days 30 :due-date "2026-03-04"}}
 
@@ -65,6 +74,7 @@
     :action-key :purchase-inventory-cash
     :variables {:date "2026-02-10" :quantity 30
                 :inventory-type "ink cartridges" :physical-item "ink-cartridges"
+                :purpose "to print with" :confidence 95
                 :vendor "InkMasters" :amount 60}}
 
    {:day 7 :level 1 :type :gate
@@ -74,6 +84,7 @@
     :unit-price 2 :min 5 :max 100
     :variables {:date "2026-02-17"
                 :inventory-type "ink cartridges" :physical-item "ink-cartridges"
+                :purpose "to print with" :confidence 95
                 :vendor "InkMasters"}}
 
    {:day 8 :level 1 :type :transaction
@@ -81,6 +92,7 @@
     :action-key :purchase-inventory-credit
     :variables {:date "2026-03-01" :quantity 50
                 :inventory-type "blank t-shirts" :physical-item "blank-tshirts"
+                :purpose "to print on" :confidence 95
                 :vendor "TextileDirect" :amount 150
                 :days 60 :due-date "2026-04-30"}}])
 

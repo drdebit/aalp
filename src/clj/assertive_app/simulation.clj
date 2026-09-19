@@ -690,14 +690,6 @@
   (or (get classification/transaction-templates template-key)
       (get simulation-templates template-key)))
 
-(defn- apply-template-string
-  "Replace {variables} in template string with actual values."
-  [template-str vars]
-  (reduce (fn [s [k v]]
-            (str/replace s (str "{" (name k) "}") (str v)))
-          template-str
-          vars))
-
 (defn generate-transaction
   "Generate a transaction for the given action.
   Accepts optional student-provided variables that override defaults.
@@ -749,8 +741,29 @@
                           (nil? (:quantity-produced vars)))
                    (assoc vars :quantity-produced (:quantity-consumed vars 10))
                    vars)
-            ;; Generate narrative from template
-            narrative (apply-template-string (:narrative-template template) vars)
+            ;; What the goods are for. SP prints, so materials are
+            ;; bought to go through the press; the templates require the
+            ;; student to say so, and the narrative has to tell them.
+            vars (if (contains? #{:purchase-inventory-cash :purchase-inventory-credit} action-key)
+                   (assoc vars
+                          :purpose (if (= "ink-cartridges" (:physical-item vars))
+                                     "to print with"
+                                     "to print on")
+                          ;; And the thing's NAME, not its key. "50
+                          ;; blank-tshirts" is the catalogue identifier
+                          ;; leaking into a sentence a student reads.
+                          :inventory-type (or (some-> (:physical-item vars) keyword
+                                                      (->> (get classification/physical-items))
+                                                      :label
+                                                      clojure.string/lower-case)
+                                              (:inventory-type vars)))
+                   vars)
+            ;; classification/apply-template, not the bare substitution
+            ;; that used to be here: that one knew no default for
+            ;; {company} and no date formatting, so simulation narratives
+            ;; read "On 2026-03-01, {company} purchases..." -- the
+            ;; company name literally unreplaced.
+            narrative (classification/apply-template (:narrative-template template) vars)
             ;; Resolve variable references in required-assertions
             resolved-assertions (classification/resolve-assertion-values
                                   (:required-assertions template)

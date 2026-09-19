@@ -587,7 +587,8 @@
    The handle has to sit somewhere, so it sits at the middle and says so.
    A click writes the value even when it does not move the handle, so a
    student who wants the number it is already showing gets it."
-  [assertion-code current-value]
+  ([assertion-code current-value] (confidence-slider assertion-code current-value nil))
+  ([assertion-code current-value unset-label]
   (let [set?  (number? current-value)
         value (if set? current-value 50)
         write #(state/update-assertion-parameter!
@@ -605,7 +606,9 @@
        :on-click write}]
      (if set?
        [:span.confidence-value (str value "%")]
-       [:span.confidence-value.unset "not set — how sure?"])]))
+       ;; Where the row already asks "How sure?", asking again beside the
+       ;; slider reads as a stutter.
+       [:span.confidence-value.unset (or unset-label "not set — how sure?")])])))
 
 (defn- customer-context-display
   "Display customer payment history context for confidence decisions."
@@ -1059,7 +1062,6 @@
           [{:value "printed-tshirts" :label "Printed T-Shirts"}
            {:value "blank-tshirts" :label "Blank T-Shirts"}]
           (:creates-item params) "what?"]])
-      [:span "."]
       [remove-assertion-button :expects]]
       (when chosen
         [:div.obligation-gloss.purpose-gloss
@@ -1068,7 +1070,7 @@
            "An input to something else: raw materials.")])
       [:div.purpose-confidence
        [:span "How sure? "]
-       [confidence-slider :expects (:confidence params)]]]]))
+       [confidence-slider :expects (:confidence params) "not set"]]]]))
 
 (defn- render-money-expectation
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]

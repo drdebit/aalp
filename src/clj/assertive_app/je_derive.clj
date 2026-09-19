@@ -357,6 +357,24 @@
     :amount :flow
     :text "SP received goods and is required to provide money later: an obligation. SP's rulebook calls that Accounts Payable — a liability. The SAME 'requires' assertion becomes an asset when the goods flow the other way."}
 
+   ;; -------- Money for money: a loan --------------------------------
+   ;; Not a trade payable: the `:payable` rule above asks for goods to
+   ;; have come in, and nothing did. What came in was cash, against a
+   ;; promise to give cash back, and that is what a note payable is.
+   ;;
+   ;; Found by the balance oracle, not by reading: a practice record's
+   ;; books were out by exactly the loan principal, every time, because
+   ;; the borrowing derived its Cash debit and no credit at all.
+   {:id :notes-payable
+    :when {:assertion :requires
+           :params {:action "provides" :unit "monetary-unit"}}
+    :context {:all-of  [{:assertion :receives :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :receives :params {:unit "physical-unit"}}
+                        {:assertion :provides :params {:unit "physical-unit"}}]}
+    :line {:side :credit :account "Notes Payable"}
+    :amount :flow
+    :text "The business took cash and promised cash back. Nothing was bought and nothing was sold — the promise IS the transaction — so the credit is not Accounts Payable, which is what you owe a supplier for goods, but Notes Payable: borrowed money, owed as money."}
+
    ;; -------- Cash in advance of goods --------------------------------
    {:id :deferred-revenue
     :when {:assertion :requires

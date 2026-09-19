@@ -235,40 +235,18 @@
     :db/cardinality :db.cardinality/one
     :db/doc "Actions remaining in current period"}
 
-   {:db/ident :business-state/cash
-    :db/valueType :db.type/bigdec
-    :db/cardinality :db.cardinality/one
-    :db/doc "Cash balance"}
 
-   {:db/ident :business-state/raw-materials
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "DEPRECATED - Raw material units (blank t-shirts)"}
 
-   {:db/ident :business-state/inventory
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "EDN map of inventory type -> quantity (e.g., {:blank-tshirts 50, :ink-cartridges 5})"}
 
-   {:db/ident :business-state/finished-goods
-    :db/valueType :db.type/long
-    :db/cardinality :db.cardinality/one
-    :db/doc "Finished goods units (printed t-shirts)"}
 
-   {:db/ident :business-state/equipment
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "EDN set of owned equipment keywords"}
 
-   {:db/ident :business-state/accounts-payable
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "EDN map of vendor -> amount owed"}
 
-   {:db/ident :business-state/accounts-receivable
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc "EDN map of customer -> amount owed"}
+
+   ;; Cash, inventory, finished goods, equipment, accounts payable and
+   ;; accounts receivable were here until 2026-09-18. They are readings
+   ;; of the chain now (simulation/business-report), not stored totals,
+   ;; and leaving the attributes declared would have kept stale values
+   ;; on old entities looking like facts. See `retract-derived-state!`.
 
    {:db/ident :business-state/simulation-date
     :db/valueType :db.type/string

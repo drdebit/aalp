@@ -284,19 +284,39 @@
     default))
 
 (defn business-state->map
-  "Convert a Datomic business-state entity to a Clojure map."
+  "The stored half of the state: the game's, not the business's.
+
+   It used to read seven more attributes here. Those are readings now
+   (`business-report`), and continuing to read the stale values off old
+   entities would have handed back numbers that stopped being updated
+   on 2026-09-18."
   [entity]
   (when entity
     {:current-period (:business-state/current-period entity 1)
      :moves-remaining (:business-state/moves-remaining entity MOVES_PER_PERIOD)
-     :cash (:business-state/cash entity STARTING_CASH)
-     :inventory (parse-edn-field (:business-state/inventory entity)
-                                 {:blank-tshirts 0 :ink-cartridges 0})
-     :finished-goods (:business-state/finished-goods entity 0)
-     :equipment (parse-edn-field (:business-state/equipment entity) #{})
-     :accounts-payable (parse-edn-field (:business-state/accounts-payable entity) {})
-     :accounts-receivable (parse-edn-field (:business-state/accounts-receivable entity) {})
      :simulation-date (:business-state/simulation-date entity STARTING_DATE)}))
+
+(def ^:private derived-state-attrs
+  "Attributes that became readings. Retracted where old entities still
+   carry them, because a stored value nothing updates is worse than no
+   value: it looks like an answer."
+  [:business-state/cash :business-state/raw-materials :business-state/inventory
+   :business-state/finished-goods :business-state/equipment
+   :business-state/accounts-payable :business-state/accounts-receivable])
+
+(defn retract-derived-state!
+  "Remove the stored totals that are now read from the chain.
+
+   Idempotent: after the first run there is nothing left to find.
+   Returns the number of datoms retracted."
+  []
+  (let [db (schema/db)
+        tx (vec (for [attr derived-state-attrs
+                      [e v] (d/q '[:find ?e ?v :in $ ?a :where [?e ?a ?v]] db attr)]
+                  [:db/retract e attr v]))]
+    (when (seq tx)
+      @(d/transact (schema/get-conn) tx))
+    (count tx)))
 
 (defn initialize-business-state
   "Create initial business state map for a new simulation."

@@ -423,6 +423,11 @@
         ;; Money out and an expectation: a prepaid, and what is prepaid is
         ;; usually a service. Goods out and an expectation: a sale on
         ;; credit, and what is expected is money.
+        ;;
+        ;; Goods IN and an expectation: what they are for -- and that one
+        ;; is guessed at nothing, because choosing between using them and
+        ;; selling them on is the question being asked.
+        (when-not (= "physical-unit" (get-in (state/selected-assertions) [:receives :unit]))
         (let [sel (state/selected-assertions)
               ;; On the business's own promise the expected event is the
               ;; business providing what it owes.
@@ -432,7 +437,7 @@
                          :else "monetary-unit")]
           (state/update-assertion-parameter! :expects :action (if owes? "provides" "receives"))
           (when-not (get-in sel [:expects :unit])
-            (state/update-assertion-parameter! :expects :unit unit)))
+            (state/update-assertion-parameter! :expects :unit unit))))
 
         ;; No auto-population for other assertions
         nil))))
@@ -1003,9 +1008,62 @@
          " — the business had no choice about this one.")]
       [remove-assertion-button assertion-code]]]))
 
-(defn- render-expects-section
-  "Render the 'expects' confidence section with context.
-   Context-aware: shows customer context for credit sales, vendor context for prepaid expenses."
+(defn- render-purpose-section
+  "What the goods that just came in are FOR.
+
+   The same assertion as an expectation about a customer's payment -- a
+   future event, and how sure you are of it -- pointed at your own plan
+   instead of somebody else's action. It is what separates raw materials
+   from merchandise, and nothing else in the transaction does: the same
+   shirts, the same money, the same vendor.
+
+   Note that a probability here is not idle, though a probability on
+   your own PROMISE would be. You decide whether you pay a bill you have
+   agreed to pay; you do not entirely decide whether these get printed.
+   The press may break, or the order may be cancelled, or you may end up
+   selling the blanks on."
+  [params]
+  ;; No default. Which of the two this is IS the question -- it is what
+  ;; separates raw materials from merchandise -- so the control opens
+  ;; unanswered rather than showing a choice the student never made.
+  ;; (The confidence slider taught this lesson the expensive way: it read
+  ;; 85% before anyone touched it and graded as unset.)
+  (let [item (:physical-item params)
+        chosen (some-> (:action params) name)
+        sell? (= "provides" chosen)]
+    [sentence-section :expectation "What the business means to do with them:"
+     [:div.purpose-content
+      [:span "The business expects to "]
+      [:select.inline-select
+       {:value (or chosen "")
+        :class (when-not chosen "unset")
+        :on-change #(let [v (.. % -target -value)]
+                      (state/update-assertion-parameter! :expects :action v)
+                      (state/update-assertion-parameter!
+                        :expects :unit (when (= v "provides") "physical-unit"))
+                      (when (= v "provides")
+                        (state/update-assertion-parameter! :expects :creates-item nil)))}
+       [:option {:value ""} "do what with them?"]
+       [:option {:value "consumes"} "use them up making something"]
+       [:option {:value "provides"} "sell them on as they are"]]
+      (when (= "consumes" chosen)
+        [:span
+         [:span " — making "]
+         [inline-dropdown :expects :creates-item
+          [{:value "printed-tshirts" :label "Printed T-Shirts"}
+           {:value "blank-tshirts" :label "Blank T-Shirts"}]
+          (:creates-item params) "what?"]])
+      [:span " — with "]
+      [confidence-slider :expects (:confidence params)]
+      [:span " confidence."]
+      (when chosen
+        [:span.obligation-gloss
+         (if sell?
+           " — stock held to sell: merchandise."
+           " — an input to something else: raw materials.")])
+      [remove-assertion-button :expects]]]))
+
+(defn- render-money-expectation
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]
   ;; Split around the unit, because "expects to receive what it paid for
   ;; WITH services WITH 95% confidence" has two `with`s doing different
@@ -1036,6 +1094,17 @@
        [confidence-slider :expects (:confidence params)]
        [:span " confidence."]
        [remove-assertion-button :expects]]]]))
+
+(defn- render-expects-section
+  "Which expectation this is depends on what just moved.
+
+   Goods in: what they are FOR. Anything else: how likely somebody
+   else's future action is. One assertion, two sentences, because a
+   student reading either should recognise what it says."
+  [params counterparty-name customer-profiles vendor-profiles is-prepaid? buying-goods?]
+  (if buying-goods?
+    [render-purpose-section params]
+    [render-money-expectation params counterparty-name customer-profiles vendor-profiles is-prepaid?]))
 
 ;; ==================== Calculation Builder Components ====================
 
@@ -1858,7 +1927,9 @@
       ;; Expects section (confidence) - context-aware for sales vs prepaid expenses
       (when (contains? selected :expects)
         [render-expects-section (:expects selected) counterparty-name
-         customer-profiles vendor-profiles is-prepaid?])
+         customer-profiles vendor-profiles is-prepaid?
+         ;; Goods came in: this expectation is about them.
+         (= "physical-unit" (get-in selected [:receives :unit]))])
 
       ;; A transformation: what was used up, and what was made
       (when (contains? selected :consumes)

@@ -642,7 +642,11 @@
     {:code :expects
      :label "Expects"
      :description "Records uncertainty about a future event, with how likely it is"
-     :level 1
+         ;; Level 0, not 1. A purchase says what the goods are FOR -- printed
+     ;; on, or sold as they stand -- and that is an expectation about a
+     ;; future event, which is what this assertion is. Level 1 then
+     ;; points the same assertion at somebody else's action.
+     :level 0
      :domain :forward-looking
      :parameterized true
      ;; Sentence: section break, then "SP expects this with [confidence]% confidence"
@@ -1364,8 +1368,9 @@
    entity-provides and entity-receives can be :cash or :goods/:services
    physical-item specifies the specific item (e.g., 'blank-tshirts', 't-shirt-printer')"
   [description journal-entry & {:keys [provides-unit provides-item receives-unit physical-item
-                                       note examples level requires-position permits also-required]
-                                 :or {level 0, permits #{}, also-required #{}}}]
+                                       note examples level requires-position permits also-required
+                                       also-params]
+                                 :or {level 0, permits #{}, also-required #{}, also-params {}}}]
   (let [base {:required (clojure.set/union #{:has-date :provides :receives :has-counterparty}
                                            also-required)
               ;; A cash exchange settles now, so it carries no obligation
@@ -1385,7 +1390,8 @@
                                         (when provides-item {:physical-item provides-item}))})
                      (when receives-unit
                        {:receives (merge {:unit receives-unit}
-                                        (when physical-item {:physical-item physical-item}))}))]
+                                        (when physical-item {:physical-item physical-item}))})
+                     also-params)]
     (cond-> base
       (seq params) (assoc :required-parameters params)
       requires-position (assoc :requires-position requires-position)
@@ -1444,6 +1450,14 @@
    (cash-exchange
      "Cash purchase of raw materials (provide cash, receive materials for production)"
      [{:debit "Raw Materials Inventory" :credit "Cash"}]
+     ;; What the goods are FOR, said by the buyer as they buy. Until
+     ;; 2026-09-19 this was left to the press's `allows`, in a different
+     ;; event, or to the first sale -- so a shop's first crate of shirts
+     ;; had no position at all until one was sold. The intent is a fact
+     ;; about the purchase and the purchaser is the one who holds it.
+     :permits #{:expects}
+     :also-required #{:expects}
+     :also-params {:expects {:action "consumes" :creates-item :any :confidence :any}}
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
      ;; What makes this inventory is that SP holds a capacity which
@@ -1502,6 +1516,13 @@
    (cash-exchange
      "Cash purchase of goods to sell on (provide cash, receive merchandise)"
      [{:debit "Finished Goods Inventory" :credit "Cash"}]
+     ;; And here the purpose is the whole difference. Same shirts, same
+     ;; money, same vendor as the purchase above; what separates
+     ;; merchandise from raw materials is what the buyer says they are
+     ;; for, and nothing else in the event does.
+     :permits #{:expects}
+     :also-required #{:expects}
+     :also-params {:expects {:action "provides" :confidence :any}}
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
      ;; The same blank shirts a printer holds as raw materials: what makes
@@ -1510,15 +1531,18 @@
      :examples ["A shop that sells blank shirts on buys 100 of them for $300"])
 
    :inventory-purchase-on-credit
-   {:required #{:has-date :receives :has-counterparty :requires}
-    ;; The business's own promise. A probability on it is the business's
-    ;; to record or not -- we teach no policy -- so `expects` is welcome;
-    ;; the entry is the same either way.
-    :optional #{:expects}
+   ;; Two forward-looking assertions doing different jobs: `requires` is
+   ;; the promise to pay, `expects` is what the goods are for. Buying on
+   ;; credit does not change what you bought them for.
+   {:required #{:has-date :receives :has-counterparty :requires :expects}
+    :optional #{}
     :prohibited #{:provides}
     :required-parameters {:receives {:unit "physical-unit"}
                           ;; physical-item will be specified in templates (blank-tshirts, ink-cartridges)
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit"}
+                          ;; To be put through the press, and the student
+                          ;; says what comes out.
+                          :expects {:action "consumes" :creates-item :any :confidence :any}}
     ;; Materials because the chain says they are an input; a shop that
     ;; sells them on is buying merchandise, below.
     :requires-position {:receives :raw-materials}
@@ -1530,11 +1554,13 @@
     :level 1}
 
    :merchandise-purchase-on-credit
-   {:required #{:has-date :receives :has-counterparty :requires}
-    :optional #{:expects}
+   {:required #{:has-date :receives :has-counterparty :requires :expects}
+    :optional #{}
     :prohibited #{:provides}
     :required-parameters {:receives {:unit "physical-unit"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit"}
+                          ;; To be sold as they stand.
+                          :expects {:action "provides" :confidence :any}}
     :requires-position {:receives :finished-goods}
     :description "Credit purchase of goods to sell on (receive merchandise now, obligation to pay later)"
     :journal-entry [{:debit "Finished Goods Inventory" :credit "Accounts Payable"}]
@@ -2743,19 +2769,24 @@
 ;; Problem generation - using research assertions
 (def transaction-templates
   {:cash-inventory-purchase
-   {:narrative-template "On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
-    :narrative-templates ["On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash."
-                          "{vendor}'s delivery arrives on {date}: {quantity} {inventory-type}. {company} pays the ${amount} on the spot."
-                          "{company} restocks. On {date} it buys {quantity} {inventory-type} from {vendor} and pays ${amount} in cash."]
+   {:narrative-template "On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash, {purpose}."
+    :narrative-templates ["On {date}, {company} purchases {quantity} {inventory-type} from {vendor} for ${amount} cash, {purpose}."
+                          "{vendor}'s delivery arrives on {date}: {quantity} {inventory-type}, {purpose}. {company} pays the ${amount} on the spot."
+                          "{company} restocks. On {date} it buys {quantity} {inventory-type} from {vendor} for ${amount} in cash, {purpose}."]
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
-                          :has-counterparty {:name :vendor}}
+                          :has-counterparty {:name :vendor}
+                          ;; What they are for. Rewritten for a shop that
+                          ;; sells them on -- see generate-problem.
+                          :expects {:action "consumes" :physical-item :physical-item
+                                    :creates-item "printed-tshirts" :confidence :confidence}}
     :correct-classification :cash-inventory-purchase
     :level 0
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :inventory-type ["blank t-shirts" "ink cartridges"]
                 :physical-item ["blank-tshirts" "ink-cartridges"]  ;; Maps to account via physical-item-accounts
+                :confidence :student-input
                 :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
                 :quantity [20 50 100]
                 :amount [100 250 500 1000]}}
@@ -2834,17 +2865,22 @@
                 :cogs [100 250 500]}}  ;; Cost of goods sold (paired with quantity)
 
    :credit-inventory-purchase
-   {:narrative-template "On {date}, {company} takes delivery of {quantity} {inventory-type} from {vendor}. {company} agrees to pay ${amount} within {days} days."
+   {:narrative-template "On {date}, {company} takes delivery of {quantity} {inventory-type} from {vendor}, {purpose}. {company} agrees to pay ${amount} within {days} days."
     :required-assertions {:has-date {:date :date}
                           :receives {:unit "physical-unit" :physical-item :physical-item :quantity :quantity}
                           :has-counterparty {:name :vendor}
                           ;; The purchase creates an obligation for SP to pay
-                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}}
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :amount :due-date :due-date}
+                          ;; And says what the goods are for, which buying
+                          ;; on credit does not change.
+                          :expects {:action "consumes" :physical-item :physical-item
+                                    :creates-item "printed-tshirts" :confidence :confidence}}
     :correct-classification :inventory-purchase-on-credit
     :level 1
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :inventory-type ["blank t-shirts" "ink cartridges"]
                 :physical-item ["blank-tshirts" "ink-cartridges"]
+                :confidence :student-input
                 :vendor ["PrintSupplyCo" "TextileDirect" "InkMasters"]
                 :quantity [20 50 100]
                 :amount [100 250 500 1000]
@@ -4039,10 +4075,21 @@ The printed t-shirts are now finished goods ready for sale."
                                       (set (:reads-record template)))
         vars (-> (select-paired-variables (:variables template))
                  (as-> v (resolve-derived-variables template v))
+                 ;; What a shop with no press buys, decided BEFORE the
+                 ;; goods are priced. It used to be swapped in after, so
+                 ;; a draw that picked ink cartridges and was rewritten
+                 ;; to blank shirts kept the ink's price -- fifty shirts
+                 ;; for $1,250, which is $25 each.
+                 (as-> v (if (= kind :reseller)
+                           (assoc v :inventory-type "blank t-shirts" :physical-item "blank-tshirts"
+                                    :purpose "to sell on as they are")
+                           v))
                  (practice-variables backstory template-key)
                  (as-> v (if (= kind :reseller)
-                           (assoc v :inventory-type "blank t-shirts" :physical-item "blank-tshirts")
-                           v))
+                           v
+                           (assoc v :purpose (if (= "ink-cartridges" (:physical-item v))
+                                               "to print with"
+                                               "to print on"))))
                  ;; A shop with no press does not pay for printer servicing
                  ;; (c8: a learner noticed, twice). Services fit the shop.
                  (as-> v (if (and (= kind :reseller) (= template-key :cash-service-purchase))
@@ -4058,6 +4105,15 @@ The printed t-shirts are now finished goods ready for sale."
                    (assoc :correct-classification :merchandise-purchase)
                    (and (= kind :reseller) (= template-key :credit-inventory-purchase))
                    (assoc :correct-classification :merchandise-purchase-on-credit)
+                   ;; A shop expects to SELL what it buys, not to consume
+                   ;; it. Same goods, same money, different purpose --
+                   ;; which is the whole of what separates merchandise
+                   ;; from raw materials.
+                   (and (= kind :reseller)
+                        (contains? #{:cash-inventory-purchase :credit-inventory-purchase} template-key))
+                   (assoc-in [:required-assertions :expects]
+                             {:action "provides" :unit "physical-unit"
+                              :physical-item "blank-tshirts" :confidence :confidence})
                    ;; A practice production points at the company's printer event.
                    (get-in template [:required-assertions :is-allowed-by])
                    (assoc-in [:required-assertions :is-allowed-by :capacity] "Printer-001")

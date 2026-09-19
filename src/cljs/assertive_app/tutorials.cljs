@@ -91,6 +91,33 @@ Your company **provides** money (monetary-unit), and
 
 You'll also enter *quantities*: the dollar amount for the money, and the quantity of the things."}
 
+     {:heading "What Did You Buy Them For?"
+      :content "One more thing, and it is the one that does the most work.
+
+*You buy 100 blank t-shirts for $500.* So does the shop across the road. Same shirts, same money, same supplier — and the two purchases are not the same transaction, because you are going to print on yours and they are going to sell theirs exactly as they are.
+
+Nothing about a shirt tells you which. **You have to say.**
+
+::assertions
+has-date: the purchase date
+has-counterparty: TextileDirect
+provides: $500 (monetary-unit)
+receives: 100 blank t-shirts (physical-unit)
+expects: to use them up making printed t-shirts — 95% sure
+::
+
+That last one is **expects**: a future event, and how sure you are of it. Here it is your own plan, and the plan is what decides the account:
+
+- Going to use them up making something → they are **raw materials**, an input.
+- Going to sell them as they are → they are **merchandise**, stock waiting for a buyer.
+
+::journal
+DR Raw Materials Inventory $500
+CR Cash $500
+::
+
+Why 95% and not 100%? Because you might not. The press could break, the order could fall through, you might end up selling the blanks on. Recording how sure you are is recording something true — and you will meet this assertion again in Level 1, pointed at things other people do."}
+
      {:heading "Worked Example, Step by Step"
       :content "Let's record one together. Suppose you see this transaction:
 
@@ -228,6 +255,10 @@ Cartridges came in (debit, same as always). But instead of cash going out, a **d
 
      {:heading "Promises and Probabilities"
       :content "**requires** records a promise. **expects** records a probability. They are different kinds of statement, not two halves of one choice — a transaction may carry one, the other, both, or neither.
+
+You have used **expects** already. Every time you bought materials you said what they were for — *we expect to use these up making printed t-shirts* — and that is an expectation about a future event with a number on how sure you are. What changes here is only where it points: at somebody else's action instead of your own plan.
+
+That raises a fair question, and it is worth answering now. If you can put a probability on your own plan, why not on your own promise? Because they are not alike. You decide whether you pay a bill you agreed to pay; nothing else gets a vote. You do not entirely decide whether those shirts get printed — the press may break, the order may be cancelled, you may sell the blanks on instead. **A probability on your own promise is idle. A probability on your own plan is not.**
 
 **requires** — a named party must do a specific thing by a specific date. Either direction: SP owes, or SP is owed.
 

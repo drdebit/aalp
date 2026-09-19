@@ -250,6 +250,9 @@
     (if-let [user (:user request)]
       (let [user-id (:db/id user)
             user-level (or (:current-level (progress/get-user-progress user-id)) 0)
+            ;; The money a business starts with got there somehow. With
+            ;; cash read off the chain, the funding has to BE an event.
+            _ (simulation/ensure-funded! user-id)
             business-state (simulation/get-business-state user-id)
             pending (simulation/get-pending-transaction user-id)
             available (simulation/available-actions user-level business-state)]

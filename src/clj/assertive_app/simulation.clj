@@ -15,7 +15,8 @@
             [assertive-app.je-derive :as je-derive]
             [clojure.edn :as edn]
             [clojure.string :as str]
-            [assertive-app.cost-basis :as cost]))
+            [assertive-app.cost-basis :as cost]
+            [assertive-app.chain :as chain]))
 
 ;; ==================== Configuration ====================
 
@@ -312,18 +313,18 @@
    :simulation-date STARTING_DATE})
 
 (defn business-state->tx-data
-  "Convert a business state map to Datomic transaction data."
+  "Datomic transaction data for the part of the state that is genuinely
+   stored.
+
+   Period, moves and date only. Cash, inventory, equipment and what is
+   owed each way are read from the record now (see `business-report`),
+   and writing them here as well would recreate the second copy that
+   could drift from it."
   [user-id state]
   {:business-state/user user-id
-   :business-state/current-period (:current-period state)
-   :business-state/moves-remaining (:moves-remaining state)
-   :business-state/cash (bigdec (:cash state))
-   :business-state/inventory (pr-str (:inventory state))
-   :business-state/finished-goods (:finished-goods state)
-   :business-state/equipment (pr-str (:equipment state))
-   :business-state/accounts-payable (pr-str (:accounts-payable state))
-   :business-state/accounts-receivable (pr-str (:accounts-receivable state))
-   :business-state/simulation-date (:simulation-date state)})
+   :business-state/current-period (:current-period state 1)
+   :business-state/moves-remaining (:moves-remaining state MOVES_PER_PERIOD)
+   :business-state/simulation-date (:simulation-date state STARTING_DATE)})
 
 ;; ==================== Prerequisite Checking ====================
 
@@ -406,87 +407,17 @@
   (:ok (check-prerequisites action-key business-state user-level)))
 
 ;; ==================== State Effects ====================
-
-(defn apply-effect
-  "Apply a single effect to business state.
-  Effect types are symbolic and resolved based on the effect key and variables."
-  [state effect-type variables]
-  (case effect-type
-    ;; Cash effects
-    :subtract-amount
-    (update state :cash - (bigdec (:amount variables)))
-
-    :add-amount
-    (update state :cash + (bigdec (:amount variables)))
-
-    ;; New inventory effects (using inventory map)
-    :add-inventory-item
-    ;; Prefer :physical-item (canonical hyphenated key, e.g. "blank-tshirts").
-    ;; Classification templates use :inventory-type as a display label with
-    ;; spaces ("blank t-shirts"); keywordizing that produces an EDN keyword
-    ;; that pr-str cannot round-trip, corrupting the business-state blob.
-    (let [item-type (keyword (or (:physical-item variables)
-                                 (:inventory-type variables)))
-          qty (:quantity variables)]
-      (update-in state [:inventory item-type] (fnil + 0) qty))
-
-    :consume-production-inputs
-    ;; Consume items according to production recipe
-    (let [recipe production-recipe]
-      (-> state
-          (update-in [:inventory :blank-tshirts] - (:blank-tshirts recipe))
-          (update-in [:inventory :ink-cartridges] - (:ink-cartridges recipe))))
-
-    ;; Finished goods effects
-    :subtract-quantity
-    (update state :finished-goods - (:quantity variables))
-
-    :add-quantity-produced
-    (update state :finished-goods + (:output-quantity production-recipe))
-
-    ;; Equipment effects
-    :add-equipment
-    (update state :equipment conj :t-shirt-printer)
-
-    ;; Accounts Payable effects
-    :add-vendor-amount
-    (update state :accounts-payable
-            (fn [ap]
-              (update (or ap {}) (:vendor variables) (fnil + 0M) (bigdec (:amount variables)))))
-
-    :subtract-vendor-amount
-    (update state :accounts-payable
-            (fn [ap]
-              (let [vendor (:vendor variables)
-                    new-ap (update (or ap {}) vendor - (bigdec (:amount variables)))]
-                ;; Remove vendor if balance is zero or negative
-                (into {} (filter (fn [[_ v]] (pos? v)) new-ap)))))
-
-    ;; Accounts Receivable effects
-    :add-customer-amount
-    (update state :accounts-receivable
-            (fn [ar]
-              (update (or ar {}) (:customer variables) (fnil + 0M) (bigdec (:amount variables)))))
-
-    :subtract-customer-amount
-    (update state :accounts-receivable
-            (fn [ar]
-              (let [customer (:customer variables)
-                    new-ar (update (or ar {}) customer - (bigdec (:amount variables)))]
-                ;; Remove customer if balance is zero or negative
-                (into {} (filter (fn [[_ v]] (pos? v)) new-ar)))))
-
-    ;; Unknown effect - no change
-    state))
-
-(defn apply-effects
-  "Apply all effects for an action to business state."
-  [business-state action-key variables]
-  (let [effects (:effects (get actions action-key) {})]
-    (reduce (fn [state [_field effect-type]]
-              (apply-effect state effect-type variables))
-            business-state
-            effects)))
+;;
+;; Gone, 2026-09-18. `apply-effect` and `apply-effects` updated a stored
+;; running total from the previous total -- the one thing `chain.clj`
+;; says a position must not be, because a total arrived at that way is
+;; frozen at booking time and cannot be revised by a later event. What
+;; the business holds is read from the record now (`business-report`),
+;; so there is nothing here to update and no second copy to drift.
+;;
+;; The effect DECLARATIONS on each action are left in place: they still
+;; document what an action does to the business, and a reader comparing
+;; them against the reading is doing something useful.
 
 (defn decrement-moves
   "Decrement moves remaining. If zero, advance period."
@@ -815,14 +746,103 @@
 
 ;; ==================== Database Operations ====================
 
+(declare get-ledger save-ledger-entry!)
+
+(defn chain-events
+  "The student's own record, as assertion maps in date order.
+
+   `as-of` limits it to what had been recorded by that date, because a
+   reading is taken at a time. Stored balances cannot answer \"what was
+   cash on 15 March\" at all; a reading answers it the same way it
+   answers today."
+  ([user-id] (chain-events user-id nil))
+  ([user-id as-of]
+   (vec (for [e (get-ledger user-id)
+              :let [a (:assertions e)]
+              :when (and (seq a)
+                         (or (nil? as-of) (nil? (:date e))
+                             (<= (compare (str (:date e)) (str as-of)) 0)))]
+          a))))
+
+(defn business-report
+  "What the record says the business holds and owes, read at a date.
+
+   Not a balance anyone posted. Cash, inventory, equipment and what is
+   owed each way are readings of the chain, computed when the question
+   is asked -- which is what the framework says they are, and what the
+   rest of the platform has been teaching for weeks. `chain.clj` puts it
+   plainly: a position that is asserted is frozen at booking time and
+   cannot be revised by later events, while a position that is derived
+   answers correctly at every date.
+
+   Until 2026-09-18 these were stored running totals, updated by
+   `apply-effects` on the previous total and never recomputed. A third
+   representation of facts the record already held, and the exact error
+   the vocabulary work has spent months removing everywhere else."
+  ([user-id] (business-report user-id nil))
+  ([user-id as-of]
+   (let [evs   (chain-events user-id as-of)
+         held  (chain/on-hand evs)
+         where (fn [pos] (into {} (for [[item n] held
+                                        :when (and (pos? n)
+                                                   (= pos (chain/inventory-position evs item)))]
+                                    [(keyword item) n])))
+         owed  (fn [kind] (reduce (fn [m p]
+                                    (update m (or (:counterparty p) "unknown")
+                                            (fnil + 0) (or (:amount p) 0)))
+                                  {}
+                                  (chain/promises-of evs kind)))]
+     {:cash (chain/cash-on-hand evs)
+      :inventory (merge {:blank-tshirts 0 :ink-cartridges 0} (where :raw-materials))
+      :finished-goods (reduce + 0 (vals (where :finished-goods)))
+      ;; Keywords, because that is what the prerequisites compare
+      ;; against (:has-equipment :t-shirt-printer) and what the stored
+      ;; set held.
+      :equipment (set (keys (where :capital)))
+      :accounts-payable (owed :payable)
+      :accounts-receivable (owed :receivable)
+      :as-of as-of})))
+
+(defn ensure-funded!
+  "The money a business starts with got there somehow, and the record
+   should say so.
+
+   Starting cash used to be a constant that `initialize-business-state`
+   dropped into a stored balance. With cash read off the chain there is
+   nothing to read it from, so the funding is an event like any other --
+   which is also how every practice company's record begins."
+  [user-id]
+  (when (empty? (get-ledger user-id))
+    (save-ledger-entry! user-id
+      {:date STARTING_DATE
+       :period 1
+       :action-type :owner-investment
+       :narrative (str "The owner puts $" STARTING_CASH " into the business to start it.")
+       :variables {:amount STARTING_CASH}
+       :assertions {:has-date {:date STARTING_DATE}
+                    :receives {:unit "monetary-unit" :quantity STARTING_CASH}
+                    :provides {:unit "ownership-units" :quantity 100}
+                    :has-counterparty {:name "the owner"}}
+       :journal-entry {:debit "Cash" :credit "Owner's Capital" :amount STARTING_CASH}
+       :template-key :owner-invests-cash})
+    true))
+
 (defn get-business-state
-  "Get or initialize business state for a user."
+  "The state of the game, and a reading of the business.
+
+   Period, moves and date are genuinely stored -- they are facts about
+   the simulation, not about the business. Everything else is computed
+   from the record each time it is asked for."
   [user-id]
   (let [db (schema/db)
-        entity (d/entity db [:business-state/user user-id])]
-    (if entity
-      (business-state->map entity)
-      (initialize-business-state))))
+        entity (d/entity db [:business-state/user user-id])
+        game (if entity
+               (select-keys (business-state->map entity)
+                            [:current-period :moves-remaining :simulation-date])
+               {:current-period 1
+                :moves-remaining MOVES_PER_PERIOD
+                :simulation-date STARTING_DATE})]
+    (merge game (business-report user-id))))
 
 (defn save-business-state!
   "Save business state to database."
@@ -1368,8 +1388,10 @@
         action-key (:action-type pending-tx)
         variables (:variables pending-tx)
         ;; Apply effects to business state
+        ;; Only the game moves on. What the business holds is read from
+        ;; the record, which the ledger entry below is about to become
+        ;; part of.
         new-state (-> business-state
-                      (apply-effects action-key variables)
                       (decrement-moves)
                       (advance-simulation-date))
         ;; One write. The engine used to be written here too, which made

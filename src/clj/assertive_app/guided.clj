@@ -181,9 +181,9 @@
    blob to avoid schema churn — the period-close diff reads them there."
   [user-id entry vars assertions journal-entry {:keys [correct? canonical-je]}]
   (let [business-state (simulation/get-business-state user-id)
-        new-state (-> business-state
-                      (simulation/apply-effects (:action-key entry) vars)
-                      (assoc :simulation-date (:date vars)))
+        ;; The day moves on; what the business holds is read from the
+        ;; record, which this entry is about to join.
+        new-state (assoc business-state :simulation-date (:date vars))
         narrative (classification/apply-template
                     (:narrative-template (entry-template entry)) vars)
         ;; One write, to the store of record. The engine was written

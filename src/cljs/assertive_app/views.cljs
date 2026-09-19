@@ -3377,12 +3377,18 @@
    whose level IS this level -- and \"no new words today\" is a
    legitimate and important thing for this panel to say."
   [level]
-  (let [all (->> (state/available-assertions) (mapcat val)
+  (let [all (->> (or (seq (state/vocabulary))
+                     ;; Pre-vocabulary fallback: the unlocked subset. It
+                     ;; cannot see words above the student's level, so
+                     ;; "no new words" is only trustworthy from the
+                     ;; table above.
+                     (mapcat val (state/available-assertions)))
                  (remove #(#{:consumes-inventory :consumes-supplies :consumes-labor
                              :creates-finished-goods} (keyword (:code %)))))
         new? (fn [a] (= level (:level a 0)))
         fresh (filter new? all)
-        known (remove new? all)]
+        ;; Words from later levels are not "already yours".
+        known (filter #(< (:level % 0) level) all)]
     [:div.or-slot
      [:h5 "The words you can use"]
      (if (seq fresh)

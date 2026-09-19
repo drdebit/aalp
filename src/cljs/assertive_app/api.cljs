@@ -309,7 +309,8 @@
      :response-format :json
      :keywords? true
      :handler (fn [response]
-                (state/set-available-assertions! (:assertions response)))
+                (state/set-available-assertions! (:assertions response))
+                (state/set-vocabulary! (:vocabulary response)))
      :error-handler (make-error-handler {:message "Failed to load assertions"
                                           :set-loading? false})}))
 

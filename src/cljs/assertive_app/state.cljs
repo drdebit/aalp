@@ -88,6 +88,16 @@
 (defn set-available-assertions! [assertions]
   (swap! app-state assoc :available-assertions assertions))
 
+(defn vocabulary
+  "Every assertion in the vocabulary with its level, unfiltered by what
+   the student has unlocked. Only the orientation uses this; the
+   sentence builder must keep using available-assertions."
+  []
+  (:vocabulary @app-state))
+
+(defn set-vocabulary! [v]
+  (swap! app-state assoc :vocabulary v))
+
 (defn toggle-assertion! [assertion-code]
   (let [code (keyword assertion-code)]
     (swap! app-state update :selected-assertions

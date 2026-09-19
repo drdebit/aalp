@@ -129,7 +129,17 @@
           resolved-assertions (classification/resolve-physical-item-options
                                filtered-assertions student-level)]
       (response/response
-        {:assertions resolved-assertions})))
+        {:assertions resolved-assertions
+         ;; The whole table, unfiltered: code, label and level only.
+         ;; The orientation's vocabulary slot says "no new words at this
+         ;; level" -- a load-bearing claim at Levels 5-7, which add
+         ;; sixteen classifications and no assertions -- and it cannot
+         ;; make that claim honestly from a set filtered to what the
+         ;; student has already unlocked. :assertions stays exactly as
+         ;; it was; this is additive.
+         :vocabulary (vec (for [[_ as] classification/available-assertions
+                                a as]
+                            (select-keys a [:code :label :level])))})))
 
   (POST "/api/classify" {body :body :as request}
     (let [selected-assertions-raw (:selected-assertions body)

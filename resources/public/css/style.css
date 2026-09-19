@@ -4529,7 +4529,7 @@ header {
    this slot has no other job. */
 .orientation .or-pair-rows {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 14px max-content;
+    grid-template-columns: minmax(0, 1fr) auto max-content;
     row-gap: 5px;
     margin: 0 0 10px;
 }
@@ -4544,7 +4544,7 @@ header {
     padding-left: 12px;
     padding-right: 10px;
 }
-.or-pair-arrow { color: #8a8a84; }
+.or-pair-arrow { color: #8a8a84; padding-right: 9px; }
 .or-pair-becomes {
     font-weight: 700;
     color: #2f3b44;

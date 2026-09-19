@@ -78,8 +78,12 @@
   (when (and problem (get-in @app-state [:drill :active?]))
     (swap! app-state update-in [:drill :served] (fnil conj []) (:template problem))))
 
-(defn je-peek? [] (boolean (get-in @app-state [:je-derive :peek?])))
-(defn set-je-peek! [v] (swap! app-state assoc-in [:je-derive :peek?] v))
+;; Peek and explore were the same idea behind two switches: derive what
+;; these assertions produce, on request. Derivation is continuous now, so
+;; there is nothing to ask for and nothing to toggle. `set-je-peek!` is
+;; kept as a no-op only because api.cljs clears it on problem load.
+(defn je-peek? [] false)
+(defn set-je-peek! [_] nil)
 
 (defn set-available-assertions! [assertions]
   (swap! app-state assoc :available-assertions assertions))
@@ -624,12 +628,6 @@
 
 (defn set-derived-je! [result]
   (swap! app-state assoc-in [:je-derive :result] result))
-
-(defn je-explore? []
-  (get-in @app-state [:je-derive :explore?] false))
-
-(defn set-je-explore! [b]
-  (swap! app-state assoc-in [:je-derive :explore?] b))
 
 (defn je-highlight []
   (get-in @app-state [:je-derive :highlight] #{}))

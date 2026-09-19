@@ -457,9 +457,7 @@
                     ;; After toggling ON, auto-populate if applicable
                     (when-not selected?  ; was not selected, now is
                       (auto-populate-assertion! assertion-code))
-                    ;; Dual-fluency explore: re-derive the JE live
-                    (when (state/je-explore?)
-                      (api/derive-je-debounced!)))
+                    )
        :title (:description assertion)}  ;; Show description on hover
       [:div.assertion-label (:label assertion)]]
 
@@ -649,15 +647,12 @@
 (defn- remove-assertion-button
   "Small button to remove an assertion from the sentence.
 
-   Re-derives while exploring. Explore mode says `toggle assertions` on
-   its own button and was wired only to the old assertion-button panel,
-   which the drill no longer shows -- so in the sentence builder it
-   explained the lines and never changed them. Taking an assertion out is
-   how you toggle one here."
+   The entry redraws when it goes, without anything here saying so: a
+   watch on the selected assertions does it (api.cljs), which is also
+   why editing a parameter redraws."
   [assertion-code]
   [:button.remove-assertion
-   {:on-click #(do (state/toggle-assertion! assertion-code)
-                   (when (state/je-explore?) (api/derive-je-debounced!)))
+   {:on-click #(state/toggle-assertion! assertion-code)
     :title "Remove this assertion"}
    "×"])
 
@@ -1556,8 +1551,6 @@
    (when (= unit "service-unit")
      (state/update-assertion-parameter! code :quantity 1))
    (auto-populate-assertion! code)
-   ;; And putting one back, for the same reason.
-   (when (state/je-explore?) (api/derive-je-debounced!))
    (focus-new-assertion-input!)))
 
 (defn- add-assertion-menu
@@ -2069,7 +2062,7 @@
    twice, a centimetre below it."
   [& _]
   (let [expanded (r/atom nil)]
-    (fn [& [{:keys [costing]}]]
+    (fn [& [{:keys [costing provisional?]}]]
       (when-let [d (state/derived-je)]
         (let [{:keys [lines placeholders context not-reflected totals unsupported]} d
               ;; Where the cost entry begins: the first line the record
@@ -2089,13 +2082,14 @@
                    [:span.dj-unsupported-mark "!"]
                    [:span.dj-unsupported-text (:message u)]]))])
            [:div.dj-header
-            [:h4 "What your assertions produce"]
-            [:button.dj-explore-btn
-             {:class (when (state/je-explore?) "active")
-              :title "Toggle assertions on and off and watch the entry change"
-              :on-click #(do (state/set-je-explore! (not (state/je-explore?)))
-                             (api/derive-je!))}
-             (if (state/je-explore?) "Exploring… toggle assertions" "Explore")]]
+            [:h4 (if provisional?
+                   "What your assertions produce so far"
+                   "What your assertions produce")]
+            ;; The "Explore" toggle stood here. It switched on the thing
+            ;; that is now simply how the panel behaves -- and being a
+            ;; toggle nobody found, it mostly did not happen at all.
+            (when provisional?
+              [:span.dj-live "updates as you build — nothing is recorded until you submit"])]
 
            (if (and (empty? lines) (empty? placeholders))
              [:p.dj-empty "No journal-entry lines yet -- nothing in SP's rulebook matches these assertions."]
@@ -2511,15 +2505,8 @@
          "Clear"]
         ;; ALEKS-style explanation, drill only: see the worked recording
         ;; at the cost of this problem not counting toward the round
-        ;; The cheaper look: derive what these assertions produce, now,
-        ;; without committing. It reads the student's own assertions
-        ;; and nothing else, so it leaks nothing about the key; a
-        ;; student who sees "(not yet classified)" and adds allows has
-        ;; learned the thing the drill is for.
-        (when (and (state/drill-active?) (not is-construct?) (seq selected))
-          [:button.secondary.peek-btn
-           {:on-click #(do (state/set-je-peek! true) (api/derive-je!))}
-           "What would this produce?"])
+        ;; "What would this produce?" was here. The entry produces itself
+        ;; now, continuously, so there is nothing left to ask for.
         (when (and (state/drill-active?) (not is-construct?))
           [:button.secondary.worked-example-btn
            {:on-click #(api/show-worked-example!)}
@@ -2535,8 +2522,12 @@
        (and (nil? feedback) (not worked-example?) (seq selected))
        [:div.status
         [:p "Assertions selected: " (count (keys selected))]
-        (when (state/je-peek?)
-          [derived-je-panel])]
+        ;; Live, and provisional. The entry redraws as the sentence is
+        ;; built; the heading says "so far" until it is submitted, so a
+        ;; balanced-looking entry is not mistaken for a correct answer.
+        ;; (An entry CAN balance with a line that has no amount -- see
+        ;; the credit sale with its `requires` removed.)
+        [derived-je-panel {:provisional? true}]]
 
        ;; Show feedback after submission
        (some? feedback)

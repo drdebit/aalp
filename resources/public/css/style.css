@@ -4471,3 +4471,11 @@ header {
 .purpose-gloss { display: block; margin: 2px 0 8px; }
 .purpose-confidence { display: flex; align-items: center; gap: 6px; }
 .purpose-confidence .confidence-input { display: flex; align-items: center; gap: 8px; }
+
+/* The entry is live while the sentence is being built, and says so. */
+.dj-live {
+    font-size: .8em;
+    font-style: italic;
+    color: #7b7b7b;
+    font-weight: 400;
+}

@@ -752,14 +752,27 @@
   (when-let [t @derive-je-timer] (js/clearTimeout t))
   (reset! derive-je-timer (js/setTimeout derive-je! 250)))
 
-;; The walkthrough is built on watching the entry move as you assert, so
-;; the entry has to actually move. Outside the walkthrough this stays as
-;; it was -- derivation on problem load and on explore -- because that is
-;; verified behaviour and this is not the moment to change it.
-(defonce ^:private walkthrough-live-derivation
-  (add-watch state/app-state ::walkthrough-derive
+;; The entry moves as you assert. Everywhere, now -- it used to be the
+;; walkthrough only, with a note here saying this was not the moment to
+;; change it. 2026-09-19 is: assertions articulating into an entry is
+;; what the platform is FOR, and watching it happen beats reading that
+;; it happens.
+;;
+;; It leaks nothing. The derivation reads the student's own assertions
+;; and never the correct classification, so no amount of looking reveals
+;; the key -- and a student who sees "(not yet classified)" and adds
+;; `allows` has just learned the thing the drill is for. A student who
+;; already knows the entry from their accounting class can work
+;; backwards to the assertions that produce it, which is a real skill
+;; the reverse problems test on purpose.
+;;
+;; Watching :selected-assertions rather than hooking each control means
+;; parameter edits count too: changing a unit from goods to cash redraws
+;; the entry, which is where the lesson is sharpest.
+(defonce ^:private live-derivation
+  (add-watch state/app-state ::live-derive
              (fn [_ _ old new]
-               (when (and (some? (:walkthrough new))
+               (when (and (seq (:selected-assertions new))
                           (not= (:selected-assertions old)
                                 (:selected-assertions new)))
                  (derive-je-debounced!)))))

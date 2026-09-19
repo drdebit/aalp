@@ -470,6 +470,34 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
    2
    {:title "Level 2: Production and Transformation"
     :subtitle "Transform raw materials into finished goods"
+    ;; The first level where nothing crosses the business boundary. The
+    ;; pair turns on exactly that: ten shirts leaving the shelf is a
+    ;; transformation or a sale depending on whether anyone was on the
+    ;; other side.
+    :orientation
+    {:framing "Every event so far had someone on the other side. This level is the first where the business acts on its own things, and nobody else is involved at all."
+     :protocol ["Everything from Levels 0 and 1 still applies — but check first: **was anyone on the other side?** If not, this is not an exchange."
+                "What was used up? — **consumes**"
+                "What came into being? — **creates**"
+                "What made it possible? — **is-allowed-by**, pointing back at the equipment that was bought to do this"]
+     :example
+     {:narrative "On March 14, SP prints 10 custom t-shirts using the printer it bought in Level 0."
+      :assertions ["has-date: March 14"
+                   "consumes: 10 blank t-shirts (raw materials)"
+                   "creates: 10 printed t-shirts (finished goods)"
+                   "is-allowed-by: the t-shirt printer"]
+      :entry ["DR Finished Goods Inventory" "CR Raw Materials Inventory"]}
+     :pair
+     {:same "Ten blank t-shirts leave the shelf."
+      :a {:when "Consumed, and printed shirts created — nobody else involved"
+          :becomes "Finished Goods Inventory"}
+      :b {:when "Provided to a counterparty, who pays for them"
+          :becomes "a sale"}
+      :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and earning it."}
+     :effect
+     {:holds "Before: 10 blank shirts. After: 10 printed ones. Nothing was gained or lost — value changed form."
+      :may-or-must "Before: the shirts were committed to printing. After: that commitment is discharged, and the printer's **allows** has been drawn on once more."}
+     :reminder "No counterparty is not a missing assertion. It is the assertion that makes this a transformation."}
     :sections
     [{:heading "Internal Transformations"
       :content "Levels 0 and 1 covered **exchange transactions** — trading with external parties using provides, receives, requires, expects, and has-counterparty.
@@ -750,6 +778,32 @@ The record now carries the reason for the confidence, beside the confidence. Nob
    5
    {:title "Level 5: Adjusting Entries"
     :subtitle "Match revenues and expenses to the correct period"
+    ;; Levels 5-7 add no assertions at all. The whole point of the
+    ;; orientation here is that the vocabulary slot says so, and the
+    ;; pair shows what rearrangement buys you.
+    :orientation
+    {:framing "Nothing new to say — and a great deal of new things to say it about. Every entry so far followed from something that happened. These follow from time passing."
+     :protocol ["There is no event to read. Ask instead: **what did the passing of the period do?**"
+                "Something was used up quietly, or something was earned or incurred before any money moved."
+                "Then: how much, and on what basis? — **reports**, carrying the calculation, because no exchange is here to fix the amount."
+                "Then, as always: does this leave somebody owing something? — **requires**"]
+     :example
+     {:narrative "On December 31, SP records one month of depreciation on the $3,000 printer, which it expects to use for five years."
+      :assertions ["has-date: December 31"
+                   "reports: $50 expense, on a systematic-allocation basis ($3,000 ÷ 60 months)"
+                   "consumes: asset-value"]
+      :entry ["DR Depreciation Expense $50" "CR Accumulated Depreciation $50"]}
+     :pair
+     {:same "The business **reports** an expense that no exchange produced."
+      :a {:when "…and **consumes** value it already held"
+          :becomes "a contra-asset"}
+      :b {:when "…and **requires** a payment still to come"
+          :becomes "a liability"}
+      :point "Same recognition, same absent counterparty. Whether the value was already yours to use up, or is still owed to somebody, decides what the credit lands on."}
+     :effect
+     {:holds "Before: a printer carried at $3,000. After: the same printer, carried at $2,950. Nothing moved, and the business is poorer."
+      :may-or-must "Before and after: nothing is owed to anyone. That is what separates depreciation from an accrual, and it is visible only in which assertions are present."}
+     :reminder "An adjusting entry is not a new kind of accounting. It is the same sentence with no counterparty and an explicit amount."}
     :sections
     [{:heading "End-of-Period Adjustments"
       :content "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.
@@ -838,6 +892,30 @@ In a sale, revenue follows from the exchange pattern — you provided goods and 
    6
    {:title "Level 6: Equity Transactions"
     :subtitle "Record owner investments, withdrawals, and dividends"
+    :orientation
+    {:framing "No new words again. What is new is who is on the other side — and that an owner is not a customer, however similar the money looks."
+     :protocol ["Read the exchange exactly as you always have: what went out, what came in, who was on the other side."
+                "Then ask the question this level turns on: **is that counterparty an owner?**"
+                "If they are, what the business hands over is a claim on itself — not goods, not a service."
+                "For a dividend, read it twice: the declaration promises (**reports** and **requires**), and the payment later discharges it."]
+     :example
+     {:narrative "On April 2, Pat invests $20,000 in SP in exchange for a 20% ownership interest."
+      :assertions ["has-date: April 2"
+                   "has-counterparty: Pat (owner)"
+                   "receives: $20,000 (monetary-unit)"
+                   "provides: ownership-interest"]
+      :entry ["DR Cash $20,000" "CR Owner's Capital $20,000"]}
+     :pair
+     {:same "SP **receives** $20,000 from a counterparty."
+      :a {:when "…having provided printed t-shirts"
+          :becomes "Revenue"}
+      :b {:when "…having provided a share of the business itself"
+          :becomes "Owner's Capital"}
+      :point "Identical money, identical assertion. What SP gave back is the whole difference between earning and being funded — and only one of them makes the business better off by its own effort."}
+     :effect
+     {:holds "Before: $9,850 cash. After: $29,850. The business holds more, and has done nothing to earn it."
+      :may-or-must "Before: nothing. After: Pat has a claim on the business that no repayment date attaches to. That is what makes it equity rather than a loan."}
+     :reminder "Revenue is not \"money came in.\" It is money that came in because something was provided to a customer."}
     :sections
     [{:heading "Owner Transactions"
       :content "So far, we've focused on operating transactions — buying, selling, producing, and adjusting. Now we'll record transactions with **owners**:
@@ -910,6 +988,32 @@ Equity transactions use the same assertion framework — provides, receives, req
    7
    {:title "Level 7: Notes and Interest"
     :subtitle "Borrow and lend with formal promissory notes"
+    ;; The pair mirrors chain.clj's `promise-kind` exactly: :borrowing
+    ;; and :lending are the two branches where money faces money.
+    :orientation
+    {:framing "Still no new words. What is new is that money faces money: for the first time, nothing was bought."
+     :protocol ["Read the exchange as always — and notice what is missing: **no goods on either side.**"
+                "That absence is what makes it a loan rather than a purchase on terms."
+                "Then: which way is the money to come back? — **requires**, naming who must pay whom, and when."
+                "Interest is not part of the loan. It accrues as time passes, and is read at Level 5's pattern: **reports** the amount, **requires** the payment."]
+     :example
+     {:narrative "On June 1, SP borrows $10,000 from First National at 8% for twelve months."
+      :assertions ["has-date: June 1"
+                   "has-counterparty: First National"
+                   "receives: $10,000 (monetary-unit)"
+                   "requires: SP is to provide $10,000 by June 1 next year"]
+      :entry ["DR Cash $10,000" "CR Notes Payable $10,000"]}
+     :pair
+     {:same "Money moves one way, and **requires** says it is to move back."
+      :a {:when "Money came IN, and is to go back out"
+          :becomes "Notes Payable"}
+      :b {:when "Money went OUT, and is to come back"
+          :becomes "Notes Receivable"}
+      :point "This is the Level 1 table again, with money in place of goods. The same word decides both, and which direction the cash first moved decides which way round it falls."}
+     :effect
+     {:holds "Before: $9,850 cash. After: $19,850 — and none of it earned. Borrowing makes a business no richer."
+      :may-or-must "Before: nothing owed. After: $10,000 due on a fixed date, and interest building every day that passes without any event to record it."}
+     :reminder "Borrowing and lending are mirrors. Read which way the money went first, and the account follows."}
     :sections
     [{:heading "Formal Borrowing and Lending"
       :content "Notes payable and receivable are **formal written promises** to pay a specific amount, usually with interest. They're more formal than accounts payable/receivable.

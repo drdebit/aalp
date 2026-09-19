@@ -3411,7 +3411,7 @@
   (let [o (tutorials/orientation-for level)]
     [:div.orientation
      (when-let [f (:framing o)]
-       [:p.or-framing f])
+       [:p.or-framing (process-inline f)])
      [vocabulary-slot level]
 
      (when-let [steps (seq (:protocol o))]
@@ -3424,7 +3424,7 @@
      (when-let [ex (:example o)]
        [:div.or-slot
         [:h5 "One worked through"]
-        [:p.or-narrative (:narrative ex)]
+        [:p.or-narrative (process-inline (:narrative ex))]
         [assertion-lines (:assertions ex)]
         [journal-lines (:entry ex)]])
 
@@ -3437,9 +3437,9 @@
            (for [[k side] [[:a (:a p)] [:b (:b p)]]]
              ^{:key k}
              [:div.or-pair-row
-              [:span.or-pair-when (:when side)]
+              [:span.or-pair-when (process-inline (:when side))]
               [:span.or-pair-arrow "→"]
-              [:span.or-pair-becomes (:becomes side)]]))]
+              [:span.or-pair-becomes (process-inline (:becomes side))]]))]
         [:p.or-pair-point (process-inline (:point p))]])
 
      (when-let [e (:effect o)]
@@ -3449,13 +3449,13 @@
         ;; second is the one no journal entry anywhere records.
         [:div.or-effect-row
          [:span.or-effect-label "What the business holds"]
-         [:span.or-effect-text (:holds e)]]
+         [:span.or-effect-text (process-inline (:holds e))]]
         [:div.or-effect-row
          [:span.or-effect-label "What it may or must do"]
-         [:span.or-effect-text (:may-or-must e)]]])
+         [:span.or-effect-text (process-inline (:may-or-must e))]]])
 
      (when-let [r (:reminder o)]
-       [:p.or-reminder r])]))
+       [:p.or-reminder (process-inline r)])]))
 
 (defn tutorial-gate
   "Gate overlay shown when tutorial hasn't been completed for this level."

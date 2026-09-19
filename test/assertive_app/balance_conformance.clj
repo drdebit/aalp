@@ -32,21 +32,33 @@
 (defn trial-balance
   "Post every event in a record and total the accounts.
 
-   Each event is derived in the context of the ones before it, which is
-   how it was derived when it happened: a cost of goods sold is priced
-   from the lots that existed at the time."
-  [events]
+   `scope` decides which record each event is read against:
+
+     :as-posted    only the events before it — what the student saw at
+                   the time, and what their stored journal entry says
+     :as-read-now  the whole record — what the assertions say today
+
+   The two differ, and the difference is the framework working rather
+   than a fault. A shop's first purchase of blank shirts posts to
+   `not yet classified`: at that moment nothing has said what blank
+   shirts are FOR, and the system declines to guess. Once the shop sells
+   some, the same purchase reads as finished goods — the position was
+   never asserted, so it answers correctly at every date, and a date
+   later than the purchase is a date that knows more.
+
+   Cost is priced from the events before, in both scopes. What a thing
+   costs is settled when it moves; only what it IS stays open."
+  [events scope]
   (reduce
     (fn [acc [i ev]]
       (let [prior (vec (take i events))
-            ;; The same context the live derivation builds
-            ;; (simulation/derivation-context-for): without the cost
-            ;; basis every cost line comes out unpriced and silently
-            ;; drops out of the totals, which would make this oracle
-            ;; agree with itself by omission.
-            entry (jd/derive-je ev {} {:events prior
+            entry (jd/derive-je ev {} {:events (if (= :as-posted scope) prior events)
                                        :current ev
                                        :item-kinds sim/item-kinds
+                                       ;; Without a cost basis every cost line
+                                       ;; comes out unpriced and drops silently
+                                       ;; out of the totals — the oracle would
+                                       ;; agree with itself by omission.
                                        :cost-basis (cost/cost-basis prior)})]
         (reduce (fn [acc {:keys [side account amount]}]
                   (if (and account (number? amount))
@@ -58,8 +70,36 @@
     {}
     (map-indexed vector events)))
 
+(defn- fmt [n]
+  (let [d (double n)]
+    (if (== d (Math/rint d)) (str (long d)) (format "%.2f" d))))
+
 (defn- total [balances accounts]
   (reduce + 0M (for [[a v] balances :when (accounts a)] v)))
+
+(defn valued-on-hand
+  "What the record says the goods still on hand cost, by position.
+
+   The counting half of a reading is easy to check and proves little:
+   `on-hand` says 55 blank shirts and so does anyone. The question worth
+   asking is whether the money agrees — whether the Raw Materials
+   balance the entries built up equals the cost of the shirts the chain
+   says are still there.
+
+   Valued batch by batch at what each batch cost, which is how an
+   outflow is priced when it names its lot. If outflows were priced one
+   way and the remainder is worth another, the two sides part company
+   and this is where it shows."
+  [events]
+  (let [basis (cost/cost-basis events)]
+    (reduce (fn [acc item]
+              (let [pos (chain/inventory-position events item)
+                    v   (reduce + 0M (for [b (chain/batches events item)
+                                           :when (pos? (:left b))]
+                                       (bigdec (or (cost/cost-of basis item (:left b) (:id b)) 0))))]
+                (cond-> acc (and pos (pos? v)) (update pos (fnil + 0M) v))))
+            {}
+            (keys (chain/on-hand events)))))
 
 (defn- readings
   "The same business, read off the chain."
@@ -73,6 +113,7 @@
     {:cash (bigdec (chain/cash-on-hand events))
      :payable (owed :payable)
      :receivable (owed :receivable)
+     :valued (valued-on-hand events)
      :raw-materials (into {} (at :raw-materials))
      :finished-goods (into {} (at :finished-goods))}))
 
@@ -81,12 +122,20 @@
 
    -> {:agree? bool :rows [{:figure :entries :readings :ok?}]}"
   [events]
-  (let [bal (trial-balance events)
-        r   (readings events)
-        rows [{:figure "Cash"                :entries (total bal cash-accounts)       :readings (:cash r)}
-              {:figure "Accounts Payable"    :entries (- (total bal payable-accounts)) :readings (:payable r)}
-              {:figure "Accounts Receivable" :entries (total bal receivable-accounts)  :readings (:receivable r)}]
-        rows (mapv #(assoc % :ok? (zero? (- (:entries %) (:readings %)))) rows)
+  (let [bal  (trial-balance events :as-read-now)
+        then (trial-balance events :as-posted)
+        r    (readings events)
+        ;; The money positions, then the goods -- valued, not counted.
+        held (fn [pos] {:figure (chain/position-accounts pos)
+                        :entries (get bal (chain/position-accounts pos) 0M)
+                        :readings (get (:valued r) pos 0M)})
+        rows (into [{:figure "Cash"                :entries (total bal cash-accounts)        :readings (:cash r)}
+                    {:figure "Accounts Payable"    :entries (- (total bal payable-accounts)) :readings (:payable r)}
+                    {:figure "Accounts Receivable" :entries (total bal receivable-accounts)  :readings (:receivable r)}]
+                   (map held [:raw-materials :work-in-process :finished-goods :capital]))
+        ;; To the cent: a weighted average divides, and a book out by
+        ;; 1e-15 is a book that balances.
+        rows (mapv #(assoc % :ok? (< (abs (- (double (:entries %)) (double (:readings %)))) 0.005)) rows)
         ;; And the books' own question, asked of the whole record rather
         ;; than one entry: do the debits equal the credits? A zero here
         ;; is the trial balance balancing. It will not be zero while the
@@ -104,6 +153,12 @@
      :rows rows
      :residual residual
      :balances bal
+     ;; Accounts whose answer has changed since they were posted. Not
+     ;; errors: lines the record has since become able to classify.
+     :since-posted (into {} (for [a (distinct (concat (keys bal) (keys then)))
+                                  :let [now (get bal a 0M) was (get then a 0M)]
+                                  :when (>= (abs (- (double now) (double was))) 0.005)]
+                              [a {:as-posted was :as-read-now now}]))
      :units (select-keys r [:raw-materials :finished-goods])}))
 
 (defn- fixture
@@ -126,19 +181,23 @@
 (defn report []
   (doseq [kind [:printer :reseller]]
     (let [events (fixture kind)
-          {:keys [agree? rows units residual balances]} (check events)]
+          {:keys [agree? rows units residual balances since-posted]} (check events)]
       (println (format "\n%s record — %d events — %s"
                        (name kind) (count events)
                        (if agree? "entries and readings AGREE" "DISAGREEMENT")))
       (doseq [{:keys [figure entries readings ok?]} rows]
-        (println (format "  %-22s entries %12s   readings %12s   %s"
-                         figure (str entries) (str readings) (if ok? "ok" "<-- differ"))))
-      (println "  on hand (units, not money):" (pr-str units))
+        (println (format "  %-26s entries %12s   readings %12s   %s"
+                         figure (fmt entries) (fmt readings) (if ok? "ok" "<-- differ"))))
+      (println "  on hand, counted:" (pr-str units))
       (println (format "  trial balance residual %s%s"
                        (str residual)
                        (if (zero? residual)
                          "  (debits = credits)"
                          "  <-- unbalanced: lines the rulebook does not derive yet")))
+      (when (seq since-posted)
+        (println "  reads differently now than when posted:")
+        (doseq [[a {:keys [as-posted as-read-now]}] since-posted]
+          (println (format "      %-30s was %10s   now %10s" a (fmt as-posted) (fmt as-read-now)))))
       (when-not (zero? residual)
         (doseq [[a v] (sort-by (comp - abs second) balances)
                 :when (not (zero? v))]

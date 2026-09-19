@@ -4517,24 +4517,40 @@ header {
 .orientation .or-narrative { font-style: italic; margin: 0 0 8px; color: #3a3a34; }
 
 .orientation .or-pair-same { margin: 0 0 10px; font-size: 1em; color: #3a3a34; }
-.or-pair-rows { margin: 0 0 10px; }
-/* A grid, not a flex row, and with the third column a FIXED width:
-   two rows that each size themselves to their own content do not line
-   up, and a pair whose two halves do not line up is not showing a
-   pair. */
-.or-pair-row {
+/* ONE grid spanning both rows, with each row `display: contents` so
+   its three parts become items of it. Two separate grids cannot line
+   up unless their columns are hard-coded, and a hard-coded width is a
+   number the next authored level breaks: Level 0's longest result is
+   183px and Level 1's is 223px. `max-content` on the result column
+   sizes it to the widest phrase in the pair, whatever the pair is, and
+   both rows get that same width because they are in the same grid.
+
+   A pair whose two halves do not line up is not showing a pair, and
+   this slot has no other job. */
+.orientation .or-pair-rows {
     display: grid;
-    grid-template-columns: 1fr 14px 190px;
-    column-gap: 10px;
-    align-items: start;
-    padding: 8px 12px;
+    grid-template-columns: minmax(0, 1fr) 14px max-content;
+    row-gap: 5px;
+    margin: 0 0 10px;
+}
+.or-pair-row { display: contents; }
+.or-pair-row > * {
     background: #f6f7f4;
-    border-left: 3px solid #b9cbb2;
-    margin-bottom: 5px;
+    padding: 8px 0;
     line-height: 1.5;
 }
+.or-pair-when {
+    border-left: 3px solid #b9cbb2;
+    padding-left: 12px;
+    padding-right: 10px;
+}
 .or-pair-arrow { color: #8a8a84; }
-.or-pair-becomes { font-weight: 700; color: #2f3b44; }
+.or-pair-becomes {
+    font-weight: 700;
+    color: #2f3b44;
+    padding-right: 12px;
+    white-space: nowrap;
+}
 .orientation .or-pair-point { margin: 0; font-size: .95em; color: #4a4a44; }
 
 .or-effect-row { display: flex; gap: 12px; margin-bottom: 8px; line-height: 1.6; }

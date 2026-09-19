@@ -1,9 +1,133 @@
-# AALP — where things stand (2026-09-17)
+# AALP — where things stand (2026-09-19)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
 
 ## Start here (next session)
+
+**2026-09-18/19. Four changes, each of which made the next one
+possible. Read them in order; the last two only make sense after the
+first two.**
+
+### 1. The business is a reading, not a stored total
+
+Cash, inventory, equipment and what is owed each way were running
+totals that `apply-effects` updated from the previous total and nothing
+ever recomputed — the exact error `chain.clj` spends its docstring
+condemning, sitting in the middle of the simulation. `business-report`
+(simulation.clj) reads them off the chain now, **at a date**, which is
+the point: a stored balance cannot answer "what was cash on 15 March"
+and a reading answers it the same way it answers today.
+
+Period, moves and date stay stored. **The business is a reading; the
+game is a state.** The seven derived attributes are gone from the
+schema and retracted from old entities (`retract-derived-state!`, 36
+datoms on choochoo).
+
+Starting cash had to come from somewhere, so **the funding is an event
+now**: `ensure-funded!` writes it on first sight of a simulation, and a
+student's ledger opens with "The owner puts $10,000 into the business
+to start it."
+
+### 2. balance_conformance.clj — the second opinion
+
+Two independent paths from one record to the same business: post every
+event's derived entry and total the accounts, or read the chain. The
+rulebook and the readers were written separately, so agreement is
+evidence. **Run it alongside je_conformance from now on** — the
+readings ARE the simulation's balances, so a derivation change now
+moves them.
+
+It found two things on its first run. A borrowing derived its Cash
+debit and no credit at all (a practice record was out by exactly the
+loan principal, every time) — one rule, `:notes-payable`, and both
+records balance to zero. And a reseller's Finished Goods came out at
+minus forty, which was not a fault: its first purchase posted to "not
+yet classified" because nothing had yet said what blank shirts were
+FOR. Which led directly to:
+
+### 3. A purchase says what the goods are for
+
+`expects` moved to **Level 0** and the four inventory purchases require
+it. A student buying shirts says whether they will be printed on or
+sold on as they stand, and that is the only thing separating raw
+materials from merchandise — same shirts, same money, same vendor.
+
+    expects consumes blank-tshirts, creates printed-tshirts -> raw materials
+    expects provides blank-tshirts                          -> merchandise
+
+New role `:sellable` in chain.clj. The drill hands a shop-with-no-press
+about half the inventory purchases, so two students get the same
+transaction and correctly answer it differently.
+
+**Matt's reading of why this works, which is now in the Level 1
+tutorial:** a probability on your own PROMISE is idle, because you
+decide whether you pay a bill you agreed to pay. A probability on your
+own PLAN is not, because the press may break and the order may be
+cancelled. Level 1 then points the same assertion at somebody else's
+action, where the number drops below 100% for reasons a manager would
+recognise.
+
+Both scripted modes needed catching up and I deployed before checking
+them: six of the guided year's eight days printed a literal "{purpose}"
+and resolved `:confidence` to the unresolved keyword. Fixed. The
+simulation had the same hole plus two older ones — it substituted
+template variables with a bare string replace that knew no default for
+`{company}` and no date formatting.
+
+### 4. The entry moves as you assert
+
+Derivation is continuous everywhere, driven by a watch on
+`:selected-assertions` (api.cljs) rather than hooks on controls — so
+parameter edits count too. **"What would this produce?" and "Explore"
+are gone**, because they were the same idea asked for twice and a
+toggle nobody finds is a feature that mostly does not happen.
+
+Before submission the panel says **"What your assertions produce so
+far"**. That matters: an entry can report balanced while a line carries
+no amount, so a balanced-looking panel must not read as a verdict.
+
+It leaks nothing — the derivation never consults the correct
+classification. A student who already knows the entry can work
+backwards to the assertions producing it, which is Matt's call and
+deliberate: that student has learned the course and is now learning the
+assertions.
+
+### And therefore: telemetry
+
+Continuous derivation means `/api/derive-je` receives the construction
+of every answer for free. `telemetry.clj` records it, plus three
+signals the server cannot see (a journal-entry line opened, a section
+left and in which direction with its dwell time, the chain opened).
+
+`(telemetry/report)` — same shape as the conformance oracles — answers
+three questions: which patterns are hard to BUILD as distinct from hard
+to get right; which sections hold students and which they return to;
+and whether anyone opens a rule at all. `construction-shape` is the
+per-problem version, and `:removals` is its sharpest number: forward
+reasoning accumulates, backward reasoning searches.
+
+Two rules in that namespace are load-bearing. Writes never fail a
+request. And nothing is collected that is not about learning.
+
+**Status, 2026-09-19 (Matt):** this is for testing the software and the
+approach, not evaluating students. The IRB conversation belongs with
+the publication plan and has not happened yet. Also note the baseline
+moved this week — live derivation is a different instrument, so any
+comparison against c7–c10 is against a different platform.
+
+### Worth knowing
+
+- **Prices are pinned to `physical-items`** — sales at sell-price,
+  purchases at unit-cost, blanks gained `:sell-price` 9. A blank shirt
+  used to sell for $25, the price of a printed one.
+- **The tutorials now say the pattern is the lesson.** Level 0 shows
+  the swap (same four assertions, shirts on the other side, every
+  account changes); Level 1 says `requires` stands IN PLACE OF money
+  that did not move, or BESIDE money that did — one assertion, four
+  accounts. Matt's framing, and sharper than anything that was there.
+- Conformance is **30 match, 0 conflicts**; both fixture records agree
+  and balance; 960 generated problems clean.
 
 > **RESOLVED 2026-09-18 — the engine no longer stores anything.**
 >

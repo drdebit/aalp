@@ -3313,7 +3313,10 @@ header {
 
 .gate-content {
     text-align: center;
-    max-width: 480px;
+    /* 480px was right when this held a title and two lines. It now
+       holds the orientation, whose minimal pair is two rows that must
+       not wrap. */
+    max-width: 660px;
     background: #f9f6f0;
     padding: 44px 40px;
     border-radius: 4px;
@@ -4486,7 +4489,7 @@ header {
     margin: 18px 0 22px;
     max-width: 640px;
 }
-.or-framing {
+.orientation .or-framing {
     font-size: 1.06em;
     line-height: 1.6;
     color: #2f3b44;
@@ -4506,14 +4509,14 @@ header {
     font-weight: 700;
 }
 .or-label { font-weight: 700; color: #5a5a54; }
-.or-new { margin: 0 0 6px; }
+.orientation .or-new { margin: 0 0 6px; font-size: 1em; }
 /* "No new words today" is a headline, not a gap. */
-.or-new.or-none { font-style: italic; color: #6b6b64; }
-.or-known { margin: 0; font-size: .92em; color: #6b6b64; }
-.or-protocol { margin: 0; padding-left: 20px; line-height: 1.75; }
-.or-narrative { font-style: italic; margin: 0 0 8px; color: #3a3a34; }
+.orientation .or-new.or-none { font-style: italic; color: #6b6b64; }
+.orientation .or-known { margin: 0; font-size: .92em; color: #6b6b64; }
+.orientation .or-protocol { margin: 0; padding-left: 20px; line-height: 1.75; }
+.orientation .or-narrative { font-style: italic; margin: 0 0 8px; color: #3a3a34; }
 
-.or-pair-same { margin: 0 0 10px; }
+.orientation .or-pair-same { margin: 0 0 10px; font-size: 1em; }
 .or-pair-rows { margin: 0 0 10px; }
 .or-pair-row {
     display: flex;
@@ -4527,7 +4530,7 @@ header {
 .or-pair-when { flex: 1; }
 .or-pair-arrow { color: #8a8a84; }
 .or-pair-becomes { font-weight: 700; color: #2f3b44; white-space: nowrap; }
-.or-pair-point { margin: 0; font-size: .95em; color: #4a4a44; }
+.orientation .or-pair-point { margin: 0; font-size: .95em; color: #4a4a44; }
 
 .or-effect-row { display: flex; gap: 12px; margin-bottom: 8px; line-height: 1.6; }
 .or-effect-label {
@@ -4541,7 +4544,7 @@ header {
 }
 .or-effect-text { flex: 1; }
 
-.or-reminder {
+.orientation .or-reminder {
     margin: 16px 0 0;
     padding: 10px 12px;
     background: #fbf7ec;

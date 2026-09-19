@@ -3036,6 +3036,42 @@
                  plain [:span {:key i} plain]))
              tokens)))))
 
+(defn- assertion-lines
+  "A block of `name: value` assertion lines.
+
+   Shared by the tutorial body's ::assertions block and the
+   orientation's worked example. The student is choosing between those
+   two screens, so an assertion must look the same on both -- which it
+   cannot if each one builds its own markup."
+  [lines]
+  [:div.assertion-block
+   (for [[i line] (map-indexed vector lines)
+         :when (not (str/blank? line))
+         :let [m (re-find #"^([^:]+):\s*(.+)" line)]]
+     ^{:key i}
+     [:div.assertion-item
+      [:span.assertion-name (str/trim (if m (nth m 1) line))]
+      [:span.assertion-value [process-inline (str/trim (if m (nth m 2) ""))]]])])
+
+(defn- journal-lines
+  "A journal entry from `DR Account $100` / `CR Account $100` lines.
+   Shared for the same reason as `assertion-lines`."
+  [lines]
+  [:div.journal-entry-block
+   [:div.je-header "Journal Entry"]
+   [:div.je-body
+    (for [[i line] (map-indexed vector lines)
+          :when (not (str/blank? line))
+          :let [t (str/trim line)
+                credit? (str/starts-with? t "CR")
+                cleaned (str/replace t #"^(DR|CR)\s+" "")
+                m (re-find #"^(.+?)\s+\$([ -~,\d]+)$" cleaned)]]
+      ^{:key i}
+      [:div.je-line {:class (if credit? "credit" "debit")}
+       [:span.je-label (if credit? "CR" "DR")]
+       [:span.je-account (str/trim (if m (nth m 1) cleaned))]
+       (when m [:span.je-amount (str "$" (nth m 2))])])]])
+
 (defn- render-markdown
   "Markdown-like rendering for tutorial content.
    Handles **bold**, *italic*, tables, lists, arrow conclusions,
@@ -3050,49 +3086,21 @@
          (cond
            ;; Assertion block (::assertions ... ::)
            (str/starts-with? (str/trim para) "::assertions")
-           (let [body (-> (str/trim para)
-                          (str/replace #"^::assertions\n?" "")
-                          (str/replace #"\n?::$" ""))
-                 lines (str/split-lines body)
-                 items (for [line lines
-                             :when (not (str/blank? line))
-                             :let [match (re-find #"^([^:]+):\s*(.+)" line)]]
-                         {:name (str/trim (if match (nth match 1) line))
-                          :value (str/trim (if match (nth match 2) ""))})]
-             [:div.assertion-block {:key idx}
-              (for [[aidx item] (map-indexed vector items)]
-                ^{:key aidx}
-                [:div.assertion-item
-                 [:span.assertion-name (:name item)]
-                 [:span.assertion-value [process-inline (:value item)]]])])
+           (with-meta
+             (assertion-lines (-> (str/trim para)
+                                  (str/replace #"^::assertions\n?" "")
+                                  (str/replace #"\n?::$" "")
+                                  str/split-lines))
+             {:key idx})
 
            ;; Journal entry block (::journal ... ::)
            (str/starts-with? (str/trim para) "::journal")
-           (let [body (-> (str/trim para)
-                          (str/replace #"^::journal\n?" "")
-                          (str/replace #"\n?::$" ""))
-                 lines (str/split-lines body)
-                 entries (for [line lines
-                               :when (not (str/blank? line))
-                               :let [trimmed (str/trim line)
-                                     is-credit (str/starts-with? trimmed "CR")
-                                     cleaned (str/replace trimmed #"^(DR|CR)\s+" "")
-                                     match (re-find #"^(.+?)\s+\$([ -~,\d]+)$" cleaned)
-                                     account (str/trim (if match (nth match 1) cleaned))
-                                     amount (when match (nth match 2))]]
-                           {:credit? is-credit
-                            :account account
-                            :amount amount})]
-             [:div.journal-entry-block {:key idx}
-              [:div.je-header "Journal Entry"]
-              [:div.je-body
-               (for [[eidx entry] (map-indexed vector entries)]
-                 ^{:key eidx}
-                 [:div.je-line {:class (if (:credit? entry) "credit" "debit")}
-                  [:span.je-label (if (:credit? entry) "CR" "DR")]
-                  [:span.je-account (:account entry)]
-                  (when (:amount entry)
-                    [:span.je-amount (str "$" (:amount entry))])])]])
+           (with-meta
+             (journal-lines (-> (str/trim para)
+                                (str/replace #"^::journal\n?" "")
+                                (str/replace #"\n?::$" "")
+                                str/split-lines))
+             {:key idx})
 
            ;; Table detection (starts with |)
            (str/starts-with? (str/trim para) "|")
@@ -3417,12 +3425,8 @@
        [:div.or-slot
         [:h5 "One worked through"]
         [:p.or-narrative (:narrative ex)]
-        [:div.assertion-block
-         (doall (for [[i a] (map-indexed vector (:assertions ex))]
-                  ^{:key i} [:div.assertion-line a]))]
-        [:div.journal-block
-         (doall (for [[i l] (map-indexed vector (:entry ex))]
-                  ^{:key i} [:div.journal-line l]))]])
+        [assertion-lines (:assertions ex)]
+        [journal-lines (:entry ex)]])
 
      (when-let [p (:pair o)]
        [:div.or-slot.or-pair

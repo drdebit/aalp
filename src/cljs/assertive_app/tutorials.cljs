@@ -53,7 +53,7 @@ That one sentence contains four facts:
 That's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."}
 
      {:heading "Meet the Four Assertions"
-      :content "At this level you only need **four** assertions. Here they are, using the coffee example:
+      :content "Four assertions describe what **moved**. Here they are, using the coffee example:
 
 **has-date** — *when* did it happen?
 (This morning. In business: the transaction date.)
@@ -135,16 +135,19 @@ Here is exactly what you'd do, click by click:
 
 **Step 5.** Click **Has Counterparty** and enter who: TextileDirect.
 
-**Step 6.** Read your sentence back at the top of the panel — it should retell the story. Then click **Submit**.
+**Step 6.** Click **Expects** and say what the shirts are for. You print on shirts, so: *use them up making something* → printed t-shirts. Then set how sure you are — 95% is honest for a plan you fully intend but do not entirely control.
+
+**Step 7.** Read your sentence back at the top of the panel — it should retell the story. Then click **Submit**.
 
 ::assertions
 has-date: January 8
 has-counterparty: TextileDirect
 provides: $150 (monetary-unit)
 receives: 50 blank t-shirts (physical-unit)
+expects: to use them up making printed t-shirts — 95% sure
 ::
 
-That's the entire skill at this level. Every problem is this same pattern with different details."}
+Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every problem at this level is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
 
      {:heading "Where the Journal Entry Comes From"
       :content "Double-entry accountants record a transaction in a **journal entry** consisting of **debits** (DR) and **credits** (CR). For the purposes of this platform, you do NOT need to build these journal entries yourself: the platform builds them *from your assertions* and shows you the result. 

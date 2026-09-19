@@ -3623,6 +3623,11 @@ The printed t-shirts are now finished goods ready for sale."
          :has-date {:date "2026-01-04"}
          :provides {:unit "monetary-unit" :quantity (* shirts shirt-cost)}
          :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity shirts}
+         ;; Bought to be sold on, and the shop says so as it buys. That
+         ;; is what makes these merchandise, and it is true the day they
+         ;; arrive rather than the day the first one leaves.
+         :expects {:action "provides" :unit "physical-unit"
+                   :physical-item "blank-tshirts" :confidence 95}
          :has-counterparty {:name "TextileDirect"}}
         {:has-identifier "Sale-001"
          :has-date {:date "2026-01-06"}
@@ -3639,6 +3644,8 @@ The printed t-shirts are now finished goods ready for sale."
          :has-date {:date "2026-01-08"}
          :provides {:unit "monetary-unit" :quantity (* small small-cost)}
          :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity small}
+         :expects {:action "provides" :unit "physical-unit"
+                   :physical-item "blank-tshirts" :confidence 95}
          :has-counterparty {:name "TextileDirect"}}]})
   ;; A blank shirt costs about what the catalogue says it costs. It used
   ;; to range $3-$6, and with a sale price drawn from an unrelated array
@@ -3775,11 +3782,19 @@ The printed t-shirts are now finished goods ready for sale."
        :has-date {:date "2026-01-04"}
        :provides {:unit "monetary-unit" :quantity (* shirts shirt-cost)}
        :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity shirts}
+       ;; Bought to go through the press. The press's `allows` says the
+       ;; same thing, but this says it where the intent actually is --
+       ;; in the purchase -- so the shirts are raw materials without
+       ;; anyone having to find the equipment event to prove it.
+       :expects {:action "consumes" :physical-item "blank-tshirts"
+                 :creates-item "printed-tshirts" :confidence 95}
        :has-counterparty {:name "TextileDirect"}}
       {:has-identifier "Ink-001"
        :has-date {:date "2026-01-04"}
        :provides {:unit "monetary-unit" :quantity (* ink ink-cost)}
        :receives {:unit "physical-unit" :physical-item "ink-cartridges" :quantity ink}
+       :expects {:action "consumes" :physical-item "ink-cartridges"
+                 :creates-item "printed-tshirts" :confidence 95}
        :has-counterparty {:name "InkMasters"}}
       {:has-identifier "Printing-001"
        :has-date {:date "2026-01-05"}

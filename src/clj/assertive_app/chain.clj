@@ -82,6 +82,20 @@
   [v]
   (keep held (cond (nil? v) [] (sequential? v) v :else [v])))
 
+(defn- expects-inputs
+  "What an expectation says will be consumed: the items a purchaser means
+   to put through a recipe. Reads `:consumes-items` or the item named on
+   an `expects` whose action is consuming."
+  [expects]
+  (let [listed (:consumes-items expects)
+        single (when (= "consumes" (some-> (:action expects) name))
+                 (:physical-item expects))]
+    (->> (concat (when (sequential? listed) listed)
+                 (when (and listed (not (sequential? listed))) [listed])
+                 (when single [single]))
+         (keep identity)
+         (mapv name))))
+
 (defn item-roles
   "What the chain says about each item, as a set of roles.
 
@@ -94,6 +108,8 @@
      :consumable / :producible
                 named by an `allows` as what some capability turns into
                 what -- a declared position, before anything has happened
+     :sellable  named by an `expects` as something the buyer means to
+                sell on as it stands -- merchandise, said at purchase
 
    -> {item #{roles}}"
   [events]
@@ -130,6 +146,27 @@
                               acc (allows-inputs allows))
                   acc (if-let [i (:creates-item allows)]
                         (update acc (name i) (fnil conj #{}) :producible)
+                        acc)
+                  ;; And the same fact stated by the BUYER, at the moment
+                  ;; of buying. `allows` is the machine's claim about what
+                  ;; it can turn into what; `expects` is the purchaser's
+                  ;; about what they mean to do with this. Both place a
+                  ;; thing, and the second places it without waiting for
+                  ;; anything to happen to it.
+                  ;;
+                  ;; It is why a shop's first crate of blank shirts is
+                  ;; merchandise the day it arrives rather than the day
+                  ;; one is sold: intent is a fact about the purchase,
+                  ;; and the purchaser is the one who holds it.
+                  expects (:expects assertions)
+                  acc (reduce (fn [acc i] (update acc i (fnil conj #{}) :consumable))
+                              acc (expects-inputs expects))
+                  acc (if-let [i (:creates-item expects)]
+                        (update acc (name i) (fnil conj #{}) :producible)
+                        acc)
+                  acc (if-let [i (and (= "provides" (some-> (:action expects) name))
+                                      (:physical-item expects))]
+                        (update acc (name i) (fnil conj #{}) :sellable)
                         acc)]
               acc))
           {} events))
@@ -188,6 +225,11 @@
        ;; said the printer consumes blanks, so blanks are inputs before
        ;; any production has run.
        (:producible roles)                             :finished-goods
+
+       ;; Bought to be sold as it stands. The purchaser said so when
+       ;; they bought it, which is the earliest anyone could have.
+       (:sellable roles)                               :finished-goods
+
        (:consumable roles)                             :raw-materials
 
        :else                                           nil))))
@@ -716,7 +758,13 @@
             acc (if-let [{:keys [item]} (and allows (held (:receives assertions)))]
                   (add acc item :enables) acc)
             acc (reduce (fn [acc i] (add acc i :consumable)) acc (allows-inputs allows))
-            acc (if-let [i (:creates-item allows)]  (add acc (name i) :producible) acc)]
+            acc (if-let [i (:creates-item allows)]  (add acc (name i) :producible) acc)
+            expects (:expects assertions)
+            acc (reduce (fn [acc i] (add acc i :consumable)) acc (expects-inputs expects))
+            acc (if-let [i (:creates-item expects)] (add acc (name i) :producible) acc)
+            acc (if-let [i (and (= "provides" (some-> (:action expects) name))
+                                (:physical-item expects))]
+                  (add acc (name i) :sellable) acc)]
         acc))
     {} events))
 
@@ -726,7 +774,7 @@
   {:capital          [:enables]
    :work-in-process  [:created :consumed]
    :raw-materials    [:consumed :consumable]
-   :finished-goods   [:created :producible :provided :acquired]})
+   :finished-goods   [:created :producible :sellable :provided :acquired]})
 
 (defn position-basis
   "The position an item occupies, and the events that established it.

@@ -4465,3 +4465,9 @@ header {
 /* The purchase's purpose: unanswered until the student answers it. */
 .purpose-content .inline-select.unset { opacity: .7; font-style: italic; }
 .purpose-content { line-height: 1.9; }
+/* One sentence, then one question. Keeping them on one line put a
+   slider in the middle of "with ... confidence" and broke both. */
+.purpose-intent { margin-bottom: 4px; }
+.purpose-gloss { display: block; margin: 2px 0 8px; }
+.purpose-confidence { display: flex; align-items: center; gap: 6px; }
+.purpose-confidence .confidence-input { display: flex; align-items: center; gap: 8px; }

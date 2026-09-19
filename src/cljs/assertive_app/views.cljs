@@ -1033,6 +1033,12 @@
         sell? (= "provides" chosen)]
     [sentence-section :expectation "What the business means to do with them:"
      [:div.purpose-content
+      ;; The intent is one sentence and the confidence is another
+      ;; question. Strung together they broke across four lines --
+      ;; "with" stranded at the end of one, "confidence." starting the
+      ;; next, the gloss wrapping after that -- and read as a form with
+      ;; sentence fragments scattered through it.
+      [:div.purpose-intent
       [:span "The business expects to "]
       [:select.inline-select
        {:value (or chosen "")
@@ -1053,15 +1059,16 @@
           [{:value "printed-tshirts" :label "Printed T-Shirts"}
            {:value "blank-tshirts" :label "Blank T-Shirts"}]
           (:creates-item params) "what?"]])
-      [:span " — with "]
-      [confidence-slider :expects (:confidence params)]
-      [:span " confidence."]
+      [:span "."]
+      [remove-assertion-button :expects]]
       (when chosen
-        [:span.obligation-gloss
+        [:div.obligation-gloss.purpose-gloss
          (if sell?
-           " — stock held to sell: merchandise."
-           " — an input to something else: raw materials.")])
-      [remove-assertion-button :expects]]]))
+           "Stock held to sell: merchandise."
+           "An input to something else: raw materials.")])
+      [:div.purpose-confidence
+       [:span "How sure? "]
+       [confidence-slider :expects (:confidence params)]]]]))
 
 (defn- render-money-expectation
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]

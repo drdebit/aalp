@@ -1,13 +1,74 @@
-# AALP — where things stand (2026-09-19)
+# AALP — where things stand (2026-09-20)
 
 Written to pick up cold in a new session. Read this, then
 `TUTORIAL-EPISODES.md` for the walkthrough copy.
 
 ## Start here (next session)
 
-**2026-09-18/19. Four changes, each of which made the next one
-possible. Read them in order; the last two only make sense after the
-first two.**
+**2026-09-20. The orientation page, and the requires/expects model
+reaching the places that had not heard about it.**
+
+### The gate has a front page now
+
+`tutorial-gate` used to show a title, a subtitle, one line of
+boilerplate and two buttons — one of them "Think you already know this?
+Skip to the practice round." Students were being asked a real question
+on a screen that told them nothing. The orientation IS that screen
+(`CLOSING-ENTRY-STUDY.md` §4): no step added to the flow, a hollow one
+filled, both exits unchanged.
+
+Six slots. Two matter more than the rest:
+
+- **The vocabulary is computed**, from `/api/assertions`' new
+  `:vocabulary` field — every assertion's code, label and level,
+  unfiltered. It cannot drift from what the sentence builder allows.
+  The filtered `:assertions` is untouched and still drives the builder,
+  because that set is what the student may *say*.
+- **The minimal pair** is the centrepiece: two sentences differing in
+  one word, landing in two accounts. Authored for 0, 1, 2, 5, 6, 7.
+  Levels 3, 4 and 8 fall back to the vocabulary slot alone — thinner,
+  not broken.
+
+Levels 5, 6 and 7 add **no assertions at all** and sixteen
+classifications between them. That is the hardest thing in the app to
+see, and "No new words at this level" is the page's headline there, not
+a gap.
+
+### The lending model, and two rules that were owed
+
+Level 7 taught that `expects` creates Notes Receivable. Its own
+classification has required **both** `requires` and `expects` for a
+while, so the tutorial was teaching an answer the drill rejects — the
+same shape as the confidence-slider fault. Level 8's capstone table was
+already right; Level 7 was the outlier.
+
+Correcting the words exposed that the rulebook could not honour them:
+`:notes-receivable-creation` derived Cash and not Notes Receivable, and
+`:interest-revenue-accrual` derived nothing at all. Both now have
+rules. **`requires` makes the asset, everywhere** — a borrower is bound
+exactly as a credit customer is.
+
+Level 5 also claimed to introduce `reports`. It arrives at Level 3.
+
+### Known and not fixed
+
+- **Nine JE-conformance gaps remain** (`production`, `design-creation`,
+  `dividend-declaration`, the L4 legal set, …) and five partials. Run
+  both oracles from `test/` with
+  `clojure -Sdeps '{:paths ["src/clj" "src/cljs" "resources" "test"]}'`.
+- **A drill round can trap a student who is failing.** `owed` prefers
+  patterns you missed and have not since got right, excluding the one
+  just served — so with exactly two owed and nothing correct, it must
+  alternate between them until one lands. Working as designed. What is
+  arguable is that `unreachable?` stays false while a streak is
+  *arithmetically* reachable, so a student at 0-for-5 is not offered
+  the tutorial until 0-for-10.
+
+
+## 2026-09-18/19
+
+**Four changes, each of which made the next one possible. Read them in
+order; the last two only make sense after the first two.**
 
 ### 1. The business is a reading, not a stored total
 
@@ -126,8 +187,8 @@ comparison against c7–c10 is against a different platform.
   account changes); Level 1 says `requires` stands IN PLACE OF money
   that did not move, or BESIDE money that did — one assertion, four
   accounts. Matt's framing, and sharper than anything that was there.
-- Conformance is **30 match, 0 conflicts**; both fixture records agree
-  and balance; 960 generated problems clean.
+- Conformance is **32 match, 0 conflicts, 10 gaps**; both fixture
+  records agree and balance; 960 generated problems clean.
 
 > **RESOLVED 2026-09-18 — the engine no longer stores anything.**
 >
@@ -156,13 +217,10 @@ comparison against c7–c10 is against a different platform.
 > without the storage architecture being revisited. It is the best
 > account we have of how this kind of drift happens.
 >
-> **Still open from that session:** `:business-state` is the same
-> category error one level down — cash, A/P and A/R are stored running
-> totals that later events cannot revise, and `chain.clj`'s own
-> docstring condemns exactly that. Seven of its eleven attributes
-> already have a reader in `chain` (`cash-on-hand`, `on-hand`,
-> `capital-assets`, `promises-of`); the other four are game state
-> (period, moves, date) and should stay stored. Not yet done.
+> **Done since:** `:business-state` was the same category error one
+> level down, and it is change 1 at the top of this file — seven
+> derived attributes retracted, the rest read from the chain. Nothing
+> from that session is still open.
 >
 > **For everything else from that session, read
 > `SESSION-2026-09-PICKUP.md`** — decisions already taken, and the

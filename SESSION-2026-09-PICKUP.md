@@ -22,6 +22,20 @@ Nothing else was touched. No commits were made.
 
 ## Do these first, in this order
 
+> **All four are done or moot as of 2026-09-20.** Items 1, 2 and 3 were
+> answered by removing the engine store rather than guarding it — see
+> the resolution header on `ENGINE-STORE-DIVERGENCE.md`. Item 4 (the
+> stale memory figure) is corrected in `CLAUDE.md`. The orientation
+> work items below are built: the renderer, `:level` on every episode,
+> and orientations for Levels 0, 1, 2, 5, 6 and 7. Still open from this
+> list: `energy-unit` and the kWh recipe line (Family B), Report
+> Builder Stage 4, Family C, and the four questions under *Open,
+> needing Matt* — of which the first, the per-episode reading protocol,
+> is the one the orientation now depends on for Levels 3, 4 and 8.
+>
+> Kept below as filed, because the reasoning is why the decisions went
+> the way they did.
+
 1. **Fix `init-engine!`'s docstring** (`server.clj:678`). One minute. Its
    claim that "the teaching flow never depends on it" is false and is the
    sentence that will talk the next reader out of caring. Item 1 in

@@ -1,4 +1,41 @@
-# URGENT — the engine store can fall back to memory, silently
+# RESOLVED — the engine store can fall back to memory, silently
+
+> **This fault no longer exists. Kept for the history, which is the
+> part worth reading.** Resolved 2026-09-18/19 by removing the thing
+> that could diverge rather than by guarding it, and verified
+> 2026-09-20: `create-datomic-store` has no callers left in `src/clj`,
+> `init-engine!` is gone from `server.clj`, and a restarted backend
+> prints no "Engine store:" line at all — because there is no longer a
+> store to choose.
+>
+> What replaced it: `engine/store-of` builds an in-memory store from
+> one student's events per request and discards it. Nothing in an
+> engine store is a fact any more, so losing one costs nothing.
+> Recorded reports — the thing this document called the worst of it —
+> live in AALP's own Datomic as `:recorded-report/*`, carrying both the
+> composition's spec and its figure.
+>
+> The five ranked fixes below are all answered. Items 1, 2, 3 and 5 by
+> the rewrite; item 4 (reconciliation) is moot, since a `ledger-entry`
+> can no longer point at an engine event that outlived its store.
+> `:business-state` — named at the end as the same category error one
+> level down — is also done: seven attributes retracted, the rest read
+> from the chain by `business-report`.
+>
+> Two vestiges, both harmless and both deliberate: `engine-db-uri` is a
+> stub in `schema.clj` with no callers, and `:ledger-entry/engine-event-id`
+> is still written, now identifying an event inside a store that lives
+> for one request.
+>
+> Everything below is as filed on 2026-09-18 and describes the world
+> before that. Read it for how an index added *alongside* the record in
+> April became load-bearing in July without anyone revisiting the
+> storage architecture — that is the general lesson, and it is why the
+> fix ended up being architectural rather than a try/catch.
+
+---
+
+## As filed, 2026-09-18
 
 *Found 2026-09-18 (author + Claude Opus 5) while scoping
 `MEASUREMENT-CHOICE-DESIGN.md`. Read-only investigation; **nothing was

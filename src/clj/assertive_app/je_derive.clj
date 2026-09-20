@@ -375,6 +375,39 @@
     :amount :flow
     :text "The business took cash and promised cash back. Nothing was bought and nothing was sold — the promise IS the transaction — so the credit is not Accounts Payable, which is what you owe a supplier for goods, but Notes Payable: borrowed money, owed as money."}
 
+   ;; The mirror. `:receivable` above asks for goods to have gone out;
+   ;; here what went out was cash, so it does not fire and this does --
+   ;; the two cannot both match. The asset comes from `requires`, as it
+   ;; does everywhere: the borrower is bound exactly as a credit
+   ;; customer is. `expects` sits beside it on the classification and
+   ;; adds no line, which is the whole of the settled asymmetry.
+   {:id :notes-receivable
+    :when {:assertion :requires
+           :params {:action "receives" :unit "monetary-unit"}}
+    :context {:all-of  [{:assertion :provides :params {:unit "monetary-unit"}}]
+              :none-of [{:assertion :provides :params {:unit "physical-unit"}}
+                        {:assertion :receives :params {:unit "physical-unit"}}]}
+    :line {:side :debit :account "Notes Receivable"}
+    :amount :flow
+    :text "The business handed over cash against a promise of cash back. Nothing was sold, so the debit is not Accounts Receivable — what a customer owes for goods — but Notes Receivable: money lent, owed back as money."}
+
+   ;; -------- Interest earned before it is collected ------------------
+   ;; The mirror of :accrued-expense / :accrued-liability, and unlike
+   ;; those two it takes no `requires` in context: the classification
+   ;; prohibits one. Nothing happened on the day; a month passed on a
+   ;; note that already exists, and the promise was recorded when the
+   ;; money went out.
+   {:id :interest-receivable
+    :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :line {:side :debit :account "Interest Receivable"}
+    :amount :reported
+    :text "Interest has been earned by the mere passing of time on money already lent. It is owed to the business whether or not anyone has paid it, so it is an asset now."}
+   {:id :interest-revenue
+    :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :line {:side :credit :account "Interest Revenue"}
+    :amount :reported
+    :text "And it is revenue of THIS period, not of the period the cash arrives in. No exchange marks the moment, which is why `reports` has to state the amount and the basis it was worked out on."}
+
    ;; -------- Cash in advance of goods --------------------------------
    {:id :deferred-revenue
     :when {:assertion :requires

@@ -816,9 +816,11 @@ Adjusting entries ensure:
 - Assets reflect their current value"}
 
      {:heading "The 'Reports' Assertion"
-      :content "Adjusting entries introduce a new assertion:
+      :content "Adjusting entries add no new assertions at all. Every word you need you already have — including the one that carries the weight here:
 
 **reports** — Explicitly recognizes a calculated amount based on some method or basis
+
+You met **reports** at Level 3, where it composed figures out of a ledger that already had sales in it. Here it does the other thing it is for: it states an amount that no exchange produced.
 
 Up to now, journal entries have followed from what happened in the transaction. You didn't need to assert 'this is revenue' because revenue emerged from the exchange pattern (providing goods for payment). You didn't need to assert 'this is an expense' because the cost followed from providing inventory.
 
@@ -1055,13 +1057,18 @@ Monthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month
 **Example: Lend $5,000 to supplier**
 - has-counterparty: Supplier
 - provides: $5,000 (monetary-unit)
-- expects: future repayment with interest
+- requires: the supplier is to provide $5,000 plus interest at maturity
+- expects: 90% confident of collecting it
 
 → DR Notes Receivable, CR Cash
 
+Read that against the credit sale in Level 1 and it is the same shape. **requires** is what creates the asset — the borrower is bound, exactly as a credit customer is — and **expects** sits beside it because repaying is the borrower's decision, not SP's. Lending money differs from selling on credit only in what SP handed over: cash rather than merchandise.
+
 **Interest revenue accrual:**
-- reports: revenue (accrual), expects: future receipt
+- reports: revenue (accrual basis)
 → DR Interest Receivable, CR Interest Revenue
+
+Nothing else. No counterparty, no promise, no probability — this is a calculation over time that has already passed, like every other Level 5 adjustment.
 
 Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
@@ -1087,8 +1094,8 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
      {:id :l7-q4
       :question "When SP lends money to a supplier, which assertion creates the Notes Receivable?"
       :choices ["requires (monetary-unit)" "provides (monetary-unit)" "expects (monetary-unit)" "reports (revenue)"]
-      :correct 2
-      :explanation "When lending, SP **expects** future repayment — this creates Notes Receivable (an asset). SP also **provides** cash now and has a counterparty."}]}
+      :correct 0
+      :explanation "**requires** creates the Notes Receivable. The borrower is bound to repay, and a promise is what makes an asset — whichever way it runs. SP also **provides** the cash now, and **expects** records how likely repayment is, which affects the allowance rather than the receivable."}]}
 
    8
    {:title "Level 8: Capstone Review"

@@ -2674,7 +2674,10 @@
                 (when same-entry?
                   [:p.je-same-accounts
                    "Your assertions produce this same entry. What is wrong is behind it, in the assertions."])])
-             (when-let [note (:note classification)]
+             ;; The note explains the entry above it: after a miss that
+             ;; is the correct one, and the student's nearest match's note
+             ;; (depreciation, say, under a service purchase) misled.
+             (when-let [note (:note (if missed? (:correct-classification feedback) classification))]
                [:p.note note])]))
 
         ;; For reverse problems, show the transaction narrative after submission

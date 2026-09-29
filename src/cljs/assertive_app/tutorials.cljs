@@ -615,6 +615,34 @@ Now you can see where the goods you sell come from — and why each batch carrie
    4
    {:title "Level 4: Legal and Regulatory Context"
     :subtitle "What stands behind a transaction, and when it changes the entry"
+    ;; Three words for the party that was always there. The pair is the
+    ;; lesson's own table in miniature: required and allowed put the same
+    ;; payment in different places, and the question that separates them
+    ;; is whether anything lasting came of it.
+    :orientation
+    {:framing "This lesson names the third party behind every exchange — the law — so the business can say what compelled a transaction, what made it possible, and what protects it."
+     :protocol ["Everything so far still applies: what moved, which way, what was promised, how sure."
+                "Then look outside the two parties. Did a rule **compel** this? — **is-required-by**"
+                "Did a law **make it possible** — a company that can exist, a sale the law will enforce? — **is-allowed-by**"
+                "Does a law **protect** what was agreed or made? — **is-protected-by**"
+                "If money went out and nothing came in, the law is doing the work the goods usually do. Read it before anything else."]
+     :example
+     {:narrative "On March 12, Northside Tees pays $500 in quarterly estimated income taxes."
+      :assertions ["has-date: March 12"
+                   "provides: $500 (monetary-unit)"
+                   "is-required-by: the tax code"]
+      :entry ["DR Tax Expense $500" "CR Cash $500"]}
+     :pair
+     {:same "The business **provides** money under a law, and nothing comes back."
+      :a {:when "…because a rule **required** it: the quarterly tax"
+          :becomes "Tax Expense — this period's cost"}
+      :b {:when "…because a law **allowed** it: the filing that forms the LLC"
+          :becomes "Organization Costs — carried, because the company lasts"}
+      :point "One word changed, and with it the question the record answers: did something lasting come of the payment?"}
+     :effect
+     {:holds "Before: $500 more cash. After: $500 less, and nothing new held. The tax bought this period's right to operate, and that is used up as the period goes."
+      :may-or-must "Before: the business must pay its quarterly estimate. After: that duty is met, and the record says which rule imposed it — something no journal entry names."}
+     :reminder "The law was a party to every exchange. Naming it sometimes changes the entry, and always changes what the record can answer."}
     :sections
     [{:heading "The Third Party Who Was Always There"
       :content "Every transaction so far has been between two parties who chose to deal with each other. SP and a vendor. SP and a customer.
@@ -858,7 +886,7 @@ In a sale, revenue follows from the exchange pattern — you provided goods and 
      :protocol ["Read the exchange exactly as you always have: what went out, what came in, who was on the other side."
                 "Then ask the question this lesson turns on: **is that counterparty an owner?**"
                 "If they are, what the business hands over is a claim on itself — not goods, not a service."
-                "For a dividend, read it twice: the declaration promises (**reports** and **requires**), and the payment later discharges it."]
+                "For a dividend, read it twice: the declaration promises (**reports** and **requires**), and the payment later keeps that promise — **fulfills**, naming the declaration."]
      :example
      {:narrative "On April 2, Pat invests $20,000 in SP in exchange for a 20% ownership interest."
       :assertions ["has-date: April 2"
@@ -1059,6 +1087,36 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
    8
    {:title "Level 8: Capstone Review"
     :subtitle "Bringing it all together — the complete assertion framework"
+    ;; No new words, and the whole reading at once: the capstone's drill
+    ;; is every lesson's patterns mixed, so the protocol is every lesson's
+    ;; question in the order an event raises them.
+    :orientation
+    {:framing "Nothing new to learn: every word is already yours. The practice round mixes every lesson, so each event has to be read from the beginning, not recognised."
+     :protocol ["What moved today, and which way? — **provides**, **receives**"
+                "Who was on the other side? — **has-counterparty**. If nobody, it is a transformation or an adjustment."
+                "If something came in: what is it for? — **expects**, or **allows** for a machine"
+                "Was a promise made, or kept? — **requires**, **fulfills**. If it is owed to the business, how sure? — **expects**"
+                "Did goods change form? — **consumes**, **creates**, **is-allowed-by**"
+                "Did time pass rather than anything happen? — **reports**, and how it was worked out"
+                "Did a law compel, allow or protect it? — **is-required-by**, **is-allowed-by**, **is-protected-by**"]
+     :example
+     {:narrative "On April 15, Northside Tees pays the $500 dividend its board declared on March 15."
+      :assertions ["has-date: April 15"
+                   "has-counterparty: Shareholders"
+                   "provides: $500 (monetary-unit)"
+                   "fulfills: the dividend declared on March 15"]
+      :entry ["DR Dividends Payable $500" "CR Cash $500"]}
+     :pair
+     {:same "The business **provides** $500 to its owners, and nothing comes back."
+      :a {:when "…keeping the promise its board made — **fulfills** the declaration"
+          :becomes "Dividends Payable — a debt paid"}
+      :b {:when "…keeping no promise, and bound by no law"
+          :becomes "Owner's Drawing — equity taken out"}
+      :point "The same payment, to the same people. Whether it keeps an earlier promise decides whether the business paid what it owed or its owner took money out."}
+     :effect
+     {:holds "Before: $500 more cash, and $500 owed to the shareholders. After: both gone."
+      :may-or-must "Before: the business must pay the shareholders by April 15. After: nothing is owed, and the record ties the payment to the declaration it kept."}
+     :reminder "Every account in this course fell out of a sentence made from the same small vocabulary. That is the whole claim."}
     :sections
     [{:heading "The Complete Framework"
       :content "You've reached the capstone. Let's review the complete assertion framework you've mastered:

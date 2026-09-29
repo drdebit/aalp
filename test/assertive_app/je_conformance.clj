@@ -85,6 +85,12 @@
                                         :consumes "blank-tshirts"
                                         :creates  "printed-tshirts"
                                         item))))
+                   ;; A purpose names the goods it is about, and the spec
+                   ;; leaves both the item and what it makes as :any.
+                   (and (= :expects a) (#{"provides" "consumes"} (:action params)))
+                   (assoc :physical-item item)
+                   (and (= :expects a) (= "consumes" (:action params)))
+                   (assoc :creates-item "printed-tshirts")
                    (= :has-date a)          (assoc :date "2026-01-15")
                    (= :has-counterparty a)  (assoc :party "Acme Co")))]))))
 
@@ -132,12 +138,16 @@
 (def prior-chain
   "The paragraph a sentence arrives in.
 
-   Classification is not always a property of the event in front of you:
-   blank shirts are an input because SP holds a printer that consumes
-   them, and that fact lives in an earlier event. Checking a
-   classification against a single synthesised event would ask it to be
-   self-sufficient in a way the model deliberately is not, so every check
-   runs against a business that has already said what it can do."
+   Much of what an entry reads lives in earlier events: production
+   consumes materials an earlier purchase brought in, a sale draws on a
+   batch, a depreciation charge needs the asset. So every check runs
+   against a business that has already said what it can do.
+
+   What the chain does NOT supply is the purpose of goods being received.
+   That was once read from here -- blanks were an input because the press
+   consumes them -- and let a purchase book itself without saying why it
+   was made, while the grader required `expects`. A purchase now places
+   what it receives by its own assertions."
   [{:has-date {:date "2026-01-02"}
     :provides {:unit "monetary-unit" :quantity 3000}
     :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}

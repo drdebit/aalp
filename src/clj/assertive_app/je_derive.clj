@@ -824,7 +824,7 @@
   [text flow context]
   (if (= :position text)
     (or (some-> (resolve-position flow context) position-texts)
-        "Nothing in the chain says what this is for, so the record has no name for it yet. `allows` would say it -- what it turns into what -- and so would a later event that uses it up or sells it on.")
+        "Nothing in this event says what the goods are for, so the record has no name for them yet. `expects` says it: to use them up making something (raw materials) or to sell them on as they are (merchandise). For a machine, `allows` says it -- what it turns into what.")
     text))
 
 (defn- account-kind
@@ -928,10 +928,32 @@
                                   hits))))
                       rulebook)
         lines (mapv (fn [{:keys [line amount matched matched-params context-used id text entry-label]}]
-                      (let [{:keys [quantity unresolved? unresolved-reason needs-lot?]}
+                      (let [;; What a thing RECEIVED is, this event has to say.
+                            ;; The chain had it placed already -- a press
+                            ;; that consumes blanks makes every later crate
+                            ;; of blanks an input -- so the entry came out
+                            ;; right before the student had said why the
+                            ;; business bought them, while the grader,
+                            ;; rightly, still wanted `expects`. Intent is a
+                            ;; fact about each purchase. Production and
+                            ;; sales still read the chain: what happens to
+                            ;; goods later is a fact about the record.
+                            context (if (= :receives matched)
+                                      (assoc context :events [])
+                                      context)
+                            {:keys [quantity unresolved? unresolved-reason needs-lot?]}
                             (resolve-amount amount matched matched-params selections variables context)
+                            ;; What in THIS event said what the goods are: the
+                            ;; purpose for stock, the capability for a machine.
+                            ;; It chose the account, so it is under the line --
+                            ;; not listed below as recorded but not reflected.
+                            placed-by (when (and (= :receives matched) (= :position (:account line)))
+                                        (case (resolve-position matched-params context)
+                                          (:raw-materials :finished-goods) (when (contains? selections :expects) [:expects])
+                                          :capital (when (contains? selections :allows) [:allows])
+                                          nil))
                             prov (vec (distinct
-                                        (concat [matched] context-used
+                                        (concat [matched] placed-by context-used
                                                 ;; Where the money came from, when the
                                                 ;; line is measured by an amount this
                                                 ;; assertion does not itself carry.

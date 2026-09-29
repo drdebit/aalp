@@ -158,7 +158,23 @@
                   ;; merchandise the day it arrives rather than the day
                   ;; one is sold: intent is a fact about the purchase,
                   ;; and the purchaser is the one who holds it.
-                  expects (:expects assertions)
+                  ;; "What the business means to do with THEM": the
+                  ;; sentence builder records the purpose without naming
+                  ;; the goods, because the goods are the ones this event
+                  ;; receives. Say so here, or a purpose stated in the
+                  ;; student's own words places nothing. Only a purpose --
+                  ;; an expectation in money or services is about somebody
+                  ;; paying or performing, not about these goods.
+                  expects (let [e    (:expects assertions)
+                                recd (held (:receives assertions))]
+                            (if (and (map? e)
+                                     (#{"consumes" "provides"} (some-> (:action e) name))
+                                     (not (#{"monetary-unit" "service-unit"} (some-> (:unit e) name)))
+                                     (nil? (:physical-item e))
+                                     (nil? (:consumes-items e))
+                                     recd)
+                              (assoc e :physical-item (:item recd))
+                              e))
                   acc (reduce (fn [acc i] (update acc i (fnil conj #{}) :consumable))
                               acc (expects-inputs expects))
                   acc (if-let [i (:creates-item expects)]

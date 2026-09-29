@@ -176,6 +176,11 @@
          :receives {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 8}
          :requires {:action "provides" :unit "monetary-unit"
                     :quantity 200 :due-date "2026-04-01"}
+         ;; What the cartridges are for. A purchase places what it
+         ;; receives by saying so; the press bought earlier does not
+         ;; say it on this purchase's behalf.
+         :expects {:action "consumes" :physical-item "ink-cartridges"
+                   :creates-item "printed-tshirts" :confidence 95}
          :has-counterparty {:name "InkMasters"}}))
 
 (defn report []

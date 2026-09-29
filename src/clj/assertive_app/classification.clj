@@ -1919,6 +1919,10 @@
    {:required #{:has-date :reports :requires}
     :required-parameters {:reports {:category "expense" :basis "accrual"}
                           :requires {:action "provides" :unit "monetary-unit"}}
+    ;; Our own obligation: `requires` states it. An `expects` beside it
+    ;; (that we will meet it, near 100%) is redundant but true, so it is
+    ;; accepted, as on deferred revenue, rather than marked wrong.
+    :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Wages earned but not yet paid"
     :journal-entry [{:debit "Wages Expense" :credit "Wages Payable"}]
@@ -1931,6 +1935,10 @@
    {:required #{:has-date :reports :requires}
     :required-parameters {:reports {:category "expense" :basis "accrual"}
                           :requires {:action "provides" :unit "monetary-unit"}}
+    ;; Our own obligation: `requires` states it. An `expects` beside it
+    ;; (that we will meet it, near 100%) is redundant but true, so it is
+    ;; accepted, as on deferred revenue, rather than marked wrong.
+    :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Interest incurred but not yet paid"
     :journal-entry [{:debit "Interest Expense" :credit "Interest Payable"}]
@@ -1994,6 +2002,10 @@
    {:required #{:has-date :reports :requires}
     :required-parameters {:reports {:category "distribution" :basis "declared"}
                           :requires {:action "provides" :unit "monetary-unit"}}
+    ;; Our own obligation: `requires` states it. An `expects` beside it
+    ;; (that we will meet it, near 100%) is redundant but true, so it is
+    ;; accepted, as on deferred revenue, rather than marked wrong.
+    :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Board declares dividend to shareholders"
     :journal-entry [{:debit "Retained Earnings" :credit "Dividends Payable"}]
@@ -2032,7 +2044,11 @@
    {:required #{:has-date :receives :has-counterparty :requires}
     :required-parameters {:receives {:unit "monetary-unit"}
                           :requires {:action "provides" :unit "monetary-unit"}}
-    :prohibited #{:provides :expects}
+    ;; Our own obligation: `requires` states it. An `expects` beside it
+    ;; (that we will meet it, near 100%) is redundant but true, so it is
+    ;; accepted, as on deferred revenue, rather than marked wrong.
+    :optional #{:expects}
+    :prohibited #{:provides}
     :description "Borrow money with formal note"
     :journal-entry [{:debit "Cash" :credit "Notes Payable"}]
     :note "Notes payable are formal written promises to pay a specific amount, usually with interest."
@@ -2325,7 +2341,9 @@
     {:missing-assertions missing-assertions
      :incorrect-assertions incorrect-assertions
      :extra-assertions extra-assertions
-     :missing-parameters missing-parameters}))
+     :missing-parameters missing-parameters
+     ;; Which expectation the answer wants, so a hint can name it.
+     :expects-spec (get required-parameters :expects)}))
 
 (defn- format-param-key
   "Convert parameter key to human-readable form."
@@ -2378,6 +2396,20 @@
     ;; Default: just return value
     param-value))
 
+(defn- expects-hint-label
+  "Name the expectation a classification wants, from its parameters."
+  [spec]
+  (let [action (some-> (:action spec) name)]
+    (cond
+      ;; Which purpose is the question itself, so the hint stops at
+      ;; saying that one is missing.
+      (#{"provides" "consumes"} action)
+      "Expects (what the business means to do with the goods it received)"
+      (= "receives" action)
+      "Expects (how sure the business is that it will receive what it paid for)"
+      :else
+      "Expects (how sure the business is that the other party will pay)")))
+
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
   [hint-data]
@@ -2389,9 +2421,16 @@
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
                                                extra-assertions))))
 
+      ;; "Expects" alone names two different things: what goods just
+      ;; bought are FOR, and how sure the business is of someone else's
+      ;; future action. A student who knows the second reads "missing
+      ;; Expects" on a purchase as a mistake about the payment. The retry
+      ;; is a new problem, so the hint has to carry the distinction.
       (seq missing-assertions)
       (conj (str "Missing assertions: "
-                (clojure.string/join ", " (map #(get assertion-labels % (name %))
+                (clojure.string/join ", " (map #(if (= :expects %)
+                                                  (expects-hint-label (:expects-spec hint-data))
+                                                  (get assertion-labels % (name %)))
                                                missing-assertions))))
 
       ;; Present tense for what happened; a promise for what is due. The

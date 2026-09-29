@@ -371,6 +371,9 @@
                         ;; The company's record, so the grader reads the
                         ;; same paragraph the derived panel does.
                         :prior-events (:prior-events problem)
+                        ;; Not graded: priced into the correct entry the
+                        ;; feedback shows after a miss.
+                        :correct-assertions (:correct-assertions problem)
                         ;; Include metadata for progress tracking
                         :problem-id (:id problem)
                         :problem-type (or (:problem-type problem) "forward")

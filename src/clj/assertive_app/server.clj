@@ -175,7 +175,19 @@
                                                           (or (:variables body) {})
                                                           ctx)))
                    result)
-          correct? (= :correct (get-in result [:feedback :status]))]
+          correct? (= :correct (get-in result [:feedback :status]))
+          ;; The entry the right answer produces, priced. The
+          ;; classification's :journal-entry names the accounts and
+          ;; nothing else, so "the correct entry" came out as two
+          ;; accounts and two dashes -- and when its accounts matched the
+          ;; student's it was not shown at all. Display only: grading
+          ;; above never sees these assertions.
+          correct-assertions (:correct-assertions body)
+          result (if (and (not correct?) (map? correct-assertions) (:feedback result))
+                   (assoc-in result [:feedback :correct-lines]
+                             (:lines (je-derive/derive-je (walk/keywordize-keys correct-assertions)
+                                                          {} ctx)))
+                   result)]
 
       ;; Return response - include progress if authenticated
       (if-let [user (:user request)]

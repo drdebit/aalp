@@ -1967,44 +1967,6 @@
 
 ;; ==================== Assertion Linkage Display ====================
 
-(defn- strip-amount
-  "Remove the amount portion from account names like 'Cash $5,000' -> 'Cash'"
-  [account-name]
-  (when account-name
-    (str/replace account-name #"\s+\$[\d,.]+" "")))
-
-(defn- find-linkage-for-account
-  "Find the assertion linkage that corresponds to this account and effect."
-  [linkages account-name effect]
-  (when (and linkages account-name)
-    (let [clean-account (strip-amount account-name)
-          effect-str (name effect)]  ;; Convert :debit/:credit to "debit"/"credit"
-      (->> linkages
-           (filter (fn [[_code data]]
-                     (let [data-effect (if (keyword? (:effect data))
-                                         (name (:effect data))
-                                         (:effect data))]
-                       (and (= (:account data) clean-account)
-                            (= data-effect effect-str)))))
-           first))))
-
-(defn- format-linkage
-  "Format linkage for display: 'receives (physical-unit, blank-tshirts)'"
-  [[code data]]
-  (let [params (:params data)
-        assertion-name (name code)
-        unit (:unit params)
-        physical-item (:physical-item params)
-        ;; Build parameter string like "(physical-unit, blank-tshirts)" or "(monetary-unit)"
-        param-parts (cond-> []
-                      unit (conj unit)
-                      physical-item (conj physical-item))
-        param-str (when (seq param-parts)
-                    (str "(" (str/join ", " param-parts) ")"))]
-    (if param-str
-      (str assertion-name " " param-str)
-      assertion-name)))
-
 (defn- format-provenance-code
   "One assertion in a line's provenance, with the parameters that made it
    apply: `provides (physical-unit, printed-tshirts)`."
@@ -2016,33 +1978,6 @@
     (if (seq parts)
       (str (name code) " (" (str/join ", " parts) ")")
       (name code))))
-
-(defn- line-provenance
-  "The assertions a journal-entry line actually rests on, read from the
-   derivation.
-
-   The display used to match one assertion to one account and then stamp
-   the counterparty onto every line. A cost-of-goods line is produced by
-   `provides` read against the chain -- no single assertion resolves to
-   that account -- so it came back annotated with nothing but the
-   customer's name, which decided none of it. je_derive knows which rule
-   fired and which assertions it used; ask it."
-  [derived-lines account side]
-  (let [account (strip-amount account)
-        side    (name side)]
-    (when-let [line (first (filter #(and (= (:account %) account)
-                                         (= (:side %) side))
-                                   derived-lines))]
-      (seq (for [code (:provenance line)]
-             (format-provenance-code code (get (:assertions line) (keyword code))))))))
-
-(defn- format-counterparty-linkage
-  "Format the counterparty info for display"
-  [linkages]
-  (when-let [cp-data (get linkages :has-counterparty)]
-    (let [name (get-in cp-data [:params :name])]
-      (when name
-        (str "has-counterparty (" name ")")))))
 
 (declare format-currency)
 
@@ -2558,85 +2493,44 @@
                 :indeterminate "Cannot classify"
                 (str "Status: " (:status feedback)))]]
 
-        ;; Show journal entries FIRST (before hints) for forward problems
-        (when (and (not is-reverse?) (some? (:classification feedback)))
+        ;; After a miss, the correct entry -- once, priced. The student's
+        ;; own entry is not drawn here: the derived panel below is the
+        ;; authority on it and carries the rule behind each line. This
+        ;; block used to draw it a second time, and withheld the correct
+        ;; entry whenever its accounts matched the student's, so a
+        ;; student with the accounts right and the assertions wrong saw
+        ;; their own entry twice and the answer never.
+        (when-not is-reverse?
           (let [classification (:classification feedback)
-                linkages (:assertion-linkages feedback)
-                derived-lines (:derived-lines feedback)
-                counterparty-str (format-counterparty-linkage linkages)
-                ;; The status arrives from JSON as a string, as the
-                ;; heading above already knows. Compared raw against a
-                ;; keyword this was permanently false, which silently
-                ;; withheld the "correct entry should be" comparison.
-                is-incorrect? (= :incorrect (keyword (:status feedback)))
-                correct-class (:correct-classification feedback)
-                ;; Two classifications can call for the very same accounts
-                ;; -- a contract sale and a credit sale post identically,
-                ;; which is the whole point of Level 4 -- and then the
-                ;; comparison showed the student their entry, and the
-                ;; correct entry, and they were the same four lines. It
-                ;; read as "wrong; here is the same thing again". When the
-                ;; accounts agree, what is wrong is upstream of them.
-                same-accounts? (= (map (juxt :debit :credit) (:journal-entry classification))
-                                  (map (juxt :debit :credit) (:journal-entry correct-class)))]
+                missed? (not= :correct (keyword (:status feedback)))
+                ;; Derived by the grader from the canonical assertions;
+                ;; where it could not, the classification's accounts alone.
+                correct-lines (or (seq (:correct-lines feedback))
+                                  (for [e (get-in feedback [:correct-classification :journal-entry])
+                                        [side account] [["debit" (:debit e)] ["credit" (:credit e)]]]
+                                    {:side side :account account :amount (:amount e)}))
+                line-key (juxt #(name (:side %)) :account :amount)
+                same-entry? (and (seq (:derived-lines feedback))
+                                 (= (set (map line-key (:derived-lines feedback)))
+                                    (set (map line-key correct-lines))))]
             [:div.je-comparison
-             ;; The student's own entry, when it was wrong -- half of a
-             ;; comparison against the correct one below.
-             ;;
-             ;; When the answer is RIGHT this block was the derived
-             ;; panel's entry a second time, line for line, a few
-             ;; centimetres above it. The derivation is the authority and
-             ;; carries the rule behind each line, so the copy goes.
-             (when (and is-incorrect? (seq (:journal-entry classification)))
-               (let [journal-entries (:journal-entry classification)]
-                 [:div.journal-entry.incorrect-je
-                  [:h4 (if same-accounts?
-                         "Your assertions produce this entry:"
-                         "Your assertions would produce this (incorrect) entry:")]
-                  (for [entry journal-entries]
-                    ;; Prefer what the derivation says produced the line;
-                    ;; fall back to the account-name match only where the
-                    ;; derivation has nothing to say about it.
-                    (let [debit-prov  (or (line-provenance derived-lines (:debit entry) :debit)
-                                          (some-> (find-linkage-for-account linkages (:debit entry) :debit)
-                                                  format-linkage vector))
-                          credit-prov (or (line-provenance derived-lines (:credit entry) :credit)
-                                          (some-> (find-linkage-for-account linkages (:credit entry) :credit)
-                                                  format-linkage vector))]
-                      ^{:key (str (:debit entry) "-" (:credit entry))}
-                      [:div.entry
-                       [:div.entry-line
-                        [:span.debit "DR: " (:debit entry)]
-                        [je-amount (:amount entry)]
-                        (when (seq debit-prov)
-                          [:span.linkage " ← " (str/join " + " debit-prov)])]
-                       [:div.entry-line
-                        [:span.credit "CR: " (:credit entry)]
-                        [je-amount (:amount entry)]
-                        (when (seq credit-prov)
-                          [:span.linkage " ← " (str/join " + " credit-prov)])]]))]))
-
-             (when (and is-incorrect? correct-class same-accounts?)
-               [:p.je-same-accounts
-                "The accounts are right — this is the entry the correct answer produces too. "
-                "What is wrong is behind them, in the assertions."])
-
-             ;; For incorrect answers, also show what the correct JE should be
-             (when (and is-incorrect? correct-class (not same-accounts?))
-               (when-let [correct-entries (:journal-entry correct-class)]
-                 (when (seq correct-entries)
-                   [:div.journal-entry.correct-je
-                    [:h4 "The correct entry should be:"]
-                    (for [entry correct-entries]
-                      ^{:key (str "correct-" (:debit entry) "-" (:credit entry))}
-                      [:div.entry
-                       [:div.entry-line
-                        [:span.debit "DR: " (:debit entry)]
-                        [je-amount (:amount entry)]]
-                       [:div.entry-line
-                        [:span.credit "CR: " (:credit entry)]
-                        [je-amount (:amount entry)]]])])))
-
+             (when (and missed? (seq correct-lines))
+               [:div.journal-entry.correct-je
+                [:h4 "The correct entry:"]
+                [:table.dj-table
+                 [:tbody
+                  (for [[i line] (map-indexed vector correct-lines)]
+                    ^{:key (str "correct-" i)}
+                    [:tr.dj-line {:class (name (:side line))}
+                     [:td.dj-drcr (if (= "debit" (name (:side line))) "DR" "CR")]
+                     [:td.dj-account {:class (name (:side line))} (:account line)]
+                     [:td.dj-amount (if-let [a (:amount line)] (format-currency a) "—")]])]]
+                ;; Two classifications can post identically -- a contract
+                ;; sale and a credit sale, which is the point of Level 4 --
+                ;; and then the fault is upstream of the entry.
+                (when same-entry?
+                  [:p.je-same-accounts
+                   "Your assertions produce this same entry. What is wrong is behind it, in the assertions."])])
              (when-let [note (:note classification)]
                [:p.note note])]))
 

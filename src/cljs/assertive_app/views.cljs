@@ -3439,10 +3439,12 @@
             (state/close-tutorial-quiz!)
             (when-not review-only?
               (if (or (state/guided-mode?) (state/lessons-mode?))
-                (do
-                  (state/start-drill! level (tutorials/drill-config level))
-                  (state/clear-feedback!)
-                  (api/fetch-problem! level))
+                (if (tutorials/reporting-lesson? level)
+                  (api/start-reporting-round! level)
+                  (do
+                    (state/start-drill! level (tutorials/drill-config level))
+                    (state/clear-feedback!)
+                    (api/fetch-problem! level)))
                 (api/complete-tutorial! level))))
           ;; on-retry (some wrong)
           (fn []
@@ -3505,7 +3507,7 @@
 
      (when-let [steps (seq (:protocol o))]
        [:div.or-slot
-        [:h5 "How to read an event"]
+        [:h5 (or (:protocol-heading o) "How to read an event")]
         [:ol.or-protocol
          (doall (for [[i st] (map-indexed vector steps)]
                   ^{:key i} [:li (process-inline st)]))]])
@@ -3519,7 +3521,7 @@
 
      (when-let [p (:pair o)]
        [:div.or-slot.or-pair
-        [:h5 "The same words, a different account"]
+        [:h5 (or (:pair-heading o) "The same words, a different account")]
         [:p.or-pair-same (process-inline (:same p))]
         [:div.or-pair-rows
          (doall
@@ -3574,11 +3576,13 @@
       ;; where the drill flow lives.
       (when (or (state/guided-mode?) (state/lessons-mode?))
         [:button.gate-testout-btn
-         {:on-click #(do
-                       (state/start-drill! level (tutorials/drill-config level)
-                                           :entry-path :test-out)
-                       (state/clear-feedback!)
-                       (api/fetch-problem! level))}
+         {:on-click #(if (tutorials/reporting-lesson? level)
+                       (api/start-reporting-round! level)
+                       (do
+                         (state/start-drill! level (tutorials/drill-config level)
+                                             :entry-path :test-out)
+                         (state/clear-feedback!)
+                         (api/fetch-problem! level)))}
          "Think you already know this? Skip to the practice round"])
       ;; If at least L0 completed, let them go back to a completed level
       (when (and (pos? level) (not (state/lessons-mode?)))
@@ -4571,7 +4575,7 @@
   "After a lesson: what it added, then a look back."
   []
   (let [{:keys [level phase drill summary results served]} (state/checkin)
-        earlier? (some #(< % level) (tutorials/all-levels))
+        earlier? (seq (tutorials/earlier-lessons level))
         next-l   (api/next-lesson)
         continue! #(do (state/end-checkin!)
                        (state/clear-feedback!)
@@ -4663,6 +4667,207 @@
       ^{:key (str "done-" l)}
       [:li (lesson-title l) " " [review-lesson-button l "Review"]])]])
 
+;; ==================== The reporting lesson's round ====================
+;; One company's year on the left, the task and the composer on the right.
+;; Reports preview freely; each task is checked part by part (reporting.clj).
+
+(def ^:private report-parts
+  {:flow   [["goods-out" "provides goods"] ["money-in" "receives money"]
+            ["money-out" "provides money"] ["goods-in" "receives goods"]]
+   :party  [["" "anyone"] ["customer" "a customer"] ["supplier" "a supplier"]
+            ["owner" "an owner"] ["lender" "a lender"]]
+   :period [["year" "during 2026"] ["all" "on any date in the record"]]
+   :total  [["consideration" "what was received or promised for the goods"]
+            ["money-in" "the money received"] ["money-out" "the money paid"]
+            ["goods-cost" "what the goods cost"]]})
+
+(def ^:private report-names
+  {:accrual-revenue "Accrual revenue" :cash-revenue "Cash revenue"
+   :accrual-cogs "Cost of goods sold (accrual)" :cash-cogs "Cost of goods sold (cash)"})
+
+(defn- part-select [comp k on-change placeholder]
+  [:select.inline-select
+   {:value (or (get comp k) "")
+    :class (when-not (get comp k) "unset")
+    :on-change #(let [v (.. % -target -value)] (on-change k (when (seq v) v)))}
+   (when placeholder [:option {:value ""} placeholder])
+   (for [[v label] (get report-parts k)]
+     ^{:key (str (name k) "-" v)} [:option {:value v} label])])
+
+(defn report-composer
+  "A report as a sentence of choices. Read-only when on-change is nil."
+  [comp on-change]
+  (let [change (or on-change (fn [_ _]))
+        ro?    (nil? on-change)]
+    [:div.rp-composer {:class (when ro? "read-only")}
+     [:span "Collect events where the business "]
+     [part-select comp :flow change (when-not ro? "does what?")]
+     [:span ", and the other party is "]
+     [part-select comp :party change nil]
+     [:label.rp-paid
+      [:input {:type "checkbox" :checked (true? (:paid comp)) :disabled ro?
+               :on-change #(change :paid (.. % -target -checked))}]
+      " only goods from batches that had been paid for"]
+     [:span ", "]
+     [part-select comp :period change (when-not ro? "when?")]
+     [:span "; then total "]
+     [part-select comp :total change (when-not ro? "what?")]
+     [:span "."]]))
+
+(defn- report-mirror
+  "The composition as the query it is, read before anyone writes one."
+  [comp]
+  [:pre.rb-dsl
+   (str "events\n"
+        (when (:flow comp) (str " |> where(business " (str/replace (:flow comp) "-" " ") ")\n"))
+        (when (seq (:party comp)) (str " |> where(counterparty is " (:party comp) ")\n"))
+        (when (:paid comp) " |> where(batch paid for)\n")
+        (when (= "year" (:period comp)) " |> between(2026-01-01, 2026-12-31)\n")
+        " |> sum(" (or (:total comp) "?") ")")])
+
+(defn- report-figure-line [preview]
+  (when preview
+    [:p.rp-figure
+     (if (:figure preview)
+       (str "Comes to " (format-currency (:figure preview)) ", from " (:count preview) " event"
+            (when (not= 1 (:count preview)) "s") ".")
+       "Collects nothing yet.")]))
+
+(defn- report-record-panel
+  "The company's year. The events the report in front of the student
+   collects are marked."
+  [collected]
+  (let [{:keys [company blurb events]} (:record (state/reporting))
+        in? (set collected)]
+    [:div.rp-record
+     [:h3 (str company " — the record")]
+     [:p.rp-blurb blurb]
+     [:table.rp-events
+      [:tbody
+       (for [e events]
+         ^{:key (:id e)}
+         [:tr {:class (when (in? (:id e)) "collected")}
+          [:td.rp-id (:id e)] [:td.rp-date (:date e)]
+          [:td (:counterparty e)] [:td.rp-says (:says e)]])]]]))
+
+(defn- grade-panel [grade]
+  (when grade
+    [:div.rp-grade {:class (if (:correct? grade) "right" "wrong")}
+     [:p [:strong (if (:correct? grade) "Composed right." "Not yet.")]
+      (when (:figure grade) (str " It comes to " (format-currency (:figure grade)) "."))]
+     (when-not (:correct? grade)
+       [:ul (for [p (:parts grade) :when (not (:ok? p))]
+              ^{:key (str (:part p))} [:li (:message p)])])]))
+
+(defn- compose-task
+  "A report to compose, checked part by part."
+  [task heading prompt]
+  (let [{:keys [composition previews grades]} (state/reporting)
+        grade (get grades task)
+        on-change (fn [k v]
+                    (state/update-reporting-composition! k v)
+                    (state/set-reporting-grade! task nil)
+                    (api/preview-report! task (assoc (:composition (state/reporting)) k v)))]
+    [:div.rp-task
+     [:h3 heading]
+     [:p prompt]
+     [report-composer composition on-change]
+     [report-mirror composition]
+     [report-figure-line (get previews task)]
+     [grade-panel grade]
+     [:div.checkin-actions
+      (if (:correct? grade)
+        [:button.primary {:on-click #(let [done (:composition (state/reporting))]
+                                       (state/set-reporting-preview! [:done task] done)
+                                       (state/next-reporting-step!))}
+         "Next →"]
+        [:button.primary {:on-click #(api/grade-report! task {:composition composition})
+                          :disabled (not (and (:flow composition) (:total composition)))}
+         "Check this report"])]]))
+
+(defn- margin-row [margin label]
+  (let [{:keys [margins grades]} (state/reporting)
+        [a b] [(get-in margins [margin :first]) (get-in margins [margin :second])]
+        sel (fn [slot v]
+              [:select.inline-select
+               {:value (or v "") :class (when-not v "unset")
+                :on-change #(do (state/set-reporting-margin! margin slot (keyword (.. % -target -value)))
+                                (state/set-reporting-grade! margin nil))}
+               [:option {:value ""} "which report?"]
+               (for [[k n] report-names] ^{:key (name k)} [:option {:value (name k)} n])])]
+    [:div.rp-margin
+     [:p [:strong label] " = " [sel :first (some-> a name)] " − " [sel :second (some-> b name)]
+      " " [:button.secondary {:on-click #(api/grade-report! margin {:inputs [a b]})
+                              :disabled (not (and a b))} "Check"]]
+     [grade-panel (get grades margin)]]))
+
+(defn reporting-view
+  "The reporting lesson's round."
+  [level]
+  (let [{:keys [step previews]} (state/reporting)
+        collected (case step
+                    :read (:collected (get previews (or (:reading (state/reporting)) :accrual-revenue)))
+                    (:accrual-cogs :cash-cogs) (:collected (get previews step))
+                    nil)]
+    [:div.drill-container
+     [:div.drill-header
+      [:h2 "Reporting practice"]
+      [:p.drill-sandbox-note "One company's year, the same for everyone. Reports preview freely as you build them; each one is checked part by part — which events, whose, what condition, when, what is totalled — not just by its figure."]]
+     [:div.two-column-layout.rp-layout
+      [report-record-panel collected]
+      [:div.rp-side
+       (case step
+         :read
+         [:div.rp-task
+          [:h3 "Read two reports"]
+          [:p "Both ask what Harbor Line earned from selling goods in 2026. Click one to see which events it collects."]
+          (doall
+            (for [[k comp] [[:accrual-revenue {:flow "goods-out" :party "customer" :period "year" :total "consideration"}]
+                            [:cash-revenue {:flow "money-in" :party "customer" :period "year" :total "money-in"}]]]
+              ^{:key (name k)}
+              [:div.rp-exemplar {:class (when (= k (or (:reading (state/reporting)) :accrual-revenue)) "showing")
+                                 :on-click #(swap! state/app-state assoc-in [:reporting :reading] k)}
+               [:h4 (report-names k)]
+               [report-composer comp nil]
+               [report-figure-line (get previews k)]]))
+          [:p.checkin-point "The November credit sale to Harbor Youth League is in the first and not the second; January's collection from Ridgeway, for a sale made in 2025, is in the second and not the first."]
+          [:div.checkin-actions
+           [:button.primary {:on-click #(do (state/set-reporting-composition! {})
+                                            (state/next-reporting-step!))}
+            "Now compose one →"]]]
+
+         :accrual-cogs
+         [compose-task :accrual-cogs "Compose: cost of goods sold, accrual basis"
+          "From blank. What did the goods Harbor Line sold in 2026 cost it? On the accrual basis the cost counts when the goods go out, paid for or not."]
+
+         :cash-cogs
+         [compose-task :cash-cogs "Change it: cost of goods sold, tax cash basis"
+          "Your accrual report is below. Under the tax cash method a cost counts in the year the goods are sold only if they have been paid for — the later of the two. Change one thing."]
+
+         :gross-margin
+         (let [grades (:grades (state/reporting))]
+           [:div.rp-task
+            [:h3 "Build both gross margins"]
+            [:p "Gross margin is revenue less the cost of the goods sold, on the same basis. Build each from the reports."]
+            [margin-row :accrual-gross-margin "Gross margin (accrual)"]
+            [margin-row :cash-gross-margin "Gross margin (cash)"]
+            (when (and (:correct? (:accrual-gross-margin grades)) (:correct? (:cash-gross-margin grades)))
+              [:div.checkin-actions
+               [:button.primary {:on-click #(state/next-reporting-step!)} "Finish →"]])])
+
+         :done
+         [:div.rp-task
+          [:h3 "The year, reported two ways"]
+          [:p "You composed the cost of goods sold from blank, changed its basis with one condition, and built both gross margins from your reports. Same events; two true answers to two different questions."]
+          [:div.checkin-actions
+           [:button.primary.drill-pass-btn
+            {:on-click #(do (api/complete-tutorial! level)
+                            (state/end-reporting!)
+                            (state/start-checkin! level {})
+                            (api/fetch-lesson-summary! level))}
+            "Lesson complete →"]]]
+         nil)]]]))
+
 (defn lessons-app-content []
   (let [level (state/current-level)]
     [:div.app-container.lessons-mode
@@ -4679,8 +4884,9 @@
      (when (state/tutorial-quiz-active?)
        [tutorial-quiz-flow])
      (cond
-       (state/checkin)         [checkin-view]
-       (state/drill-active?)   [drill-view level]
+       (state/checkin)            [checkin-view]
+       (state/reporting-active?)  [reporting-view level]
+       (state/drill-active?)      [drill-view level]
        (nil? (api/next-lesson)) [lessons-complete-view]
        :else                   [tutorial-gate level])]))
 

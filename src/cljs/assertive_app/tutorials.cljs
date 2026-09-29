@@ -909,6 +909,109 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
       :correct 1
       :explanation "No money moves today — it came in with the advance. What happens is that half the promise is kept: **reports** the $300 earned, and **fulfills** names the advance it came out of. Deferred Revenue goes down by $300 and Revenue goes up by the same."}]}
 
+   9
+   {:title "Level 9: Reporting"
+    :subtitle "Ask the record a question, and say how you asked it"
+    ;; Keyed 9 because the numbers are keys; it sits after Adjusting
+    ;; Entries in lesson-sequence. Its round is not a drill but a short run
+    ;; of report tasks over a fixed company year (reporting.clj), graded by
+    ;; how each report is composed. LESSON-REPORTING-DESIGN.org.
+    :kind :reporting
+    :orientation
+    {:framing "Everything so far recorded one event at a time. A report reads many: it collects the events that answer a question, and totals something about them. This lesson asks two questions of one company's year — what did it earn from selling goods, and what did those goods cost — on two different bases."
+     :protocol-heading "How to read a report"
+     :protocol ["**Which events?** Goods going out, money coming in, money going out, goods coming in."
+                "**Whose?** Who the other party is to the business: a customer, a supplier, an owner, a lender. The record reads it from what each event does."
+                "**Any condition?** For the tax cash basis, only goods from batches that had been paid for."
+                "**When?** The reporting year, or every date in the record."
+                "**Total what?** What was received or promised for the goods, the money received, or what the goods cost."]
+     :pair-heading "The same events, a different report"
+     :pair
+     {:same "Harbor Line Shirts' 2026, asked **what did you earn from selling goods?**"
+      :a {:when "…collect goods provided to customers, and total what was received or promised for them"
+          :becomes "Accrual revenue, $2,160"}
+      :b {:when "…collect money received from customers"
+          :becomes "Cash revenue, $2,110"}
+      :point "Nothing in the record changed. A credit sale made in November and not yet paid counts in the first and not the second; last December's sale, collected in January, counts in the second and not the first."}
+     :effect
+     {:holds "Before and after: exactly the same. A report moves nothing."
+      :may-or-must "After: the business has said what its revenue was, how it was worked out, and on which basis. The report is itself something asserted — and it can be checked, because the way it was composed is kept with it."}
+     :reminder "A report is a question asked of the record. Ask it differently and the same events give a different, equally true answer."}
+    :sections
+    [{:heading "From Entries to Reports"
+      :content "Every lesson so far recorded one event: what moved, who was on the other side, what was promised. A **report** reads many events at once.
+
+It does two things, and only two:
+
+1. **Collect** the events that answer the question — the sales, say, and not the purchases.
+2. **Total** something about them — what the customers paid, or what the goods cost.
+
+Nothing in the record changes when you report on it. What changes is what you know about the year."}
+
+     {:heading "Whose Money? The Counterparty's Role"
+      :content "Money comes in from customers when they pay, from owners when they invest, from lenders when they lend. Only the first is revenue.
+
+The record knows which is which, and not from a name. It reads **who the other party is to the business** from what each event does: someone the business provides goods to, or who keeps a promise to pay for goods, is a **customer**; someone it buys from is a **supplier**; someone who puts money in for a share of the business, or takes it out, is an **owner**.
+
+So a report asks for, say, *money received from customers*, and the owner's investment stays out without anyone having to remember it."}
+
+     {:heading "Two Bases for the Same Year"
+      :content "**Accrual basis.** Revenue is earned when the goods go out, whether the customer paid on the spot or promised to pay later — the rule from the credit lesson. The **cost of goods sold** is what the goods that went out cost, taken from the batch they came out of.
+
+**Tax cash basis.** A small business may keep its tax books on the cash method even though it holds inventory (IRC 448(c) and 471(c); in 2026, average gross receipts of $32 million or less). Receipts count **when received**: a cash sale, and a customer paying what they owed. The cost of goods is deducted in the year the goods are **sold, and only if they have been paid for** — the later of the two (Treas. Reg. 1.471-1(b)(4)). Goods bought on credit and sold before the supplier is paid are not deductible yet.
+
+| | Accrual | Tax cash |
+|---|---|---|
+| Revenue | goods provided to customers, paid or promised | money received from customers |
+| Cost of goods sold | cost of goods that went out | the same, only from batches paid for |
+
+Neither is wrong. They answer different questions, and a business may have to answer both."}
+
+     {:heading "Gross Margin"
+      :content "**Gross margin** is revenue less the cost of the goods sold: what selling the goods earned before any other cost of running the business.
+
+It is not a new walk over the events. It is arithmetic over two reports you already have — so it is built from them, on the same basis:
+
+- accrual gross margin = accrual revenue − accrual cost of goods sold
+- cash gross margin = cash revenue − cash cost of goods sold
+
+Mixing the bases gives a number that means nothing."}
+
+     {:heading "What You Will Do"
+      :content "You will work with one company's year: Harbor Line Shirts, a wholesaler of blank shirts. Its record is on screen the whole time.
+
+1. **Read** two revenue reports that are already built, and see which events each one collects.
+2. **Compose** the accrual cost of goods sold, from blank.
+3. **Change** it into the cash-basis cost of goods sold.
+4. **Build** both gross margins from your reports.
+
+Each report is checked **part by part** — which events, whose, what condition, when, what is totalled — not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault."}]
+
+    :quiz
+    [{:id :l9-q1
+      :question "The owner puts $10,000 into the business. Why does a report of money received from customers leave it out?"
+      :choices ["Because the amount is too large" "Because the owner is not a customer: the record reads who the other party is from what the event does" "Because investments are recorded in a separate book" "Because only credit sales count as revenue"]
+      :correct 1
+      :explanation "The owner received a share of the business for the money — that is what makes them an **owner**, not a customer. A report that collects money from customers leaves the investment out because of what the event says, not because anyone remembered to exclude it."}
+
+     {:id :l9-q2
+      :question "A sale on credit in November, not paid by December 31. In which of the year's revenue reports does it count?"
+      :choices ["Both" "Accrual revenue only" "Cash revenue only" "Neither"]
+      :correct 1
+      :explanation "On the **accrual** basis the revenue is earned when the goods go out. On the **cash** basis nothing is received until the customer pays — next year."}
+
+     {:id :l9-q3
+      :question "Under the tax cash method, shirts bought on credit in September and sold in October, with the supplier not paid until January. When is their cost deductible?"
+      :choices ["September, when bought" "October, when sold" "January, when paid — the later of sold and paid" "Never"]
+      :correct 2
+      :explanation "Inventory treated as non-incidental materials and supplies is deductible in the year it is used or sold, **or** the year it is paid for, **whichever is later** (Treas. Reg. 1.471-1(b)(4)). Sold in October, paid in January: January."}
+
+     {:id :l9-q4
+      :question "What is gross margin on the cash basis?"
+      :choices ["Cash revenue less accrual cost of goods sold" "Cash revenue less cash cost of goods sold" "All money in less all money out" "Accrual revenue less cash cost of goods sold"]
+      :correct 1
+      :explanation "Both reports on the **same basis**. Mixing bases gives a number that answers no question."}]}
+
    6
    {:title "Level 6: Equity Transactions"
     :subtitle "Record owner investments, withdrawals, and dividends"
@@ -1357,10 +1460,26 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
   [level]
   (get-in level-tutorials [level :quiz]))
 
+(def lesson-sequence
+  "The order students meet the lessons in. The numbers are keys, not
+   positions: Reporting (9) comes after Adjusting Entries, where every
+   kind of event its reports read has been taught."
+  [0 1 2 4 5 9 6 7 8])
+
 (defn all-levels
-  "Returns all tutorial level numbers in order."
+  "Every lesson, in the order students meet them."
   []
-  (sort (keys level-tutorials)))
+  (filterv #(contains? level-tutorials %) lesson-sequence))
+
+(defn earlier-lessons
+  "The lessons before this one in the sequence."
+  [level]
+  (vec (take-while #(not= % level) (all-levels))))
+
+(defn reporting-lesson?
+  "Is this lesson's round a run of report tasks rather than a drill?"
+  [level]
+  (= :reporting (get-in level-tutorials [level :kind])))
 
 (defn max-level
   "Returns the highest tutorial level number."

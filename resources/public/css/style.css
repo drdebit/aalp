@@ -4710,3 +4710,133 @@ header {
     font-size: 0.85em;
     padding: 2px 10px;
 }
+
+/* ==================== The reporting lesson's round ==================== */
+.rp-layout {
+    align-items: flex-start;
+}
+
+.rp-record {
+    background: #f9f6f0;
+    border: 1px solid #e8e2d6;
+    border-radius: 4px;
+    padding: 16px 18px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.rp-record h3,
+.rp-task h3 {
+    font-family: 'Source Serif 4', 'Georgia', serif;
+    font-size: 1.05em;
+    margin: 0 0 6px;
+    color: #1a2332;
+}
+
+.rp-blurb {
+    color: #64748b;
+    font-size: 0.88em;
+    margin: 0 0 10px;
+}
+
+.rp-events {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82em;
+}
+
+.rp-events td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #efe9dd;
+    vertical-align: top;
+}
+
+.rp-events tr.collected td {
+    background: #fdf3d8;
+}
+
+.rp-events tr.collected td.rp-id {
+    box-shadow: inset 3px 0 0 #c9a227;
+}
+
+.rp-id, .rp-date {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    white-space: nowrap;
+    color: #3b4a61;
+}
+
+.rp-says {
+    color: #3b4a61;
+}
+
+.rp-task {
+    background: #ffffff;
+    border: 1px solid #e8e2d6;
+    border-radius: 4px;
+    padding: 18px 20px;
+    font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.rp-composer {
+    line-height: 2.2;
+    margin: 8px 0;
+}
+
+.rp-composer.read-only select {
+    pointer-events: none;
+    background: #f4efe6;
+}
+
+.rp-paid {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 6px;
+    font-size: 0.92em;
+}
+
+.rp-figure {
+    font-weight: 600;
+    color: #1a2332;
+}
+
+.rp-exemplar {
+    border: 1px solid #efe9dd;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    cursor: pointer;
+}
+
+.rp-exemplar.showing {
+    border-color: #c9a227;
+    background: #fffbf0;
+}
+
+.rp-exemplar h4 {
+    margin: 0 0 4px;
+}
+
+.rp-grade {
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 10px 0;
+}
+
+.rp-grade.right {
+    background: #eef7ee;
+    border: 1px solid #b7dcb7;
+}
+
+.rp-grade.wrong {
+    background: #fdf1ef;
+    border: 1px solid #efc2b8;
+}
+
+.rp-grade ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+
+.rp-margin {
+    margin: 12px 0;
+}

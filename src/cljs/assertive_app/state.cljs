@@ -388,6 +388,51 @@
 (defn lessons-mode? []
   (= :lessons (:app-mode @app-state)))
 
+;; ==================== The reporting lesson's round ====================
+;; Not a drill: a short run of report tasks over one fixed company year,
+;; each graded by how the report is composed. Steps, in order:
+;;   :read          two revenue reports, already built, to read
+;;   :accrual-cogs  cost of goods sold, composed from blank
+;;   :cash-cogs     the same, changed to the tax cash basis
+;;   :gross-margin  both gross margins, built from the reports
+;;   :done
+
+(def reporting-steps [:read :accrual-cogs :cash-cogs :gross-margin :done])
+
+(defn reporting [] (:reporting @app-state))
+(defn reporting-active? [] (some? (:reporting @app-state)))
+
+(defn start-reporting! [level]
+  (swap! app-state assoc :reporting {:level level :step :read :composition {}
+                                     :previews {} :grades {} :margins {}}))
+
+(defn set-reporting-record! [record]
+  (swap! app-state assoc-in [:reporting :record] record))
+
+(defn set-reporting-composition! [c]
+  (swap! app-state assoc-in [:reporting :composition] c))
+
+(defn update-reporting-composition! [k v]
+  (swap! app-state update-in [:reporting :composition] assoc k v))
+
+(defn set-reporting-preview! [key preview]
+  (swap! app-state assoc-in [:reporting :previews key] preview))
+
+(defn set-reporting-grade! [task grade]
+  (swap! app-state assoc-in [:reporting :grades task] grade))
+
+(defn set-reporting-margin! [margin slot report]
+  (swap! app-state assoc-in [:reporting :margins margin slot] report))
+
+(defn next-reporting-step! []
+  (swap! app-state update :reporting
+         (fn [r] (let [steps reporting-steps
+                       i (.indexOf steps (:step r))]
+                   (assoc r :step (get steps (inc i) :done))))))
+
+(defn end-reporting! []
+  (swap! app-state dissoc :reporting))
+
 ;; ==================== Lesson check-in ====================
 ;; After a lesson's practice round is passed: what the student can now
 ;; say, then a short look back at earlier lessons. The look back informs

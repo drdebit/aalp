@@ -327,7 +327,57 @@
   "The next look-back problem: from lessons before this one, not one
    already served in this check-in."
   [level]
-  (fetch-problem! level {:below level :served (get-in @state/app-state [:checkin :served] [])}))
+  (fetch-problem! level {:levels (tutorials/earlier-lessons level)
+                         :served (get-in @state/app-state [:checkin :served] [])}))
+
+;; ==================== The reporting lesson ====================
+
+(defn fetch-reporting-record! []
+  (GET (str api-base "/lessons/reporting/record")
+    {:params {:record "harbor-line"}
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler state/set-reporting-record!
+     :error-handler (silent-error-handler "Reporting record error:")}))
+
+(defn preview-report!
+  "Run a composition over the lesson's record, free, and keep the figure
+   and the events it collected under `key`."
+  [key composition]
+  (POST (str api-base "/lessons/reporting/preview")
+    {:params {:record "harbor-line" :composition composition}
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler #(state/set-reporting-preview! key %)
+     :error-handler (silent-error-handler "Report preview error:")}))
+
+(defn grade-report!
+  "Check a report task: a composition, or for a gross margin the two
+   reports it combines."
+  [task {:keys [composition inputs]}]
+  (POST (str api-base "/lessons/reporting/grade")
+    {:params (cond-> {:record "harbor-line" :task (name task)
+                      :level (:level (state/reporting))}
+               composition (assoc :composition composition)
+               inputs (assoc :inputs (mapv name inputs)))
+     :format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler #(state/set-reporting-grade! task %)
+     :error-handler (make-error-handler {:message "Could not check the report"})}))
+
+(defn start-reporting-round!
+  "Open the reporting lesson's round: the record, and the two revenue
+   reports to read, already built."
+  [level]
+  (state/start-reporting! level)
+  (fetch-reporting-record!)
+  (preview-report! :accrual-revenue {:flow "goods-out" :party "customer" :period "year" :total "consideration"})
+  (preview-report! :cash-revenue {:flow "money-in" :party "customer" :period "year" :total "money-in"}))
 
 ;; ==================== Tutorial Completion ====================
 
@@ -364,7 +414,7 @@
   "Serve a problem at `level`. Options override the drill's own bookkeeping:
    a retention check passes :below (only earlier lessons' patterns) and
    its own :served."
-  [level & [{:keys [below served]}]]
+  [level & [{:keys [below served levels]}]]
   (state/set-loading! true)
   (POST (str api-base "/generate-problem")
     {:params (cond-> {:level level
@@ -374,8 +424,9 @@
                       :served (vec (or served (get-in @state/app-state [:drill :served] [])))
                       ;; Patterns missed earlier: they come round again before the
                       ;; round can be passed without them.
-                      :missed (vec (if below [] (get-in @state/app-state [:drill :missed] [])))}
-               below (assoc :below below))
+                      :missed (vec (if (or below levels) [] (get-in @state/app-state [:drill :missed] [])))}
+               below (assoc :below below)
+               levels (assoc :levels (vec levels)))
      :format :json
      :headers (auth-headers)
      :response-format :json
@@ -391,7 +442,7 @@
                   (state/update-assertion-parameter! :has-date :date date))
                 (state/clear-feedback!)
                 (state/stamp-problem-served!)
-                (when below (state/note-retention-served! (:template response)))
+                (when (or below levels) (state/note-retention-served! (:template response)))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to load problem"})}))
 

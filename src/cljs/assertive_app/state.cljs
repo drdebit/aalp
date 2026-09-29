@@ -433,6 +433,48 @@
 (defn end-reporting! []
   (swap! app-state dissoc :reporting))
 
+;; ==================== The capstone's own year ====================
+;; Phases: :record (each transaction in turn, no verdicts), :review (every
+;; entry, flagged where it differs; any can be revised, with feedback),
+;; :report (the reports over the student's own books), :done.
+
+(defn capstone [] (:capstone @app-state))
+(defn capstone-active? [] (some? (:capstone @app-state)))
+
+(defn start-capstone! [level]
+  (swap! app-state assoc :capstone {:level level :phase :record
+                                    :previews {} :grades {} :margins {} :composition {}}))
+
+(defn set-capstone-data! [data]
+  (swap! app-state assoc-in [:capstone :data] data))
+
+(defn set-capstone-phase! [phase]
+  (swap! app-state assoc-in [:capstone :phase] phase))
+
+(defn set-capstone-correcting! [tx verdict]
+  (swap! app-state update :capstone assoc :correcting tx :verdict verdict))
+
+(defn set-capstone-verdict! [verdict]
+  (swap! app-state assoc-in [:capstone :verdict] verdict))
+
+(defn set-capstone-task! [task]
+  (swap! app-state update :capstone assoc :task task :composition {}))
+
+(defn update-capstone-composition! [k v]
+  (swap! app-state update-in [:capstone :composition] assoc k v))
+
+(defn set-capstone-preview! [key preview]
+  (swap! app-state assoc-in [:capstone :previews key] preview))
+
+(defn set-capstone-grade! [task grade]
+  (swap! app-state assoc-in [:capstone :grades task] grade))
+
+(defn set-capstone-margin! [margin slot report]
+  (swap! app-state assoc-in [:capstone :margins margin slot] report))
+
+(defn end-capstone! []
+  (swap! app-state dissoc :capstone))
+
 ;; ==================== Lesson check-in ====================
 ;; After a lesson's practice round is passed: what the student can now
 ;; say, then a short look back at earlier lessons. The look back informs

@@ -379,6 +379,106 @@
   (preview-report! :accrual-revenue {:flow "goods-out" :party "customer" :period "year" :total "consideration"})
   (preview-report! :cash-revenue {:flow "money-in" :party "customer" :period "year" :total "money-in"}))
 
+;; ==================== The capstone's own year ====================
+
+(declare capstone-load-next!)
+
+(defn- capstone-load-transaction!
+  "Put one transaction of the year in front of the student, read against
+   their own books as they stood when it happened. `selections` pre-fills
+   the sentence -- the entry being revised."
+  [tx selections]
+  (state/set-current-problem!
+    {:id (str "capstone-" (:id tx))
+     :narrative (:narrative tx)
+     :prior-events (:prior-events tx)
+     :variables {:date (:date tx)}
+     :problem-type "forward"
+     :level 8
+     :capstone-tx (:id tx)})
+  (state/set-derived-je! nil)
+  (state/clear-feedback!)
+  (if (seq selections)
+    (state/set-selected-assertions! selections)
+    (do (state/clear-selections!)
+        (state/toggle-assertion! :has-date)
+        (state/update-assertion-parameter! :has-date :date (:date tx))))
+  (state/stamp-problem-served!)
+  (derive-je!))
+
+(defn fetch-capstone-state!
+  "The year and the student's entries. `then` runs with the data."
+  ([] (fetch-capstone-state! nil))
+  ([then]
+   (GET (str api-base "/capstone/state")
+     {:headers (auth-headers)
+      :response-format :json
+      :keywords? true
+      :handler (fn [data]
+                 (state/set-capstone-data! data)
+                 (when then (then data)))
+      :error-handler (make-error-handler {:message "Could not load the year"})})))
+
+(defn capstone-load-next!
+  "The next transaction not yet recorded, or on to the review."
+  [data]
+  (if-let [tx (first (remove :entry (:transactions data)))]
+    (capstone-load-transaction! tx nil)
+    (do (state/set-current-problem! nil)
+        (state/set-capstone-phase! :review))))
+
+(defn start-capstone-round! [level]
+  (state/start-capstone! level)
+  (fetch-capstone-state! capstone-load-next!))
+
+(defn capstone-revise!
+  "Open an entry again, as the student recorded it."
+  [tx-id]
+  (when-let [tx (first (filter #(= tx-id (:id %)) (:transactions (:data (state/capstone)))))]
+    (state/set-capstone-correcting! tx-id nil)
+    (state/set-capstone-phase! :correct)
+    (capstone-load-transaction! tx (:entry tx))))
+
+(defn capstone-record!
+  "Record the entry in front of the student. While the year is first being
+   recorded nothing is said about it; a revision is told whether it now
+   says what the transaction says."
+  []
+  (let [cp (state/capstone)
+        tx (:capstone-tx (state/current-problem))]
+    (state/set-loading! true)
+    (POST (str api-base "/capstone/record")
+      {:params {:tx tx :selected-assertions (state/selected-assertions)}
+       :format :json
+       :headers (auth-headers)
+       :response-format :json
+       :keywords? true
+       :handler (fn [verdict]
+                  (state/set-loading! false)
+                  (if (= :correct (:phase cp))
+                    (do (state/set-capstone-verdict! verdict)
+                        (fetch-capstone-state!))
+                    (fetch-capstone-state! capstone-load-next!)))
+       :error-handler (make-error-handler {:message "Could not record the entry"})})))
+
+(defn capstone-preview! [key composition]
+  (POST (str api-base "/capstone/preview")
+    {:params {:composition composition}
+     :format :json :headers (auth-headers)
+     :response-format :json :keywords? true
+     :handler #(state/set-capstone-preview! key %)
+     :error-handler (silent-error-handler "Capstone preview error:")}))
+
+(defn capstone-grade! [task {:keys [composition inputs]}]
+  (POST (str api-base "/capstone/grade")
+    {:params (cond-> {:task (name task)}
+               composition (assoc :composition composition)
+               inputs (assoc :inputs (mapv name inputs)))
+     :format :json :headers (auth-headers)
+     :response-format :json :keywords? true
+     :handler #(state/set-capstone-grade! task %)
+     :error-handler (make-error-handler {:message "Could not check the report"})}))
+
 ;; ==================== Tutorial Completion ====================
 
 (defn complete-tutorial!
@@ -832,7 +932,8 @@
                               (:prior-events (state/current-problem)))
               ;; Neither a lesson nor another company's problem is read
               ;; against SP's own ledger.
-              :isolated (or (state/walkthrough-active?) (state/drill-active?))}
+              :isolated (or (state/walkthrough-active?) (state/drill-active?)
+                            (state/capstone-active?))}
      :format :json
      :headers (auth-headers)
      :response-format :json

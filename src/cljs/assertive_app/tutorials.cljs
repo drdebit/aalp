@@ -1221,6 +1221,9 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
    8
    {:title "Level 8: Capstone Review"
     :subtitle "Bringing it all together — the complete assertion framework"
+    ;; After its mixed practice round: one company's year, recorded by the
+    ;; student, reviewed and corrected, then reported on (capstone.clj).
+    :capstone? true
     ;; No new words, and the whole reading at once: the capstone's drill
     ;; is every lesson's patterns mixed, so the protocol is every lesson's
     ;; question in the order an event raises them.
@@ -1475,6 +1478,11 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
   "The lessons before this one in the sequence."
   [level]
   (vec (take-while #(not= % level) (all-levels))))
+
+(defn capstone-lesson?
+  "Does this lesson end with the student's own year?"
+  [level]
+  (true? (get-in level-tutorials [level :capstone?])))
 
 (defn reporting-lesson?
   "Is this lesson's round a run of report tasks rather than a drill?"

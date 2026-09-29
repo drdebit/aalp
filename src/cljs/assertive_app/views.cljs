@@ -762,7 +762,10 @@
         ;; where it gets asked. Offering it inline let a student cost the
         ;; sale before recognizing it -- and made the step that follows
         ;; look like something they had already done.
-        (when-let [bs (and (state/walkthrough-active?)
+        ;; ...and in the capstone's own year, where there is no verdict
+        ;; to open a costing step: naming the batch is part of recording
+        ;; the sale.
+        (when-let [bs (and (or (state/walkthrough-active?) (state/capstone-active?))
                            (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item params) ""))])))]
           [:span
            [:span.connector " from "]
@@ -2461,6 +2464,15 @@
                           (< (+ correct remaining) pass-count)
                           (not streak-reachable?))]
     (cond
+      (and passed? (state/lessons-mode?) (tutorials/capstone-lesson? level))
+      [:button.primary.drill-pass-btn
+       {:on-click #(do (state/end-drill!)
+                       (api/save-drill-state! nil)
+                       (state/clear-feedback!)
+                       (state/set-current-problem! nil)
+                       (api/start-capstone-round! level))}
+       "Round passed — now your own year →"]
+
       (and passed? (state/lessons-mode?))
       [:button.primary.drill-pass-btn
        {:on-click #(let [round (state/drill-state)]
@@ -4868,6 +4880,188 @@
             "Lesson complete →"]]]
          nil)]]]))
 
+;; ==================== The capstone's own year ====================
+;; Record one company's year, review and correct it, report on it
+;; (capstone.clj). The books are the student's own throughout.
+
+(defn- capstone-entry-panel
+  "The live entry and the button that records it. While the year is first
+   being recorded there is no verdict; a revision is told whether it now
+   says what the transaction says."
+  []
+  (let [{:keys [phase verdict]} (state/capstone)]
+    [:div.column.feedback-panel
+     [:h2 "Your entry"]
+     [derived-je-panel {:provisional? true}]
+     (when (and (= :correct phase) verdict)
+       [:div.rp-grade {:class (if (:matches? verdict) "right" "wrong")}
+        [:p [:strong (if (:matches? verdict) "This entry now says what happened." "This entry still differs from what happened.")]]
+        (when-not (:matches? verdict)
+          [:ul (for [h (:hints verdict)] ^{:key h} [:li h])])])
+     [:div.actions
+      [:button.primary {:on-click #(api/capstone-record!)
+                        :disabled (empty? (keys (state/selected-assertions)))}
+       (if (= :correct phase) "Record the revision" "Record this entry")]
+      (when (= :correct phase)
+        [:button.secondary {:on-click #(do (state/set-capstone-correcting! nil nil)
+                                           (state/set-current-problem! nil)
+                                           (state/set-capstone-phase! :review))}
+         "Back to the review"])]]))
+
+(defn- capstone-books-panel
+  "The books as the student has kept them."
+  [collected]
+  (let [{:keys [company books]} (:data (state/capstone))
+        in? (set collected)]
+    [:div.rp-record
+     [:h3 (str company " — your books")]
+     [:table.rp-events
+      [:tbody
+       (for [e books]
+         ^{:key (:id e)}
+         [:tr {:class (when (in? (:id e)) "collected")}
+          [:td.rp-id (:id e)] [:td.rp-date (:date e)]
+          [:td (:counterparty e)] [:td.rp-says (:says e)]])]]]))
+
+(def ^:private capstone-reports
+  [[:accrual-revenue "Accrual revenue" "What Campus Threads earned from selling goods in 2026, on the accrual basis."]
+   [:accrual-cogs "Cost of goods sold (accrual)" "What the goods it sold in 2026 cost it."]
+   [:cash-revenue "Cash revenue" "What it received from customers in 2026 — the tax cash basis."]
+   [:cash-cogs "Cost of goods sold (cash)" "The cost it may deduct for 2026 under the tax cash method."]])
+
+(defn- capstone-compare [compare]
+  (when compare
+    [:div.cp-compare
+     [:p "Your books: " [:strong (format-currency (:yours compare))]
+      ". Books with every entry right: " [:strong (format-currency (:right compare))] "."]
+     (cond
+       (seq (:entries compare))
+       [:p "The difference comes from " (str/join ", " (:entries compare))
+        ". Those entries do not say what happened, and the report reads what they say."]
+       (seq (:unaffected compare))
+       [:p "They agree. " (str/join ", " (:unaffected compare))
+        " still differs from what happened — but not in anything this report totals."]
+       :else
+       [:p "They agree: every entry this report reads says what happened."])]))
+
+(defn- capstone-report-task [task label prompt]
+  (let [{:keys [composition previews grades]} (state/capstone)
+        grade (get grades task)
+        on-change (fn [k v]
+                    (state/update-capstone-composition! k v)
+                    (state/set-capstone-grade! task nil)
+                    (api/capstone-preview! task (assoc (:composition (state/capstone)) k v)))]
+    [:div.rp-task
+     [:h3 label]
+     [:p prompt]
+     [report-composer composition on-change]
+     [report-figure-line (get previews task)]
+     [grade-panel grade]
+     (when (:correct? grade) [capstone-compare (:compare grade)])
+     [:div.checkin-actions
+      (if (:correct? grade)
+        [:button.primary {:on-click #(let [i (.indexOf (mapv first capstone-reports) task)
+                                           nxt (get capstone-reports (inc i))]
+                                       (if nxt
+                                         (state/set-capstone-task! (first nxt))
+                                         (state/set-capstone-task! :gross-margin)))}
+         "Next →"]
+        [:button.primary {:on-click #(api/capstone-grade! task {:composition composition})
+                          :disabled (not (and (:flow composition) (:total composition)))}
+         "Check this report"])]]))
+
+(defn- capstone-margin-row [margin label]
+  (let [{:keys [margins grades]} (state/capstone)
+        a (get-in margins [margin :first]) b (get-in margins [margin :second])
+        sel (fn [slot v]
+              [:select.inline-select
+               {:value (or (some-> v name) "") :class (when-not v "unset")
+                :on-change #(do (state/set-capstone-margin! margin slot (keyword (.. % -target -value)))
+                                (state/set-capstone-grade! margin nil))}
+               [:option {:value ""} "which report?"]
+               (for [[k n] report-names] ^{:key (name k)} [:option {:value (name k)} n])])]
+    [:div.rp-margin
+     [:p [:strong label] " = " [sel :first a] " − " [sel :second b] " "
+      [:button.secondary {:on-click #(api/capstone-grade! margin {:inputs [a b]})
+                          :disabled (not (and a b))} "Check"]]
+     [grade-panel (get grades margin)]
+     (when (:correct? (get grades margin)) [capstone-compare (:compare (get grades margin))])]))
+
+(defn capstone-view
+  "The capstone's own year."
+  [level]
+  (let [{:keys [phase data task previews grades]} (state/capstone)
+        txs (:transactions data)
+        recorded (count (filter :entry txs))]
+    [:div.drill-container
+     [:div.drill-header
+      [:h2 (case phase
+             :record "Your year: recording"
+             (:review :correct) "Your year: review and correct"
+             :report "Your year: reporting"
+             "Your year")]
+      [:p.drill-sandbox-note (:blurb data)]
+      (when (= :record phase)
+        [:div.drill-progress (str "Transaction " (min (inc recorded) (count txs)) " of " (count txs)
+                                  ". Nothing tells you as you go — books do not. You will see every entry again before you report.")])]
+     (case phase
+       (:record :correct)
+       [:div.three-column-layout
+        [narrative-panel]
+        [sentence-builder]
+        [capstone-entry-panel]]
+
+       :review
+       (let [differs (count (remove :matches? txs))]
+         [:div.rp-task.cp-review
+          [:h3 (if (zero? differs)
+                 "Every entry says what happened."
+                 (str differs " of " (count txs) " entries differ from what happened."))]
+          [:p "Each is checked against the transaction it records. Revise any of them — or leave them, and see what they do to the reports."]
+          [:table.rp-events.cp-entries
+           [:tbody
+            (for [tx txs]
+              ^{:key (:id tx)}
+              [:tr {:class (if (:matches? tx) "ok" "differs")}
+               [:td.rp-id (:id tx)] [:td.rp-date (:date tx)]
+               [:td (:narrative tx)]
+               [:td.cp-status (if (:matches? tx) "✓" "⚑ differs")
+                (when (:corrected? tx) [:span.cp-revised " (revised)"])]
+               [:td [:button.secondary {:on-click #(api/capstone-revise! (:id tx))} "Revise"]]])]]
+          [:div.checkin-actions
+           [:button.primary {:on-click #(do (state/set-capstone-phase! :report)
+                                            (state/set-capstone-task! :accrual-revenue))}
+            "Report on your books →"]]])
+
+       :report
+       [:div.two-column-layout.rp-layout
+        [capstone-books-panel (:collected (get previews task))]
+        [:div.rp-side
+         (if (= :gross-margin task)
+           [:div.rp-task
+            [:h3 "Both gross margins, from your reports"]
+            [capstone-margin-row :accrual-gross-margin "Gross margin (accrual)"]
+            [capstone-margin-row :cash-gross-margin "Gross margin (cash)"]
+            (when (and (:correct? (:accrual-gross-margin grades)) (:correct? (:cash-gross-margin grades)))
+              [:div.checkin-actions
+               [:button.primary {:on-click #(state/set-capstone-phase! :done)} "Finish →"]])]
+           (let [[k label prompt] (first (filter #(= task (first %)) capstone-reports))]
+             [capstone-report-task k label prompt]))]]
+
+       :done
+       [:div.rp-task
+        [:h3 "Campus Threads' 2026, in your books"]
+        [:p "You kept a year's books, checked them, corrected what you chose to, and reported on them on two bases. Where a report differs from the one correct books give, you know which entries it comes from."]
+        [:div.checkin-actions
+         [:button.primary.drill-pass-btn
+          {:on-click #(do (api/complete-tutorial! level)
+                          (state/end-capstone!)
+                          (state/set-current-problem! nil)
+                          (state/start-checkin! level {})
+                          (api/fetch-lesson-summary! level))}
+          "Course complete →"]]]
+       nil)]))
+
 (defn lessons-app-content []
   (let [level (state/current-level)]
     [:div.app-container.lessons-mode
@@ -4886,6 +5080,7 @@
      (cond
        (state/checkin)            [checkin-view]
        (state/reporting-active?)  [reporting-view level]
+       (state/capstone-active?)   [capstone-view level]
        (state/drill-active?)      [drill-view level]
        (nil? (api/next-lesson)) [lessons-complete-view]
        :else                   [tutorial-gate level])]))

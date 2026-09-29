@@ -1365,6 +1365,22 @@
 
 ;; Template builder functions to reduce repetition in classification definitions
 
+(defn fulfills-requirement-met?
+  "Does this event's `fulfills` name a promise the record holds open, of a
+   kind this classification settles?
+
+   Paying a dividend is paying THE dividend the board declared; a payment
+   that names no promise, or names the loan, is a different transaction
+   however much cash moved. The record is the only place that can say
+   which promises are open, so, like a position, this is a property of
+   the paragraph. A standalone problem has no paragraph and is not
+   assessed on it."
+  [assertions-map kinds context]
+  (or (:standalone? context)
+      (let [id (some-> (get-in assertions-map [:fulfills :event]) name not-empty)]
+        (boolean (and id (some #(and (= id (:id %)) (contains? kinds (:kind %)))
+                               (chain/promises (:events context))))))))
+
 (defn cash-exchange
   "Template for cash exchange transactions (simultaneous exchange, no future obligation).
    entity-provides and entity-receives can be :cash or :goods/:services
@@ -2011,8 +2027,10 @@
     :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Board declares dividend to shareholders"
-    :journal-entry [{:debit "Retained Earnings" :credit "Dividends Payable"}]
-    :note "When declared, dividends become a liability. Retained earnings decrease."
+    ;; 2101 debits a temporary Dividends account, closed to Retained
+    ;; Earnings at year end (ACCT 2101 equity T-accounts, Topic 9).
+    :journal-entry [{:debit "Dividends" :credit "Dividends Payable"}]
+    :note "When declared, dividends become a liability. The Dividends account records the distribution and is closed to Retained Earnings at year end."
     :examples ["Board declares $0.50 per share dividend"
                "SP declares quarterly dividend to shareholders"]
     :level 6}
@@ -2021,6 +2039,7 @@
    {:required #{:has-date :provides :has-counterparty :fulfills}
     :required-parameters {:provides {:unit "monetary-unit"}
                           :fulfills {:action "requires"}}
+    :fulfills-kind #{:declared}
     :prohibited #{:receives :expects :requires}
     :description "Payment of previously declared dividend"
     :journal-entry [{:debit "Dividends Payable" :credit "Cash"}]
@@ -2032,7 +2051,9 @@
    :owner-withdrawal
    {:required #{:has-date :provides :has-counterparty}
     :required-parameters {:provides {:unit "monetary-unit"}}
-    :prohibited #{:receives :requires :expects}
+    ;; Keeping an earlier promise is not a draw, however alike the cash
+    ;; looks: the derivation's :owner-drawing rule excludes it too.
+    :prohibited #{:receives :requires :expects :fulfills}
     :description "Owner withdraws capital from business"
     :journal-entry [{:debit "Owner's Drawing" :credit "Cash"}]
     :note "In sole proprietorships and partnerships, owners can withdraw funds. This reduces equity."
@@ -2063,6 +2084,7 @@
    {:required #{:has-date :provides :has-counterparty :fulfills}
     :required-parameters {:provides {:unit "monetary-unit"}
                           :fulfills {:action "requires"}}
+    :fulfills-kind #{:borrowing}
     :prohibited #{:receives :expects}
     :description "Pay principal on notes payable"
     :journal-entry [{:debit "Notes Payable" :credit "Cash"}]
@@ -2075,6 +2097,7 @@
    {:required #{:has-date :provides :has-counterparty :fulfills}
     :required-parameters {:provides {:unit "monetary-unit"}
                           :fulfills {:action "requires"}}
+    :fulfills-kind #{:accrued}
     :prohibited #{:receives :expects}
     :description "Pay accrued interest"
     :journal-entry [{:debit "Interest Payable" :credit "Cash"}]
@@ -2314,8 +2337,9 @@
 
 (defn generate-dynamic-hints
   "Generate dynamic hints by comparing student assertions to a classification pattern.
-   Returns a map with :missing-assertions, :incorrect-assertions, :missing-parameters."
-  [assertions-map classification-key]
+   Returns a map with :missing-assertions, :incorrect-assertions, :missing-parameters.
+   Given the record, also whether `fulfills` names the promise this keeps."
+  [assertions-map classification-key & [context]]
   (let [classification (get classifications classification-key)
         {:keys [required prohibited optional required-parameters]} classification
         assertion-keys (set (keys assertions-map))
@@ -2346,7 +2370,11 @@
      :extra-assertions extra-assertions
      :missing-parameters missing-parameters
      ;; Which expectation the answer wants, so a hint can name it.
-     :expects-spec (get required-parameters :expects)}))
+     :expects-spec (get required-parameters :expects)
+     :fulfills-unmet (let [kinds (:fulfills-kind classification)]
+                       (when (and kinds context (contains? assertion-keys :fulfills)
+                                  (not (fulfills-requirement-met? assertions-map kinds context)))
+                         kinds))}))
 
 (defn- format-param-key
   "Convert parameter key to human-readable form."
@@ -2413,12 +2441,27 @@
       :else
       "Expects (how sure the business is that the other party will pay)")))
 
+(def ^:private promise-kind-phrases
+  {:declared "the dividend the board declared"
+   :borrowing "the note the business signed"
+   :accrued "the interest (or wages) the business accrued"
+   :payable "what the business owes a supplier"
+   :receivable "what a customer owes the business"
+   :lending "the note a borrower signed"})
+
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
   [hint-data]
-  (let [{:keys [missing-assertions incorrect-assertions extra-assertions missing-parameters]} hint-data
+  (let [{:keys [missing-assertions incorrect-assertions extra-assertions missing-parameters
+                fulfills-unmet]} hint-data
         hints []]
     (cond-> hints
+      ;; Fulfills is present but keeps the wrong promise, or none.
+      (seq fulfills-unmet)
+      (conj (str "Fulfills has to name the promise this payment keeps: "
+                 (clojure.string/join " or " (keep promise-kind-phrases fulfills-unmet))
+                 ". Choose it from the record's open promises."))
+
       (seq extra-assertions)
       (conj (str "Not part of this one: "
                 (clojure.string/join ", " (map #(get assertion-labels % (name %))
@@ -2545,7 +2588,8 @@
         universal-context #{:has-date}
 
         exact-matches (for [[class-key {:keys [required prohibited optional required-parameters
-                                              requires-missing-parameters requires-position]}] classifications
+                                              requires-missing-parameters requires-position
+                                              fulfills-kind]}] classifications
                             :when (and
                                    ;; All required assertions present
                                    (clojure.set/subset? required assertion-keys)
@@ -2563,6 +2607,9 @@
                                    ;; about -- see position-requirement-met?
                                    (or (nil? requires-position)
                                        (position-requirement-met? assertions-map requires-position context))
+                                   ;; A payment keeps a particular promise.
+                                   (or (nil? fulfills-kind)
+                                       (fulfills-requirement-met? assertions-map fulfills-kind context))
                                    ;; Check parameters match if required-parameters specified
                                    (or (nil? required-parameters)
                                        (every? (fn [[assertion-code required-params]]
@@ -2573,8 +2620,14 @@
                         class-key)
 
         all-distances (when (empty? exact-matches)
-                        (for [[class-key {:keys [required prohibited optional required-parameters]}] classifications]
+                        (for [[class-key {:keys [required prohibited optional required-parameters
+                                                 fulfills-kind]}] classifications]
                           (let [optional-set (or optional #{})
+                                ;; Naming the wrong promise, or none, is a
+                                ;; parameter wrong, not a near miss of nothing.
+                                fulfills-unmet? (and fulfills-kind
+                                                     (contains? assertion-keys :fulfills)
+                                                     (not (fulfills-requirement-met? assertions-map fulfills-kind context)))
                                 allowed-set (clojure.set/union required optional-set
                                                                universal-context)
                                 missing (clojure.set/difference required assertion-keys)
@@ -2597,7 +2650,8 @@
                                            (* (:prohibited-assertion distance-weights) (count extra-prohibited))
                                            (* (:unrequired-assertion distance-weights) (count extra-unrequired))
                                            (* (:parameter-mismatch distance-weights) (get param-failures :wrong 0))
-                                           (* (:parameter-blank distance-weights) (get param-failures :blank 0)))
+                                           (* (:parameter-blank distance-weights) (get param-failures :blank 0))
+                                           (if fulfills-unmet? (:parameter-mismatch distance-weights) 0))
                                 ;; Count parameter matches for tiebreaking
                                 param-matches (if (and required-parameters (seq present-assertions))
                                                 (count
@@ -2755,7 +2809,7 @@
                                        ;; near-miss branch does; the generic
                                        ;; line alone left a printer-on-credit
                                        ;; student with nothing to act on.
-                                       (let [specific (format-hints (generate-dynamic-hints assertions-map correct-classification))]
+                                       (let [specific (format-hints (generate-dynamic-hints assertions-map correct-classification context))]
                                          (if (seq specific)
                                            specific
                                            ["Check what the entity is providing vs. receiving."])))))})
@@ -2768,7 +2822,8 @@
                          correct-desc (when correct-class (:description correct-class))
                          ;; Generate parameter-level hints against correct classification
                          hint-data (generate-dynamic-hints assertions-map
-                                                           (or correct-classification (:type closest)))
+                                                           (or correct-classification (:type closest))
+                                                           context)
                          param-hints (format-hints hint-data)
                          ;; Augment closest classification with quantities for JE display
                          augmented-closest (update closest-classification :journal-entry
@@ -3406,7 +3461,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, {company}'s Board of Directors declares a cash dividend of ${per-share} per share on {shares} outstanding shares. Total dividend payable is ${total}. Payment date is {payment-date}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "distribution" :basis "declared"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit" :quantity :total}}
     :correct-classification :dividend-declaration
     :level 6
     :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15" "2026-06-15" "2026-07-15" "2026-08-15" "2026-09-15" "2026-10-15" "2026-11-15" "2026-12-15"]
@@ -3420,8 +3475,10 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name "Shareholders"}
-                          :fulfills {:action "requires"}}
+                          :fulfills {:action "requires" :event "Dividend-001"}}
     :correct-classification :dividend-payment
+    ;; The dividend paid is the one in the record, and fulfills names it.
+    :reads-record [:declared]
     :level 6
     :variables {:date ["2026-01-01" "2026-02-01" "2026-03-01" "2026-04-01" "2026-05-01" "2026-06-01" "2026-07-01" "2026-08-01" "2026-09-01" "2026-10-01" "2026-11-01" "2026-12-01"]
                 :amount [250 1000 5000 1000]
@@ -3460,8 +3517,9 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :lender}
-                          :fulfills {:action "requires"}}
+                          :fulfills {:action "requires" :event "Loan-001"}}
     :correct-classification :notes-payable-payment
+    :reads-record [:borrowing]
     :level 7
     :variables {:date ["2026-07-15" "2026-01-15" "2027-01-10" "2029-04-22"]
                 :amount [5000 10000 20000 50000]
@@ -3473,8 +3531,9 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :lender}
-                          :fulfills {:action "requires"}}
+                          :fulfills {:action "requires" :event "Interest-001"}}
     :correct-classification :interest-payment
+    :reads-record [:accrued-interest]
     :level 7
     :variables {:date ["2026-04-15" "2026-07-15" "2026-10-15" "2027-01-15"]
                 :amount [125 250 500 1500]
@@ -3824,7 +3883,7 @@ The printed t-shirts are now finished goods ready for sale."
                              :quantity (* owed4 price) :due-date "2026-07-08"}
                   :expects {:action "receives" :unit "monetary-unit" :confidence conf4}
                   :has-counterparty {:name "Delmar Coffee Roasters"}}])
-          (contains? needs :borrowing)
+          (or (contains? needs :borrowing) (contains? needs :accrued-interest))
           (conj {:has-identifier "Loan-001"
                  :has-date {:date "2026-01-02"}
                  :receives {:unit "monetary-unit" :quantity principal}
@@ -3838,7 +3897,28 @@ The printed t-shirts are now finished goods ready for sale."
                  :requires {:action "provides" :unit "physical-unit"
                             :physical-item "printed-tshirts" :quantity ordered
                             :due-date "2026-03-15"}
-                 :has-counterparty {:name "LocalSportsTeam"}}))]
+                 :has-counterparty {:name "LocalSportsTeam"}})
+          ;; A quarter's interest on the loan, recognised at the quarter
+          ;; end and still owed: an accrual is a promise like any other,
+          ;; and paying it keeps that promise. Eight per cent on a
+          ;; multiple of 1,200 is whole dollars.
+          (contains? needs :accrued-interest)
+          (conj {:has-identifier "Interest-001"
+                 :has-date {:date "2026-03-31"}
+                 :reports {:category "expense" :basis "accrual"
+                           :amount (quot (* principal 8 3) 1200)}
+                 :requires {:action "provides" :unit "monetary-unit"
+                            :quantity (quot (* principal 8 3) 1200)
+                            :due-date "2026-04-15"}})
+          ;; The board declared a dividend and has not yet paid it. The
+          ;; declaration is the promise; paying keeps it.
+          (contains? needs :declared)
+          (conj (let [dividend (rand-nth [300 500 1000])]
+                  {:has-identifier "Dividend-001"
+                   :has-date {:date "2026-03-15"}
+                   :reports {:category "distribution" :basis "declared" :amount dividend}
+                   :requires {:action "provides" :unit "monetary-unit"
+                              :quantity dividend :due-date "2026-04-15"}})))]
     {:company name :kind :printer :blurb blurb
      :sale-item "printed-tshirts"
      :unit-costs {:blank-tshirts shirt-cost :ink-cartridges ink-cost}
@@ -3981,6 +4061,28 @@ The printed t-shirts are now finished goods ready for sale."
                       :loan-date (:date b)
                       :rate rate
                       :interest (long (Math/round (/ (* principal (double rate)) 1200)))))
+        vars)
+
+      ;; A payment keeps a promise the record holds, so its figures are
+      ;; that promise's: what was declared, accrued or borrowed, to whom,
+      ;; and when it falls due -- the day the payment is made.
+      :pay-dividend
+      (if-let [p (first (chain/promises-of events :declared))]
+        (assoc vars :amount (:amount p) :declaration-date (:date p) :date (:due-date p))
+        vars)
+
+      :pay-interest-on-note
+      (if-let [p (first (chain/promises-of events :accrued))]
+        (assoc vars :amount (:amount p)
+                    :lender (:counterparty (first (chain/promises-of events :borrowing)))
+                    :period "quarter"
+                    :date (:due-date p))
+        vars)
+
+      :repay-note-principal
+      (if-let [b (first (chain/promises-of events :borrowing))]
+        (assoc vars :amount (:amount b) :lender (:counterparty b)
+                    :months (or (:months b) 24) :date (:due-date b))
         vars)
 
       ;; An advance is earned by delivering, so what has been earned is a

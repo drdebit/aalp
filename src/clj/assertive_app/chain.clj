@@ -421,7 +421,14 @@
      :advance     money came in, goods or a service are to go out
      :borrowing   money came in, money is to go back -- nothing was
                   bought, so the promise is the whole of the exchange
-     :lending     money went out, money is to come back"
+     :lending     money went out, money is to come back
+
+   And two where nothing moved at all, so what the promise is for comes
+   from `reports` instead of from an exchange:
+
+     :declared    a distribution declared: money is to go to the owners
+     :accrued     an expense incurred before it is paid: money is to go
+                  out for work done or interest run up"
   [assertions requires]
   (let [act       (some-> (:action requires) name)
         money?    (= "monetary-unit" (some-> (:unit requires) name))
@@ -437,7 +444,27 @@
       ;; Money for money: no goods on either side, which is what makes
       ;; it a loan rather than a purchase on terms.
       (and money? (= "provides" act) in-money)  :borrowing
-      (and money? (= "receives" act) out-money) :lending)))
+      (and money? (= "receives" act) out-money) :lending
+      ;; Nothing moved: the recognition says what the promise is.
+      (and money? (= "provides" act)
+           (= "distribution" (some-> (get-in assertions [:reports :category]) name)))
+      :declared
+      (and money? (= "provides" act)
+           (= "expense" (some-> (get-in assertions [:reports :category]) name))
+           (= "accrual" (some-> (get-in assertions [:reports :basis]) name)))
+      :accrued)))
+
+(def promise-accounts
+  "The account a promise of each kind sits in while it is open, and so
+   the account keeping it clears. A claim the business holds is an asset;
+   a debt it owes is a liability. An advance and a prepayment are kept by
+   delivering, not by paying, and are settled by their own adjustments."
+  {:receivable "Accounts Receivable"
+   :payable    "Accounts Payable"
+   :borrowing  "Notes Payable"
+   :lending    "Notes Receivable"
+   :declared   "Dividends Payable"
+   :accrued    "Accrued Liabilities"})
 
 (defn promises
   "The promises the record still carries, one per `requires` asserted.
@@ -478,7 +505,8 @@
                       :amount (case kind
                                 (:receivable :payable) (num-qty (:quantity req))
                                 (:prepaid :lending)    (monetary-qty (:provides a))
-                                (:advance :borrowing)  (monetary-qty (:receives a)))
+                                (:advance :borrowing)  (monetary-qty (:receives a))
+                                (:declared :accrued)   (num-qty (:quantity req)))
                       :counterparty (get-in a [:has-counterparty :name])}
                (:physical-item req) (assoc :item (name (:physical-item req)))
                (:service-item req)  (assoc :item (name (:service-item req)))

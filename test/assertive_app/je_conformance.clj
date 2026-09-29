@@ -50,13 +50,17 @@
       (or (t "Finished Goods Inventory") (t "Revenue")) "printed-tshirts"
       :else                           "blank-tshirts")))
 
+(def ^:private promise-for-kind
+  "The fixture promise a payment of each kind keeps."
+  {:borrowing "Loan-001" :accrued "Interest-001" :declared "Dividend-001"})
+
 (defn canonical-selection
   "Synthesise a student's selection for a classification from its own
    spec: every required assertion, carrying its required parameters, a
    representative quantity in the right denomination, and -- for
    physical flows -- a representative item."
   [class-key]
-  (let [{:keys [required required-parameters]} (get c/classifications class-key)
+  (let [{:keys [required required-parameters fulfills-kind]} (get c/classifications class-key)
         item (representative-item class-key)]
     (into {}
           (for [a required]
@@ -91,6 +95,9 @@
                    (assoc :physical-item item)
                    (and (= :expects a) (= "consumes" (:action params)))
                    (assoc :creates-item "printed-tshirts")
+                   ;; A payment names the promise it keeps.
+                   (and (= :fulfills a) fulfills-kind)
+                   (assoc :event (promise-for-kind (first fulfills-kind)))
                    (= :has-date a)          (assoc :date "2026-01-15")
                    (= :has-counterparty a)  (assoc :party "Acme Co")))]))))
 
@@ -152,7 +159,22 @@
     :provides {:unit "monetary-unit" :quantity 3000}
     :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
     :has-counterparty {:name "EquipmentDirect"}
-    :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}}])
+    :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}}
+   ;; Open promises, for a payment to keep. A `fulfills` names one; with
+   ;; none in the record there is nothing for it to clear.
+   {:has-identifier "Loan-001"
+    :has-date {:date "2026-01-02"}
+    :receives {:unit "monetary-unit" :quantity 9000}
+    :requires {:action "provides" :unit "monetary-unit" :quantity 9000 :due-date "2028-01-02"}
+    :has-counterparty {:name "the Grange Bank"}}
+   {:has-identifier "Interest-001"
+    :has-date {:date "2026-03-31"}
+    :reports {:category "expense" :basis "accrual" :amount 180}
+    :requires {:action "provides" :unit "monetary-unit" :quantity 180 :due-date "2026-04-15"}}
+   {:has-identifier "Dividend-001"
+    :has-date {:date "2026-03-15"}
+    :reports {:category "distribution" :basis "declared" :amount 500}
+    :requires {:action "provides" :unit "monetary-unit" :quantity 500 :due-date "2026-04-15"}}])
 
 (defn check
   "Conformance result for one classification."

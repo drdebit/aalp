@@ -125,10 +125,71 @@
               :none-of [{:assertion :provides :params {:unit "physical-unit"}}
                         {:assertion :requires}
                         {:assertion :modifies}
+                        {:assertion :fulfills}
                         {:assertion :consumes}]}
     :line {:side :credit :account "Owner's Capital"}
     :amount :monetary
     :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue.)"}
+
+;; -------- Money out with nothing coming in: the owner's draw -------
+   ;; The mirror of :owner-capital. Nothing came in, nothing is promised,
+   ;; no earlier promise is being kept, and no law is the reason: the
+   ;; money went to the one whose claim the business's equity is, and
+   ;; the claim is smaller for it. A temporary account, closed to capital
+   ;; at year end, as Dividends is closed to Retained Earnings.
+   {:id :owner-drawing
+    :when {:assertion :provides :params {:unit "monetary-unit"}}
+    :context {:all-of  [{:assertion :has-counterparty}]
+              :none-of [{:assertion :receives}
+                        {:assertion :requires}
+                        {:assertion :fulfills}
+                        {:assertion :modifies}
+                        {:assertion :reports}
+                        {:assertion :consumes}
+                        {:assertion :is-required-by}
+                        {:assertion :is-allowed-by}
+                        {:assertion :is-protected-by}]}
+    :line {:side :debit :account "Owner's Drawing"}
+    :amount :flow
+    :text "Money went out and nothing came back for it. The business received no goods or service, made no promise, kept none, and no law required the payment. What is left is a distribution to the owner: their claim on the business is smaller by what they took. Owner's Drawing records it for the period and is closed to capital at year end. (If something DID come in for this money, say so — receives — and this line becomes what was bought.)"}
+
+   ;; -------- Keeping an earlier promise --------------------------------
+   ;; `fulfills` names the promise, and the record says what it was: which
+   ;; account it has sat in since it was made. Paying clears a debt;
+   ;; collecting clears a claim. A promise the student does not name, or
+   ;; one the record does not hold open, has no account to clear -- said
+   ;; as such rather than guessed from the amount or the counterparty.
+   {:id :settle-debt
+    :when {:assertion :provides :params {:unit "monetary-unit"}}
+    :context {:all-of [{:assertion :fulfills}]}
+    :line {:side :debit :account :settled-debt}
+    :amount :flow
+    :text "Money went out to keep a promise the business made earlier. The debt that promise put on the books is cleared by it, so the account it has sat in since is debited: nothing new is owed, and less of the old is."}
+
+   {:id :settle-claim
+    :when {:assertion :receives :params {:unit "monetary-unit"}}
+    :context {:all-of [{:assertion :fulfills}]}
+    :line {:side :credit :account :settled-claim}
+    :amount :flow
+    :text "Money came in because somebody kept a promise made to the business earlier. The claim that promise put on the books is cleared by it, so the account it has sat in since is credited: nothing was earned today, and less is owed."}
+
+   ;; -------- A distribution declared ------------------------------------
+   ;; Nothing moves on the day. The board's declaration is the promise, so
+   ;; its amount is the amount; `reports` says what kind of recognition
+   ;; this is. 2101 debits a temporary Dividends account, closed to
+   ;; Retained Earnings at year end, beside Revenues and Expenses.
+   {:id :dividends-declared
+    :when {:assertion :reports :params {:category "distribution"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :line {:side :debit :account "Dividends"}
+    :amount :monetary
+    :text "A distribution to the owners has been declared. It is not an expense — nothing was consumed earning revenue — but a return of what the business earned to the people who own it. Dividends records it for the period and is closed to Retained Earnings at year end."}
+   {:id :dividends-payable
+    :when {:assertion :reports :params {:category "distribution"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :line {:side :credit :account "Dividends Payable"}
+    :amount :monetary
+    :text "Declaring it is the promise: from today the business owes the owners that money, and it is a liability until it is paid. The `requires` says so."}
 
    ;; -------- Goods received: the account is the item's POSITION -------
    ;; Not three rules keyed on which item it is. One rule that asks where
@@ -733,6 +794,39 @@
   [context]
   (first (chain/promises-of (:events context) :prepaid)))
 
+(defn- settled-promise
+  "The open promise this event's `fulfills` names, read from the record.
+
+   The event itself is set aside first. A recorded payment is part of the
+   record it is re-derived against, and its own `fulfills` would otherwise
+   report the promise it keeps as already kept."
+  [context]
+  (when-let [id (some-> (get-in context [:current :fulfills :event]) name not-empty)]
+    (let [current (:current context)
+          events  (remove #(or (= % current)
+                               (and (:has-identifier current)
+                                    (= (:has-identifier %) (:has-identifier current))))
+                          (:events context))]
+      (first (filter #(= id (:id %)) (chain/promises events))))))
+
+(defn- settled-account
+  "The account keeping the named promise clears, when it is a promise of
+   a kind this side can clear; otherwise a label saying what is missing."
+  [side context]
+  (let [p     (settled-promise context)
+        kinds (if (= :debit side)
+                #{:payable :borrowing :declared :accrued}
+                #{:receivable :lending})]
+    (cond
+      (nil? (get-in context [:current :fulfills :event]))
+      "(which promise does this keep?)"
+      (nil? p)
+      "(no open promise by that name)"
+      (not (contains? kinds (:kind p)))
+      (if (= :debit side) "(that promise is not a debt)" "(that promise is not owed to the business)")
+      :else
+      (get chain/promise-accounts (:kind p)))))
+
 (defn- prepaid-expense-account
   "What to call the expense when a prepayment is used up. Named for what
    was bought, which the record says -- a year of rent used up is Rent
@@ -804,6 +898,9 @@
    expense a prepayment turns into; anything else is the literal label
    the rule names."
   [account flow context]
+  (case account
+    :settled-debt  (settled-account :debit context)
+    :settled-claim (settled-account :credit context)
   (if (= :prepaid-service account)
     (prepaid-expense-account context)
   (if (= :position account)
@@ -818,7 +915,7 @@
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.
         "(not yet classified)")
-    account)))
+    account))))
 
 (defn- resolve-line-text
   [text flow context]
@@ -1005,6 +1102,17 @@
                                                      :id id
                                                      :role :prepaid
                                                      :assertions (select-keys ev [:provides :requires :expects :has-counterparty])}])))
+                                             ;; And the promise a payment or a
+                                             ;; collection keeps: the event that put
+                                             ;; the debt or the claim on the books.
+                                             (when (contains? #{:settled-debt :settled-claim} (:account line))
+                                               (when-let [id (:id (settled-promise context))]
+                                                 (when-let [ev (first (filter #(= id (some-> (:has-identifier %) name))
+                                                                              (:events context)))]
+                                                   [{:date (get-in ev [:has-date :date])
+                                                     :id id
+                                                     :role :promise
+                                                     :assertions (select-keys ev [:provides :receives :requires :reports :has-counterparty])}])))
                                              ;; A cost line taken from a named batch
                                              ;; shows the batch: the event that made
                                              ;; or bought these units, and its price.
@@ -1098,7 +1206,14 @@
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
                               :prompt "Something must balance this. What did the business get, or settle — and who from? The assertions do not say yet."}))]
-    {:holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
+    {;; What the record still owes or is owed, for `fulfills` to name.
+     ;; Only the kinds paying or collecting can clear; an advance or a
+     ;; prepayment is kept by delivering, through its own adjustment.
+     :open-promises (vec (for [p (chain/promises (:events chain-ctx))
+                               :when (contains? chain/promise-accounts (:kind p))]
+                           (assoc (select-keys p [:id :kind :date :due-date :amount :counterparty])
+                                  :account (get chain/promise-accounts (:kind p)))))
+     :holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
                                                             (:events chain-ctx))))
                           ;; Only what can go out: materials and goods. A
                           ;; printer is on hand too, but nobody sells it

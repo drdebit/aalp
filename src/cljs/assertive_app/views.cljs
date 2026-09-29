@@ -515,6 +515,11 @@
           (when-not (get-in sel [:expects :unit])
             (state/update-assertion-parameter! :expects :unit unit))))
 
+        ;; What is kept is a promise -- a `requires` -- always; which one
+        ;; is the question, and is left for the student.
+        :fulfills
+        (state/update-assertion-parameter! :fulfills :action "requires")
+
         ;; No auto-population for other assertions
         nil))))
 
@@ -1079,6 +1084,38 @@
          [:span " under "]
          [framework-select :is-allowed-by (:framework params) "which law?"]])
       [remove-assertion-button :is-allowed-by]]]))
+
+;; Kept promises. Which one this keeps is the student's to say -- the
+;; same question the batch picker asks of a sale, pointed at the record's
+;; promises instead of its lots -- so nothing is preselected, even when
+;; the record holds only one.
+(def ^:private promise-kind-labels
+  {"declared"   "dividend declared"
+   "accrued"    "accrued"
+   "borrowing"  "note signed"
+   "payable"    "owed to a supplier"
+   "receivable" "owed by a customer"
+   "lending"    "note received"})
+
+(defn- render-fulfills-section
+  "Which earlier promise this event keeps, chosen from the record's open
+   promises. The derivation clears the account that promise sits in."
+  [params]
+  (let [open (:open-promises (state/derived-je))]
+    [sentence-section :obligation "This keeps an earlier promise:"
+     [:div.fulfills-content
+      [:span "keeping "]
+      (if (seq open)
+        [inline-dropdown :fulfills :event
+         (for [p open]
+           {:value (:id p)
+            :label (str (:id p) " — " (get promise-kind-labels (name (:kind p)) (name (:kind p)))
+                        " " (:date p)
+                        (when (:amount p) (str ", " (format-currency (:amount p))))
+                        (when (:counterparty p) (str ", " (:counterparty p))))})
+         (:event params) "which promise?"]
+        [:span.obligation-gloss "— the record holds no open promise to keep."])
+      [remove-assertion-button :fulfills]]]))
 
 (defn- render-legal-framework-section
   "A law that compelled this event, or protects what it made.
@@ -2054,6 +2091,9 @@
         [render-legal-framework-section :is-protected-by (:is-protected-by selected)])
 
       ;; Reports section (recognition)
+      (when (contains? selected :fulfills)
+        [render-fulfills-section (:fulfills selected)])
+
       (when (contains? selected :reports)
         [render-reports-section (:reports selected)])]
 

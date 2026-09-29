@@ -943,7 +943,9 @@
    [{:code :reports
      :label "Reports"
      :description "Recognizes a calculated amount to be reported on the financial statements"
-     :level 3
+     ;; Taught with adjusting entries, the first place a problem asks for
+     ;; it. Level 3 held it until that level was folded into Level 0.
+     :level 5
      :domain :recognition
      :parameterized true
      ;; Sentence: "SP reports [category] calculated by [basis]"
@@ -1428,8 +1430,9 @@
 
 ;; Classification rules - using research assertions
 (def classifications
-  {;; ==================== Level 3: Sales with Recognition ====================
-   ;; Sales require reporting assertions because we recognize revenue and COGS
+  {;; ==================== Level 0: Sales with Recognition ====================
+   ;; Taught and served at Level 0 (Level 3, where this sat, is gone).
+   ;; Revenue and its cost emerge from the exchange; no `reports` needed.
 
    :cash-sale
    {:required #{:has-date :provides :receives :has-counterparty}
@@ -1444,7 +1447,7 @@
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "When SP provides goods and receives cash, revenue is recognized. Revenue emerges from the assertion pattern — providing physical goods in exchange for monetary units with a counterparty."
     :examples ["SP sells printed t-shirts for cash, recognizing revenue and COGS"]
-    :level 3}
+    :level 0}
 
    :cash-inventory-purchase
    (cash-exchange

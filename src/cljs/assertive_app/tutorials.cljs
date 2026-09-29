@@ -1,7 +1,7 @@
 (ns assertive-app.tutorials
   "Level-based tutorial content with reading sections and quiz questions.
 
-   Each level (0-7) has:
+   Each level has:
    - :title, :subtitle — display text
    - :sections — vector of {:heading :content} for the tutorial reader
    - :quiz — vector of {:id :question :choices :correct :explanation} for the MC quiz
@@ -9,19 +9,27 @@
    Quiz grading is client-side. Server is called once on success to persist completion.
 
    Tutorial content matches the backend grading templates in classification.clj:
-   - L0: Cash purchases (provides, receives, has-counterparty)
+   - L0: Cash purchases and cash sales (provides, receives,
+         has-counterparty; expects/allows for what a purchase is for;
+         revenue and cost of goods sold)
    - L1: Credit transactions (requires, expects — including credit sales)
    - L2: Production (consumes, creates, is-allowed-by)
-   - L3: Cash sales (provides, receives, has-counterparty)
-   - L4: Adjusting entries (introduces reports — calculated recognitions)
-   - L5: Equity transactions
-   - L6: Notes and interest
-   - L7: Capstone review")
+   - L4: Legal and regulatory context
+   - L5: Adjusting entries (introduces reports — calculated recognitions)
+   - L6: Equity transactions
+   - L7: Notes and interest
+   - L8: Capstone review
+
+   There is no Level 3. It taught cash sales, which the Level 0 drill
+   has served since 2026-09-07; its revenue and cost-of-goods-sold
+   sections moved into Level 0 on 2026-09-29, so a student meets the
+   costing step having been taught it. The numbers are keys, not
+   positions: the path is (all-levels), in order.")
 
 ;; ==================== Level Tutorials ====================
 
 (def level-tutorials
-  "Tutorial content and quiz questions keyed by level (0-7)."
+  "Tutorial content and quiz questions keyed by level."
   {0
    {:title "Level 0: Cash Transactions"
     :subtitle "Learn the basics of recording business exchanges."
@@ -148,7 +156,7 @@ DR Raw Materials Inventory $500
 CR Cash $500
 ::
 
-Why 95% and not 100%? Because you might not. The press could break, the order could fall through, you might end up selling the blanks on. Recording how sure you are is recording something true — and you will meet this assertion again in Level 1, pointed at things other people do."}
+Why 95% and not 100%? Because you might not. The press could break, the order could fall through, you might end up selling the blanks on. Recording how sure you are is recording something true — and you will meet this assertion again in the next lesson, pointed at things other people do."}
 
      {:heading "Worked Example, Step by Step"
       :content "Let's record one together. Suppose you see this transaction:
@@ -179,7 +187,7 @@ receives: 50 blank t-shirts (physical-unit)
 expects: to use them up making printed t-shirts — 95% sure
 ::
 
-Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every problem at this level is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
+Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every purchase at this level is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
 
      {:heading "Where the Journal Entry Comes From"
       :content "Double-entry accountants record a transaction in a **journal entry** consisting of **debits** (DR) and **credits** (CR). For the purposes of this platform, you do NOT need to build these journal entries yourself: the platform builds them *from your assertions* and shows you the result. 
@@ -207,6 +215,36 @@ Same four assertions. Swap which side the shirts are on and every account change
 Watch the **derived journal entry panel** every time you record: it shows which of *your* assertions produced each line, and you can click any line to see *why the thing got that name*. When a line says '(not yet classified)', the record is telling you it doesn't yet know the meaning of the transaction.
 
 The panel is live: it redraws as you build, and nothing is recorded until you submit. So the cheapest way to see how much work a single assertion is doing is to take one away and watch. Remove **has-counterparty** from a sale and the Revenue line goes with it — because goods leaving with nobody on the other side is not a sale, and the platform will not pretend otherwise."}
+
+     {:heading "Selling: The Same Words, the Other Way Round"
+      :content "A sale uses the same four assertions. Only the direction changes: things go out, money comes in.
+
+::assertions
+has-date: March 3
+has-counterparty: CampusBoutique
+provides: 10 printed t-shirts (physical-unit)
+receives: $250 (monetary-unit)
+::
+
+No **expects** here: what came in is money, and money does not need a purpose to be money.
+
+**Revenue is not an assertion.** There is nothing to select that says *this is revenue*. Revenue emerges from the pattern: goods provided to a customer, in exchange for money. The assertions record what happened; the account is what that pattern means.
+
+**A sale is two entries.** The first records what the sale earned:
+
+::journal
+DR Cash $250
+CR Revenue $250
+::
+
+The second records what it cost. The shirts that went out cost the business something to make, and that cost belongs against this sale, as **Cost of Goods Sold**:
+
+::journal
+DR Cost of Goods Sold $100
+CR Finished Goods Inventory $100
+::
+
+**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. So once your sale is right, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. Pick one and the cost lines fill in from what the record says those shirts cost. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
@@ -254,7 +292,19 @@ Two things to remember once you ARE keeping the books:
       :question "Which set of assertions correctly describes SP buying ink cartridges for $200 cash?"
       :choices ["provides physical-unit, receives monetary-unit, has-counterparty" "provides monetary-unit, receives physical-unit, has-counterparty" "requires monetary-unit, receives physical-unit, has-counterparty" "provides monetary-unit, creates physical-unit, has-counterparty"]
       :correct 1
-      :explanation "SP **provides** cash (monetary-unit), **receives** ink cartridges (physical-unit), and there is a vendor (**has-counterparty**). 'Requires' is for credit transactions, and 'creates' is for production."}]}
+      :explanation "SP **provides** cash (monetary-unit), **receives** ink cartridges (physical-unit), and there is a vendor (**has-counterparty**). 'Requires' is for credit transactions, and 'creates' is for production."}
+
+     {:id :l0-q5
+      :question "How is revenue recognized in assertive accounting?"
+      :choices ["Through a special 'reports revenue' assertion" "Revenue emerges from providing goods to a customer for monetary units" "The student must calculate revenue separately" "Revenue is only recorded at year-end"]
+      :correct 1
+      :explanation "Revenue **emerges from the assertion pattern**. When SP provides goods and receives money from a customer, that exchange is a sale, and the platform credits Revenue. There's no separate revenue assertion."}
+
+     {:id :l0-q6
+      :question "SP sells t-shirts that cost $100 to make for $250 cash. What is the FULL journal entry?"
+      :choices ["DR Cash $250, CR Revenue $250 only" "DR Cash $250, CR Revenue $250; DR COGS $100, CR Finished Goods $100" "DR Revenue $250, CR Cash $250" "DR Cash $150, CR Revenue $150 (net profit only)"]
+      :correct 1
+      :explanation "A sale is two entries: what it earned (DR Cash, CR Revenue) and what it cost (DR Cost of Goods Sold, CR Finished Goods Inventory). Which shirts went out decides the cost — that is why you name the batch."}]}
 
    1
    {:title "Level 1: Credit Transactions"
@@ -545,7 +595,7 @@ Production may also consume labor and supplies — the journal entry captures al
 
 Both blank t-shirts and printed t-shirts are your assets. Production just changes the form of your inventory.
 
-Now that you can produce finished goods, you'll be ready to sell them in Level 3!"}]
+Now you can see where the goods you sell come from — and why each batch carries its own cost."}]
 
     :quiz
     [{:id :l2-q1
@@ -565,93 +615,6 @@ Now that you can produce finished goods, you'll be ready to sell them in Level 3
       :choices ["DR Cash, CR Inventory" "DR Raw Materials, CR Finished Goods" "DR Finished Goods, CR Raw Materials" "DR Equipment, CR Raw Materials"]
       :correct 2
       :explanation "What you **create** (finished goods) is debited, and what you **consume** (raw materials) is credited. Value moves between your own asset accounts."}]}
-
-   3
-   {:title "Level 3: Cash Sales"
-    :subtitle "Sell your products and understand revenue"
-    :sections
-    [{:heading "Selling What You've Made"
-      :content "You've purchased materials (L0), learned about credit transactions (L1), and produced finished goods (L2). Now it's time to sell those printed t-shirts for cash!
-
-You already saw credit sales in Level 1. Cash sales are simpler — payment is immediate, so there's no `requires` or `expects`."}
-
-     {:heading "The Cash Sale Pattern"
-      :content "When a customer pays immediately:
-
-**Example: Sell 10 printed t-shirts for $250 cash**
-- has-counterparty: Customer
-- provides: 10 printed t-shirts (physical-unit)
-- receives: $250 cash (monetary-unit)
-
-These are the same assertions as a cash purchase — just reversed:
-- **Purchase:** provides monetary-unit, receives physical-unit
-- **Sale:** provides physical-unit, receives monetary-unit
-
-→ **Journal Entry:** DR Cash $250, CR Revenue $250"}
-
-     {:heading "Revenue: From Assertions to Journal Entry"
-      :content "Level 1 settled *when* revenue is recorded: the day the goods go out, because providing them is what earns it. Here is a different question — *where the word comes from at all*.
-
-**Revenue is not an assertion.** There's no 'reports revenue' assertion you need to select.
-
-Instead, revenue **emerges from the assertion pattern.** In assertive accounting, the assertions record *what happened*: SP provided goods and received cash from a customer. The journal entry system then maps this to the appropriate accounts.
-
-**What assertive accounting sees:**
-- SP provides physical goods (inventory leaves)
-- SP receives monetary units (cash comes in)
-- There is a counterparty (customer)
-
-**What double-entry sees:**
-- DR Cash — an asset increases
-- CR Revenue — income is earned
-
-The revenue credit follows from the *meaning* of the exchange: when you provide goods to a customer for monetary units, that's a sale, and the monetary value is revenue. The assertions capture the economic reality; the journal entry categorizes it."}
-
-     {:heading "Cost of Goods Sold"
-      :content "When you sell inventory, two things happen economically:
-
-1. **Revenue** — Monetary units received for goods provided
-2. **Cost of Goods Sold** — The cost of the inventory you gave up
-
-→ Full Journal Entries:
-- DR Cash $250, CR Revenue $250 (revenue side)
-- DR Cost of Goods Sold $100, CR Finished Goods Inventory $100 (cost side)
-
-**Compare cash sales vs. credit sales:**
-
-| | Cash Sale | Credit Sale |
-|---|-----------|-------------|
-| **provides** | physical-unit | physical-unit |
-| **receives** | monetary-unit | — |
-| **requires** | — | Customer must pay |
-| **expects** | — | Confidence level |
-
-Both types provide goods to a customer. The difference is whether payment is immediate (**receives**) or deferred (**requires** + **expects**). The revenue is the same in both, and recorded at the same moment — providing the goods earned it. All the deferred case changes is how long SP waits for the money."}]
-
-    :quiz
-    [{:id :l3-q1
-      :question "Which assertions describe a cash sale of printed t-shirts?"
-      :choices ["provides monetary-unit, receives physical-unit, has-counterparty" "provides physical-unit, receives monetary-unit, has-counterparty" "provides physical-unit, expects monetary-unit, has-counterparty" "provides physical-unit, requires monetary-unit, has-counterparty"]
-      :correct 1
-      :explanation "A cash sale: SP **provides** goods (physical-unit), **receives** cash (monetary-unit), and there's a customer (**has-counterparty**). No requires/expects because payment is immediate."}
-
-     {:id :l3-q2
-      :question "How is revenue recognized in assertive accounting?"
-      :choices ["Through a special 'reports revenue' assertion" "Revenue emerges from providing goods to a customer for monetary units" "The student must calculate revenue separately" "Revenue is only recorded at year-end"]
-      :correct 1
-      :explanation "Revenue **emerges from the assertion pattern**. When SP provides goods and receives (or is owed) monetary units from a customer, the journal entry system maps that exchange to Revenue. There's no separate revenue assertion."}
-
-     {:id :l3-q3
-      :question "What is the FULL journal entry when SP sells t-shirts that cost $100 to produce for $250 cash?"
-      :choices ["DR Cash $250, CR Revenue $250 only" "DR Cash $250, CR Revenue $250; DR COGS $100, CR Finished Goods $100" "DR Revenue $250, CR Cash $250" "DR Cash $150, CR Revenue $150 (net profit only)"]
-      :correct 1
-      :explanation "A sale triggers BOTH revenue recognition (DR Cash, CR Revenue) and cost recognition (DR Cost of Goods Sold, CR Finished Goods Inventory). Both the revenue and its associated cost are recognized."}
-
-     {:id :l3-q4
-      :question "A cash sale and a cash purchase use the same assertions but reversed. What changes?"
-      :choices ["Different assertions entirely" "Provides and receives swap — purchase provides cash for goods, sale provides goods for cash" "Sales don't use has-counterparty" "Purchases don't use provides"]
-      :correct 1
-      :explanation "Cash purchase: **provides** monetary-unit, **receives** physical-unit. Cash sale: **provides** physical-unit, **receives** monetary-unit. The assertions mirror each other — it's the direction of the exchange that differs."}]}
 
    4
    {:title "Level 4: Legal and Regulatory Context"
@@ -778,11 +741,11 @@ The record now carries the reason for the confidence, beside the confidence. Nob
    5
    {:title "Level 5: Adjusting Entries"
     :subtitle "Match revenues and expenses to the correct period"
-    ;; Levels 5-7 add no assertions at all. The whole point of the
-    ;; orientation here is that the vocabulary slot says so, and the
-    ;; pair shows what rearrangement buys you.
+    ;; One new word, reports, and it is the whole of what this level
+    ;; adds. It was tagged Level 3 while a Level 3 existed; nothing
+    ;; before adjusting entries asks for it. Levels 6-7 add none.
     :orientation
-    {:framing "Nothing new to say — and a great deal of new things to say it about. Every entry so far followed from something that happened. These follow from time passing."
+    {:framing "One new word, **reports** — because every entry so far followed from something that happened, and these follow from time passing. With no exchange to fix the amount, the business has to state it, and say how it was worked out."
      :protocol ["There is no event to read. Ask instead: **what did the passing of the period do?**"
                 "Something was used up quietly, or something was earned or incurred before any money moved."
                 "Then: how much, and on what basis? — **reports**, carrying the calculation, because no exchange is here to fix the amount."
@@ -816,11 +779,11 @@ Adjusting entries ensure:
 - Assets reflect their current value"}
 
      {:heading "The 'Reports' Assertion"
-      :content "Adjusting entries add no new assertions at all. Every word you need you already have — including the one that carries the weight here:
+      :content "Adjusting entries add one new assertion, and it carries the weight here:
 
 **reports** — Explicitly recognizes a calculated amount based on some method or basis
 
-You met **reports** at Level 3, where it composed figures out of a ledger that already had sales in it. Here it does the other thing it is for: it states an amount that no exchange produced.
+It states an amount that no exchange produced.
 
 Up to now, journal entries have followed from what happened in the transaction. You didn't need to assert 'this is revenue' because revenue emerged from the exchange pattern (providing goods for payment). You didn't need to assert 'this is an expense' because the cost followed from providing inventory.
 

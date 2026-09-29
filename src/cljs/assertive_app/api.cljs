@@ -696,13 +696,15 @@
   []
   (POST (str api-base "/derive-je")
     {:params {:selected-assertions (state/selected-assertions)
-              ;; In the walkthrough the problem underneath is the guided
-              ;; day, a different transaction; its amount was pricing
-              ;; lines the student had not yet given a quantity ($3,000
-              ;; on a shirt purchase). The walkthrough's numbers are the
-              ;; student's own, so nothing else supplies one.
-              :variables (when-not (state/walkthrough-active?)
-                           (:variables (state/current-problem)))
+              ;; No :variables. Their only use in the derivation is the
+              ;; :amount fallback, which priced every line the student had
+              ;; not yet given a quantity -- with the problem's own answer.
+              ;; Add the obligation and the entry showed its dollar figure
+              ;; before any number was typed. The walkthrough met this first ($3,000 on a
+              ;; shirt purchase, from the guided day underneath); it is
+              ;; the same fault everywhere. An unpriced line shows as
+              ;; unpriced. The worked example still prices itself: the
+              ;; canonical assertions carry their amounts.
               ;; What the student established earlier in the walkthrough.
               ;; Sent rather than stored: the walkthrough teaches, and a
               ;; student working through it twice should not accumulate

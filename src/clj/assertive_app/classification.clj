@@ -3105,7 +3105,7 @@ The printed t-shirts are now finished goods ready for sale."
    :capability-purchase
    {:narrative-template "On {date}, {company} purchases a T-shirt Printer from {vendor} for ${amount} cash, and will use it to print custom t-shirts."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "monetary-unit"}
+                          :provides {:unit "monetary-unit" :quantity :amount}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
                           :has-counterparty {:name :vendor}
                           :allows {}}
@@ -3192,7 +3192,7 @@ The printed t-shirts are now finished goods ready for sale."
    :pay-taxes
    {:narrative-template "On {date}, {company} calculates and pays ${amount} in {tax-type}, as the tax code demands. Failure to pay would bring penalties and interest."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "monetary-unit"}
+                          :provides {:unit "monetary-unit" :quantity :amount}
                           :is-required-by {:framework "tax-code"}}
     :correct-classification :tax-required-filing
     :level 4
@@ -3203,7 +3203,7 @@ The printed t-shirts are now finished goods ready for sale."
    :business-license
    {:narrative-template "On {date}, {company} pays ${amount} for its {license-type}, which {authority} rules demand before it may trade at all."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "monetary-unit"}
+                          :provides {:unit "monetary-unit" :quantity :amount}
                           :is-required-by {:framework "industry-regs"}}
     :correct-classification :regulatory-compliance
     :level 4
@@ -3215,7 +3215,7 @@ The printed t-shirts are now finished goods ready for sale."
    :form-llc
    {:narrative-template "On {date}, {company} pays ${amount} to the state to form an LLC (Limited Liability Company). State business law makes this structure available, and it keeps the owner's personal assets out of reach of the business's creditors."
     :required-assertions {:has-date {:date :date}
-                          :provides {:unit "monetary-unit"}
+                          :provides {:unit "monetary-unit" :quantity :amount}
                           :is-allowed-by {:framework "state-business-law"}}
     :correct-classification :business-formation
     :level 4

@@ -1029,13 +1029,23 @@
         ;; the cost recognition -- and they must not be interleaved, so
         ;; the grouping is by `:entry-label`, in the order each label
         ;; first appears, and only the sides are ordered within a group.
-        lines (let [group-order (reduce (fn [m l]
-                                          (let [g (:entry-label l)]
+        ;;
+        ;; Only the sale's own rules carry a label. The other side of the
+        ;; revenue -- Cash, or Accounts Receivable -- is written by a rule
+        ;; that serves every exchange and has none, so it formed a group
+        ;; of its own, placed wherever the rulebook first reached it: on
+        ;; a credit sale, below the cost of goods, with the revenue it
+        ;; balances two lines away. An unlabelled line belongs to the
+        ;; first entry, the exchange itself.
+        lines (let [primary     (some :entry-label lines)
+                    group-of    #(or (:entry-label %) primary)
+                    group-order (reduce (fn [m l]
+                                          (let [g (group-of l)]
                                             (if (contains? m g)
                                               m
                                               (assoc m g (count m)))))
                                         {} lines)]
-                (vec (sort-by (juxt #(get group-order (:entry-label %))
+                (vec (sort-by (juxt #(get group-order (group-of %))
                                     #(if (= :debit (:side %)) 0 1))
                               lines)))
         line-producing (set (mapcat :provenance lines))

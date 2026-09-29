@@ -1,0 +1,138 @@
+#+TITLE: Pilot: the lessons as one path
+#+AUTHOR: Matt DeAngelis (with Claude)
+#+DATE: 2026-09-29
+
+* Decision
+
+For the pilot, students work through the *lessons*, Level 0 to Level 8,
+not the Guided Year. Decided 2026-09-29.
+
+- The Guided Year's value (errors that surface at period close, one
+  continuous record, corridor decisions) needs a script that reaches a
+  close and a sale. The script is eight days, Levels 0–1, with neither.
+  What is left is recording purchases into a ledger that never pays off.
+- Running a business asks for judgement the students have not been
+  taught. The roadmap already puts "you run the company" after a year of
+  scaffolding.
+- The lessons are built for all nine levels and currently unreachable:
+  the Guided Year is the only route into a tutorial, and it stops at
+  Level 1.
+- Continuity of the record is already practised in the drills: every
+  problem arrives with its company's record.
+
+| Question                  | Decision                                        |
+|---------------------------+-------------------------------------------------|
+| Scope                     | All nine levels; truncate later if too long     |
+| Guided Year               | Hidden for the pilot; code kept                 |
+| Retention checks          | In the pilot                                    |
+| Which company per problem | Random, as now                                  |
+| Level numbers             | Not shown; an unnumbered progress bar instead   |
+| Level 3 (Cash Sales)      | Removed; its useful parts merged into Level 0   |
+
+* The path
+
+The path is the tutorial levels in order: 0, 1, 2, 4, 5, 6, 7, 8. The
+numbers are keys, not positions; students see only where they are in
+the sequence. For each level L:
+
+1. *Level gate*: orientation, then "Start Tutorial" or test out
+   straight to the drill. Exists (=tutorial-gate=); test-out is
+   currently shown only in guided mode.
+2. *Tutorial and comprehension quiz*. Exists.
+3. *Drill*: unledgered problems with full feedback; pass 8 of 10, or 5
+   in a row, with missed patterns owed until got right. Exists. Today a
+   pass returns to the Guided Year script; in the lesson path it
+   completes the level, unlocks L+1, and opens the check-in.
+4. *Check-in* (new):
+   - *Summary*, computed rather than authored: the words new at this
+     level (the vocabulary data the orientation already uses), the
+     classifications the level's problems produce with their accounts,
+     and the level's minimal pair where one is authored.
+   - *Retention check*, from Level 1 on: three problems drawn from
+     earlier levels, full feedback. Informs, never relocks
+     (=ALEKS-DERIVED-MECHANICS.md= §5): a miss is reported to the
+     student with a link to that level's tutorial, and recorded for the
+     instructor, but the student continues regardless.
+5. On to Level L+1's gate. After Level 8, a completion screen: each
+   level's drill result and each retention check.
+
+A student can go back to any completed level: re-read the tutorial or
+practise more. Nothing there changes their standing.
+
+Rough length, from the drill config's own estimate of 1–2 minutes a
+problem: 25–35 minutes a level including tutorial and check-in, so 4–5
+hours for all nine. This is an estimate, not a measurement; the pilot's
+time-on-task data will say.
+
+* Build
+
+** Routing
+- A server setting, =AALP_FLOW= in =~/.config/aalp/env=: =lessons= for
+  the pilot, =guided= otherwise. Sent to the client at login; switching
+  back needs a restart, not a rebuild.
+- In =lessons=, login goes to the lesson path at the student's current
+  level instead of =fetch-guided-state!=. The Guided Year's code and
+  endpoints stay as they are.
+
+** Server
+- =POST /api/lessons/advance {level}=: mark the tutorial complete,
+  unlock L+1, set the current level. Trusts the client's report of a
+  passed drill, as =complete-tutorial!= does today.
+- Problem generation takes =:below L= for retention draws: only
+  templates from levels under L, preferring ones the student has missed.
+- Retention answers are recorded as attempts with problem type
+  =retention=. They count toward nothing (the level-progress rule
+  already skips templates below the attempt's level), and they feed
+  the claim-prompt fade like any graded practice answer.
+
+** Client
+- A =:lessons= app mode: header with the level path (0–8, done / current
+  / locked), then gate → quiz → drill → check-in.
+- Drill pass button: "Level L complete →" to the check-in, instead of
+  "start recording Year 1".
+- Check-in screen: summary, then the retention round (reuses the drill's
+  three-column problem view and feedback), then continue.
+- Completion screen after Level 8.
+
+* Content gaps found while planning
+
+- [X] *Level 3 (Cash Sales) removed* (2026-09-29). The cash sale had
+  been served at Level 0 since 09-07 while the teaching stayed at Level
+  3, so a Level 0 student met the costing step untaught. Level 0 now has
+  "Selling: The Same Words, the Other Way Round" (revenue emerges from
+  the pattern; a sale is two entries; naming the batch) and two quiz
+  questions from the old Level 3. =reports=, tagged Level 3 but first
+  asked for by adjusting entries, is now introduced at Level 5, whose
+  orientation and tutorial say so.
+- [X] *Level 8 (Capstone)*: structure kept; its drill is a mixed review
+  of every level. Stale spots fixed (2026-09-29): the framework table
+  (=provides=, =receives=, =requires= in both directions, =fulfills=,
+  purpose =expects= and =allows=, the legal-context assertions), level
+  numbers in the text, and the credit-purchase line.
+- [ ] *Level numbers in tutorial prose.* About twenty references ("In
+  Level 1…", "the Level 1 rule") across Levels 1, 2, 4 and 5. They
+  have to become lesson names before the numbers leave the screen.
+- [ ] *Guided-Year wording in Level 0* ("Your job in Year 1…", "unlock
+  … recording Year 1") needs rewording for the lesson path.
+- [X] *Dividends, payments and the owner's draw* (2026-09-29). Following
+  2101 (Alison's Topic 9 equity T-accounts: a temporary Dividends
+  account under Retained Earnings), a declaration is DR Dividends / CR
+  Dividends Payable. =fulfills= now names an open promise in the record,
+  and keeping it clears the account that promise sits in (Dividends
+  Payable, Accrued Liabilities, Notes Payable, …); grading checks the
+  promise is open and of the right kind. An owner's withdrawal is DR
+  Owner's Drawing. The payment problems read their promise from the
+  practice record, and the sentence builder offers the record's open
+  promises to choose from. Conformance 32 → 37, no conflicts.
+- [ ] Two Level 4 templates are already held as derivation-pending.
+- [ ] Orientations for Levels 3, 4 and 8 fall back to the vocabulary
+  slot alone (=HANDOFF.md=).
+
+* Open, not blocking
+
+** Reporting without a company to follow
+Problems come from random companies, so there is no single ledger for a
+student to report on. Matt's suggestion: run report queries over any one,
+or an assortment, of the ledgers of the companies the student has worked
+with. Not in the lesson path yet; the Report Builder is not a level. To
+decide when reporting enters the pilot.

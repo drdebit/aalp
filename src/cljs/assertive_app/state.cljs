@@ -100,11 +100,25 @@
 
 (defn toggle-assertion! [assertion-code]
   (let [code (keyword assertion-code)]
+    (swap! app-state update :pattern-sources dissoc code)
     (swap! app-state update :selected-assertions
            (fn [selected]
              (if (contains? selected code)
                (dissoc selected code)
                (assoc selected code {}))))))
+
+;; Where an assertion's values were repeated from. An assertion added to
+;; a purchase of something the record has bought before arrives filled in
+;; as it was said last time -- the system assuming the pattern recurs --
+;; and the sentence says so, so a student can see it is a default to keep
+;; or change, not a fact they supplied. Kept beside the selection rather
+;; than in it: it is about how the values got there, and the grader and
+;; the ledger have no use for it.
+(defn pattern-source [assertion-code]
+  (get-in @app-state [:pattern-sources (keyword assertion-code)]))
+
+(defn set-pattern-source! [assertion-code source]
+  (swap! app-state assoc-in [:pattern-sources (keyword assertion-code)] source))
 
 (defn update-assertion-parameter! [assertion-code param-key param-value]
   (swap! app-state assoc-in [:selected-assertions (keyword assertion-code) param-key] param-value))
@@ -214,13 +228,13 @@
            (cond (empty? next) {} (= 1 (count next)) (first next) :else next))))
 
 (defn clear-selections! []
-  (swap! app-state assoc :selected-assertions {}))
+  (swap! app-state assoc :selected-assertions {} :pattern-sources {}))
 
 (defn set-selected-assertions!
   "Replace the whole selection map (used by the drill's worked example
    to fill the sentence builder with the canonical assertions)."
   [assertions]
-  (swap! app-state assoc :selected-assertions (or assertions {})))
+  (swap! app-state assoc :selected-assertions (or assertions {}) :pattern-sources {}))
 
 ;; ==================== Time-on-task ====================
 ;; Every attempt carries raw serve-to-submit seconds (instrumentation

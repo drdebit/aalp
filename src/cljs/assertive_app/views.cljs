@@ -345,6 +345,82 @@
       :else
       [:div (str "Unknown parameter type: " param-type)])))
 
+;; ==================== Recurring patterns ====================
+;; An assertive record can repeat itself intelligently. A shop that has
+;; bought blank shirts to sell on will, more often than not, buy the next
+;; crate to sell on too -- so when the student says what this purchase is
+;; FOR, the sentence opens as the record said it last time. The student
+;; still has to add the assertion: that the purchase has a purpose is
+;; theirs to say. What the purpose is arrives as a default, marked as one,
+;; for them to keep or change for this particular transaction.
+;;
+;; Only where the record holds the pattern. With no earlier purchase of
+;; the item there is nothing to repeat, and the purpose stays unanswered,
+;; as it always has: choosing between using and selling is the question.
+
+(def ^:private recurring-codes
+  "Assertions about what an acquisition is for -- the part of a purchase
+   that recurs. Dates, amounts and due dates belong to each event."
+  #{:expects :allows})
+
+(def ^:private event-specific-params
+  #{:quantity :due-date :date :from-event :has-identifier})
+
+(defn- history-events
+  "The record this transaction is being written into: the walkthrough's
+   earlier episodes, a practice company's own record, or SP's ledger."
+  []
+  (let [problem (state/current-problem)]
+    (cond
+      (state/walkthrough-active?)       (state/walkthrough-events)
+      (seq (:prior-events problem))     (:prior-events problem)
+      :else                             (keep :assertions (state/ledger)))))
+
+(defn- recurring-pattern
+  "The last event in the record that received the same item and said
+   CODE about it: what it said, less what belonged to that event alone,
+   and which event it was."
+  [code selected]
+  (let [item-of #(some-> (get-in % [:receives :physical-item]) name)
+        item    (item-of selected)]
+    (when item
+      (when-let [e (last (filter #(and (= item (item-of %)) (map? (get % code)))
+                                 (history-events)))]
+        {:params (apply dissoc (get e code) event-specific-params)
+         :item   item
+         :id     (some-> (:has-identifier e) name)
+         :date   (get-in e [:has-date :date])}))))
+
+(defn- repeat-pattern!
+  "Fill a newly added assertion from the record's last matching purchase.
+   Returns truthy when it did, so nothing guesses over the top of it."
+  [code]
+  (when (contains? recurring-codes code)
+    (when-let [{:keys [params] :as source} (recurring-pattern code (state/selected-assertions))]
+      (doseq [[k v] params]
+        (state/update-assertion-parameter! code k v))
+      (state/set-pattern-source! code source)
+      (api/note! :pattern-repeated (:id (state/current-problem))
+                 {:code (name code) :from (:id source) :item (:item source)})
+      true)))
+
+(defn- pattern-note
+  "Says where a repeated assertion's values came from, and whether the
+   student has since changed them for this transaction."
+  [code params]
+  (when-let [{:keys [id date item] :as source} (state/pattern-source code)]
+    (let [kept? (= (:params source) (select-keys params (keys (:params source))))
+          what  (str/replace (str item) "-" " ")
+          where (str/join ", " (remove nil? [id date]))]
+      [:div.obligation-gloss.pattern-note
+       (if kept?
+         (str "Repeated from the last purchase of " what
+              (when (seq where) (str " (" where ")"))
+              ". Change it if this one is different.")
+         (str "Changed from the last purchase of " what
+              (when (seq where) (str " (" where ")"))
+              " for this transaction."))])))
+
 (defn- auto-populate-assertion!
   "Auto-populate assertion parameters at L1+ when assertion is selected."
   [assertion-code]
@@ -356,7 +432,7 @@
         ;; contradict what the student was just asked to record.
         problem (when-not (state/walkthrough-active?) (state/current-problem))
         vars (:variables problem)]
-    (when (>= level 1)
+    (when (and (not (repeat-pattern! code)) (>= level 1))
       (case code
         ;; Auto-populate Has Date from problem variables
         :has-date
@@ -927,7 +1003,8 @@
        "+ another input"]
       [:span " into "]
       [item-select :allows :creates-item (:creates-item params)]
-      [remove-assertion-button :allows]]]))
+      [remove-assertion-button :allows]
+      [pattern-note :allows params]]]))
 
 (defn- chain-capabilities
   "The events in the chain that granted a capability -- said `allows` --
@@ -1065,7 +1142,8 @@
            "An input to something else: raw materials.")])
       [:div.purpose-confidence
        [:span "How sure? "]
-       [confidence-slider :expects (:confidence params) "not set"]]]]))
+       [confidence-slider :expects (:confidence params) "not set"]]
+      [pattern-note :expects params]]]))
 
 (defn- render-money-expectation
   [params counterparty-name customer-profiles vendor-profiles is-prepaid?]

@@ -866,6 +866,7 @@
         ;; than in whatever month the student happens to be sitting in.
         earliest (get-in (state/current-problem) [:variables :date])]
     [sentence-section :obligation "This creates an obligation:"
+     [:<>
      [:div.requires-content
       [:span.party-name "The business"]
       [:span (if owes? " must provide " " is to receive ")]
@@ -884,7 +885,23 @@
       [:span.obligation-gloss (if owes?
                                 " — a debt the business owes."
                                 (str " — a claim the business holds; " party " must provide it."))]
-      [remove-assertion-button :requires]]]))
+      [remove-assertion-button :requires]]
+     ;; Scaffold for the one omission the entry cannot show. On a claim
+     ;; owed TO the business `expects` posts nothing, so a sentence
+     ;; without it looks finished and balanced, and the first the student
+     ;; hears of it is a miss and a new problem. A question, not an added
+     ;; assertion: that bound-to is not will is the thing to notice, and
+     ;; naming `expects` would do the noticing for them. Not on the
+     ;; business's own debt, where `expects` is optional. Gone once the
+     ;; student has got such a claim right (progress :demonstrated).
+     (when (and (not owes?)
+                (not (contains? (state/selected-assertions) :expects))
+                (not (some #{"claim-expects" :claim-expects}
+                           (:demonstrated (state/progress)))))
+       [:div.obligation-gloss.claim-prompt
+        (if (= "monetary-unit" (:unit params))
+          "Bound to pay is not the same as will pay. Has the business said how sure it is?"
+          "Bound to deliver is not the same as will deliver. Has the business said how sure it is?")])]]))
 
 (defn- assertion-param-options
   "The dropdown options the server resolved for this assertion parameter.

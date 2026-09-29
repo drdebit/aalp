@@ -7,7 +7,7 @@
 ;; Number of correct answers needed at a level to unlock the next level
 (def CORRECT_TO_UNLOCK 5)
 
-(declare get-completed-tutorials)
+(declare get-completed-tutorials demonstrated)
 
 (defn get-user-progress
   "Get user's current progress state.
@@ -35,7 +35,8 @@
                              [level {:correct-count correct
                                      :total-attempts total
                                      :unlocked-next unlocked}]))
-     :completed-tutorials (get-completed-tutorials user-id)}))
+     :completed-tutorials (get-completed-tutorials user-id)
+     :demonstrated (demonstrated db user-id)}))
 
 (defn- find-level-progress
   "Find level-progress entity for user+level combination."
@@ -261,6 +262,47 @@
        :needs-for-unlock CORRECT_TO_UNLOCK})))
 
 ;; ==================== Tutorial Completion ====================
+
+;; ==================== Demonstrated patterns ====================
+;; A scaffold is taken away once the student has shown they no longer
+;; need it. Read from graded attempts, so it holds across sessions.
+;;
+;; Not from the guided year. It never tells a student whether an entry
+;; was right -- errors surface at period close -- and a prompt that
+;; vanished after a correct credit sale would say so on the next one.
+
+(defn- claim-classifications
+  "Every classification in which a counterparty is bound to pay or
+   perform for the business. Each requires `expects` beside the
+   `requires`: bound to is not the same as will. Read from the
+   classifications themselves, so a new one joins without a list here.
+   Resolved at call time -- classification requires nothing from this
+   namespace, but loading it here would make that a cycle to guard."
+  []
+  (let [cs @(requiring-resolve 'assertive-app.classification/classifications)]
+    (set (for [[k {:keys [required required-parameters]}] cs
+               :when (and (contains? (set required) :requires)
+                          (contains? (set required) :expects)
+                          (= "receives" (some-> (get-in required-parameters [:requires :action]) name)))]
+           k))))
+
+(defn- demonstrated
+  "The patterns this student has got right at least once.
+
+     :claim-expects  an obligation owed TO the business, with how sure
+                     it is that it will be met"
+  [db user-id]
+  (cond-> []
+    (seq (d/q '[:find ?a
+                :in $ ?user [?c ...]
+                :where
+                [?a :attempt/user ?user]
+                [?a :attempt/correct? true]
+                [?a :attempt/correct-classification ?c]
+                [?a :attempt/problem-type ?t]
+                [(not= ?t :guided)]]
+              db user-id (vec (claim-classifications))))
+    (conj :claim-expects)))
 
 (defn get-completed-tutorials
   "Get set of tutorial levels the user has completed."

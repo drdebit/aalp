@@ -94,6 +94,26 @@ time-on-task data will say.
   three-column problem view and feedback), then continue.
 - Completion screen after Level 8.
 
+* Status (2026-09-29)
+
+Built and running on choochoo with =AALP_FLOW=lessons=:
+- [X] Routing at login and session restore; Guided Year untouched.
+- [X] Unnumbered progress bar; finished lessons open for review.
+- [X] Drill pass completes the lesson and opens the check-in.
+- [X] Check-in: round result, new words, what the lesson records, the
+  minimal pair; then three look-back problems from earlier lessons,
+  recorded as =retention= attempts, and a results page naming each miss
+  and its lesson with a review button.
+- [X] Completion screen.
+- [X] Level numbers out of the tutorial prose and the reader's title;
+  Level 0 reworded for the lesson path.
+- [ ] *Level 2 serves six problems whose own correct answer derives an
+  empty or unclassified entry*: =production-tshirt-printing=,
+  =production-simple-printing=, =design-creation=, =service-creation=,
+  =supplies-used=, =production-labor=. Present before today's work
+  (checked at =250d22a=). Three of Level 2's nine are sound. Needs
+  fixing, or holding back, before the pilot.
+
 * Content gaps found while planning
 
 - [X] *Level 3 (Cash Sales) removed* (2026-09-29). The cash sale had

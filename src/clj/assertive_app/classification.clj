@@ -2040,6 +2040,32 @@
                "SP declares quarterly dividend to shareholders"]
     :level 6}
 
+   ;; Collecting what a customer owed, and paying what the business owed a
+   ;; supplier: keeping a trade promise. The commonest settlements in 2101,
+   ;; and until the capstone the teaching model had no classification for
+   ;; either -- only the simulation's ad-hoc templates.
+   :receivable-collection
+   {:required #{:has-date :receives :has-counterparty :fulfills}
+    :required-parameters {:receives {:unit "monetary-unit"}
+                          :fulfills {:action "requires"}}
+    :fulfills-kind #{:receivable}
+    :prohibited #{:provides :requires :expects}
+    :description "Collecting what a customer owed for goods already provided"
+    :journal-entry [{:debit "Cash" :credit "Accounts Receivable"}]
+    :note "The claim is cleared by the payment. Nothing is earned today: the revenue was recognised when the goods went out."
+    :level 5}
+
+   :payable-payment
+   {:required #{:has-date :provides :has-counterparty :fulfills}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :fulfills {:action "requires"}}
+    :fulfills-kind #{:payable}
+    :prohibited #{:receives :requires :expects}
+    :description "Paying a supplier what the business owed for goods already received"
+    :journal-entry [{:debit "Accounts Payable" :credit "Cash"}]
+    :note "The debt is cleared by the payment. Nothing is bought today: the goods came in when the promise was made."
+    :level 5}
+
    :dividend-payment
    {:required #{:has-date :provides :has-counterparty :fulfills}
     :required-parameters {:provides {:unit "monetary-unit"}

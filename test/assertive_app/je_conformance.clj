@@ -52,7 +52,8 @@
 
 (def ^:private promise-for-kind
   "The fixture promise a payment of each kind keeps."
-  {:borrowing "Loan-001" :accrued "Interest-001" :declared "Dividend-001"})
+  {:borrowing "Loan-001" :accrued "Interest-001" :declared "Dividend-001"
+   :receivable "CreditSale-R" :payable "CreditBuy-P"})
 
 (defn canonical-selection
   "Synthesise a student's selection for a classification from its own
@@ -171,6 +172,17 @@
     :has-date {:date "2026-03-31"}
     :reports {:category "expense" :basis "accrual" :amount 180}
     :requires {:action "provides" :unit "monetary-unit" :quantity 180 :due-date "2026-04-15"}}
+   {:has-identifier "CreditSale-R"
+    :has-date {:date "2026-02-01"}
+    :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity 5}
+    :requires {:action "receives" :unit "monetary-unit" :quantity 125 :due-date "2026-03-03"}
+    :has-counterparty {:name "Acme Co"}}
+   {:has-identifier "CreditBuy-P"
+    :has-date {:date "2026-02-02"}
+    :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 10}
+    :requires {:action "provides" :unit "monetary-unit" :quantity 40 :due-date "2026-03-04"}
+    :expects {:action "consumes" :physical-item "blank-tshirts" :creates-item "printed-tshirts" :confidence 95}
+    :has-counterparty {:name "Acme Co"}}
    {:has-identifier "Dividend-001"
     :has-date {:date "2026-03-15"}
     :reports {:category "distribution" :basis "declared" :amount 500}

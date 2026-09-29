@@ -149,8 +149,10 @@
   "A student's composition, whitelisted, as an engine collects-spec and
    aggregate over one fixed record. Nothing arrives but choices from these
    lists; anything else is dropped."
-  [record-key {:keys [flow party paid period total]}]
-  (let [{:keys [from to]} (get-in records [record-key :period])]
+  [record-or-period {:keys [flow party paid period total]}]
+  (let [{:keys [from to]} (if (map? record-or-period)
+                            record-or-period
+                            (get-in records [record-or-period :period]))]
     {:spec {:includes (cond-> (get flows flow {})
                         (contains? parties party)
                         (assoc-in [:readings :counterparty-role] (keyword party))

@@ -14,6 +14,7 @@
             [assertive-app.telemetry :as telemetry]
             [assertive-app.guided :as guided]
             [assertive-app.reporting :as reporting]
+            [assertive-app.capstone :as capstone]
             [assertive-app.engine :as engine]
             [assertive-app.schema :as schema]
             [assertive-app.je-derive :as je-derive]
@@ -288,6 +289,71 @@
                :feedback-status (if (:correct? result) "correct" "incorrect")}))
           (response/response (assoc result :figure figure)))
         {:status 400 :body {:error "Unknown task"}})))
+
+  ;; ==================== The capstone's own year ====================
+  ;; One company's 2026, recorded by the student, reviewed and corrected,
+  ;; then reported on over their own books (capstone.clj).
+
+  (GET "/api/capstone/state" request
+    (if-let [user (:user request)]
+      (response/response (capstone/state (:db/id user)))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/capstone/record" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [tx (:tx body)
+            sel (:selected-assertions body)
+            verdict (capstone/judge tx sel)]
+        (progress/record-attempt!
+          {:user-id (:db/id user)
+           :problem-id (str "capstone-" tx)
+           :problem-type "capstone"
+           :level 8
+           :selected-assertions sel
+           :correct (:matches? verdict)
+           :feedback-status (if (:matches? verdict) "correct" "incorrect")})
+        ;; The verdict goes back; the client shows it only when correcting.
+        ;; Recording the year for the first time is like keeping books:
+        ;; nobody tells you as you go.
+        (response/response verdict))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/capstone/preview" {body :body :as request}
+    (if-let [user (:user request)]
+      (response/response (or (capstone/preview (:db/id user) (:composition body))
+                             {:figure nil :count 0 :collected []}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/capstone/grade" {body :body :as request}
+    (if-let [user (:user request)]
+      (let [uid (:db/id user)
+            task (keyword (:task body))
+            margin? (contains? reporting/gross-margins task)
+            result (if margin?
+                     (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
+                     (reporting/grade-composition task (:composition body)))
+            compare (if margin?
+                      (let [[a b] (map keyword (:inputs body))
+                            ca (capstone/compare-report uid a)
+                            cb (capstone/compare-report uid b)]
+                        (when (and ca cb (:yours ca) (:yours cb))
+                          {:yours (- (:yours ca) (:yours cb))
+                           :right (- (:right ca) (:right cb))
+                           :entries (vec (distinct (concat (:entries ca) (:entries cb))))
+                           :unaffected (vec (distinct (concat (:unaffected ca) (:unaffected cb))))}))
+                      (capstone/compare-report uid task))]
+        (if result
+          (do
+            (progress/record-attempt!
+              {:user-id uid :problem-id (str "capstone-report-" (name task))
+               :problem-type "report" :level 8 :template-key task
+               :selected-assertions (:composition body)
+               :correct (:correct? result)
+               :feedback-status (if (:correct? result) "correct" "incorrect")})
+            (response/response (cond-> result
+                                 (:correct? result) (assoc :compare compare))))
+          {:status 400 :body {:error "Unknown task"}}))
+      {:status 401 :body {:error "Authentication required"}}))
 
   ;; What a lesson's problems produce, for the check-in after it: each
   ;; pattern the level serves, and the entry its answer posts.

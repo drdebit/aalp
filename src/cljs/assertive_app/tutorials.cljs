@@ -1065,18 +1065,32 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
     :subtitle "Bringing it all together — the complete assertion framework"
     :sections
     [{:heading "The Complete Framework"
-      :content "Congratulations on making it to Level 8! Let's review the complete assertion framework you've mastered:
+      :content "You've reached the capstone. Let's review the complete assertion framework you've mastered:
 
 **Exchange Assertions:**
 
 | Assertion | Used For | Journal Entry Effect |
 |-----------|----------|---------------------|
 | **has-date** | Every transaction | Records when it happened |
-| **has-counterparty** | Exchanges with others | Identifies the other party |
-| **provides** | Giving something now | Credit to asset/equity |
-| **receives** | Getting something now | Debit to asset |
-| **requires** | Legal obligation (future) | Credit to liability |
-| **expects** | How likely a future event is | No line — it becomes Bad Debt Expense at period end |
+| **has-counterparty** | Exchanges with others | Identifies the other party — and without one, goods going out are not a sale |
+| **provides** | Giving something now | Credit what goes out; goods provided to a customer also earn Revenue |
+| **receives** | Getting something now | Debit what comes in — an asset, or an expense if it is used up as it arrives |
+| **requires** | A promise someone must keep | Owed *to* the business: a claim, debited (Accounts Receivable, Notes Receivable, Prepaid Expense). Owed *by* it: a debt, credited (Accounts Payable, Deferred Revenue, Notes Payable) |
+| **fulfills** | Keeping an earlier promise | Settles the claim or debt that promise created |
+
+**What It Is For:**
+
+| Assertion | Used For | Journal Entry Effect |
+|-----------|----------|---------------------|
+| **expects** (on goods bought) | What the business means to do with them | Picks the account: Raw Materials if they will be used up making something, Finished Goods if they will be sold as they are |
+| **allows** (on a machine bought) | What it makes possible | Places it as Equipment: it produces, and is still there afterwards |
+| **expects** (on a promise owed to the business) | How likely it is to be kept | No line now — at period end it becomes the allowance for doubtful accounts, and Bad Debt Expense |
+
+**Legal Context:**
+
+| Assertion | Used For | Journal Entry Effect |
+|-----------|----------|---------------------|
+| **is-allowed-by** / **is-required-by** / **is-protected-by** | The law, contract or standard behind a transaction | Names it; the entry changes only where the law itself creates the cost — a tax, a license, the cost of forming the company |
 
 **Transformation Assertions:**
 
@@ -1084,7 +1098,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 |-----------|----------|---------------------|
 | **consumes** | Using up resources | Credit to asset (input) |
 | **creates** | Producing new resources | Debit to asset (output) |
-| **is-allowed-by** | Equipment enabling production | Links to equipment |
+| **is-allowed-by** | The equipment that makes production possible | Links the run to the equipment |
 
 **Recognition Assertion:**
 
@@ -1092,26 +1106,32 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 |-----------|----------|---------------------|
 | **reports** | Calculated recognitions (adjustments) | Debit/Credit per type |
 
-**Key insight, recalled from Levels 1 and 3:** providing the goods earns the revenue, which fixes *when* it is recorded; and revenue needs no assertion of its own, because it emerges from the exchange pattern. Adjusting entries have no exchange to emerge from — so they need `reports` to say what is being recognised, and how it was worked out."}
+**Key insight, recalled from earlier lessons:** providing the goods earns the revenue, which fixes *when* it is recorded; and revenue needs no assertion of its own, because it emerges from the exchange pattern. Adjusting entries have no exchange to emerge from — so they need `reports` to say what is being recognised, and how it was worked out."}
 
      {:heading "Transaction Categories"
       :content "Every transaction falls into one of these categories:
 
-**Exchange Transactions** (L0-L1, L3, L6-L7):
+**Exchange Transactions** — buying, selling, borrowing, lending, owners putting money in or taking it out:
 - Always have a counterparty
-- Use provides/receives for immediate exchanges
-- Use requires/expects for future obligations
+- Use provides/receives for what moves now
+- Use requires for promises, and expects for how likely one owed to the business is to be kept
+- Use fulfills when an earlier promise is kept
+- On goods bought, say what they are for: expects, or allows for a machine
 - Revenue emerges from the sale pattern — no separate assertion needed
 
-**Internal Transformations** (L2):
+**Internal Transformations** — production:
 - No counterparty
 - Use consumes/creates for production
 - is-allowed-by links to enabling equipment
 
-**Adjusting Entries** (L5):
+**Legal Context** — taxes, licenses, forming the company, contracts and protections:
+- is-allowed-by, is-required-by and is-protected-by name what stands behind the transaction
+- Usually beside an exchange; sometimes the law is the whole reason money moved
+
+**Adjusting Entries** — the end of a period:
 - No counterparty
 - Use reports for calculated recognitions
-- May use consumes (prepaid), requires (accruals)
+- May use consumes (value used up), requires (accruals), fulfills (an advance now earned)
 - reports is needed because there's no exchange pattern to derive from"}
 
      {:heading "From Assertions to Journal Entries"
@@ -1141,7 +1161,7 @@ Expense**, matched against the sales that produced the debts. Revenue
 is never reduced.
 
 **The requires/expects asymmetry:**
-- Credit purchase: **requires** (SP's own promise — a probability is optional)
+- Credit purchase: **requires** (SP's own promise — a probability is optional) + **expects** saying what the goods are for
 - Credit sale: **requires** + **expects** (will the customer pay? a probability worth recording)
 - Deferred revenue: **requires** (SP's own promise to deliver — a probability is optional)
 - Prepaid expense: **requires** + **expects** (the contract binds the vendor; delivering is still the vendor's doing)
@@ -1151,7 +1171,7 @@ is never reduced.
 **Adjustments:** Use **reports** to explicitly recognize amounts where no exchange occurred."}
 
      {:heading "Ready for the Final Quiz"
-      :content "This capstone quiz covers all levels. You'll see questions that require you to identify assertion patterns across different transaction types.
+      :content "This capstone quiz covers every lesson. You'll see questions that require you to identify assertion patterns across different transaction types.
 
 Once you pass, you'll have demonstrated mastery of the complete assertive accounting framework. Good luck!"}]
 

@@ -129,6 +129,12 @@ Built and running on choochoo with =AALP_FLOW=lessons=:
 - [ ] =design-creation= stays held until it is rewritten with an expense
   treatment, which is what GAAP asks of an internally created design.
 
+- [X] The capstone ends on the student's own year: record, review and
+  correct, report (see LESSON-REPORTING-DESIGN.org). 2026-09-29.
+- [ ] *Collecting a receivable and paying a supplier are practised in no
+  lesson* — the capstone is the first place a student meets them. Add
+  practice templates (credit lesson, or with =fulfills= at Level 5)?
+
 * Content gaps found while planning
 
 - [X] *Level 3 (Cash Sales) removed* (2026-09-29). The cash sale had

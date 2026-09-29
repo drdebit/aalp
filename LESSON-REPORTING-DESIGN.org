@@ -255,3 +255,34 @@ own-entries reporting with a correction pass.
 3. Endpoints: preview, record and combine over the fixed record.
 4. Canonical compositions and per-part grading, with hidden test records.
 5. The lesson and the Report Builder in the lesson path.
+
+** The capstone's own year (2026-09-29) — built, uncommitted
+Decided: a short year the student records, not practice answers grouped
+by company (those rarely make a coherent year, so reports would fail for
+reasons that are not the student's). Placed inside the Capstone, after
+its mixed practice round.
+- =capstone.clj=: Campus Threads' 2026 — three opening events given, then
+  eleven transactions the student records (collections, credit and cash
+  purchases and sales, a supplier payment, a cleaning service, an owner's
+  draw). Correct books: accrual 2,870 / 1,420 / 1,450; cash 2,350 / 940 /
+  1,410. Entries are graded attempts (problem type =capstone=; the latest
+  counts), so no schema change.
+- Recording: each transaction read against the student's own books so
+  far; batches and promises chosen from what they recorded; no verdicts.
+- Review: every entry judged against the right books up to its date, so
+  each is judged on its own; any entry can be revised, with feedback.
+- Report: the four reports and both margins over their own books, graded
+  by composition; each correct report shows their figure beside the right
+  books' and names the entries behind any difference — or, when the
+  figures agree, names a wrong entry the report collected but does not
+  total.
+- Two classifications the teaching model lacked: =receivable-collection=
+  and =payable-payment= (keeping a trade promise), graded like the other
+  payments. *No lesson practises either* before the capstone.
+- Fixed on the way: a customer collection could not find the promise it
+  kept. The "received goods take their purpose from their own event"
+  change had emptied the record for every line matched on =receives=,
+  cash included; it now applies only to the line placing the goods.
+- Walked through in a browser: all eleven recorded, two mistakes flagged,
+  one revised with feedback, the other traced through the reports.
+

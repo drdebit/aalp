@@ -1039,7 +1039,11 @@
                             ;; fact about each purchase. Production and
                             ;; sales still read the chain: what happens to
                             ;; goods later is a fact about the record.
-                            context (if (= :receives matched)
+                            ;; Only for the line that places the goods: a
+                            ;; collection's cash is matched on receives too,
+                            ;; and it needs the record to find the promise it
+                            ;; keeps.
+                            context (if (and (= :receives matched) (= :position (:account line)))
                                       (assoc context :events [])
                                       context)
                             {:keys [quantity unresolved? unresolved-reason needs-lot?]}

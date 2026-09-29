@@ -427,7 +427,10 @@
 
   (GET "/api/guided/state" request
     (if-let [user (:user request)]
-      (let [user-id (:db/id user)]
+      (let [user-id (:db/id user)
+            ;; The guided year is a way into the same business; it has
+            ;; to start funded too.
+            _ (simulation/ensure-funded! user-id)]
         (response/response
           (assoc (guided/day-payload user-id)
                  :business-state (simulation/get-business-state user-id))))

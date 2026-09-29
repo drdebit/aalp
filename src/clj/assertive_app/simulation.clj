@@ -843,9 +843,17 @@
    Starting cash used to be a constant that `initialize-business-state`
    dropped into a stored balance. With cash read off the chain there is
    nothing to read it from, so the funding is an event like any other --
-   which is also how every practice company's record begins."
+   which is also how every practice company's record begins.
+
+   Asks whether the funding is THERE, not whether the ledger is empty.
+   Only the simulation's state endpoint called this, so a business reset
+   and then run from the guided year recorded its first purchase unfunded
+   -- and a ledger that is not empty was never asked again. It spent money
+   it never had, and a gate bounded by cash on hand refused every
+   quantity."
   [user-id]
-  (when (empty? (get-ledger user-id))
+  (when-not (some #(= :owner-invests-cash (some-> (:template-key %) keyword))
+                  (get-ledger user-id))
     (save-ledger-entry! user-id
       {:date STARTING_DATE
        :period 1

@@ -4228,14 +4228,19 @@
           [:div.gate-summary
            [:span "Unit price: " (format-currency (:unit-price gate))]
            [:span.gate-total "Total: " (format-currency total)]
+           ;; Signed: format-currency drops it, and an overdrawn business
+           ;; read as one with money in the bank.
            (when bs
-             [:span "Cash on hand: " (format-currency (:cash bs))])]
+             [:span "Cash on hand: " (when (neg? (:cash bs)) "−") (format-currency (:cash bs))])]
           [:button.primary.gate-buy-btn
            {:on-click #(api/submit-guided-gate! q)
             :disabled (or (< q (:min gate)) (> q (:max gate)))}
            (str "Buy " q " from " (:vendor gate))]
           [:p.gate-bounds-hint
-           (str "Between " (:min gate) " and " (:max gate) ".")]]]))))
+           (if (< (:max gate) (:min gate))
+             (str "Cash on hand does not cover the smallest order, " (:min gate) " for "
+                  (format-currency (* (:min gate) (:unit-price gate))) ".")
+             (str "Between " (:min gate) " and " (:max gate) "."))]]]))))
 
 (defn costing-owed-panel
   "The books owe a cost match. Same panel either side of the year

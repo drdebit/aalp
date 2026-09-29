@@ -1,0 +1,257 @@
+#+TITLE: Reporting in the lesson path
+#+AUTHOR: Matt DeAngelis (with Claude)
+#+DATE: 2026-09-29
+
+* The problem
+
+The Report Builder (=REPORT-BUILDER-DESIGN.md=) composes reports over
+/the student's own ledger/ and lives in Year 2. The pilot runs the
+lessons instead ([[file:PILOT-LESSONS-PLAN.org][PILOT-LESSONS-PLAN.org]]), where problems come from
+randomly chosen practice companies. There is no single business whose
+books the student has kept, so there is nothing obvious to report on.
+
+Matt's suggestion: run report queries over any one, or an assortment,
+of the ledgers of the companies the student has worked with.
+
+* What exists, and what does not
+
+- The engine composes over *any list of events* (=engine/store-of=), so
+  the Report Builder can run over a practice company's record as easily
+  as over a student's ledger. The backend is not the constraint.
+- The builder's frontend exists (composer in the sentence-builder idiom,
+  read-only DSL mirror, preview, record, exemplar presets), reachable
+  only in Year 2.
+- *A practice company's record is regenerated for every problem.* About
+  23 random draws set its prices, quantities, customers and loans, so
+  "Northside Tees" is a different shop each time a student meets it.
+  There is no stable company ledger today.
+- *An attempt stores the student's assertions, but not which company it
+  belonged to*, nor that company's record at the time.
+- No lesson teaches reporting. The =reports= assertion (Level 5) is a
+  recognition inside one entry, not a report over many events.
+
+* What reporting should teach
+
+From the Report Builder design, unchanged: the same events, walked
+differently, give different reports, and the walk is itself a recorded,
+accountable thing. Stage 1 /reads/ two finished compositions over the
+same events (accrual revenue and cash revenue differ only in what they
+exclude); Stage 2 /modifies/ one; Stage 3 /composes/ from blank and
+records it.
+
+That needs a ledger with enough in it to make the definitions disagree:
+credit sales not yet collected, an advance not yet earned, an accrual.
+By Adjusting Entries a student has met all of these.
+
+* Options: whose ledger
+
+| Option | Ledger | For | Against |
+|--------+--------+-----+---------|
+| A. Fixed company records | Each practice company has one full-year record, the same for every student | Comparable across students; answers knowable in advance; gradable by result | The student did not write any of it |
+| B. Stable per student | A company's record is seeded per student, so Northside is the same shop each time *this* student meets it | Continuity without running a business | Answers differ per student; grading must compute them |
+| C. The student's own entries | B's record plus every event the student recorded for that company, as recorded — errors kept | Reporting on books partly their own; a wrong entry shows up in the report, which is the period-close lesson without the Guided Year | Needs the company stored on each attempt; a report can be "wrong" because an entry was |
+| D. An assortment | A query across several companies' ledgers at once | Analytics-style questions ("revenue across every shop you have kept") | Adds a dimension before the basic one is taught |
+
+* Recommendation
+
+1. *A reporting lesson*, after Adjusting Entries and before Equity. It
+   needs sales, collections, advances and accruals to make the
+   definitions disagree, and all of those are taught by then.
+2. *Start from option A* for the lesson itself: one or two fixed
+   company records, a full year each, the same for everyone. Stage 1
+   and 2 run over them, and its practice round asks report questions
+   ("What was Harbor Line's accrual revenue for the year?") graded by
+   result against the canonical composition over the same ledger. Fixed
+   records make answers knowable and the round gradable now.
+3. *Build toward C* for the capstone: from now on, record the company on
+   every attempt, and give each student a stable record per company
+   (B). At the capstone, the student reports on a company whose books
+   hold their own entries — and where a report comes out wrong because
+   an entry was, that is the error archaeology the Guided Year was
+   meant to deliver, reached without running a business.
+4. *Leave D for later* (analytics courses, per the roadmap).
+
+* Decided (2026-09-29)
+
+- [X] A separate reporting lesson.
+- [X] Fixed company records for the lesson.
+- [X] The capstone returns students to their own entries — with a chance
+      to correct them before they report on them.
+- [X] Reporting across several companies waits.
+- [X] At least one figure composed from blank. The reports: *gross margin,
+      on a cash basis and on an accrual basis.*
+- [X] Graded by how the report is composed, not by the figure: the
+      figure can be wrong for reasons the composition is not.
+
+* What gross margin needs that the engine cannot do yet
+
+Found 2026-09-29, reading =assertive-engine/compute/collects.clj= and
+=aalp/engine.clj=.
+
+1. *The engine's revenue exemplars are wrong for the current model.*
+   =accrual-revenue-spec= collects events that provide goods AND receive
+   cash, excluding =requires=: cash sales only, with credit sales — the
+   case accrual accounting exists for — left out. =cash-revenue-spec=
+   collects every cash receipt without an open promise, which takes in
+   owner investment and borrowing. These are the Report Builder's
+   Stage 1 exemplars; as they stand they teach the wrong answers.
+2. *Revenue on credit is a promise, not a flow.* A composition sums one
+   flow (=provides=, =receives=, =consumes=, =creates=); a credit sale's
+   money is on =requires=.
+3. *Cost of goods sold is derived, not asserted.* A sale asserts the
+   shirts that went out; what they cost comes from the batch named, via
+   the record's cost basis. No sum over assertions reaches it.
+4. *No arithmetic across reports.* Gross margin is revenue less cost of
+   goods sold: one report combining two recorded ones. The engine has
+   sum, count and average over a single collection.
+5. *No filter on which promise a =fulfills= keeps.* Cash-basis gross
+   margin needs collections from customers and payments to suppliers,
+   which are =fulfills= events distinguished only by the promise kept.
+
+* Build plan (proposed)
+
+1. *Engine: patterns and aggregates.* Pattern keys for "keeps a promise
+   of kind K" and "has a counterparty"; aggregates for the money a
+   =requires= promises, and for the cost of goods that went out (read
+   from the cost basis, the way the derivation prices COGS).
+2. *Engine: a report over reports.* A composition whose inputs are
+   recorded reports and whose operation is difference (gross margin) —
+   the research model's "calculations as events", recorded with its
+   inputs so it can be traced.
+3. *Correct the exemplars* to the current model, or retire them.
+4. *Fixed records.* One or two practice companies with a full year: cash
+   and credit sales, collections, cash and credit purchases, payments,
+   an advance, production, so cash and accrual gross margin differ, and
+   for more than one reason.
+5. *Composition grading.* Compare each part — what is included, what is
+   excluded, what is summed — against the canonical composition, with
+   feedback per part. Accept a different composition when it collects
+   the same events as the canonical one on the fixed record *and* on
+   hidden test records built to separate near-misses (the design doc's
+   "grading by extension"), so an equivalent form is not marked wrong.
+6. *The lesson.* Tutorial and quiz; Stage 1 reads the two finished
+   revenue compositions; Stage 2 modifies one; Stage 3 composes cost of
+   goods sold, or a gross margin, from blank. Placed after Adjusting
+   Entries.
+7. *Later, for the capstone:* the company on every attempt, a stable
+   record per student and company, a correction pass, then reporting.
+
+* Decided: the two bases (2026-09-29)
+
+- [X] *Cash basis follows one that exists: the tax cash method* for a
+      small business holding inventory. After the 2017 act, a business
+      under the gross-receipts test (IRC 448(c)) may use the cash method
+      with inventory, treating it as non-incidental materials and
+      supplies (471(c); Reg. 1.162-3): receipts count when received —
+      cash sales, collections, advances — and the cost of goods is
+      deducted in the year they are used or sold, *and only if paid
+      for*; not when bought.
+      *Confirmed against the sources, 2026-09-29:*
+      - Reg. 1.471-1(b)(4): the cost of inventory treated as
+        non-incidental materials and supplies is recovered "only in the
+        taxable year in which the inventory is used or consumed in the
+        taxpayer's business, or in the taxable year in which the taxpayer
+        pays for or incurs the cost of the inventory, whichever is
+        later." Its example: peanut butter bought in November, baked into
+        cookies in December, cookies sold in January — deductible in
+        January, when provided to customers.
+      - The gross-receipts test (448(c)) for 2026 is average annual gross
+        receipts of $32 million or less over the prior three years (Rev.
+        Proc. 2025-32). Publication 538 (01/2022) still shows the older
+        $26 million.
+      - Receipts: "Under the cash method, you include in your gross
+        income all items of income you actually or constructively
+        received during the tax year" (Pub. 538) — so collections count
+        when collected, and customer advances when received.
+      Sources: [[https://www.law.cornell.edu/cfr/text/26/1.471-1][26 CFR 1.471-1]];
+      [[https://www.irs.gov/publications/p538][IRS Publication 538]];
+      [[https://www.currentfederaltaxdevelopments.com/blog/2025/10/9/2026-inflation-adjustments-for-tax-professionals-revenue-procedure-2025-32-analysis][Rev. Proc. 2025-32 analysis]].
+      So cash gross margin = receipts from customers for goods, when
+      received, less the cost of goods that went out during the period
+      from batches that have been paid for.
+      A plain "cash from customers less cash paid for goods" is a
+      cash-flow measure, not a basis, and is not used.
+- [X] *Accrual basis:* revenue from goods provided to customers, paid or
+      promised, less the cost of the batches that went out. Cost of
+      services would replace cost of goods for a company that provides
+      services — but no practice company does: every practice sale is of
+      shirts, and the one service-provider template went to 2102 with
+      labour. Revisit if a service company is added.
+- [X] *Composed from blank: cost of goods sold (accrual).* Students already
+      name the batch when costing a sale; this is the same act, totalled
+      over the year. Gross margin then combines it with a revenue report
+      modified in Stage 2.
+
+* What the cash basis adds to the build
+
+- A way to tell whether a batch has been paid for: bought for cash, or
+  bought on credit with the payable since settled (=fulfills=). The
+  record holds both facts already.
+- Cost of goods sold, cash basis, is then the accrual composition with
+  one more exclusion — batches not yet paid for — which makes the pair a
+  good Stage 2 exercise: one chip, a different basis.
+
+* Progress
+
+** Engine (2026-09-29) — done, uncommitted
+Architecture decided: the engine gains generic powers; AALP supplies the
+accounting readings as it loads events. Moving the readings into the
+engine stays possible later.
+- Several flows of one kind in one event (a production consuming shirts
+  and ink) decompose and reconstitute.
+- The AALP adapter keeps what reports need: =fulfills= names the promise
+  kept (an edge to it); a flow of goods keeps the batch it came out of
+  (=:draws-from=); =reports= keeps its amount; client readings are stored
+  on the event (=:event/readings=).
+- Patterns over readings (=:readings {:counterparty-role :customer}=, a
+  set meaning any of), and totals over a reading (=:reading/goods-cost=,
+  =:reading/consideration=) as money.
+- A report over reports: =combine-and-record!= (=:difference=, =:sum=),
+  recorded as an event whose targets are the reports it combines, from
+  the figures they recorded rather than by re-running them.
+- The old =accrual-revenue-spec= and =cash-revenue-spec= are documented
+  as the paper's first pass (credit sales left out; owner investment let
+  in) and kept, since the SP example's tests are written against them.
+  AALP will not use them as presets.
+- Tests: 56, 317 assertions, 0 failures (4 new, 21 assertions).
+
+** AALP (2026-09-29) — built, uncommitted
+- =readings.clj=: the readings above, computed as a record loads.
+- =reporting.clj=: the fixed record (Harbor Line Shirts, 2026 with a
+  December 2025 tail); compositions in five parts (which events, whose,
+  paid-for condition, when, what is totalled), whitelisted; the four
+  reports' correct compositions; grading part by part, with feedback per
+  part; gross margins graded on their two inputs and order.
+  Figures: accrual revenue 2,160, COGS 1,180, margin 980; cash revenue
+  2,110, COGS 640, margin 1,470.
+- Endpoints: =GET /api/lessons/reporting/record=,
+  =POST .../preview= (free), =POST .../grade= (recorded as =report=
+  attempts).
+- The lesson: Reporting (key 9), after Adjusting Entries in an explicit
+  =lesson-sequence=. Orientation, five sections (the tax cash method
+  cited), four quiz questions. Its round: read the two revenue reports
+  (click one to see what it collects), compose accrual COGS from blank,
+  change it to cash with one condition, build both gross margins.
+- Retention now names the earlier lessons (=:levels=) instead of
+  "numerically below", since a lesson's key is no longer its position.
+- Walked through in a browser: every step, a wrong total and mixed bases
+  caught with the right feedback, into the check-in.
+
+Deferred: hidden test records (not needed while each part is one choice
+— a wrong part is a wrong report); a second fixed record; the capstone's
+own-entries reporting with a correction pass.
+
+** AALP — originally planned
+1. Readings, computed as a record loads: =:counterparty-role= (customer,
+   supplier, owner, lender, borrower — read from what the event does and
+   which promise it makes or keeps), =:consideration= (money received or
+   promised for goods provided), =:goods-cost= (from the batch named, as
+   the derivation prices it), =:batch-paid= (bought for cash, or bought
+   on credit with the payable settled by the record's end).
+2. The fixed record: a reseller's full year (Harbor Line Shirts), with a
+   prior-year receivable collected this year, a credit sale not yet
+   collected, and a batch bought on credit and not yet paid for — so the
+   two bases differ on both revenue and cost. No customer advances.
+3. Endpoints: preview, record and combine over the fixed record.
+4. Canonical compositions and per-part grading, with hidden test records.
+5. The lesson and the Report Builder in the lesson path.

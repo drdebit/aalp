@@ -31,7 +31,8 @@ not the Guided Year. Decided 2026-09-29.
 
 * The path
 
-The path is the tutorial levels in order: 0, 1, 2, 4, 5, 6, 7, 8. The
+The path is the tutorial levels in order: 0, 1, 2, 4, 5, 9 (Reporting,
+added 2026-09-29 — see [[file:LESSON-REPORTING-DESIGN.org][LESSON-REPORTING-DESIGN.org]]), 6, 7, 8. The
 numbers are keys, not positions; students see only where they are in
 the sequence. For each level L:
 

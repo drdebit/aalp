@@ -13,6 +13,7 @@
             [assertive-app.simulation :as simulation]
             [assertive-app.telemetry :as telemetry]
             [assertive-app.guided :as guided]
+            [assertive-app.reporting :as reporting]
             [assertive-app.engine :as engine]
             [assertive-app.schema :as schema]
             [assertive-app.je-derive :as je-derive]
@@ -243,8 +244,50 @@
                                                   :show-assertions show-assertions?
                                                   :served (:served body)
                                                   :missed (:missed body)
-                                                  :below (:below body))]
+                                                  :below (:below body)
+                                                  :levels (:levels body))]
       (response/response problem)))
+
+  ;; ==================== The reporting lesson ====================
+  ;; Compositions over a fixed company record: preview freely, graded by
+  ;; how the report is composed (reporting.clj).
+
+  (GET "/api/lessons/reporting/record" [record]
+    (if-let [v (reporting/record-view (keyword (or record "harbor-line")))]
+      (response/response v)
+      {:status 404 :body {:error "No such record"}}))
+
+  (POST "/api/lessons/reporting/preview" {body :body}
+    (response/response
+      (or (reporting/preview (keyword (or (:record body) "harbor-line")) (:composition body))
+          {:figure nil :count 0 :collected []})))
+
+  (POST "/api/lessons/reporting/grade" {body :body :as request}
+    (let [record (keyword (or (:record body) "harbor-line"))
+          task   (keyword (:task body))
+          result (if (contains? reporting/gross-margins task)
+                   (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
+                   (reporting/grade-composition task (:composition body)))
+          figure (if (contains? reporting/gross-margins task)
+                   (let [[a b] (map keyword (:inputs body))
+                         fa (reporting/report-figure record a)
+                         fb (reporting/report-figure record b)]
+                     (when (and fa fb) (- fa fb)))
+                   (:figure (reporting/preview record (:composition body))))]
+      (if result
+        (do
+          (when-let [user (:user request)]
+            (progress/record-attempt!
+              {:user-id (:db/id user)
+               :problem-id (str "report-" (name task))
+               :problem-type "report"
+               :level (or (:level body) 0)
+               :template-key task
+               :selected-assertions (:composition body)
+               :correct (:correct? result)
+               :feedback-status (if (:correct? result) "correct" "incorrect")}))
+          (response/response (assoc result :figure figure)))
+        {:status 400 :body {:error "Unknown task"}})))
 
   ;; What a lesson's problems produce, for the check-in after it: each
   ;; pattern the level serves, and the entry its answer posts.

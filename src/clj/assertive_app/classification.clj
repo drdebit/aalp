@@ -4223,11 +4223,15 @@ The printed t-shirts are now finished goods ready for sale."
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
-  [level & {:keys [problem-type show-assertions served missed below] :or {problem-type :forward show-assertions false}}]
+  [level & {:keys [problem-type show-assertions served missed below levels] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(and (<= (:level (val %)) level)
                                           ;; A retention check looks back:
                                           ;; only patterns from before `below`.
                                           (or (nil? below) (< (:level (val %)) below))
+                                          ;; ...or names the lessons it looks
+                                          ;; back at, when their keys are not
+                                          ;; their order.
+                                          (or (empty? levels) (contains? (set levels) (:level (val %))))
                                           ;; Patterns whose entry cannot yet be
                                           ;; derived are not served. A problem
                                           ;; whose journal entry comes out empty

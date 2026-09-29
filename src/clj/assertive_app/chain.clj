@@ -454,6 +454,13 @@
            (= "accrual" (some-> (get-in assertions [:reports :basis]) name)))
       :accrued)))
 
+(defn promise-kind-of
+  "The kind of promise an event made, whether or not it has since been
+   kept. nil when it made none, or none of the kinds the record reads."
+  [event]
+  (when-let [req (:requires event)]
+    (promise-kind event req)))
+
 (def promise-accounts
   "The account a promise of each kind sits in while it is open, and so
    the account keeping it clears. A claim the business holds is an asset;

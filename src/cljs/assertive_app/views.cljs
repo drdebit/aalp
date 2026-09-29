@@ -2174,7 +2174,15 @@
                          [:td]
                          [:td.dj-needs-cell {:colSpan 3}
                           [:span.dj-needs-mark "?"]
-                          [:span.dj-needs-text (:unresolved-reason line)]]])
+                          [:span.dj-needs-text
+                           ;; Before submission the derivation's own reason
+                           ;; -- "name the batch" -- asks for something the
+                           ;; sentence builder does not offer: costing is the
+                           ;; second act, opened by a correct revenue
+                           ;; sentence. Say what comes next instead.
+                           (if (and provisional? (:needs-lot? line))
+                             "Not priced yet. Once the sale is submitted and the revenue recognized, you will name which batch these goods came out of, and the cost follows from the record."
+                             (:unresolved-reason line))]]])
                       ;; The figure came from a calculation and is not the
                       ;; figure that calculation comes to. Said on the face
                       ;; of the entry, like an unpriced line: it is the

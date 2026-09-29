@@ -7,7 +7,8 @@
 
 ;; Forward declarations for functions used before definition
 (declare flush-telemetry! fetch-assertions! fetch-problem! fetch-ledger! derive-je!
-         fetch-guided-state! fetch-simulation-state! fetch-action-schemas!)
+         fetch-guided-state! fetch-simulation-state! fetch-action-schemas!
+         enter-app!)
 
 ;; Detect if we're running under a subpath (e.g., /aalp/)
 ;; and adjust API base accordingly
@@ -91,8 +92,9 @@
                 (save-session! (:session-token response))
                 ;; Update state
                 (state/set-user! response)
-                ;; Enter the two-act arc (Guided Year -> simulation)
-                (fetch-guided-state!)
+                ;; The lessons, or the two-act arc (Guided Year ->
+                ;; simulation): the server's flow decides.
+                (enter-app!)
                 (state/set-loading! false))
      :error-handler (fn [error]
                       (state/set-login-error! "Login failed. Please check your email.")
@@ -123,6 +125,7 @@
                            :current-level user-level
                            :completed-tutorials (set (:completed-tutorials response [])))
                     (state/update-progress! response)
+                    (state/set-flow! (:flow response))
                     ;; A practice round left unfinished is picked up where
                     ;; it stopped. Restored BEFORE the guided state is
                     ;; fetched, because that is what decides which view
@@ -134,7 +137,7 @@
                     ;; can see it and leave the drill's problem alone.
                     (when-let [drill (:drill-state response)]
                       (state/resume-drill! drill))
-                    (fetch-guided-state!)
+                    (enter-app!)
                     (when-let [drill (:drill-state response)]
                       (fetch-problem! (:level drill user-level)))
                     (state/set-loading! false)))
@@ -283,6 +286,49 @@
   (state/set-derived-je! nil)
   (fetch-guided-state!))
 
+;; ==================== The lessons (pilot flow) ====================
+
+(defn next-lesson
+  "The first lesson whose tutorial is not yet complete, or nil when every
+   one is. Read from completions rather than from the stored level, so a
+   student's place is where their work says it is."
+  []
+  (first (remove state/tutorial-completed? (tutorials/all-levels))))
+
+(defn enter-lessons!
+  "Put the student in front of the lesson they are on."
+  []
+  (state/set-app-mode! :lessons)
+  (let [level (or (when (state/drill-active?) (:level (state/drill-state)))
+                  (next-lesson)
+                  (last (tutorials/all-levels)))]
+    (state/set-current-level! level)
+    (fetch-assertions! level)))
+
+(defn enter-app!
+  "After login: the lessons, or the Guided Year and simulation."
+  []
+  (if (state/lessons-flow?)
+    (enter-lessons!)
+    (fetch-guided-state!)))
+
+(defn fetch-lesson-summary!
+  "What the lesson's problems produce, for its check-in."
+  [level]
+  (GET (str api-base "/lessons/summary")
+    {:params {:level level}
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler #(state/set-checkin-summary! (:classifications %))
+     :error-handler (silent-error-handler "Lesson summary error:")}))
+
+(defn fetch-retention-problem!
+  "The next look-back problem: from lessons before this one, not one
+   already served in this check-in."
+  [level]
+  (fetch-problem! level {:below level :served (get-in @state/app-state [:checkin :served] [])}))
+
 ;; ==================== Tutorial Completion ====================
 
 (defn complete-tutorial!
@@ -314,17 +360,22 @@
      :error-handler (make-error-handler {:message "Failed to load assertions"
                                           :set-loading? false})}))
 
-(defn fetch-problem! [level]
+(defn fetch-problem!
+  "Serve a problem at `level`. Options override the drill's own bookkeeping:
+   a retention check passes :below (only earlier lessons' patterns) and
+   its own :served."
+  [level & [{:keys [below served]}]]
   (state/set-loading! true)
   (POST (str api-base "/generate-problem")
-    {:params {:level level
-              :problem-type (state/problem-type)
-              ;; Patterns already served this round, so the next draw
-              ;; prefers one the student has not met yet.
-              :served (vec (get-in @state/app-state [:drill :served] []))
-              ;; Patterns missed earlier: they come round again before the
-              ;; round can be passed without them.
-              :missed (vec (get-in @state/app-state [:drill :missed] []))}
+    {:params (cond-> {:level level
+                      :problem-type (state/problem-type)
+                      ;; Patterns already served this round, so the next draw
+                      ;; prefers one the student has not met yet.
+                      :served (vec (or served (get-in @state/app-state [:drill :served] [])))
+                      ;; Patterns missed earlier: they come round again before the
+                      ;; round can be passed without them.
+                      :missed (vec (if below [] (get-in @state/app-state [:drill :missed] [])))}
+               below (assoc :below below))
      :format :json
      :headers (auth-headers)
      :response-format :json
@@ -340,6 +391,7 @@
                   (state/update-assertion-parameter! :has-date :date date))
                 (state/clear-feedback!)
                 (state/stamp-problem-served!)
+                (when below (state/note-retention-served! (:template response)))
                 (state/set-loading! false))
      :error-handler (make-error-handler {:message "Failed to load problem"})}))
 
@@ -376,7 +428,12 @@
                         :correct-assertions (:correct-assertions problem)
                         ;; Include metadata for progress tracking
                         :problem-id (:id problem)
-                        :problem-type (or (:problem-type problem) "forward")
+                        ;; A look back at an earlier lesson is recorded as
+                        ;; such: it counts toward nothing, and the pilot can
+                        ;; tell retention from practice.
+                        :problem-type (if (state/retention-active?)
+                                        "retention"
+                                        (or (:problem-type problem) "forward"))
                         :level (:level problem 0)
                         :template-level (:template-level problem)  ; Template's actual difficulty
                         :template-key (:template problem)
@@ -408,6 +465,11 @@
                       (state/record-drill-result! correct? missing)
                       ;; ...and keep it, so leaving now does not undo it.
                       (save-drill-state! (state/drill-state))))
+                  (when (state/retention-active?)
+                    (state/record-retention-result!
+                      {:correct? (contains? #{"correct" :correct} (get-in response [:feedback :status]))
+                       :template-level (:template-level problem)
+                       :description (get-in response [:feedback :correct-classification :description])}))
                   ;; The buffer is never more likely to be abandoned than
                   ;; just after an answer goes in.
                   (flush-telemetry!)

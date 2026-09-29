@@ -9,6 +9,16 @@
 
 (declare get-completed-tutorials demonstrated)
 
+(defn flow
+  "Which path students take through the platform: \"lessons\", the tutorial
+   levels in sequence (the 2026 pilot), or \"guided\", the Guided Year and
+   then the simulation. Set by AALP_FLOW in the server's environment
+   (~/.config/aalp/env, read by restart-backend.sh), so switching is a
+   restart, not a rebuild. Guided when unset, which is how it has always
+   run."
+  []
+  (if (= "lessons" (System/getenv "AALP_FLOW")) "lessons" "guided"))
+
 (defn get-user-progress
   "Get user's current progress state.
    Returns {:current-level, :unlocked-levels, :level-stats}"
@@ -36,7 +46,8 @@
                                      :total-attempts total
                                      :unlocked-next unlocked}]))
      :completed-tutorials (get-completed-tutorials user-id)
-     :demonstrated (demonstrated db user-id)}))
+     :demonstrated (demonstrated db user-id)
+     :flow (flow)}))
 
 (defn- find-level-progress
   "Find level-progress entity for user+level combination."

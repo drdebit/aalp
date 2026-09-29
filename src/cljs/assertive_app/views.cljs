@@ -245,7 +245,7 @@
             :else "Transaction")]
      ;; Levels and problem modes are practice-mode controls; the Guided
      ;; Year's drill is one level at a time, forward only.
-     (when-not (state/guided-mode?) [level-selector])
+     (when-not (or (state/guided-mode?) (state/lessons-mode?)) [level-selector])
      (if problem
        (cond
          is-reverse?
@@ -2459,6 +2459,20 @@
                           (< (+ correct remaining) pass-count)
                           (not streak-reachable?))]
     (cond
+      (and passed? (state/lessons-mode?))
+      [:button.primary.drill-pass-btn
+       {:on-click #(let [round (state/drill-state)]
+                     (api/complete-tutorial! level)
+                     (state/end-drill!)
+                     (api/save-drill-state! nil)
+                     (state/clear-feedback!)
+                     (state/set-current-problem! nil)
+                     (state/start-checkin! level round)
+                     (api/fetch-lesson-summary! level))}
+       (if (and streak-passed? (< correct pass-count))
+         (str streak-pass " in a row — lesson complete →")
+         "Lesson complete →")]
+
       passed?
       [:button.primary.drill-pass-btn
        {:on-click #(do
@@ -2543,6 +2557,22 @@
                    (state/clear-feedback!)
                    (api/fetch-problem! (state/current-level)))}
      "Try a fresh problem"]]])
+
+(defn- retention-next-controls
+  "Between look-back problems, and out of the last one. Right or wrong,
+   the student moves on: this check informs, it does not gate."
+  []
+  (let [{:keys [level results]} (state/checkin)]
+    (if (< (count results) state/retention-size)
+      [:button.primary
+       {:on-click #(do (state/clear-feedback!)
+                       (api/fetch-retention-problem! level))}
+       "Next →"]
+      [:button.primary
+       {:on-click #(do (state/clear-feedback!)
+                       (state/set-current-problem! nil)
+                       (state/set-checkin-phase! :results))}
+       "See how it went →"])))
 
 (defn feedback-panel []
   (let [feedback (state/feedback)
@@ -2722,8 +2752,12 @@
           [:p.actions-blocked
            "This entry is not finished: name the batch the goods came out of, above."]
           [:div.actions
-           (if (state/drill-active?)
+           (cond
+             (state/drill-active?)
              [drill-next-controls]
+             (state/retention-active?)
+             [retention-next-controls]
+             :else
              [:button.primary
               {:on-click #(do
                             (api/fetch-problem! (state/current-level))
@@ -3338,6 +3372,13 @@
          {:on-click on-retry}
          "Try Again"]])]))
 
+(defn lesson-title
+  "A lesson's name without its level number. The numbers are keys; the
+   pilot shows position in the sequence, not a number."
+  [level]
+  (some-> (:title (tutorials/get-level-tutorial level))
+          (str/replace #"^Level \d+:\s*" "")))
+
 (defn tutorial-quiz-flow
   "Full-screen overlay orchestrating all tutorial-quiz phases."
   []
@@ -3359,7 +3400,7 @@
     [:div.tutorial-overlay
      [:div.tutorial-modal.tutorial-quiz-modal
       [:div.tutorial-header
-       [:h1 (:title tutorial)]
+       [:h1 (if (state/lessons-mode?) (lesson-title level) (:title tutorial))]
        [:p.subtitle (:subtitle tutorial)]
        [:button.tutorial-close-btn
         {:on-click #(state/close-tutorial-quiz!)}
@@ -3395,7 +3436,7 @@
           (fn []
             (state/close-tutorial-quiz!)
             (when-not review-only?
-              (if (state/guided-mode?)
+              (if (or (state/guided-mode?) (state/lessons-mode?))
                 (do
                   (state/start-drill! level (tutorials/drill-config level))
                   (state/clear-feedback!)
@@ -3436,7 +3477,7 @@
         [:span.or-label "New here: "]
         (str/join ", " (map :label fresh))]
        [:p.or-new.or-none
-        "No new words at this level. Everything below, rearranged — which is where the interesting accounts come from."])
+        "No new words in this lesson. Everything below, rearranged — which is where the interesting accounts come from."])
      (when (seq known)
        [:p.or-known
         [:span.or-label "Already yours: "]
@@ -3509,7 +3550,9 @@
   (let [tutorial (tutorials/get-level-tutorial level)]
     [:div.tutorial-gate
      [:div.gate-content
-      [:h2 (str "Welcome to " (:title tutorial))]
+      [:h2 (if (state/lessons-mode?)
+             (lesson-title level)
+             (str "Welcome to " (:title tutorial)))]
       [:p (:subtitle tutorial)]
       ;; The orientation IS this screen, not a step before or after it.
       ;; The gate asks the student to decide whether they already know
@@ -3527,7 +3570,7 @@
       ;; challenge the practice round directly; the same bar applies, and a
       ;; dead round routes back into the reading. Guided mode only: that's
       ;; where the drill flow lives.
-      (when (state/guided-mode?)
+      (when (or (state/guided-mode?) (state/lessons-mode?))
         [:button.gate-testout-btn
          {:on-click #(do
                        (state/start-drill! level (tutorials/drill-config level)
@@ -3536,7 +3579,7 @@
                        (api/fetch-problem! level))}
          "Think you already know this? Skip to the practice round"])
       ;; If at least L0 completed, let them go back to a completed level
-      (when (pos? level)
+      (when (and (pos? level) (not (state/lessons-mode?)))
         [:p.gate-hint "Or switch to a level you've already completed."])]]))
 
 (defn tutorial-review-button
@@ -4337,6 +4380,36 @@
   []
   [costing-owed-panel (state/guided-day) api/submit-costing!])
 
+(defn drill-view
+  "A practice round: other companies' problems, full feedback, a bar to
+   pass. Shared by the lessons and the Guided Year, which differ only in
+   what passing opens."
+  [level]
+  (let [{:keys [attempted correct round round-size pass-count
+                streak streak-pass]} (state/drill-state)
+        goal (if (state/lessons-mode?) "to finish this lesson." "to start recording.")]
+    [:div.drill-container
+     [:div.drill-header
+      [:h2 (str "Practice round " round)]
+      [:p.drill-sandbox-note
+       (str (if (state/lessons-mode?)
+              "Each problem is a different company with its own books"
+              "Other people's businesses, not SP's: each problem is a different company with its own books")
+            ", and nothing carries over between problems. Mistakes here are free. Get "
+            pass-count " of " round-size
+            (if streak-pass
+              (str " right — or " streak-pass " in a row — " goal)
+              (str " right " goal)))]
+      [:div.drill-progress
+       (str "This round: " correct " correct of " attempted " attempted"
+            (when (and streak-pass (>= streak 2))
+              (str " · " streak " in a row")))]
+      [tutorial-review-button level]]
+     [:div.three-column-layout
+      [narrative-panel]
+      [sentence-builder]
+      [feedback-panel]]]))
+
 (defn guided-app-content []
   (let [day (state/guided-day)
         level (:level day 0)
@@ -4382,28 +4455,7 @@
        ;; Practice drill: unledgered problems with complete feedback,
        ;; between the tutorial quiz and Year 1 recording
        (state/drill-active?)
-       (let [{:keys [attempted correct round round-size pass-count
-                     streak streak-pass]} (state/drill-state)]
-         [:div.drill-container
-          [:div.drill-header
-           [:h2 (str "Practice round " round)]
-           [:p.drill-sandbox-note
-            (str "Other people's businesses, not SP's: each problem is a "
-                 "different company with its own books, and nothing carries "
-                 "over between problems. Mistakes here are free. Get "
-                 pass-count " of " round-size
-                 (if streak-pass
-                   (str " right — or " streak-pass " in a row — to start recording.")
-                   " right to start recording."))]
-           [:div.drill-progress
-            (str "This round: " correct " correct of " attempted " attempted"
-                 (when (and streak-pass (>= streak 2))
-                   (str " · " streak " in a row")))]
-           [tutorial-review-button level]]
-          [:div.three-column-layout
-           [narrative-panel]
-           [sentence-builder]
-           [feedback-panel]]])
+       [drill-view level]
 
        ;; Level boundary: the new level's tutorial gates the next day
        (not completed?)
@@ -4480,6 +4532,156 @@
          [feedback-panel]]]
        [tutorial-gate level])]))
 
+;; ==================== The lessons (pilot flow) ====================
+;; The tutorial levels in sequence, each: orientation, tutorial and quiz,
+;; practice round, then a check-in -- what the student can now say, and a
+;; short look back at earlier lessons. No level numbers on screen: the
+;; bar shows where the student is in the sequence.
+
+(defn lesson-progress-bar []
+  (let [levels  (tutorials/all-levels)
+        current (api/next-lesson)]
+    [:div.lesson-progress
+     [:div.lesson-track
+      (doall
+        (for [l levels]
+          (let [done? (state/tutorial-completed? l)
+                here? (= l current)]
+            ^{:key (str "lesson-" l)}
+            [:button.lesson-step
+             {:class (cond done? "done" here? "current" :else "ahead")
+              :title (str (lesson-title l)
+                          (cond done? " — done; click to review" here? " — you are here" :else ""))
+              :disabled (not done?)
+              :on-click #(when done?
+                           (api/start-section-clock!)
+                           (state/start-tutorial-quiz! l :review-only? true))}])))]
+     [:div.lesson-now
+      (if current (lesson-title current) "All lessons complete")]]))
+
+(defn- review-lesson-button [level label]
+  [:button.secondary
+   {:on-click #(do (api/start-section-clock!)
+                   (state/start-tutorial-quiz! level :review-only? true))}
+   label])
+
+(defn checkin-view
+  "After a lesson: what it added, then a look back."
+  []
+  (let [{:keys [level phase drill summary results served]} (state/checkin)
+        earlier? (some #(< % level) (tutorials/all-levels))
+        next-l   (api/next-lesson)
+        continue! #(do (state/end-checkin!)
+                       (state/clear-feedback!)
+                       (state/set-current-problem! nil)
+                       (api/enter-lessons!))
+        continue-label (if next-l (str "On to " (lesson-title next-l) " →") "Finish →")]
+    (case phase
+      :summary
+      [:div.checkin
+       [:h2 (str (lesson-title level) " — done")]
+       (when (:attempted drill)
+         [:p.checkin-round (str "Practice round: " (:correct drill) " of " (:attempted drill) " right.")])
+       (let [words (filter #(= level (:level %)) (state/vocabulary))]
+         [:div.checkin-section
+          [:h3 "What you can now say"]
+          (if (seq words)
+            [:p.checkin-words
+             (interpose ", " (for [w words]
+                               ^{:key (str (:code w))}
+                               [:code (name (:code w))]))]
+            [:p "No new words in this lesson: the ones you already had, arranged to say new things."])])
+       (when (seq summary)
+         [:div.checkin-section
+          [:h3 "What it records"]
+          [:table.checkin-entries
+           [:tbody
+            (for [c summary]
+              ^{:key (str (:classification c))}
+              [:tr
+               [:td (:description c)]
+               [:td.checkin-entry
+                (str/join "; " (for [e (:entry c)] (str "DR " (:debit e) " / CR " (:credit e))))]])]]])
+       (when-let [{:keys [a b point]} (:pair (tutorials/orientation-for level))]
+         [:div.checkin-section
+          [:h3 "The one to remember"]
+          [:p (:when a) " → " [:strong (:becomes a)]]
+          [:p (:when b) " → " [:strong (:becomes b)]]
+          [:p.checkin-point (str/replace (str point) "**" "")]])
+       [:div.checkin-actions
+        (if earlier?
+          [:button.primary
+           {:on-click #(do (state/set-checkin-phase! :retention)
+                           (api/fetch-retention-problem! level))}
+           "A quick look back →"]
+          [:button.primary {:on-click continue!} continue-label])]]
+
+      :retention
+      [:div.drill-container
+       [:div.drill-header
+        [:h2 "A quick look back"]
+        [:p.drill-sandbox-note
+         (str "Problem " (max 1 (count served)) " of " state/retention-size
+              ", from earlier lessons. It doesn't count against you — it shows what has stuck.")]]
+       [:div.three-column-layout
+        [narrative-panel]
+        [sentence-builder]
+        [feedback-panel]]]
+
+      :results
+      (let [right  (count (filter :correct? results))
+            misses (remove :correct? results)]
+        [:div.checkin
+         [:h2 "Looking back"]
+         [:p.checkin-round (str right " of " (count results) " right.")]
+         (if (seq misses)
+           [:div.checkin-section
+            [:h3 "Worth another look"]
+            [:ul.checkin-misses
+             (doall
+               (for [[i {:keys [template-level description]}] (map-indexed vector misses)]
+                 ^{:key (str "miss-" i)}
+                 [:li
+                  (or description "A pattern from an earlier lesson")
+                  (when-let [t (lesson-title template-level)]
+                    [:span " — from " [:em t] " "
+                     [review-lesson-button template-level "Review it"]])]))]]
+           [:p "Everything from earlier lessons held up."])
+         [:div.checkin-actions
+          [:button.primary {:on-click continue!} continue-label]]])
+
+      nil)))
+
+(defn lessons-complete-view []
+  [:div.checkin
+   [:h2 "All lessons complete"]
+   [:p "You have worked through every lesson. Any of them can be read again:"]
+   [:ul.checkin-lessons
+    (for [l (tutorials/all-levels)]
+      ^{:key (str "done-" l)}
+      [:li (lesson-title l) " " [review-lesson-button l "Review"]])]])
+
+(defn lessons-app-content []
+  (let [level (state/current-level)]
+    [:div.app-container.lessons-mode
+     [:header
+      [:div.header-left
+       [:h1 "Assertive Accounting"]]
+      [:div.user-header
+       [:div.user-info
+        [:span.user-email (:email (state/user))]]
+       [:button.logout-button
+        {:on-click #(api/logout!)}
+        "Sign Out"]]]
+     [lesson-progress-bar]
+     (when (state/tutorial-quiz-active?)
+       [tutorial-quiz-flow])
+     (cond
+       (state/checkin)         [checkin-view]
+       (state/drill-active?)   [drill-view level]
+       (nil? (api/next-lesson)) [lessons-complete-view]
+       :else                   [tutorial-gate level])]))
+
 (defn main-app []
   (let [loading? (:loading? @state/app-state)
         logged-in? (state/logged-in?)
@@ -4494,6 +4696,10 @@
       ;; Show login if not logged in
       (not logged-in?)
       [login-view]
+
+      ;; The pilot: the lessons in sequence
+      (= mode :lessons)
+      [lessons-app-content]
 
       ;; Year 1: the Guided Year
       (= mode :guided)

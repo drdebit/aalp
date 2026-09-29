@@ -323,9 +323,11 @@
            :current-level (:current-level user-data 0)
            :unlocked-levels unlocked
            :completed-tutorials completed
+           :flow (:flow user-data)
            :progress {:current-level (:current-level user-data 0)
                       :unlocked-levels (vec unlocked)
-                      :level-stats (:level-stats user-data {})})))
+                      :level-stats (:level-stats user-data {})
+                      :demonstrated (:demonstrated user-data [])})))
 
 (defn set-login-error! [error]
   (swap! app-state assoc :login-error error))
@@ -373,6 +375,59 @@
 
 (defn practice-mode? []
   (= :practice (:app-mode @app-state)))
+
+(defn lessons-flow?
+  "Does this deployment send students through the lessons in sequence,
+   rather than the Guided Year? The server says, at login."
+  []
+  (= "lessons" (:flow @app-state)))
+
+(defn set-flow! [flow]
+  (swap! app-state assoc :flow flow))
+
+(defn lessons-mode? []
+  (= :lessons (:app-mode @app-state)))
+
+;; ==================== Lesson check-in ====================
+;; After a lesson's practice round is passed: what the student can now
+;; say, then a short look back at earlier lessons. The look back informs
+;; and never relocks -- a miss is reported, with the lesson to review,
+;; and the student goes on regardless.
+
+(def retention-size 3)
+
+(defn checkin [] (:checkin @app-state))
+
+(defn start-checkin!
+  "Open the check-in for a lesson just completed, carrying the round's
+   result so the summary can say it."
+  [level drill]
+  (swap! app-state assoc :checkin {:level level
+                                   :phase :summary
+                                   :drill (select-keys drill [:correct :attempted])
+                                   :results []
+                                   :served []}))
+
+(defn set-checkin-summary! [summary]
+  (swap! app-state assoc-in [:checkin :summary] summary))
+
+(defn set-checkin-phase! [phase]
+  (swap! app-state assoc-in [:checkin :phase] phase))
+
+(defn retention-active? []
+  (= :retention (get-in @app-state [:checkin :phase])))
+
+(defn note-retention-served! [template-key]
+  (swap! app-state update-in [:checkin :served] (fnil conj []) (name template-key)))
+
+(defn record-retention-result!
+  "One look-back answer: whether it was right, and what it was, so a miss
+   can name the lesson to go back to."
+  [result]
+  (swap! app-state update-in [:checkin :results] (fnil conj []) result))
+
+(defn end-checkin! []
+  (swap! app-state dissoc :checkin))
 
 (defn guided-mode? []
   (= :guided (:app-mode @app-state)))

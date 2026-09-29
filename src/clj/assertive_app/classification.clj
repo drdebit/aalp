@@ -4170,12 +4170,32 @@ The printed t-shirts are now finished goods ready for sale."
                          :ink-consumed (min (long (or (:ink-consumed v) 1))
                                             (long (get held "ink-cartridges" 1)))))))))
 
+(defn level-summary
+  "What a level's problems produce: for each classification its servable
+   templates teach, the description and the entry. For the check-in that
+   closes a lesson -- read from the templates, so it cannot say a level
+   teaches something its drill never serves."
+  [level]
+  (vec (for [k (distinct (keep (fn [[_ t]]
+                                 (when (and (= level (:level t)) (not (:derivation-pending t)))
+                                   (:correct-classification t)))
+                               (sort-by key transaction-templates)))
+             :let [c (get classifications k)
+                   je (:journal-entry c)
+                   je (cond (map? je) [je] (sequential? je) (filterv map? je) :else [])]]
+         {:classification k
+          :description (:description c)
+          :entry (mapv #(select-keys % [:debit :credit :entry-label]) je)})))
+
 (defn generate-problem
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
-  [level & {:keys [problem-type show-assertions served missed] :or {problem-type :forward show-assertions false}}]
+  [level & {:keys [problem-type show-assertions served missed below] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(and (<= (:level (val %)) level)
+                                          ;; A retention check looks back:
+                                          ;; only patterns from before `below`.
+                                          (or (nil? below) (< (:level (val %)) below))
                                           ;; Patterns whose entry cannot yet be
                                           ;; derived are not served. A problem
                                           ;; whose journal entry comes out empty

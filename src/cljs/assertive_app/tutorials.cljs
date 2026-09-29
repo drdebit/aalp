@@ -40,7 +40,7 @@
     ;; procedure over accounts is the pedagogy this platform exists to
     ;; replace. Slot 6, the minimal pair, is the centrepiece.
     :orientation
-    {:framing "This level lets the business say what moved today, and what it means the things that moved to be for."
+    {:framing "This lesson lets the business say what moved today, and what it means the things that moved to be for."
      :protocol ["What went out? — **provides**"
                 "What came in? — **receives**"
                 "Who was on the other side? — **has-counterparty**"
@@ -66,12 +66,12 @@
       :may-or-must "Before: nothing. After: the shirts are committed to printing. Nothing in the journal entry records that, and it is the reason they are raw materials rather than stock for sale."}
      :reminder "An account is not a name you look up. It is what falls out of what you said."}
     :sections
-    [{:heading "Your Story: You Run a T-Shirt Company"
-      :content "Welcome! In this course, **you** run SP's T-Shirt Company. You'll buy a printer, stock up on blank shirts and ink, print designs, and sell them.
+    [{:heading "The Story: A T-Shirt Company"
+      :content "Welcome! The examples in these lessons follow SP's T-Shirt Company: it buys a printer, stocks up on blank shirts and ink, prints designs, and sells them. The practice problems come from other small shops like it, each with its own books.
 
 Every business keeps a record of what happens — every purchase, every sale. That record is called the company's **books**, and keeping it accurately is what accounting *is*.
 
-Your job in Year 1 is to be the company's bookkeeper: things will happen in the business, and you will record them.
+Your job is to be the bookkeeper: things happen in a business, and you record them.
 
 Don't worry if you've never done anything like this. We'll go one small step at a time, and you'll get plenty of practice."} 
 
@@ -114,12 +114,12 @@ provides: $5 (money going out)
 receives: 1 latte (a thing coming in)
 ::
 
-Every cash purchase you record at this level uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?
+Every cash purchase you record in this lesson uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?
 
 One exception, and it matters: something bought to *serve a purpose* needs a fifth assertion to indicate what it is for. That assertion is **allows**. For example, a t-shirt printer turns blank t-shirts into printed ones. Without the **allows** assertion, the record cannot tell if the printer is equipment or stock to resell. Shirts and ink are used. The printer produces. The **allows** assertion indicates that capacity."}
 
      {:heading "Two Kinds of Stuff: Money and Things"
-      :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. At this level there are only two kinds:
+      :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. In this lesson there are only two kinds:
 
 A **monetary-unit**. That is, money. Dollars. Cash.
 
@@ -187,7 +187,7 @@ receives: 50 blank t-shirts (physical-unit)
 expects: to use them up making printed t-shirts — 95% sure
 ::
 
-Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every purchase at this level is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
+Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every purchase in this lesson is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
 
      {:heading "Where the Journal Entry Comes From"
       :content "Double-entry accountants record a transaction in a **journal entry** consisting of **debits** (DR) and **credits** (CR). For the purposes of this platform, you do NOT need to build these journal entries yourself: the platform builds them *from your assertions* and shows you the result. 
@@ -249,13 +249,9 @@ CR Finished Goods Inventory $100
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
 
-Practice problems are a sandbox: they do **not** go into your company's books, and you get complete feedback on every answer — what you got right, what you missed, and why. Get enough right and you'll unlock the real thing: recording Year 1 of your company's books.
+Practice problems are a sandbox: nothing carries over from one to the next, and you get complete feedback on every answer — what you got right, what you missed, and why. Get enough right and the lesson is complete. A short check-in follows — what you can now say, and a quick look back at earlier lessons — and then the next lesson.
 
-Two things to remember once you ARE keeping the books:
-
-1. **Your books record whatever you enter.** Real bookkeeping doesn't stop you when you're wrong: errors sit in the records until someone finds them. (You'll look for errors yourself, later, at year-end.)
-
-2. **You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this, including during practice. Using the tutorial is smart, not cheating."}]
+**You can always come back here.** There's a *Review Tutorial* button whenever you need to re-read any of this, including during practice, and every finished lesson stays open to re-read. Using the tutorial is smart, not cheating."}]
 
     :quiz
     [{:id :l0-q0a
@@ -312,8 +308,8 @@ Two things to remember once you ARE keeping the books:
     ;; One new word, six new classifications. This is the level where
     ;; the framework's claim is most visible, so the pair does the work.
     :orientation
-    {:framing "This level adds exactly one word — and with it the business can say what somebody still owes, in either direction."
-     :protocol ["Everything from Level 0 still applies: what moved today, and what for."
+    {:framing "This lesson adds exactly one word — and with it the business can say what somebody still owes, in either direction."
+     :protocol ["Everything from the first lesson still applies: what moved today, and what for."
                 "Then: was a promise made about the future? — **requires**, naming who must do what, by when"
                 "Then: is the outcome in the business's hands? If not, how likely is it? — **expects**"]
      :example
@@ -337,7 +333,7 @@ Two things to remember once you ARE keeping the books:
      :reminder "One assertion, four accounts. Where the promise sits, and which way the goods went, decides which."}
     :sections
     [{:heading "Buying Now, Paying Later"
-      :content "In Level 0 everything happened at once: cash out, goods in, done.
+      :content "In the first lesson everything happened at once: cash out, goods in, done.
 
 *The garage fixes your car this morning and hands you an invoice, payable in 30 days. You drive away owing them money.*
 
@@ -345,7 +341,7 @@ You owe **the garage** — the people who did the work. That is what makes it cr
 
 So on the day the ink cartridges arrive, what happened? You received cartridges and provided nothing. No money moved — and yet something real did, something the books have to carry: **you now owe money**.
 
-Level 1 is about recording promises."}
+This lesson is about recording promises."}
 
      {:heading "New Assertion: 'Requires' (a Promise Someone Must Keep)"
       :content "**requires** — records a promise: a named party must do a specific thing by a specific date. Most often it is the business's own promise.
@@ -477,7 +473,7 @@ Every row records the promise with **requires**. What the third column decides i
 
 Nothing here is a rule to memorise. The account follows from where the promise sits and which way the goods went, and you can watch it happen: take the `requires` out of a credit sale and look at the panel. Accounts Receivable disappears — and so does the amount on the Revenue line, because in a credit sale the promise is the only thing that says how much money is involved. No money moved. Without the promise, the record does not know what the shirts were worth."}
 
-     {:heading "How to Approach Every Level 1 Problem"
+     {:heading "How to Approach Every Credit Problem"
       :content "A recipe you can follow every single time:
 
 **Step 1.** Read the narrative. Ask: did money move TODAY? Did goods move TODAY? Record only what actually moved: **provides** for out, **receives** for in. If it didn't move today, don't select it.
@@ -525,13 +521,13 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
     ;; transformation or a sale depending on whether anyone was on the
     ;; other side.
     :orientation
-    {:framing "Every event so far had someone on the other side. This level is the first where the business acts on its own things, and nobody else is involved at all."
-     :protocol ["Everything from Levels 0 and 1 still applies — but check first: **was anyone on the other side?** If not, this is not an exchange."
+    {:framing "Every event so far had someone on the other side. This lesson is the first where the business acts on its own things, and nobody else is involved at all."
+     :protocol ["Everything from the first two lessons still applies — but check first: **was anyone on the other side?** If not, this is not an exchange."
                 "What was used up? — **consumes**"
                 "What came into being? — **creates**"
                 "What made it possible? — **is-allowed-by**, pointing back at the equipment that was bought to do this"]
      :example
-     {:narrative "On March 14, SP prints 10 custom t-shirts using the printer it bought in Level 0."
+     {:narrative "On March 14, SP prints 10 custom t-shirts using the printer it bought earlier."
       :assertions ["has-date: March 14"
                    "consumes: 10 blank t-shirts (raw materials)"
                    "creates: 10 printed t-shirts (finished goods)"
@@ -550,9 +546,9 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
      :reminder "No counterparty is not a missing assertion. It is the assertion that makes this a transformation."}
     :sections
     [{:heading "Internal Transformations"
-      :content "Levels 0 and 1 covered **exchange transactions** — trading with external parties using provides, receives, requires, expects, and has-counterparty.
+      :content "The first two lessons covered **exchange transactions** — trading with external parties using provides, receives, requires, expects, and has-counterparty.
 
-Level 2 introduces **internal transformations** — using your resources to create new products. No counterparty, no exchange — just transformation."}
+This lesson introduces **internal transformations** — using your resources to create new products. No counterparty, no exchange — just transformation."}
 
      {:heading "The Transformation Assertions"
       :content "Production transactions use different assertions:
@@ -565,7 +561,7 @@ Level 2 introduces **internal transformations** — using your resources to crea
 
 Notice: **No counterparty!** This happens entirely within your business.
 
-Remember when you purchased that t-shirt printer in Level 0? The printer **allows** production — and production references this connection through **is-allowed-by**. Equipment enables transformation."}
+Remember the t-shirt printer from the first lesson? The printer **allows** production — and production references this connection through **is-allowed-by**. Equipment enables transformation."}
 
      {:heading "Printing T-Shirts"
       :content "When SP prints t-shirts:
@@ -627,7 +623,7 @@ Now you can see where the goods you sell come from — and why each batch carrie
 
 That third party has been there the whole time, and the record has not mentioned it once.
 
-Level 4 gives it three assertions. Sometimes naming the law changes the journal entry. More often it does not — and the cases where it does not are the more interesting ones."}
+This lesson gives it three assertions. Sometimes naming the law changes the journal entry. More often it does not — and the cases where it does not are the more interesting ones."}
 
      {:heading "New Assertion: 'Is Required By' (money out because a rule said so)"
       :content "**is-required-by** — names the law or rule that made this event compulsory.
@@ -640,7 +636,7 @@ provides: $500 (monetary-unit)
 is-required-by: the tax code
 ::
 
-Notice what is missing: **no receives**. Money went out and nothing came in. In Level 0 that never happened — every payment bought something, and the something was what you debited.
+Notice what is missing: **no receives**. Money went out and nothing came in. In the lessons so far that never happened — every payment bought something, and the something was what you debited.
 
 ::journal
 DR Tax Expense $500
@@ -652,7 +648,7 @@ So where does the debit come from? From **is-required-by**. Money that leaves un
 This is the first assertion you have met that decides an account on its own, with no flow of goods to read."}
 
      {:heading "'Is Allowed By', Again — Now Pointing at a Statute"
-      :content "You have used **is-allowed-by** before. In Level 2 it pointed at the press: the printer is what made printing possible.
+      :content "You have used **is-allowed-by** before. In the production lesson it pointed at the press: the printer is what made printing possible.
 
 Now it points at a law.
 
@@ -680,7 +676,7 @@ The assertions say which is which. You did not have to know that formation fees 
 
 *Maple Street Prints delivers 25 printed t-shirts to CorporateClient under a written contract for $625, payable in 60 days.*
 
-Work through it as a Level 1 credit sale, because that is what it is:
+Work through it as a credit sale, because that is what it is:
 
 - **provides** 25 printed t-shirts, **has-counterparty** CorporateClient
 - **requires**: the customer must pay $625 by the due date
@@ -733,8 +729,8 @@ The record now carries the reason for the confidence, beside the confidence. Nob
       :explanation "The entry is the same credit sale: DR Accounts Receivable, CR Revenue. What the law changes is how collectible the promise is, which is what **expects** measures — and now the reason sits in the record beside the number, where it can be queried."}
 
      {:id :l4-q4
-      :question "You used is-allowed-by in Level 2 to point at the t-shirt printer. Now it points at the UCC. Is that the same assertion?"
-      :choices ["No — they happen to share a name" "Yes — it asks what made the event possible, and the answer can be a machine or a law" "No — the Level 2 one should have been is-required-by" "Yes, but only because the platform has not separated them yet"]
+      :question "You used is-allowed-by in the production lesson to point at the t-shirt printer. Now it points at the UCC. Is that the same assertion?"
+      :choices ["No — they happen to share a name" "Yes — it asks what made the event possible, and the answer can be a machine or a law" "No — the production one should have been is-required-by" "Yes, but only because the platform has not separated them yet"]
       :correct 1
       :explanation "One question, two kinds of answer. A press makes printing possible; the UCC makes a sale of goods an enforceable exchange rather than two people handing each other things. An event can rest on both at once."}]}
 
@@ -771,11 +767,11 @@ The record now carries the reason for the confidence, beside the confidence. Nob
     [{:heading "End-of-Period Adjustments"
       :content "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.
 
-You have already done this once. In Level 1 a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply that same rule to everything else.
+You have already done this once. In the credit lesson, a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply that same rule to everything else.
 
 Adjusting entries ensure:
 - Expenses are recognized when incurred (not just when paid)
-- Revenues are recognized when earned (not just when received) — the Level 1 rule, now applied where no exchange marks the moment
+- Revenues are recognized when earned (not just when received) — the credit lesson's rule, now applied where no exchange marks the moment
 - Assets reflect their current value"}
 
      {:heading "The 'Reports' Assertion"
@@ -860,7 +856,7 @@ In a sale, revenue follows from the exchange pattern — you provided goods and 
     :orientation
     {:framing "No new words again. What is new is who is on the other side — and that an owner is not a customer, however similar the money looks."
      :protocol ["Read the exchange exactly as you always have: what went out, what came in, who was on the other side."
-                "Then ask the question this level turns on: **is that counterparty an owner?**"
+                "Then ask the question this lesson turns on: **is that counterparty an owner?**"
                 "If they are, what the business hands over is a claim on itself — not goods, not a service."
                 "For a dividend, read it twice: the declaration promises (**reports** and **requires**), and the payment later discharges it."]
      :example
@@ -960,7 +956,7 @@ Equity transactions use the same assertion framework — provides, receives, req
      :protocol ["Read the exchange as always — and notice what is missing: **no goods on either side.**"
                 "That absence is what makes it a loan rather than a purchase on terms."
                 "Then: which way is the money to come back? — **requires**, naming who must pay whom, and when."
-                "Interest is not part of the loan. It accrues as time passes, and is read at Level 5's pattern: **reports** the amount, **requires** the payment."]
+                "Interest is not part of the loan. It accrues as time passes, and is read with the adjusting-entries pattern: **reports** the amount, **requires** the payment."]
      :example
      {:narrative "On June 1, SP borrows $10,000 from First National at 8% for twelve months."
       :assertions ["has-date: June 1"
@@ -974,7 +970,7 @@ Equity transactions use the same assertion framework — provides, receives, req
           :becomes "Notes Payable"}
       :b {:when "Money went OUT, and is to come back"
           :becomes "Notes Receivable"}
-      :point "This is the Level 1 table again, with money in place of goods. The same word decides both, and which direction the cash first moved decides which way round it falls."}
+      :point "This is the credit lesson's table again, with money in place of goods. The same word decides both, and which direction the cash first moved decides which way round it falls."}
      :effect
      {:holds "Before: $9,850 cash. After: $19,850 — and none of it earned. Borrowing makes a business no richer."
       :may-or-must "Before: nothing owed. After: $10,000 due on a fixed date, and interest building every day that passes without any event to record it."}
@@ -1025,13 +1021,13 @@ Monthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month
 
 → DR Notes Receivable, CR Cash
 
-Read that against the credit sale in Level 1 and it is the same shape. **requires** is what creates the asset — the borrower is bound, exactly as a credit customer is — and **expects** sits beside it because repaying is the borrower's decision, not SP's. Lending money differs from selling on credit only in what SP handed over: cash rather than merchandise.
+Read that against the credit sale from the credit lesson and it is the same shape. **requires** is what creates the asset — the borrower is bound, exactly as a credit customer is — and **expects** sits beside it because repaying is the borrower's decision, not SP's. Lending money differs from selling on credit only in what SP handed over: cash rather than merchandise.
 
 **Interest revenue accrual:**
 - reports: revenue (accrual basis)
 → DR Interest Receivable, CR Interest Revenue
 
-Nothing else. No counterparty, no promise, no probability — this is a calculation over time that has already passed, like every other Level 5 adjustment.
+Nothing else. No counterparty, no promise, no probability — this is a calculation over time that has already passed, like every other adjusting entry.
 
 Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
@@ -1149,7 +1145,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
 **requires** appears in both lists on purpose. One assertion, two
 accounts, and the direction of the promise is the whole difference —
-that is the single fact this level is testing.
+that is the single fact this lesson is testing.
 
 **expects** appears in neither, and reaches the books in exactly one
 place. On a credit sale the promise does all the work in the entry: it

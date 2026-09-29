@@ -159,8 +159,19 @@ Built and running on choochoo with =AALP_FLOW=lessons=:
   practice record, and the sentence builder offers the record's open
   promises to choose from. Conformance 32 → 37, no conflicts.
 - [ ] Two Level 4 templates are already held as derivation-pending.
-- [ ] Orientations for Levels 3, 4 and 8 fall back to the vocabulary
-  slot alone (=HANDOFF.md=).
+- [X] Opening pages for Legal and Regulatory Context (4) and the Capstone
+  (8), written to the six-slot design (=CLOSING-ENTRY-STUDY.md= §4): the
+  reading protocol never names an account. Level 4's minimal pair is
+  required against allowed (Tax Expense against Organization Costs);
+  the capstone's is a payment that keeps a promise against one that
+  keeps none (Dividends Payable against Owner's Drawing). 2026-09-29.
+- [X] Word tags corrected while doing it: =fulfills= moved to Level 5,
+  the first lesson whose problems ask for it (earning an advance), and
+  Level 5 now teaches it ("Earning an Advance: Keeping a Promise", with
+  a quiz question); =modifies=, which no problem uses, is no longer
+  offered. Earning an advance now names the advance it keeps, and clears
+  Deferred Revenue (Liability) — the account the advance went into —
+  rather than a second "Unearned Revenue".
 
 * Open, not blocking
 

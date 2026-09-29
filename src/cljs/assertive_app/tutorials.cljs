@@ -765,15 +765,16 @@ The record now carries the reason for the confidence, beside the confidence. Nob
    5
    {:title "Level 5: Adjusting Entries"
     :subtitle "Match revenues and expenses to the correct period"
-    ;; One new word, reports, and it is the whole of what this level
-    ;; adds. It was tagged Level 3 while a Level 3 existed; nothing
-    ;; before adjusting entries asks for it. Levels 6-7 add none.
+    ;; Two new words. reports was tagged Level 3 while a Level 3 existed,
+    ;; and fulfills Level 4, which never used it; earning an advance, here,
+    ;; is the first problem to ask for either. Levels 6-7 add none.
     :orientation
-    {:framing "One new word, **reports** — because every entry so far followed from something that happened, and these follow from time passing. With no exchange to fix the amount, the business has to state it, and say how it was worked out."
+    {:framing "Two new words. **reports**, because every entry so far followed from something that happened, and these follow from time passing: with no exchange to fix the amount, the business has to state it and say how it was worked out. And **fulfills**, for when what happened is an earlier promise being kept."
      :protocol ["There is no event to read. Ask instead: **what did the passing of the period do?**"
                 "Something was used up quietly, or something was earned or incurred before any money moved."
                 "Then: how much, and on what basis? — **reports**, carrying the calculation, because no exchange is here to fix the amount."
-                "Then, as always: does this leave somebody owing something? — **requires**"]
+                "Then, as always: does this leave somebody owing something? — **requires**"
+                "Or does it keep a promise already on the books — an advance now earned? — **fulfills**, naming it"]
      :example
      {:narrative "On December 31, SP records one month of depreciation on the $3,000 printer, which it expects to use for five years."
       :assertions ["has-date: December 31"
@@ -851,7 +852,31 @@ Note: Accumulated Depreciation is a **contra-asset** that reduces equipment valu
 Like production, adjusting entries have **no counterparty** — they're internal recognitions.
 
 **Why adjusting entries need 'reports' but sales don't:**
-In a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."}]
+In a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."}
+
+     {:heading "Earning an Advance: Keeping a Promise"
+      :content "In the credit lesson, a customer paid ahead for shirts not yet made. The business recorded the cash and a promise — **requires** it to provide the shirts — and the promise sat on the books as **Deferred Revenue**, a liability.
+
+*On March 20, Blue Heron Printing delivers 12 of the 24 shirts LocalSportsTeam paid $600 for in advance. That much of the advance is now earned: $300.*
+
+Nothing is exchanged today; the money came in weeks ago. What happened is that the business kept part of a promise, and that needs one more word:
+
+**fulfills** — names the earlier promise this event keeps.
+
+::assertions
+has-date: March 20
+reports: $300 revenue, earned
+fulfills: the advance LocalSportsTeam paid on February 1
+::
+
+::journal
+DR Deferred Revenue (Liability) $300
+CR Revenue $300
+::
+
+**reports** says how much has been earned and on what basis. **fulfills** says which promise it came out of — you choose it from the promises the record still holds open. The liability that promise put on the books is smaller by what was delivered, and the revenue is recognised now, when it was earned.
+
+You will meet **fulfills** again whenever a promise is kept: a declared dividend paid, a loan repaid, accrued interest settled. It is always the same question — *which earlier promise does this keep?* — and the answer always comes from the record."}]
 
     :quiz
     [{:id :l5-q1
@@ -876,7 +901,13 @@ In a sale, revenue follows from the exchange pattern — you provided goods and 
       :question "Which assertions describe accruing wages that employees have earned but not yet been paid?"
       :choices ["provides monetary-unit, has-counterparty" "reports expense (accrual), requires future payment" "receives physical-unit, reports expense" "consumes asset-value, creates liability"]
       :correct 1
-      :explanation "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."}]}
+      :explanation "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."}
+
+     {:id :l5-q5
+      :question "A customer paid $600 in advance for 24 shirts. Today the business delivers 12. Which assertions record what happened today?"
+      :choices ["provides 12 shirts, receives $300, has-counterparty" "reports $300 revenue earned, fulfills the advance" "requires the customer to pay $300" "reports $600 revenue earned"]
+      :correct 1
+      :explanation "No money moves today — it came in with the advance. What happens is that half the promise is kept: **reports** the $300 earned, and **fulfills** names the advance it came out of. Deferred Revenue goes down by $300 and Revenue goes up by the same."}]}
 
    6
    {:title "Level 6: Equity Transactions"

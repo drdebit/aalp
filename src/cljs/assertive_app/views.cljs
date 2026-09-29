@@ -1095,7 +1095,9 @@
    "borrowing"  "note signed"
    "payable"    "owed to a supplier"
    "receivable" "owed by a customer"
-   "lending"    "note received"})
+   "lending"    "note received"
+   "advance"    "paid in advance by a customer"
+   "prepaid"    "paid ahead to a supplier"})
 
 (defn- render-fulfills-section
   "Which earlier promise this event keeps, chosen from the record's open

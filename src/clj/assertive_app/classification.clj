@@ -987,7 +987,9 @@
    [{:code :modifies
      :label "Modifies"
      :description "Updates or changes a prior assertion"
-     :level 4
+     ;; Part of the research vocabulary, but no problem in the course asks
+     ;; for it, so it is not offered to students (no level reaches 99).
+     :level 99
      :domain :state-modification
      :sentence {:fragment "modifies"
                 :pattern [:reference]
@@ -996,7 +998,9 @@
     {:code :fulfills
      :label "Fulfills"
      :description "Satisfies a prior expectation or requirement"
-     :level 4
+     ;; First asked for by earning an advance, an adjusting entry; taught
+     ;; there. It was tagged 4, where no lesson used or taught it.
+     :level 5
      :domain :state-modification
      :parameterized true
      ;; Sentence: "fulfilling [requirement]"
@@ -1983,8 +1987,9 @@
     :required-parameters {:reports {:category "revenue" :basis "earned"}
                           :fulfills {:action "requires"}}
     :prohibited #{:has-counterparty :provides :receives}
+    :fulfills-kind #{:advance}
     :description "Earning previously deferred revenue"
-    :journal-entry [{:debit "Unearned Revenue" :credit "Revenue"}]
+    :journal-entry [{:debit "Deferred Revenue (Liability)" :credit "Revenue"}]
     :note "When performance obligations are satisfied, deferred revenue becomes earned revenue."
     :examples ["SP earns portion of advance payment by delivering shirts"
                "SP recognizes revenue as service is performed"]
@@ -2447,7 +2452,8 @@
    :accrued "the interest (or wages) the business accrued"
    :payable "what the business owes a supplier"
    :receivable "what a customer owes the business"
-   :lending "the note a borrower signed"})
+   :lending "the note a borrower signed"
+   :advance "the advance a customer paid"})
 
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
@@ -2458,7 +2464,7 @@
     (cond-> hints
       ;; Fulfills is present but keeps the wrong promise, or none.
       (seq fulfills-unmet)
-      (conj (str "Fulfills has to name the promise this payment keeps: "
+      (conj (str "Fulfills has to name the promise this keeps: "
                  (clojure.string/join " or " (keep promise-kind-phrases fulfills-unmet))
                  ". Choose it from the record's open promises."))
 
@@ -3446,8 +3452,8 @@ The printed t-shirts are now finished goods ready for sale."
    ;; the promise itself carries.
    {:narrative-template "On {date}, {company} delivers {delivered} of the {ordered} printed t-shirts {customer} paid ${total} for in advance on {advance-date}. That much of the advance has now been earned: ${earned}."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "revenue" :basis "earned"}
-                          :fulfills {:action "requires"}}
+                          :reports {:category "revenue" :basis "earned" :amount :earned}
+                          :fulfills {:action "requires" :event "Deposit-001"}}
     :correct-classification :unearned-revenue-adjustment
     :reads-record [:advance]
     :level 5

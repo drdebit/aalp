@@ -285,7 +285,11 @@
     :text "The right to future service is smaller by the same amount."}
    {:id :advance-earned
     :when {:assertion :reports :params {:category "revenue" :basis "earned"}}
-    :line {:side :debit :account "Unearned Revenue"}
+    ;; The account the advance was credited to when it came in -- one
+    ;; liability, cleared as it is earned. It debited "Unearned Revenue",
+    ;; a second account, so the books carried the advance in one and its
+    ;; earning in another.
+    :line {:side :debit :account "Deferred Revenue (Liability)"}
     :amount :reported
     :text "Part of an advance has been earned: the goods or service it paid for have now been provided. The business owes that much less."}
    {:id :advance-revenue
@@ -1206,13 +1210,14 @@
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
                               :prompt "Something must balance this. What did the business get, or settle — and who from? The assertions do not say yet."}))]
-    {;; What the record still owes or is owed, for `fulfills` to name.
-     ;; Only the kinds paying or collecting can clear; an advance or a
-     ;; prepayment is kept by delivering, through its own adjustment.
-     :open-promises (vec (for [p (chain/promises (:events chain-ctx))
-                               :when (contains? chain/promise-accounts (:kind p))]
-                           (assoc (select-keys p [:id :kind :date :due-date :amount :counterparty])
-                                  :account (get chain/promise-accounts (:kind p)))))
+    {;; What the record still owes or is owed, for `fulfills` to name --
+     ;; every open promise. An advance or a prepayment is kept by
+     ;; delivering rather than paying, so it has no account a payment
+     ;; clears, but it is kept all the same, and named the same way.
+     :open-promises (vec (for [p (chain/promises (:events chain-ctx))]
+                           (cond-> (select-keys p [:id :kind :date :due-date :amount :counterparty])
+                             (get chain/promise-accounts (:kind p))
+                             (assoc :account (get chain/promise-accounts (:kind p))))))
      :holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))
                                                             (:events chain-ctx))))
                           ;; Only what can go out: materials and goods. A

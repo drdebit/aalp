@@ -107,12 +107,26 @@ Built and running on choochoo with =AALP_FLOW=lessons=:
 - [X] Completion screen.
 - [X] Level numbers out of the tutorial prose and the reader's title;
   Level 0 reworded for the lesson path.
-- [ ] *Level 2 serves six problems whose own correct answer derives an
-  empty or unclassified entry*: =production-tshirt-printing=,
-  =production-simple-printing=, =design-creation=, =service-creation=,
-  =supplies-used=, =production-labor=. Present before today's work
-  (checked at =250d22a=). Three of Level 2's nine are sound. Needs
-  fixing, or holding back, before the pilot.
+- [X] *Level 2 served six problems whose own correct answer derived an
+  empty or unclassified entry* (present at =250d22a=). Held back
+  (=:derivation-pending=) on 2026-09-29, each with its reason beside it:
+  - =production-tshirt-printing=, =production-simple-printing=: a
+    retired vocabulary (=consumes-inventory=, =consumes-labor=,
+    =creates-finished-goods=) the sentence builder does not offer.
+    =production-direct= replaces them.
+  - =supplies-used=: no items or quantities; duplicates =production-direct=.
+  - =production-labor=, =service-creation=: units only, and no rule turns
+    consumed effort into a wage owed.
+  - =design-creation=: the same, and it capitalises an internally created
+    design, which GAAP generally expenses.
+  Level 2 now serves =production-direct=, =capability-purchase= and
+  =cash-design-purchase=, which match what its tutorial teaches. No
+  served problem at any level now derives an empty or unclassified entry.
+- [X] *Labour goes to 2102* (decided 2026-09-29): costing labour into
+  product is managerial. The four labour templates stay held, marked for
+  that course, and are not rebuilt for 2101.
+- [ ] =design-creation= stays held until it is rewritten with an expense
+  treatment, which is what GAAP asks of an internally created design.
 
 * Content gaps found while planning
 

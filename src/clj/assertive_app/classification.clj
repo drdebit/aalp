@@ -3110,6 +3110,11 @@ The printed t-shirts are now finished goods ready for sale."
                           :is-allowed-by {:capacity "t-shirt-printer"}
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-full
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- written in a retired vocabulary (consumes-inventory, consumes-labor, creates-finished-goods) the sentence builder does not offer, so the answer cannot be stated. production-direct is its replacement.
+    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; product is managerial. Kept for that course, not served in 2101.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50]
@@ -3132,6 +3137,11 @@ The printed t-shirts are now finished goods ready for sale."
                           :is-allowed-by {:capacity "t-shirt-printer"}
                           :creates-finished-goods {:item "printed t-shirts" :quantity :quantity}}
     :correct-classification :production-inventory-labor
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- the same retired vocabulary as production-tshirt-printing.
+    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; product is managerial. Kept for that course, not served in 2101.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :quantity [10 25 50 100]
@@ -3163,6 +3173,11 @@ The printed t-shirts are now finished goods ready for sale."
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "physical-unit"}}
     :correct-classification :production-with-labor
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- its answer names units only, and no rule turns consumed effort into a wage owed; labour costed into product is closer to 2102 than 2101.
+    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; product is managerial. Kept for that course, not served in 2101.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [2 4 8 16 40]}}
@@ -3173,6 +3188,9 @@ The printed t-shirts are now finished goods ready for sale."
                           :consumes {:unit "physical-unit"}
                           :creates {:unit "physical-unit"}}
     :correct-classification :supplies-consumption
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- its answer names no items or quantities, so nothing can be placed or priced, and production-direct already teaches materials consumed into goods.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :supplies ["ink cartridges" "specialty inks" "printing supplies" "packaging materials"]}}
@@ -3183,6 +3201,9 @@ The printed t-shirts are now finished goods ready for sale."
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "intellectual-property"}}
     :correct-classification :design-creation
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- its answer names units only (no hours, no rate, no amount), no rule turns consumed effort into a wage owed, and it capitalises an internally created design, which GAAP generally expenses.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [4 8 16 24 40]
@@ -3194,6 +3215,11 @@ The printed t-shirts are now finished goods ready for sale."
                           :consumes {:unit "effort-unit"}
                           :creates {:unit "service-output"}}
     :correct-classification :service-delivery
+    ;; Held back from the drill (2026-09-29): its own correct answer
+    ;; derives an empty or unclassified entry -- its answer names units only, and no rule turns consumed effort into a wage owed.
+    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; product is managerial. Kept for that course, not served in 2101.
+    :derivation-pending true
     :level 2
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [2 4 8 16]

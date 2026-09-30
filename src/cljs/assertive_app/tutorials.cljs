@@ -332,7 +332,7 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
      :effect
      {:holds "Before: 25 shirts. After: no shirts, and a claim on CampusBoutique worth $625."
       :may-or-must "Before: nothing owed either way. After: somebody else must pay — and SP has recorded how sure it is they will. That confidence is in no journal entry anywhere, and at year end it is what the allowance for doubtful accounts is built from."}
-     :reminder "One assertion, four accounts. Where the promise sits, and which way the goods went, decides which."}
+     :reminder "One assertion, requires. When the goods have moved and the money is still due, it is a claim or a debt, by which way the goods went. When the money has moved and the goods are still due, the promise is about goods — and the lesson comes to those two cases too."}
     :sections
     [{:heading "Buying Now, Paying Later"
       :content "In the first lesson everything happened at once: cash out, goods in, done.

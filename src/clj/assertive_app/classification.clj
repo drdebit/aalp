@@ -3559,7 +3559,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :par-value [1 1 10 10]}}
 
    :declare-dividend
-   {:narrative-template "On {date}, {company}'s Board of Directors declares a cash dividend of ${per-share} per share on {shares} outstanding shares. Total dividend payable is ${total}. Payment date is {payment-date}."
+   {:narrative-template "On {date}, {company}'s Board of Directors declares a cash dividend of ${per-share} per share on {shares} outstanding shares. Total dividend payable is ${total}. Payment date is {due-date}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "distribution" :basis "declared"}
                           :requires {:action "provides" :unit "monetary-unit" :quantity :total}}
@@ -3569,7 +3569,10 @@ The printed t-shirts are now finished goods ready for sale."
                 :per-share [0.25 0.50 1.00 0.10]
                 :shares [1000 2000 5000 10000]
                 :total [250 1000 5000 1000]
-                :payment-date ["February 1" "April 1" "July 1" "October 1"]}}
+                ;; Paid after it is declared, not before: the payment date
+                ;; used to be drawn from a list that ignored the declaration.
+                :days [30 45 60]
+                :due-date :calculated}}
 
    :pay-dividend
    {:narrative-template "On {date}, {company} pays the previously declared dividend of ${amount} to shareholders. This settles the dividend declared on {declaration-date}."

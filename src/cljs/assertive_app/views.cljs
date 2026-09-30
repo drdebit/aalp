@@ -1655,7 +1655,10 @@
   (let [category-options [{:value "revenue" :label "Revenue"}
                           {:value "expense" :label "Expense"}
                           {:value "gain" :label "Gain"}
-                          {:value "loss" :label "Loss"}]
+                          {:value "loss" :label "Loss"}
+                          ;; A dividend: not earned, not incurred, but
+                          ;; declared -- a distribution to the owners.
+                          {:value "distribution" :label "Distribution (dividend)"}]
         basis-options [{:value "earned" :label "Performance obligation satisfied"}
                        {:value "cash-received" :label "Equal to cash received"}
                        {:value "cash-paid" :label "Equal to cash paid"}
@@ -1664,7 +1667,8 @@
                        {:value "aging" :label "Aging of receivables (bad debt)"}
                        {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
                        {:value "time-based" :label "Passage of time (prepaid)"}
-                       {:value "accrual" :label "Accrual over time (wages, interest)"}]
+                       {:value "accrual" :label "Accrual over time (wages, interest)"}
+                       {:value "declared" :label "Declared by the board (dividend)"}]
         selected-basis (:basis params)]
     [:div.reports-section
      [sentence-section :recognition "Recognition:"

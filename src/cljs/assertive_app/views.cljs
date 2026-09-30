@@ -2258,8 +2258,13 @@
                       ;; to hover over an em dash to find that out.
                       (when (and (:unresolved? line)
                                  ;; ...unless the costing panel directly
-                                 ;; above is already saying it.
-                                 (not (and costing (:needs-lot? line))))
+                                 ;; above is already saying it, or an
+                                 ;; earlier line of this entry already
+                                 ;; carries the same question: the two
+                                 ;; cost lines wait on one answer.
+                                 (not (and costing (:needs-lot? line)))
+                                 (not (and (:needs-lot? line)
+                                           (some :needs-lot? (take i lines)))))
                         [:tr.dj-needs
                          [:td]
                          [:td.dj-needs-cell {:colSpan 3}
@@ -2270,8 +2275,12 @@
                            ;; sentence builder does not offer: costing is the
                            ;; second act, opened by a correct revenue
                            ;; sentence. Say what comes next instead.
-                           (if (and provisional? (:needs-lot? line))
+                           (cond
+                             (and provisional? (:needs-lot? line))
                              "Not priced yet. Once the sale is submitted and the revenue recognized, you will name which batch these goods came out of, and the cost follows from the record."
+                             (:needs-lot? line)
+                             "Not priced yet: name the batch these goods came out of, under your sentence, and both cost lines fill in from what the record says they cost."
+                             :else
                              (:unresolved-reason line))]]])
                       ;; The figure came from a calculation and is not the
                       ;; figure that calculation comes to. Said on the face
@@ -2419,14 +2428,16 @@
         holdings (:holdings d)
         provided (:provides (state/selected-assertions))
         picked   (:from-event provided)
-        item     (some-> (:physical-item provided) keyword)
+        ;; Names, not keywords: the holdings come back from JSON with
+        ;; string values, and the selection's item is a string too.
+        item     (some-> (:physical-item provided) name)
         qty      (some-> (:quantity provided) js/parseFloat)
         choose!  (fn [id]
                    (state/update-assertion-parameter! :provides :from-event id)
                    (api/derive-je!))
         ;; The lots that could have answered: same goods, enough of them.
         fits     (when (and item qty)
-                   (filter #(and (= item (:item %)) (>= (:left %) qty) (:unit-cost %)) holdings))
+                   (filter #(and (= item (some-> (:item %) name)) (>= (:left %) qty) (:unit-cost %)) holdings))
         chosen   (first (filter #(= (:id %) picked) fits))
         others   (remove #(= (:id %) picked) fits)]
     (cond

@@ -129,7 +129,7 @@
                         {:assertion :consumes}]}
     :line {:side :credit :account "Owner's Capital"}
     :amount :monetary
-    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue.)"}
+    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue. If the money settles something this party already owed, name the promise it keeps — fulfills — and this line becomes the claim being cleared.)"}
 
 ;; -------- Money out with nothing coming in: the owner's draw -------
    ;; The mirror of :owner-capital. Nothing came in, nothing is promised,
@@ -151,7 +151,7 @@
                         {:assertion :is-protected-by}]}
     :line {:side :debit :account "Owner's Drawing"}
     :amount :flow
-    :text "Money went out and nothing came back for it. The business received no goods or service, made no promise, kept none, and no law required the payment. What is left is a distribution to the owner: their claim on the business is smaller by what they took. Owner's Drawing records it for the period and is closed to capital at year end. (If something DID come in for this money, say so — receives — and this line becomes what was bought.)"}
+    :text "Money went out and nothing came back for it. The business received no goods or service, made no promise, kept none, and no law required the payment. What is left is a distribution to the owner: their claim on the business is smaller by what they took. Owner's Drawing records it for the period and is closed to capital at year end. (If something DID come in for this money, say so — receives — and this line becomes what was bought. If the money settles a debt already on the books, name the promise it keeps — fulfills — and this line becomes the debt being cleared.)"}
 
    ;; -------- Keeping an earlier promise --------------------------------
    ;; `fulfills` names the promise, and the record says what it was: which

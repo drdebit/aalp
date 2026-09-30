@@ -60,7 +60,7 @@
           :becomes "Raw Materials Inventory"}
       :b {:when "Receives 50 blank t-shirts, expects to sell them on as they are"
           :becomes "Finished Goods Inventory"}
-      :point "One word changed. Same shirts, same money, same vendor — and a different account falls out, because the business said a different thing about what it bought."}
+      :point "The purpose changed. Same shirts, same money, same vendor — and a different account falls out, because what the business said it bought them for is what decides where they belong."}
      :effect
      {:holds "Before: $10,000 cash. After: $9,850 cash and 50 shirts. The business is no poorer — it swapped one asset for another."
       :may-or-must "Before: nothing. After: the shirts are committed to printing. Nothing in the journal entry records that, and it is the reason they are raw materials rather than stock for sale."}
@@ -672,7 +672,7 @@ The design is there in both — the business owns it either way. But GAAP does n
           :becomes "Tax Expense — this period's cost"}
       :b {:when "…because a law **allowed** it: the filing that forms the LLC"
           :becomes "Organization Costs — carried, because the company lasts"}
-      :point "One word changed, and with it the question the record answers: did something lasting come of the payment?"}
+      :point "The reason changed — required by a rule, or allowed by a law — and with it the question the record answers: did something lasting come of the payment?"}
      :effect
      {:holds "Before: $500 more cash. After: $500 less, and nothing new held. The tax bought this period's right to operate, and that is used up as the period goes."
       :may-or-must "Before: the business must pay its quarterly estimate. After: that duty is met, and the record says which rule imposed it — something no journal entry names."}

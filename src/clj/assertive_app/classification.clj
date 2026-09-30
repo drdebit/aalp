@@ -1473,6 +1473,7 @@
    (cash-exchange
      "Cash purchase of raw materials (provide cash, receive materials for production)"
      [{:debit "Raw Materials Inventory" :credit "Cash"}]
+     :note "The business provided cash and received materials, and said what it expects to do with them: use them up making something. That purpose is what makes them Raw Materials Inventory, an input. The same goods bought to sell on as they are would be Finished Goods Inventory."
      ;; What the goods are FOR, said by the buyer as they buy. Until
      ;; 2026-09-19 this was left to the press's `allows`, in a different
      ;; event, or to the first sale -- so a shop's first crate of shirts
@@ -1496,6 +1497,7 @@
    (cash-exchange
      "Cash purchase of equipment (provide cash, receive long-term asset)"
      [{:debit "Equipment (Fixed Asset)" :credit "Cash"}]
+     :note "The business provided cash and received a machine, and said what the machine allows: a transformation it makes possible without being used up by it. That capacity is what makes the purchase Equipment, an asset held for use. Without allows the record could not tell a printer bought to print on from a printer bought to sell."
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
      :physical-item "t-shirt-printer"
@@ -1513,6 +1515,7 @@
    (cash-exchange
      "Cash purchase of a design (provide cash, receive an intangible asset)"
      [{:debit "Design (Intangible Asset)" :credit "Cash"}]
+     :note "The business provided cash and received a design, and said what the design allows. Held for use and not used up by it, the design is capital, like a printer. What separates it from equipment is what the record says it is denominated in: intellectual property, a right with no physical substance. That is what makes it an intangible asset."
      :provides-unit "monetary-unit"
      ;; Intellectual property, not a physical unit. A design is an asset
      ;; for the same reason a printer is -- the record says what it is
@@ -1531,6 +1534,7 @@
    (cash-exchange
      "Cash purchase of a service (provide cash, receive work done -- an expense)"
      [{:debit "Services Expense" :credit "Cash"}]
+     :note "The business provided cash and received a service: work done for it, used up as it was done. Nothing is left to hold afterwards, so there is no asset to carry; what the work cost is an expense of the period."
      :provides-unit "monetary-unit"
      :receives-unit "service-unit"
      :examples ["SP pays $60 to have the printer serviced"])
@@ -1539,6 +1543,7 @@
    (cash-exchange
      "Cash purchase of goods to sell on (provide cash, receive merchandise)"
      [{:debit "Finished Goods Inventory" :credit "Cash"}]
+     :note "The business provided cash and received goods, and said what it expects to do with them: sell them on as they are. That purpose is what makes them Finished Goods Inventory, stock waiting for a buyer. The same goods bought to use up making something would be Raw Materials Inventory."
      ;; And here the purpose is the whole difference. Same shirts, same
      ;; money, same vendor as the purchase above; what separates
      ;; merchandise from raw materials is what the buyer says they are

@@ -390,7 +390,7 @@ That raises a fair question, and it is worth answering now. If you can put a pro
 
 *SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing, so SP records how sure it is: **expects**.
 
-Notice what is missing from the second one. Nothing stops SP putting a probability on its own promise, but by convention it does not: SP decides whether it pays its own bills, it agreed to pay, and it means to. There is nothing to estimate. That is the one exception, and it comes down to control — everywhere else, if the outcome is not yours to decide, the number belongs on the record. A business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
+Notice what is missing from the second one: no **expects**. The rule is that a promise carries a probability. **The one exception is the business's own promise.** SP decides whether it pays its own bills; it agreed to pay, and it means to, so there is nothing to estimate, and by convention no number is recorded. (Nothing forbids one. It would just be idle.) Everywhere else, if the outcome is not the business's to decide, the number belongs on the record. A business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
      {:heading "Selling on Credit: The Other Chair"
       :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid** — the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
 

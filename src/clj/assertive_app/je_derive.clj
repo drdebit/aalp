@@ -534,7 +534,11 @@
    :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
    :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."
    :requires "A promise is recorded here. It reaches the entry as a claim in money — something owed, or owing — when the pattern says so; this one does not add a line of its own."
-   :reports "Reporting assertions drive calculations rather than journal-entry lines."})
+   :reports "Reporting assertions drive calculations rather than journal-entry lines."
+   ;; Only a creation with no rule reaches here: printed shirts made by
+   ;; production have their line. What is left is a thing made in-house
+   ;; that GAAP will not carry -- a design, above all.
+   :creates "The design exists, and the record says the business made it and owns it. GAAP does not put an internally created design on the balance sheet: what it cost to make is an expense as it is incurred — here, the designer's wages. Bought from someone else, the same design would be an asset, Design (Intangible Asset). The record keeps what double-entry leaves out."})
 
 (def context-roles
   {:has-date "stamps the entry's date"

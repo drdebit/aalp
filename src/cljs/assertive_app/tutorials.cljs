@@ -591,7 +591,39 @@ Production may also consume labor and supplies — the journal entry captures al
 
 Both blank t-shirts and printed t-shirts are your assets. Production just changes the form of your inventory.
 
-Now you can see where the goods you sell come from — and why each batch carries its own cost."}]
+Now you can see where the goods you sell come from — and why each batch carries its own cost."}
+
+     {:heading "A Design: Bought, or Made"
+      :content "A business can get a design two ways, and the record treats them differently.
+
+**Bought.** *Northside pays a studio $400 for a logo it will print on its shirts.* The business receives a design — a right, not a thing, so it is denominated in **intellectual property** — and it lasts:
+
+::assertions
+provides: $400 (monetary-unit)
+receives: a logo design (intellectual-property)
+allows: printing blank shirts into printed ones
+::
+
+::journal
+DR Design (Intangible Asset) $400
+CR Cash $400
+::
+
+**Made.** *Northside's own designer spends 8 hours creating a logo, and is paid $240 for the work.* What the business receives is the designer's **effort**, and it pays for it. What it makes is the design:
+
+::assertions
+has-counterparty: the designer
+receives: 8 hours (effort-unit)
+provides: $240 (monetary-unit)
+creates: a logo design (intellectual-property)
+::
+
+::journal
+DR Wage Expense $240
+CR Cash $240
+::
+
+The design is there in both — the business owns it either way. But GAAP does not put a design the business made itself on the balance sheet: what it cost is an expense as it is incurred. So **creates** is recorded, and produces no line. The record keeps what double-entry leaves out."}]
 
     :quiz
     [{:id :l2-q1

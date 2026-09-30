@@ -1730,14 +1730,20 @@
                "SP provides consulting services"]
     :level 2}
 
+   ;; Made in-house, a design is expensed: GAAP does not capitalise an
+   ;; internally created intangible. What the business pays for the
+   ;; designer's hours is Wage Expense, and the design itself is recorded
+   ;; -- created, owned -- with no line. Bought, the same design is an
+   ;; asset (:design-purchase). Revised 2026-09-29; it used to capitalise.
    :design-creation
-   {:required #{:consumes :creates}
-    :required-parameters {:consumes {:unit "effort-unit"}
+   {:required #{:has-date :has-counterparty :receives :provides :creates}
+    :required-parameters {:receives {:unit "effort-unit"}
+                          :provides {:unit "monetary-unit"}
                           :creates {:unit "intellectual-property"}}
-    :prohibited #{:has-counterparty :provides :receives}
-    :description "Creating intellectual property/designs"
-    :journal-entry [{:debit "Design Asset" :credit "Wages Payable"}]
-    :note "Effort transformed into intellectual property (designs, artwork, etc.)."
+    :prohibited #{:requires :expects :consumes :allows}
+    :description "Creating a design in-house, paying the designer for the work"
+    :journal-entry [{:debit "Wage Expense" :credit "Cash"}]
+    :note "The design is recorded as created and owned, but GAAP does not carry an internally created design as an asset: the wages it took are an expense."
     :examples ["SP's designer creates new t-shirt design"
                "SP develops proprietary printing technique"]
     :level 2}
@@ -3228,18 +3234,21 @@ The printed t-shirts are now finished goods ready for sale."
                 :supplies ["ink cartridges" "specialty inks" "printing supplies" "packaging materials"]}}
 
    :design-creation
-   {:narrative-template "On {date}, {company}'s designer spends {hours} hours creating a new {design-type} for the upcoming product line."
+   {:narrative-template "On {date}, {company}'s designer, {designer}, spends {hours} hours creating a new {design-type} for the upcoming product line, and is paid ${amount} for the work ({hours} hours at ${rate} an hour)."
     :required-assertions {:has-date {:date :date}
-                          :consumes {:unit "effort-unit"}
-                          :creates {:unit "intellectual-property"}}
+                          :has-counterparty {:name :designer}
+                          :receives {:unit "effort-unit" :quantity :hours}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :creates {:unit "intellectual-property" :physical-item "logo-design" :quantity 1}}
     :correct-classification :design-creation
-    ;; Held back from the drill (2026-09-29): its own correct answer
-    ;; derives an empty or unclassified entry -- its answer names units only (no hours, no rate, no amount), no rule turns consumed effort into a wage owed, and it capitalises an internally created design, which GAAP generally expenses.
-    :derivation-pending true
     :level 2
-    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
-                :hours [4 8 16 24 40]
-                :design-type ["t-shirt design" "logo" "artwork" "graphic design" "product concept"]}}
+    ;; Paired: hours, rate and amount agree.
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14"]
+                :hours [8 10 12 16 20]
+                :rate [30 25 30 35 25]
+                :amount [240 250 360 560 500]
+                :designer ["Maya Ortiz" "Sam Lee" "Priya Nair" "Jordan Blake" "Alex Kim"]
+                :design-type ["logo" "t-shirt design" "graphic design" "logo" "t-shirt design"]}}
 
    :service-creation
    {:narrative-template "On {date}, {company}'s team spends {hours} hours on {service} for a customer order."

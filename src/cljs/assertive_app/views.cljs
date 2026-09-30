@@ -1639,13 +1639,18 @@
                        {:value "aging" :label "Aging of receivables (bad debt)"}
                        {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
                        {:value "time-based" :label "Passage of time (prepaid)"}
-                       {:value "accrual" :label "Accrual over time (interest)"}]
+                       {:value "accrual" :label "Accrual over time (wages, interest)"}]
         selected-basis (:basis params)]
     [:div.reports-section
      [sentence-section :recognition "Recognition:"
       [:div.reports-content
        [:span "The business reports "]
        [inline-dropdown :reports :category category-options (:category params) "type"]
+       ;; The amount, typed or calculated. A calculation below writes it
+       ;; here; a narrative that states the figure (two days of wages)
+       ;; has nothing to calculate, and the student types it.
+       [:span " of $"]
+       [inline-number-input :reports :amount (:amount params) "amount"]
        [:span " calculated by "]
        [inline-dropdown :reports :basis basis-options selected-basis "method"]
        [remove-assertion-button :reports]]]

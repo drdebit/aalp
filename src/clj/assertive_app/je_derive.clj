@@ -534,6 +534,7 @@
    :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
    :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."
    :requires "A promise is recorded here. It reaches the entry as a claim in money — something owed, or owing — when the pattern says so; this one does not add a line of its own."
+   :fulfills "The promise this event keeps is named here, and the entry reads it: the account that promise has sat in since it was made is the one cleared or drawn down. Naming it adds no line of its own — it says which line the others are about."
    :reports "Reporting assertions drive calculations rather than journal-entry lines."
    ;; Only a creation with no rule reaches here: printed shirts made by
    ;; production have their line. What is left is a thing made in-house

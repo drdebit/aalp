@@ -242,7 +242,13 @@
            (cond (empty? next) {} (= 1 (count next)) (first next) :else next))))
 
 (defn clear-selections! []
-  (swap! app-state assoc :selected-assertions {} :pattern-sources {} :selection-order []))
+  (swap! app-state (fn [st]
+                     (-> st
+                         (assoc :selected-assertions {} :pattern-sources {} :selection-order [])
+                         ;; A calculation belongs to the problem it was done
+                         ;; for; its inputs and result do not carry over.
+                         (assoc-in [:calculation :inputs] {})
+                         (assoc-in [:calculation :result] nil)))))
 
 (defn set-selected-assertions!
   "Replace the whole selection map (used by the drill's worked example

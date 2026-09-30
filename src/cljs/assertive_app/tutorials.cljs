@@ -873,7 +873,7 @@ Note: Accumulated Depreciation is a **contra-asset** that reduces equipment valu
       :content "**Accrued Expenses** — expenses incurred before payment:
 - Wages: employees worked but payday hasn't arrived
 - Interest: accumulates daily on loans
-- reports: expense (accrual basis), requires: future payment
+- reports: expense (accrual basis), requires: a future payment — and to whom: employees for wages, the lender for interest. The promise's party is what names the payable.
 → DR Expense, CR Payable
 
 **Prepaid Adjustments** — 'using up' prepaid assets over time:

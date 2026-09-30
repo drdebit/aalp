@@ -123,9 +123,10 @@
   "An accrued wage and an accrued interest are the same position with
    different words; so are a prepaid insurance and a prepaid rent. The
    rulebook names the position; the templates name the instance."
-  {"Wages Expense" "Accrued Expense" "Wage Expense" "Accrued Expense" "Interest Expense" "Accrued Expense"
-   "Wages Payable" "Accrued Liabilities" "Interest Payable" "Accrued Liabilities"
-   "Prepaid Insurance" "Prepaid Expense" "Prepaid Rent" "Prepaid Expense"
+  ;; Wages and interest were aliased to the generic accrued accounts
+  ;; until the promise named who is owed (2026-09-30); the rulebook
+  ;; names them now, and a difference here is a real one again.
+  {"Prepaid Insurance" "Prepaid Expense" "Prepaid Rent" "Prepaid Expense"
    "Deferred Revenue (Liability)" "Unearned Revenue"
    ;; The residual claim under a different entity form: the same position,
    ;; a corporation's word for it.

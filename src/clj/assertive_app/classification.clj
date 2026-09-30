@@ -1951,8 +1951,11 @@
 
    :accrued-wages
    {:required #{:has-date :reports :requires}
+    ;; The promise names who is owed. Nothing else in an accrual does --
+    ;; there is no exchange -- and it is what separates wages from
+    ;; interest: the same reports, the same requires, a different party.
     :required-parameters {:reports {:category "expense" :basis "accrual"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit" :party "employees"}}
     ;; Our own obligation: `requires` states it. An `expects` beside it
     ;; (that we will meet it, near 100%) is redundant but true, so it is
     ;; accepted, as on deferred revenue, rather than marked wrong.
@@ -1968,7 +1971,7 @@
    :accrued-interest-expense
    {:required #{:has-date :reports :requires}
     :required-parameters {:reports {:category "expense" :basis "accrual"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit" :party "lender"}}
     ;; Our own obligation: `requires` states it. An `expects` beside it
     ;; (that we will meet it, near 100%) is redundant but true, so it is
     ;; accepted, as on deferred revenue, rather than marked wrong.
@@ -3448,7 +3451,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, {company} has {days} days of unpaid wages for employees. Total wages earned but not yet paid amount to ${amount}. Payday is {payday}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "accrual"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit" :party "employees"}}
     :correct-classification :accrued-wages
     :level 5
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
@@ -3466,7 +3469,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, {company} accrues a month of interest on the ${principal} it borrowed from {lender} on {loan-date}. The note runs at {rate}% a year, so a month of interest is ${interest}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "expense" :basis "accrual"}
-                          :requires {:action "provides" :unit "monetary-unit"}}
+                          :requires {:action "provides" :unit "monetary-unit" :party "lender"}}
     :correct-classification :accrued-interest-expense
     :reads-record [:borrowing]
     :level 7

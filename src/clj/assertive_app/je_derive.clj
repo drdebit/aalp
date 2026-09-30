@@ -260,15 +260,46 @@
     :line {:side :credit :account "Allowance for Doubtful Accounts"}
     :amount :reported
     :text "The receivable is not reduced directly — no particular customer has failed yet. The doubt sits beside it as an allowance."}
+   ;; An accrual's promise names who is owed, and that is what names the
+   ;; lines: employees are owed wages, a lender is owed interest. A
+   ;; promise to nobody in particular still accrues, generically.
+   {:id :accrued-wages-expense
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit" :party "employees"}}]}
+    :line {:side :debit :account "Wages Expense"}
+    :amount :reported
+    :text "Work has been done for the business before any money moved, and the promise says who is owed for it: employees. The expense belongs to the period the work was done."}
+   {:id :accrued-wages-payable
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit" :party "employees"}}]}
+    :line {:side :credit :account "Wages Payable"}
+    :amount :reported
+    :text "And what is owed to them is a claim on the business until payday: the `requires` says so, and who it is to."}
+   {:id :accrued-interest-expense
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit" :party "lender"}}]}
+    :line {:side :debit :account "Interest Expense"}
+    :amount :reported
+    :text "Interest has run up on borrowed money before any was paid, and the promise says who is owed it: the lender. The expense belongs to the period the money was borrowed for."}
+   {:id :accrued-interest-payable
+    :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit" :party "lender"}}]}
+    :line {:side :credit :account "Interest Payable"}
+    :amount :reported
+    :text "And what is owed to the lender is a claim on the business until it is paid: the `requires` says so, and who it is to."}
    {:id :accrued-expense
     :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
-    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :context {:all-of  [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]
+              :none-of [{:assertion :requires :params {:party "employees"}}
+                        {:assertion :requires :params {:party "lender"}}]}
     :line {:side :debit :account "Accrued Expense"}
     :amount :reported
-    :text "A cost has been incurred — work done for the business, or interest run up — before any money moved. The expense belongs to the period it was incurred."}
+    :text "A cost has been incurred before any money moved. The expense belongs to the period it was incurred. Say whom the promise is to — employees, a lender — and the record can name it."}
    {:id :accrued-liability
     :when {:assertion :reports :params {:category "expense" :basis "accrual"}}
-    :context {:all-of [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]}
+    :context {:all-of  [{:assertion :requires :params {:action "provides" :unit "monetary-unit"}}]
+              :none-of [{:assertion :requires :params {:party "employees"}}
+                        {:assertion :requires :params {:party "lender"}}]}
     :line {:side :credit :account "Accrued Liabilities"}
     :amount :reported
     :text "And what is owed for it is a claim on the business until it is paid: the `requires` says so."}

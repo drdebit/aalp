@@ -870,7 +870,25 @@
   ;; and it is to receive what it is owed. The closing gloss names whose
   ;; promise this is, which the verb alone left ambiguous.
   (let [owes?  (not= "receives" (:action params))
-        party  (or counterparty-name "the counterparty")
+        ;; Whose promise, or to whom. An exchange names the other party on
+        ;; the sentence and the promise is theirs or to them. An accrual
+        ;; has no exchange -- wages earned, interest run up -- and the
+        ;; promise is the only place the party can be said. Said as a
+        ;; role, which is what names the payable: employees are owed
+        ;; wages, a lender is owed interest.
+        party  (or counterparty-name
+                   (get {"employees" "employees" "lender" "the lender" "supplier" "a supplier"
+                         "customer" "a customer" "owner" "the owner"}
+                        (:party params))
+                   "the counterparty")
+        party-select (when-not counterparty-name
+                       [inline-dropdown :requires :party
+                        [{:value "employees" :label "employees"}
+                         {:value "lender" :label "the lender"}
+                         {:value "supplier" :label "a supplier"}
+                         {:value "customer" :label "a customer"}
+                         {:value "owner" :label "the owner"}]
+                        (:party params) "whom?"])
         ;; Nothing falls due before the event that promised it, and the
         ;; calendar should open in the month of the transaction rather
         ;; than in whatever month the student happens to be sitting in.
@@ -890,7 +908,9 @@
                                        {:value "physical-unit" :label "goods"}
                                        {:value "service-unit" :label "services"}]
        (:unit params) "what"]
-      [:span (str (if owes? " to " " from ") party " by ")]
+      [:span (if owes? " to " " from ")]
+      (or party-select [:span party])
+      [:span " by "]
       [inline-date-input :requires :due-date (:due-date params) earliest]
       [:span.obligation-gloss (if owes?
                                 " — a debt the business owes."

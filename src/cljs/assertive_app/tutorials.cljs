@@ -40,7 +40,7 @@
     ;; procedure over accounts is the pedagogy this platform exists to
     ;; replace. Slot 6, the minimal pair, is the centrepiece.
     :orientation
-    {:framing "This lesson lets the business say what moved today, and what the things that came in are for."
+    {:framing "Every event in this lesson is a trade. The business says what it gave, what it got, and why it wanted the one in place of the other."
      :protocol ["What went out? — **provides**"
                 "What came in? — **receives**"
                 "Who was on the other side? — **has-counterparty**"

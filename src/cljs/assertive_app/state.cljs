@@ -18,6 +18,7 @@
     :current-problem nil
     :available-assertions {}
     :selected-assertions {}  ; Map to store parameters
+    :selection-order []      ; The codes in the order the student added them
     :feedback nil
     :current-level 0
     :problem-type "forward"  ; "forward", "reverse", or "construct"
@@ -98,14 +99,26 @@
 (defn set-vocabulary! [v]
   (swap! app-state assoc :vocabulary v))
 
+(defn selection-order
+  "The assertions in the order they were added. The sentence's panes
+   (expects, requires, allows...) are shown in this order, so a pane a
+   student just added appears at the bottom, under the one they added
+   before, and never above something already there."
+  []
+  (:selection-order @app-state))
+
 (defn toggle-assertion! [assertion-code]
   (let [code (keyword assertion-code)]
     (swap! app-state update :pattern-sources dissoc code)
-    (swap! app-state update :selected-assertions
-           (fn [selected]
-             (if (contains? selected code)
-               (dissoc selected code)
-               (assoc selected code {}))))))
+    (swap! app-state
+           (fn [st]
+             (if (contains? (:selected-assertions st) code)
+               (-> st
+                   (update :selected-assertions dissoc code)
+                   (update :selection-order (fn [o] (vec (remove #{code} o)))))
+               (-> st
+                   (assoc-in [:selected-assertions code] {})
+                   (update :selection-order (fnil conj []) code)))))))
 
 ;; Where an assertion's values were repeated from. An assertion added to
 ;; a purchase of something the record has bought before arrives filled in
@@ -140,7 +153,8 @@
    (swap! app-state assoc
           :walkthrough {:episode episode-idx :step 0}
           :walkthrough-events []
-          :selected-assertions {})))
+          :selected-assertions {}
+          :selection-order [])))
 
 (defn end-walkthrough! []
   (swap! app-state dissoc :walkthrough :walkthrough-events))
@@ -228,13 +242,13 @@
            (cond (empty? next) {} (= 1 (count next)) (first next) :else next))))
 
 (defn clear-selections! []
-  (swap! app-state assoc :selected-assertions {} :pattern-sources {}))
+  (swap! app-state assoc :selected-assertions {} :pattern-sources {} :selection-order []))
 
 (defn set-selected-assertions!
   "Replace the whole selection map (used by the drill's worked example
    to fill the sentence builder with the canonical assertions)."
   [assertions]
-  (swap! app-state assoc :selected-assertions (or assertions {}) :pattern-sources {}))
+  (swap! app-state assoc :selected-assertions (or assertions {}) :pattern-sources {} :selection-order []))
 
 ;; ==================== Time-on-task ====================
 ;; Every attempt carries raw serve-to-submit seconds (instrumentation

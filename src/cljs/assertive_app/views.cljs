@@ -2019,6 +2019,8 @@
                          (api/fetch-assertions! (state/current-level)))}
          "Leave the walkthrough"]]])))
 
+(declare costing-step)
+
 (defn sentence-builder
   "Main sentence builder component - builds assertions as natural language."
   []
@@ -2084,48 +2086,43 @@
         [:div.sentence-placeholder
          [:span.placeholder-text "Start by adding assertions to build your sentence..."]])
 
-      ;; Requires section (obligation) - context-aware for purchases vs sales
-      (when (contains? selected :requires)
-        [render-requires-section (:requires selected) counterparty-name is-purchase?])
-
-      ;; Expects section (confidence) - context-aware for sales vs prepaid expenses
-      (when (contains? selected :expects)
-        [render-expects-section (:expects selected) counterparty-name
-         customer-profiles vendor-profiles is-prepaid?
-         ;; Goods came in: this expectation is about them.
-         (= "physical-unit" (get-in selected [:receives :unit]))])
-
-      ;; A transformation: what was used up, and what was made
-      (when (contains? selected :consumes)
-        [render-transformation-section :consumes "This uses up:"])
-
-      (when (contains? selected :creates)
-        [render-transformation-section :creates "This makes:"])
-
-      ;; What this acquisition makes possible
-      (when (contains? selected :allows)
-        [render-allows-section (:allows selected)])
-
-      ;; What made this event possible
-      (when (contains? selected :is-allowed-by)
-        [render-is-allowed-by-section (:is-allowed-by selected)])
-
-      ;; And the law that compelled it, or protects what it made
-      (when (contains? selected :is-required-by)
-        [render-legal-framework-section :is-required-by (:is-required-by selected)])
-
-      (when (contains? selected :is-protected-by)
-        [render-legal-framework-section :is-protected-by (:is-protected-by selected)])
-
-      ;; Reports section (recognition)
-      (when (contains? selected :fulfills)
-        [render-fulfills-section (:fulfills selected)])
-
-      (when (contains? selected :reports)
-        [render-reports-section (:reports selected)])]
+      ;; The panes under the sentence -- what this obliges, what the
+      ;; business expects, what it makes possible -- in the order the
+      ;; student added them. The sentence itself keeps one fixed shape;
+      ;; the panes are where a new one used to land above an old one and
+      ;; had to be hunted for. Anything set without being added (a worked
+      ;; example, a restored round) falls back to the fixed order.
+      (let [sections
+            {:requires        [render-requires-section (:requires selected) counterparty-name is-purchase?]
+             :expects         [render-expects-section (:expects selected) counterparty-name
+                               customer-profiles vendor-profiles is-prepaid?
+                               ;; Goods came in: this expectation is about them.
+                               (= "physical-unit" (get-in selected [:receives :unit]))]
+             :consumes        [render-transformation-section :consumes "This uses up:"]
+             :creates         [render-transformation-section :creates "This makes:"]
+             :allows          [render-allows-section (:allows selected)]
+             :is-allowed-by   [render-is-allowed-by-section (:is-allowed-by selected)]
+             :is-required-by  [render-legal-framework-section :is-required-by (:is-required-by selected)]
+             :is-protected-by [render-legal-framework-section :is-protected-by (:is-protected-by selected)]
+             :fulfills        [render-fulfills-section (:fulfills selected)]
+             :reports         [render-reports-section (:reports selected)]}
+            fixed [:requires :expects :consumes :creates :allows :is-allowed-by
+                   :is-required-by :is-protected-by :fulfills :reports]
+            added (filterv (set (keys sections)) (state/selection-order))
+            shown (concat added (remove (set added) fixed))]
+        (doall
+          (for [code shown
+                :when (contains? selected code)]
+            (with-meta (get sections code) {:key (name code)}))))]
 
      ;; Add assertion menu
-     [add-assertion-menu selected available]]))
+     [add-assertion-menu selected available]
+
+     ;; The sentence's second act. A correct sale has recognized its
+     ;; revenue; costing what went out is the student's next action, so
+     ;; it belongs here, under the sentence, and not among the results.
+     (when (= :correct (keyword (:status (state/feedback))))
+       [costing-step])]))
 
 ;; ==================== Assertion Linkage Display ====================
 
@@ -2161,7 +2158,10 @@
    on those lines, which would otherwise repeat the panel's own text
    twice, a centimetre below it."
   [& _]
-  (let [expanded (r/atom nil)]
+  (let [expanded (r/atom nil)
+        ;; The provenance column and the context line: the densest text
+        ;; on the screen, and read by the student who asks for it.
+        show-why? (r/atom false)]
     (fn [& [{:keys [costing provisional?]}]]
       (when-let [d (state/derived-je)]
         (let [{:keys [lines placeholders context not-reflected totals unsupported]} d
@@ -2189,7 +2189,12 @@
             ;; that is now simply how the panel behaves -- and being a
             ;; toggle nobody found, it mostly did not happen at all.
             (when provisional?
-              [:span.dj-live "updates as you build — nothing is recorded until you submit"])]
+              [:span.dj-live "updates as you build — nothing is recorded until you submit"])
+            (when (seq lines)
+              [:button.dj-why-btn
+               {:on-click #(swap! show-why? not)
+                :title "Show which assertions produced each line"}
+               (if @show-why? "Hide the reasons" "Why these accounts?")])]
 
            (if (and (empty? lines) (empty? placeholders))
              [:p.dj-empty "No journal-entry lines yet -- nothing in the rulebook matches these assertions."]
@@ -2239,11 +2244,12 @@
                        ;; With the parameters that made each assertion
                        ;; apply, so this column says the same thing as
                        ;; the entry above it rather than an abbreviation.
-                       [:td.dj-from "← "
-                        (clojure.string/join
-                          " + "
-                          (for [code (:provenance line)]
-                            (format-provenance-code code (get (:assertions line) (keyword code)))))]]
+                       (when @show-why?
+                         [:td.dj-from "← "
+                          (clojure.string/join
+                            " + "
+                            (for [code (:provenance line)]
+                              (format-provenance-code code (get (:assertions line) (keyword code)))))])]
                       ;; A line the assertions do not price says so on
                       ;; the face of the entry, not in a tooltip. The
                       ;; cost of goods sold is the case that matters:
@@ -2370,7 +2376,7 @@
                        " vs credits " (format-currency credits)
                        " -- not balanced yet"))]))
 
-           (when (seq context)
+           (when (and @show-why? (seq context))
              [:p.dj-context
               "Context: "
               (clojure.string/join "; "
@@ -2746,6 +2752,33 @@
                 :indeterminate "Cannot classify"
                 (str "Status: " (:status feedback)))]]
 
+        ;; The outcome and the way on, together and first: the entry
+        ;; below can run long, and the exit should not be under it.
+        (when (state/drill-active?)
+          [drill-stuck-nudge])
+
+        ;; A sale whose cost is not yet matched is not a finished
+        ;; entry, so there is nowhere to go on to. Holding the advance
+        ;; here rather than disabling a button keeps the reason visible:
+        ;; the work left is up in the costing step.
+        (if (and (= :correct (keyword (:status feedback)))
+                 (some :needs-lot? (:lines (state/derived-je))))
+          [:p.actions-blocked
+           "This entry is not finished: name the batch the goods came out of, under your sentence."]
+          [:div.actions
+           (cond
+             (state/drill-active?)
+             [drill-next-controls]
+             (state/retention-active?)
+             [retention-next-controls]
+             :else
+             [:button.primary
+              {:on-click #(do
+                            (api/fetch-problem! (state/current-level))
+                            (state/clear-feedback!)
+                            (when is-construct? (state/clear-je-fields!)))}
+              "Next Problem"])])
+
         ;; After a miss, the correct entry -- once, priced. The student's
         ;; own entry is not drawn here: the derived panel below is the
         ;; authority on it and carries the rule behind each line. This
@@ -2807,43 +2840,12 @@
                 [:li hint])]]))
 
         ;; Dual fluency: the entry derived from the student's own
-        ;; assertions, rule by rule, with explore mode.
-        ;;
-        ;; A correct sale is not finished until its cost is matched
-        ;; against it, and the question goes INSIDE the entry: after the
-        ;; revenue lines, which balance on their own, and before the
-        ;; cost lines, which are what it is about. The step appears only
-        ;; once the assertions are right, because it is revenue
-        ;; recognition that licenses it.
-        [derived-je-panel
-         (when (and (= :correct (keyword (:status feedback)))
-                    (some :needs-lot? (:lines (state/derived-je))))
-           {:costing [costing-step]})]
+        ;; assertions, rule by rule. A correct sale's cost lines stay
+        ;; unpriced here until the costing step, under the sentence, is
+        ;; answered; then the entry settles into one priced block.
+        [derived-je-panel]
 
-        (when (state/drill-active?)
-          [drill-stuck-nudge])
-
-        ;; A sale whose cost is not yet matched is not a finished
-        ;; entry, so there is nowhere to go on to. Holding the advance
-        ;; here rather than disabling a button keeps the reason visible:
-        ;; the work left is up in the costing step.
-        (if (and (= :correct (keyword (:status feedback)))
-                 (some :needs-lot? (:lines (state/derived-je))))
-          [:p.actions-blocked
-           "This entry is not finished: name the batch the goods came out of, above."]
-          [:div.actions
-           (cond
-             (state/drill-active?)
-             [drill-next-controls]
-             (state/retention-active?)
-             [retention-next-controls]
-             :else
-             [:button.primary
-              {:on-click #(do
-                            (api/fetch-problem! (state/current-level))
-                            (state/clear-feedback!)
-                            (when is-construct? (state/clear-je-fields!)))}
-              "Next Problem"])])]
+]
 
        :else
        [:div.instructions

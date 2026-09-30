@@ -1638,7 +1638,7 @@
     [:div.reports-section
      [sentence-section :recognition "Recognition:"
       [:div.reports-content
-       [:span "SP reports "]
+       [:span "The business reports "]
        [inline-dropdown :reports :category category-options (:category params) "type"]
        [:span " calculated by "]
        [inline-dropdown :reports :basis basis-options selected-basis "method"]

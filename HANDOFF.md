@@ -7,10 +7,51 @@ sections follow, newest first.
 
 ## Start here (next session)
 
-**Next: Matt and Claude go through the app together in the browser, as a
-student would, from the first lesson to the capstone.** Everything below
-has been exercised piecewise — in a browser from the console, and on the
-server — but never in one continuous pass as a student.
+**The walkthrough is done (2026-09-30).** Matt and Claude went through
+every lesson in the pilot's order as a student — 0, 1, 2, 4, 5, 9, 6, 7,
+8 — each tutorial, quiz, practice round, check-in and look-back, then
+the capstone's own year to "Course complete" (account
+`walk-0930@test.com`, which reached "All lessons complete"). Thirty-odd
+commits came out of it, `31ba4db..d45fc6c`; `git log` reads as the list.
+The ones that changed how the app behaves, not just what it says:
+
+- **Silent failures are said out loud.** A failed request puts a bar at
+  the top ("Something went wrong talking to the server, and the screen
+  may be behind") instead of leaving the entry stale. It caught two
+  server faults during the walkthrough that had been invisible: the
+  derive route's telemetry choking on a two-input production, and the
+  capstone's cash-revenue report adding quantities stored as text.
+- **Kinds unlock by lesson**, from one table (`unit-kind-level`):
+  intellectual property and labour at Level 2, ownership units at 6.
+  The production words are hidden until their lesson (`held-codes`).
+- **Panes appear in the order the student adds them**; the batch step
+  is a real radio group under the sentence, and the verdict sits above
+  the entry.
+- **An accrual names who is owed** (`requires` with a party: employees,
+  the lender) and that names the accounts — Wages Payable, Interest
+  Payable. The tutorials say so.
+- **The Reports pane carries the amount**, and offers Distribution /
+  Declared so a dividend can be declared. The party list offers a
+  template's literal party ("Shareholders").
+- Due dates are computed from the problem, in days or months. A design
+  made in-house can be answered (labour, the designer, an IP creation).
+- Every served pattern has a note; SP is no longer in server text.
+
+**Next:** decide the open questions below, then the pilot itself.
+
+### Open after the walkthrough (for Matt)
+
+- A stock issue derives `CR Owner's Capital`, not Common Stock: nothing
+  in the assertions separates a corporation's shares from a
+  proprietor's interest. The check-in table promises Common Stock. Which
+  assertion should carry the difference?
+- Interest *expense* accrues with a `requires` (to the lender) and
+  interest *revenue* with none — the classification prohibits it. The
+  mirror would be `requires: the borrower is to provide`. Asymmetric on
+  purpose, or owed?
+- Level 5's pattern notes are one-liners next to the fuller Level 4 ones.
+- SP remains the tutorials' worked example; practice belongs to other
+  companies. Kept deliberately for now.
 
 ### Where the work turned (2026-09-28 → 09-30)
 
@@ -98,21 +139,21 @@ Conformance 40 match / 1 partial / 8 gap / 0 conflict (the gaps are
 labour and Level 4 intangibles); both balance records agree; served
 problems 37, 0 issues; engine 56 tests, 0 failures.
 
-### For the walkthrough — what to look at
+### The walkthrough's checklist (all seen 2026-09-30)
 
-- [ ] Login lands in the lessons; the progress bar; finished lessons
+- [x] Login lands in the lessons; the progress bar; finished lessons
       reopen for review.
-- [ ] Level 0: the new selling section; a cash sale and its batch step.
-- [ ] Purpose prefill on a second purchase of the same item.
-- [ ] The claim prompt on a credit sale, and that it fades.
-- [ ] Level 5: earning an advance, a collection, a supplier payment —
+- [x] Level 0: the new selling section; a cash sale and its batch step.
+- [x] Purpose prefill on a second purchase of the same item.
+- [x] The claim prompt on a credit sale, and that it fades.
+- [x] Level 5: earning an advance, a collection, a supplier payment —
       the promise list, and what the entry says if `fulfills` is left out.
-- [ ] Level 6–7: declaring and paying a dividend; repaying a note.
-- [ ] A check-in with its look-back round.
-- [ ] Reporting: the four tasks, a deliberately wrong part, both margins.
-- [ ] The capstone: record the year with a mistake or two, review,
+- [x] Level 6–7: declaring and paying a dividend; repaying a note.
+- [x] A check-in with its look-back round.
+- [x] Reporting: the four tasks, a deliberately wrong part, both margins.
+- [x] The capstone: record the year with a mistake or two, review,
       revise, report — and "Course complete".
-- [ ] Wording and layout throughout: anything that reads oddly.
+- [x] Wording and layout throughout: anything that reads oddly.
 
 ### Open, not blocking
 
@@ -133,6 +174,16 @@ problems 37, 0 issues; engine 56 tests, 0 failures.
   expect screenshots of a hidden tab to time out.
 - Keep JavaScript results short and free of `=`, `?`, `&` — longer page
   text was withheld by the tool's filter.
+- In a hidden tab `setTimeout` is throttled and the tool gives up at
+  45 s: keep each call to two round-trips or fewer, and drive through
+  state rather than the DOM — `assertive_app.state.toggle_assertion_BANG_`,
+  `update_assertion_parameter_BANG_`, `assertive_app.api.derive_je_BANG_`,
+  `submit_answer_BANG_`, `capstone_record_BANG_`; read the grade from
+  `state.feedback()` and the entry from `state.derived_je()`.
+- The browser caches `cljs-runtime` modules across shadow rebuilds:
+  `fetch(url, {cache: 'reload'})` then `location.reload()`.
+- Item ids are hyphenated as the menu writes them (`t-shirt-printer`);
+  a hand-typed `tshirt-printer` is a wrong answer, not a bug.
 
 ## 2026-09-20
 

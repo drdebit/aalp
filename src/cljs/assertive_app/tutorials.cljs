@@ -116,7 +116,7 @@ receives: 1 latte (a thing coming in)
 
 Every cash purchase you record in this lesson uses these four. When in doubt, ask the friend-telling-the-story questions: when? who? what went out? what came in?
 
-One exception, and it matters: something bought to *serve a purpose* needs a fifth assertion to indicate what it is for. That assertion is **allows**. For example, a t-shirt printer turns blank t-shirts into printed ones. Without the **allows** assertion, the record cannot tell if the printer is equipment or stock to resell. Shirts and ink are used. The printer produces. The **allows** assertion indicates that capacity."}
+Those four describe the exchange itself. A business usually wants to record more: what the thing is *for*, and what the transaction implies about the *future*. Two more assertions carry that. **allows** states a purpose. A t-shirt printer turns blank shirts into printed ones, and without **allows** the record cannot tell whether the printer is equipment or stock to resell. **expects** states an implication for the future, and it can carry a purpose too: you bought these shirts expecting to print on them. There is no limit on how much an event may assert. A simple transaction just needs fewer assertions than a complicated one."}
 
      {:heading "Two Kinds of Stuff: Money and Things"
       :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. In this lesson there are only two kinds:
@@ -167,7 +167,7 @@ Here is exactly what you'd do, click by click:
 
 **Step 1.** Read the sentence slowly. Find the four facts: the date (January 8), the other party (TextileDirect), what went out ($150), what came in (50 blank t-shirts).
 
-**Step 2.** **Has Date** is usually already filled in by the system with the current date. Just check that it matches.
+**Step 2.** **Has Date** is already filled in with the date of the transaction. Check that it matches the date in the problem — January 8 here — not today's date.
 
 **Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.
 
@@ -228,7 +228,7 @@ receives: $250 (monetary-unit)
 
 No **expects** here: what came in is money, and money does not need a purpose to be money.
 
-**Revenue is not an assertion.** There is nothing to select that says *this is revenue*. Revenue emerges from the pattern: goods provided to a customer, in exchange for money. The assertions record what happened; the account is what that pattern means.
+**Revenue is not an assertion.** There is nothing to select that says *this is revenue*. The assertions record what happened: goods went to a customer, money came in. Turning that pattern into an account is the work of a set of rules, and the rules this platform applies are GAAP's, the ones taught in ACCT 2101. Under those rules this pattern is revenue, earned when the goods are provided. You supply the record; the rules read it. A different set of rules could read the same record differently, which is why the two are kept apart.
 
 **A sale is two entries.** The first records what the sale earned:
 

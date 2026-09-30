@@ -1696,6 +1696,12 @@
    (auto-populate-assertion! code)
    (focus-new-assertion-input!)))
 
+(def held-codes
+  "The old per-kind production words. Their templates are held back
+   from the drill (labour costed into product is 2102's), so neither the
+   menu, the orientation nor the check-in shows them."
+  #{:consumes-inventory :consumes-supplies :consumes-labor :creates-finished-goods})
+
 (def unit-kind-level
   "The lesson at which each kind of thing first appears in a served
    problem, read off transaction-templates' :required-assertions (a
@@ -1722,7 +1728,6 @@
             ;; The old per-kind production words belong to templates the
             ;; drill holds back (labour costed into product is 2102's);
             ;; the orientation hides them and so does the menu.
-            held-codes #{:consumes-inventory :consumes-supplies :consumes-labor :creates-finished-goods}
             all-assertions (for [[_domain assertions] available-assertions
                                  assertion assertions
                                  :when (and (not (contains? selected-assertions (keyword (:code assertion))))
@@ -3582,8 +3587,7 @@
                      ;; "no new words" is only trustworthy from the
                      ;; table above.
                      (mapcat val (state/available-assertions)))
-                 (remove #(#{:consumes-inventory :consumes-supplies :consumes-labor
-                             :creates-finished-goods} (keyword (:code %)))))
+                 (remove #(held-codes (keyword (:code %)))))
         new? (fn [a] (= level (:level a 0)))
         fresh (filter new? all)
         ;; Words from later levels are not "already yours".
@@ -4702,7 +4706,9 @@
        [:h2 (str (lesson-title level) " — done")]
        (when (:attempted drill)
          [:p.checkin-round (str "Practice round: " (:correct drill) " of " (:attempted drill) " right.")])
-       (let [words (filter #(= level (:level %)) (state/vocabulary))]
+       (let [words (->> (state/vocabulary)
+                        (filter #(= level (:level %)))
+                        (remove #(held-codes (keyword (:code %)))))]
          [:div.checkin-section
           [:h3 "What you can now say"]
           (if (seq words)

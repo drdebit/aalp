@@ -1786,7 +1786,7 @@
     :required-parameters {:provides {:unit "monetary-unit"}
                           :receives {:unit "physical-unit" :physical-item "t-shirt-printer"}}
     :prohibited #{}
-    :description "Equipment purchase with explicit capability recognition"
+    :description "Cash purchase of equipment, saying what it allows (provide cash, receive a machine that makes production possible)"
     :journal-entry [{:debit "Equipment" :credit "Cash"}]
     :note "The business provided cash and received a machine, and said what it allows: a transformation it makes possible without being used up by it. That capacity is what makes the purchase Equipment, an asset held for use, and it is what later production events will point back to with is-allowed-by."
     :examples ["SP purchases t-shirt printer that allows future shirt printing"]

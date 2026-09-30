@@ -811,7 +811,7 @@
        :else
        [:span.unit-label (case (:unit params)
                            "service-unit" "a service"
-                           "effort-unit" "labour"
+                           "effort-unit" "hours of labour"
                            "time-unit" "time"
                            "ownership-units" "ownership units"
                            "cash")])
@@ -1698,6 +1698,7 @@
    "physical-unit" 0
    "service-unit" 0
    "intellectual-property" 2
+   "effort-unit" 2
    "ownership-units" 6})
 
 (defn- add-assertion-menu
@@ -1768,6 +1769,17 @@
                                (reset! sub-menu nil)
                                (reset! show-menu? false))}
                   "a service"])
+               ;; Somebody's hours, paid for: what a design made in-house
+               ;; costs. Counted, unlike a service, because the narrative
+               ;; says how many.
+               (when (and (= "receives" (name assertion-code))
+                          (kind-open? "effort-unit"))
+                 [:button.menu-item
+                  {:on-click #(do
+                               (add-assertion! assertion-code "effort-unit")
+                               (reset! sub-menu nil)
+                               (reset! show-menu? false))}
+                  "labour"])
                ;; A right with no physical substance. Its own
                ;; denomination, because that absence is the whole of what
                ;; makes an asset intangible rather than equipment.

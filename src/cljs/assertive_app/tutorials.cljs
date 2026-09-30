@@ -1096,7 +1096,7 @@ Each report is checked **part by part** — which events, whose, what condition,
       :assertions ["has-date: April 2"
                    "has-counterparty: Pat (owner)"
                    "receives: $20,000 (monetary-unit)"
-                   "provides: ownership-interest"]
+                   "provides: ownership units"]
       :entry ["DR Cash $20,000" "CR Owner's Capital $20,000"]}
      :pair
      {:same "SP **receives** $20,000 from a counterparty."
@@ -1126,7 +1126,7 @@ These transactions affect **equity**, not revenue or expense."}
 **Example: Pat invests $20,000 for 20% ownership**
 - has-counterparty: Pat (owner)
 - receives: $20,000 (monetary-unit)
-- provides: ownership-interest
+- provides: ownership units
 
 → **Journal Entry:** DR Cash $20,000, CR Owner's Capital $20,000
 
@@ -1135,10 +1135,12 @@ Note: This isn't revenue! The company isn't earning money — it's receiving inv
      {:heading "Dividends and Withdrawals"
       :content "**Dividends** return profits to shareholders (two-step process):
 
-**Declaration:** reports distribution, requires future cash payment
-→ DR Retained Earnings, CR Dividends Payable
+**Declaration:** reports a distribution, requires a future cash payment to the shareholders
+→ DR Dividends, CR Dividends Payable
 
-**Payment:** provides cash, has-counterparty (shareholders)
+Dividends is a temporary account, like an expense: it is closed to Retained Earnings at year end. Nothing has been paid yet — the declaration is a promise, and the payable is what the promise puts on the books.
+
+**Payment:** provides cash, has-counterparty (the shareholders), fulfills the declaration — the promise this payment keeps
 → DR Dividends Payable, CR Cash
 
 **Owner Withdrawals** (sole proprietorships):
@@ -1154,7 +1156,7 @@ Note: Neither dividends nor withdrawals are expenses — they're returns of capi
 |-------------|-----------------|------------------|
 | Investment | + Cash | + Capital |
 | Withdrawal | - Cash | - Drawing |
-| Dividend Declaration | No change | - Retained Earnings, + Payable |
+| Dividend Declaration | No change | - Dividends (closed to Retained Earnings at year end), + Payable |
 | Dividend Payment | - Cash | - Payable |
 
 Equity transactions use the same assertion framework — provides, receives, requires, reports — but the accounts affected are equity accounts."}]
@@ -1174,7 +1176,7 @@ Equity transactions use the same assertion framework — provides, receives, req
 
      {:id :l6-q3
       :question "In the two-step dividend process, what happens at declaration?"
-      :choices ["Cash is paid to shareholders" "Retained Earnings decreases and a payable is created" "Revenue is recorded" "Equipment is distributed to owners"]
+      :choices ["Cash is paid to shareholders" "Dividends is debited and a payable is created — Retained Earnings falls only when Dividends is closed at year end" "Revenue is recorded" "Equipment is distributed to owners"]
       :correct 1
       :explanation "At declaration, the board commits to paying dividends: **Retained Earnings decreases** (debit) and **Dividends Payable is created** (credit). Cash doesn't move until the payment step."}]}
 

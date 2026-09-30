@@ -5220,11 +5220,21 @@
        (nil? (api/next-lesson)) [lessons-complete-view]
        :else                   [tutorial-gate level])]))
 
+(defn- server-error-bar
+  "A failed request the student could not act on, said out loud."
+  []
+  (when-let [msg (state/server-error)]
+    [:div.server-error-bar
+     [:span "Something went wrong talking to the server, and the screen may be behind: " msg]
+     [:button.server-error-dismiss {:on-click #(state/clear-server-error!) :title "Dismiss"} "×"]]))
+
 (defn main-app []
   (let [loading? (:loading? @state/app-state)
         logged-in? (state/logged-in?)
         mode (state/app-mode)]
-    (cond
+    [:<>
+     [server-error-bar]
+     (cond
       ;; Show loading spinner during session restore
       (and loading? (not logged-in?))
       [:div.loading-container
@@ -5253,4 +5263,4 @@
       :else
       [:div.loading-container
        [:div.loading-spinner]
-       [:p "Loading your business year..."]])))
+       [:p "Loading your business year..."]])]))

@@ -46,10 +46,25 @@
     (println (or log-label message) error)))
 
 (defn silent-error-handler
-  "Error handler that only logs to console (no user-facing error)."
+  "The handler for requests whose failure the student cannot act on.
+
+   Not silent any more. A failed derivation used to leave the previous
+   entry on screen with no sign anything had happened, and a rejected
+   tutorial completion sent a student back to the same lesson on every
+   login; both were 400s and 500s that this handler swallowed. Now the
+   error goes to the console with its label, and a notice appears at
+   the top of the page until the next request of any kind succeeds or
+   the student dismisses it."
   [label]
   (fn [error]
-    (println label error)))
+    (let [status (:status error)
+          body   (:response error)
+          detail (or (:error body) (:message body) (:status-text error) "")]
+      (js/console.error label (clj->js error))
+      (state/set-server-error!
+        (str label " "
+             (when status (str "(" status ") "))
+             (if (string? detail) detail (pr-str detail)))))))
 
 ;; ==================== Auth Helpers ====================
 
@@ -949,6 +964,7 @@
      :keywords? true
      :handler (fn [response]
                 (when (= n @derive-seq)
+                  (state/clear-server-error!)
                   (state/set-derived-je! response)))
      :error-handler (silent-error-handler "JE derivation error:")})))
 

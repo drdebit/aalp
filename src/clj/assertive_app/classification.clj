@@ -3704,11 +3704,29 @@ The printed t-shirts are now finished goods ready for sale."
     (str (clojure.string/upper-case (subs s 0 1)) (subs s 1))
     s))
 
+(def ^:private counted-nouns
+  "Plural nouns a template counts. A count of one reads singular: a
+   template that says {ink-consumed} ink cartridges is right for 2 and
+   wrong for 1, and there is no third form."
+  ["blank t-shirts" "printed t-shirts" "t-shirts" "ink cartridges" "cartridges"
+   "shares" "hours" "days" "months" "years" "weeks"])
+
+(defn- singular-ones
+  "\"1 ink cartridges\" reads \"1 ink cartridge\"; \"1 blank t-shirts\" reads
+   \"1 blank t-shirt\". Only the nouns the templates count, so nothing
+   else in a sentence is touched."
+  [s]
+  (reduce (fn [s noun]
+            (clojure.string/replace s (re-pattern (str "\\b1 " noun "\\b"))
+                                    (str "1 " (subs noun 0 (dec (count noun))))))
+          s counted-nouns))
+
 (defn apply-template
   "Replace {variables} in template string with actual values.
    Dates in ISO format are converted to readable format."
   [template vars]
   (capitalize-first
+   (singular-ones
     (reduce (fn [s [k v]]
               ;; Any date reads as a date. Narratives that point back into
               ;; the record name the day a thing was bought or paid for,
@@ -3721,7 +3739,7 @@ The printed t-shirts are now finished goods ready for sale."
                 (clojure.string/replace s (str "{" (name k) "}") (str display-value))))
             template
             ;; The Guided Year and the simulation are SP's own books.
-            (merge {:company "SP"} vars))))
+            (merge {:company "SP"} vars)))))
 
 (defn resolve-assertion-values
   "Resolve variable references in required-assertions.

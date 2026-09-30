@@ -74,7 +74,9 @@
 
 ;; State mutators
 (defn set-current-problem! [problem]
+  ;; A new problem arrived: whatever failed before is behind us.
   (swap! app-state assoc :current-problem problem)
+  (when problem (swap! app-state dissoc :server-error))
   ;; The drill remembers which patterns this round has served.
   (when (and problem (get-in @app-state [:drill :active?]))
     (swap! app-state update-in [:drill :served] (fnil conj []) (:template problem))))
@@ -322,6 +324,17 @@
 
 (defn login-error []
   (:login-error @app-state))
+
+;; A request the student could not act on has failed. Shown until the
+;; next request succeeds or the student dismisses it -- never silent.
+(defn server-error []
+  (:server-error @app-state))
+
+(defn set-server-error! [message]
+  (swap! app-state assoc :server-error message))
+
+(defn clear-server-error! []
+  (swap! app-state dissoc :server-error))
 
 (defn progress []
   (:progress @app-state))

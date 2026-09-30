@@ -1394,7 +1394,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 **Adjusting Entries** — the end of a period:
 - No counterparty
 - Use reports for calculated recognitions
-- May use consumes (value used up), requires (accruals), fulfills (an advance now earned)
+- May use requires (an accrual: what is owed, and to whom), fulfills (an advance now earned)
 - reports is needed because there's no exchange pattern to derive from"}
 
      {:heading "From Assertions to Journal Entries"

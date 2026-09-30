@@ -907,9 +907,18 @@
 ;; Derive the journal entry the student's own assertions produce --
 ;; faithful, partial where underspecified, silent about correctness.
 
+(defonce ^:private derive-seq
+  ;; The number of the latest derivation asked for. Responses arrive in
+  ;; whatever order the server finishes them, and a slow one for an
+  ;; earlier state of the sentence used to overwrite the answer for the
+  ;; current state -- an entry that stayed unpriced after the amount was
+  ;; typed, until something else changed. Only the newest applies.
+  (atom 0))
+
 (defn derive-je!
   "Fetch the derived JE for the current selections."
   []
+  (let [n (swap! derive-seq inc)]
   (POST (str api-base "/derive-je")
     {:params {:selected-assertions (state/selected-assertions)
               ;; No :variables. Their only use in the derivation is the
@@ -939,8 +948,9 @@
      :response-format :json
      :keywords? true
      :handler (fn [response]
-                (state/set-derived-je! response))
-     :error-handler (silent-error-handler "JE derivation error:")}))
+                (when (= n @derive-seq)
+                  (state/set-derived-je! response)))
+     :error-handler (silent-error-handler "JE derivation error:")})))
 
 (defn show-worked-example!
   "ALEKS-style worked example for the current drill problem: fill the

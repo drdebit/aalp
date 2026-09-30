@@ -839,8 +839,13 @@
         events     (concat (:prior-events problem)
                            (state/walkthrough-events)
                            (map :assertions (state/ledger)))
-        from-chain (map #(get-in % [:has-counterparty :name]) events)]
-    (->> (concat from-vars from-chain [current])
+        from-chain (map #(get-in % [:has-counterparty :name]) events)
+        ;; A template may name the other party outright -- a dividend is
+        ;; paid to \"Shareholders\" -- with no variable behind it. The
+        ;; name is not what is assessed, so offering it costs nothing
+        ;; and leaving it out made the problem unanswerable.
+        from-key   [(get-in problem [:correct-assertions :has-counterparty :name])]]
+    (->> (concat from-vars from-chain from-key [current])
          (filter string?)
          (remove str/blank?)
          distinct

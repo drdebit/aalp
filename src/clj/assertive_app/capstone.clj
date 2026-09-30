@@ -154,8 +154,28 @@
                     :at at
                     :corrected? (> (count sorted) 1)}]))))
 
+(defn- numbered
+  "An entry's figures as numbers. The sentence's inputs put a quantity in
+   as the text typed, and the correct books hold numbers, so a report
+   that adds the two up -- money in, over the student's books -- fell
+   over on the first one. The engine reads what is stored, so this is
+   where the text becomes a number."
+  [assertions]
+  (into {}
+        (for [[k v] assertions]
+          [k (if (map? v)
+               (into {}
+                     (for [[pk pv] v]
+                       [pk (if (and (#{:quantity :amount :confidence} pk) (string? pv))
+                             (let [n (try (Double/parseDouble pv) (catch Exception _ nil))]
+                               (cond (nil? n) pv
+                                     (== n (Math/rint n)) (long n)
+                                     :else n))
+                             pv)]))
+               v)])))
+
 (defn- as-event [tx-id assertions]
-  (assoc assertions :has-identifier tx-id))
+  (assoc (numbered assertions) :has-identifier tx-id))
 
 (defn books
   "The student's books: the opening, then each entry they recorded, in the

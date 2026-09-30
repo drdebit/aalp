@@ -118,11 +118,15 @@
   (POST "/api/tutorial/complete" {body :body :as request}
     (if-let [user (:user request)]
       (let [level (:level body)]
-        (if (and (integer? level) (<= 0 level 7))
+        ;; Every lesson on the path, Reporting (9) and the Capstone (8)
+        ;; included. Capped at 7 until 2026-09-30, which left the last two
+        ;; lessons never marked complete: a student who finished Reporting
+        ;; was put back at it on every login.
+        (if (and (integer? level) (<= 0 level 9))
           (do
             (progress/mark-tutorial-completed! (:db/id user) level)
             (response/response {:success true :level level}))
-          {:status 400 :body {:error "Invalid level (must be 0-7)"}}))
+          {:status 400 :body {:error "Invalid level (must be 0-9)"}}))
       {:status 401 :body {:error "Authentication required"}}))
 
     ;; ==================== Assertions & Classification ====================

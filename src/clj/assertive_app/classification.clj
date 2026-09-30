@@ -3921,7 +3921,11 @@ The printed t-shirts are now finished goods ready for sale."
   (let [shirt-cost (rand-nth [4 5])
         shirts     (rand-nth [60 80 100 120])
         ink        (rand-nth [6 8 10])
-        printed    (rand-nth [20 30 40 50])
+        ;; Two printings, and at least twenty blank shirts left after
+        ;; them: a production problem is drawn against this record, and
+        ;; one was served as "uses 0 blank t-shirts" (2026-09-30) when a
+        ;; sixty-shirt lot had all gone through the press.
+        printed    (rand-nth (filterv #(<= (+ % 15 20) shirts) [20 30 40 50]))
         ;; The press costs a multiple of 360, so that a three-, five- or
         ;; ten-year life all divide into whole dollars a month: the
         ;; depreciation a student computes is then exactly the figure the
@@ -3945,7 +3949,7 @@ The printed t-shirts are now finished goods ready for sale."
         ;; shirt out of this batch is worth more than one out of the
         ;; first. Bounded by the blanks actually on hand -- the record
         ;; cannot print shirts it never bought.
-        printed2   (min (rand-nth [15 20 25]) (- shirts printed))
+        printed2   (min (rand-nth [15 20 25]) (- shirts printed 20))
         ;; Four customers who took shirts and have not paid, at different
         ;; confidences and -- as importantly -- at different ages. An
         ;; allowance is a sum over what is owed, and a sum of one teaches

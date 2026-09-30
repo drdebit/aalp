@@ -806,7 +806,13 @@
         ;; they already knew) or a few deliberate ones.
         (telemetry/record! (:db/id user) :derive (:problem-id body)
                            {:codes (vec (sort (map name (keys sel))))
-                            :params (into {} (for [[k v] sel] [k (dissoc v :confidence)]))
+                            ;; A flow assertion may hold several flows -- a
+                            ;; production consuming shirts AND ink -- as a
+                            ;; vector, which cannot be dissoc'd. This line
+                            ;; threw on every two-input production, and the
+                            ;; client's silent error handler left the
+                            ;; previous entry on screen.
+                            :params (into {} (for [[k v] sel] [k (if (map? v) (dissoc v :confidence) v)]))
                             :confidence (get-in sel [:expects :confidence])
                             :level (:level body)
                             :template (:template-key body)})

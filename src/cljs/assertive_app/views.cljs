@@ -4731,8 +4731,10 @@
        (when-let [{:keys [a b point]} (:pair (tutorials/orientation-for level))]
          [:div.checkin-section
           [:h3 "The one to remember"]
-          [:p (:when a) " → " [:strong (:becomes a)]]
-          [:p (:when b) " → " [:strong (:becomes b)]]
+          ;; Written for the orientation, which renders markdown; plain
+          ;; text here, so the emphasis marks go.
+          [:p (str/replace (str (:when a)) "**" "") " → " [:strong (:becomes a)]]
+          [:p (str/replace (str (:when b)) "**" "") " → " [:strong (:becomes b)]]
           [:p.checkin-point (str/replace (str point) "**" "")]])
        [:div.checkin-actions
         (if earlier?

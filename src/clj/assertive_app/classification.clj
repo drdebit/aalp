@@ -3127,6 +3127,7 @@
                 ;; Four entries, so the term does NOT pair with the three
                 ;; above and every service can run for any of them.
                 :months [3 6 12 12]
+                :due-date :calculated
                 ;; Confidence - student input, but vendors typically reliable (suggest high)
                 :confidence :student-input}
     ;; Vendor profiles - generally high reliability
@@ -3607,6 +3608,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :amount [5000 10000 20000 50000]
                 :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
                 :months [6 12 24 36]
+                :due-date :calculated
                 :rate [6 8 10 12]}}
 
    :repay-note-principal
@@ -3621,7 +3623,8 @@ The printed t-shirts are now finished goods ready for sale."
     :variables {:date ["2026-07-15" "2026-01-15" "2027-01-10" "2029-04-22"]
                 :amount [5000 10000 20000 50000]
                 :lender ["First National Bank" "City Credit Union" "Regional Bank" "SBA Lender"]
-                :months [6 12 24 36]}}
+                :months [6 12 24 36]
+                :due-date :calculated}}
 
    :pay-interest-on-note
    {:narrative-template "On {date}, {company} pays ${amount} interest to {lender} on its note payable. This payment covers the interest accrued during the past {period}."
@@ -3654,6 +3657,7 @@ The printed t-shirts are now finished goods ready for sale."
                 :amount [2000 5000 10000 25000]
                 :borrower ["Trusted Supplier" "Business Partner" "Customer Inc." "Affiliate Co."]
                 :months [3 6 12 24]
+                :due-date :calculated
                 :rate [6 8 10 12]
                 :confidence [80 85 90 95]}}
 
@@ -3779,8 +3783,14 @@ The printed t-shirts are now finished goods ready for sale."
   (reduce (fn [vars [k marker]]
             (case marker
               :calculated
+              ;; Days when the template counts in days, months when it
+              ;; counts in months (a prepaid's term, a note's), and thirty
+              ;; days when it says neither.
               (assoc vars k (if-let [d (:date vars)]
-                              (str (.plusDays (java.time.LocalDate/parse d) (long (or (:days vars) 30))))
+                              (let [d (java.time.LocalDate/parse d)]
+                                (str (cond (:days vars)   (.plusDays d (long (:days vars)))
+                                           (:months vars) (.plusMonths d (long (:months vars)))
+                                           :else          (.plusDays d 30))))
                               (:date vars)))
               :student-input
               (let [party (or (:customer vars) (:vendor vars))

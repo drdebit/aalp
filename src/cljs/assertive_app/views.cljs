@@ -484,15 +484,14 @@
           (state/update-assertion-parameter! :requires :action (if owed-to-us? "receives" "provides"))
           (when-not (get-in sel [:requires :unit])
             (state/update-assertion-parameter! :requires :unit unit))
-          ;; The day of the transaction, so the picker opens in the month
-          ;; the problem is about rather than the month the student is
-          ;; sitting in. Not an answer -- a promise due the day it was
-          ;; made is visibly not what the narrative says -- just the place
-          ;; to count forward from. No classification grades this figure,
-          ;; but the record reads it: it is where the term of a prepaid
-          ;; comes from.
+          ;; The due date the problem computed, when it has one: counting
+          ;; thirty or ninety days forward by hand teaches nothing about
+          ;; promises, and no classification grades the figure. The record
+          ;; does read it -- it is where the term of a prepaid comes from --
+          ;; so it should be right. Without one, the day of the transaction,
+          ;; so the picker at least opens in the right month.
           (when-not (get-in sel [:requires :due-date])
-            (when-let [d (:date vars)]
+            (when-let [d (or (:due-date vars) (:date vars))]
               (state/update-assertion-parameter! :requires :due-date d))))
 
         :expects

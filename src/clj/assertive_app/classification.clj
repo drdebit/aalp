@@ -4298,10 +4298,17 @@ The printed t-shirts are now finished goods ready for sale."
    closes a lesson -- read from the templates, so it cannot say a level
    teaches something its drill never serves."
   [level]
-  (vec (for [k (distinct (keep (fn [[_ t]]
-                                 (when (and (= level (:level t)) (not (:derivation-pending t)))
-                                   (:correct-classification t)))
-                               (sort-by key transaction-templates)))
+  (vec (for [k (distinct (mapcat (fn [[tk t]]
+                                   (when (and (= level (:level t)) (not (:derivation-pending t)))
+                                     ;; A reseller's problems carry the
+                                     ;; merchandise classification instead
+                                     ;; (generate-problem), so the level
+                                     ;; serves both variants and the
+                                     ;; summary should say so.
+                                     (cond-> [(:correct-classification t)]
+                                       (= tk :cash-inventory-purchase)   (conj :merchandise-purchase)
+                                       (= tk :credit-inventory-purchase) (conj :merchandise-purchase-on-credit))))
+                                 (sort-by key transaction-templates)))
              :let [c (get classifications k)
                    je (:journal-entry c)
                    je (cond (map? je) [je] (sequential? je) (filterv map? je) :else [])]]

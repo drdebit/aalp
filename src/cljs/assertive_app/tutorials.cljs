@@ -529,12 +529,12 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
                 "What came into being? — **creates**"
                 "What made it possible? — **is-allowed-by**, pointing back at the equipment that was bought to do this"]
      :example
-     {:narrative "On March 14, SP prints 10 custom t-shirts using the printer it bought earlier."
+     {:narrative "On March 14, SP prints 10 custom t-shirts using the printer it bought earlier. The blank shirts cost $3 each when they were bought."
       :assertions ["has-date: March 14"
                    "consumes: 10 blank t-shirts (raw materials)"
                    "creates: 10 printed t-shirts (finished goods)"
                    "is-allowed-by: the t-shirt printer"]
-      :entry ["DR Finished Goods Inventory" "CR Raw Materials Inventory"]}
+      :entry ["DR Finished Goods Inventory $30" "CR Raw Materials Inventory $30"]}
      :pair
      {:same "Ten blank t-shirts leave the shelf."
       :a {:when "Consumed, and printed shirts created — nobody else involved"

@@ -1198,6 +1198,22 @@
                                               ;; it, is not something a journal entry can
                                               ;; say -- the ownership schedule is computed
                                               ;; from the record instead.
+                                              ;; Money went out and the vendor is to
+                                              ;; deliver: the expectation is about them,
+                                              ;; and what it feeds is not an allowance.
+                                              (and (= :expects code)
+                                                   (= "receives" (get-in selections [:requires :action]))
+                                                   (not= "monetary-unit" (get-in selections [:requires :unit])))
+                                              "A probability is not a money amount, so nothing is posted here. `requires` does the work in this entry — the vendor's promise is what the business paid for, and it is what sits on the books as a prepaid asset. What this number does is later: as the term runs the asset is used up and expensed, and if the vendor fails to deliver the business will have recorded, in advance, how sure it was."
+
+                                              ;; A purpose, with a number on it: what
+                                              ;; the goods are for is what placed them,
+                                              ;; and the number says how firm the plan is.
+                                              (and (= :expects code)
+                                                   (nil? (:requires selections))
+                                                   (contains? #{"consumes" "provides"} (get-in selections [:expects :action])))
+                                              "A probability is not a money amount, so nothing is posted here. What this expectation says — what the goods are for — is what decided their account; the number beside it records how firm the plan is, and it stays in the record for comparison with what the business actually did."
+
                                               (claim? code)
                                               "Double-entry measures in money, and 200 units is a count rather than an amount — that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."
 

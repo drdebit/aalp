@@ -1807,7 +1807,7 @@
     ;; names it too.
     :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "The UCC provides the legal framework that makes commercial sales enforceable."
+    :note "A cash sale, read as before: goods went out to a customer and money came in, so revenue is recognized and the goods are costed against it. is-allowed-by names the Uniform Commercial Code, the law under which a sale of goods is one the courts will enforce. It changes nothing on the entry; it records what the sale rests on."
     :examples ["SP sells t-shirts under standard commercial law"
                "SP engages in commerce enabled by UCC Article 2"]
     :level 4}
@@ -1824,7 +1824,7 @@
     ;; An obligation still owed would be requires/provides, as
     ;; accrued-wages has.
     :journal-entry [{:debit "Wage Expense" :credit "Cash"}]
-    :note "Employment is both enabled by and subject to employment law (minimum wage, benefits, etc.)."
+    :note "The business paid cash and received hours of work, used up as they were given, so what it paid is Wage Expense. Two laws stand behind the event: employment law made the relationship possible, and the same law compels its terms, the minimum wage among them. Neither reaches the entry; both are what the business would point to if the arrangement were questioned."
     :examples ["SP hires employee subject to minimum wage requirements"
                "SP employs staff under labor law framework"]
     :level 4}
@@ -1862,7 +1862,7 @@
     :prohibited #{:receives}
     :description "Tax payment required by law"
     :journal-entry [{:debit "Tax Expense" :credit "Cash"}]
-    :note "Tax payments are mandated by federal and state tax codes."
+    :note "The business provided cash and nothing came back, and it said what compelled the payment: the tax code. Money that leaves under a rule, with no asset coming in, has bought only the right to keep operating this period, and that is gone when the period is. So it is an expense, and the rule that compelled it names it: Tax Expense."
     :examples ["SP files and pays quarterly estimated taxes"
                "SP remits sales tax as required by state law"]
     :level 4}
@@ -1874,7 +1874,7 @@
     :prohibited #{}
     :description "Payment for regulatory compliance"
     :journal-entry [{:debit "Compliance Expense" :credit "Cash"}]
-    :note "Many industries have specific regulations requiring fees, certifications, or compliance costs."
+    :note "The business provided cash and nothing came back, and it said what compelled the payment: a regulation the business must satisfy to trade. Like the tax, the money bought this period's permission and nothing the business can hold or sell, so it is an expense of the period, named by the rule that required it: Compliance Expense."
     :examples ["SP pays for required business license"
                "SP obtains industry-required certification"]
     :level 4}
@@ -1891,7 +1891,7 @@
     :description "Agreement protected by contract law"
     :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "Contract law enables parties to create legally binding agreements with enforceable terms."
+    :note "A credit sale, read as before: goods went out, the customer must pay by a date, and the business said how sure it is of collecting. is-protected-by names contract law. It changes nothing on the entry, because double-entry has no room for what stands behind a claim, but it is why the confidence is as high as it is: a customer the business could sue is a safer debtor than one it could not, and the record now says so beside the number."
     :examples ["SP enters sales contract with legal protections"
                "SP signs service agreement enforceable under contract law"]
     :level 4}
@@ -1903,7 +1903,7 @@
     :prohibited #{:receives}
     :description "Business entity formation under state law"
     :journal-entry [{:debit "Organization Costs" :credit "Cash"}]
-    :note "State business laws enable formation of LLCs, corporations, and other legal entities."
+    :note "The business provided cash and nothing came back, and it said what made the payment possible: state business law, under which the entity exists at all. Compare the tax: both are money out under a rule, but this one brought the company into being, and the company is still there next year. What lasts is carried, not expensed, as Organization Costs."
     :examples ["SP forms LLC under state business law"
                "SP incorporates business as permitted by state statutes"]
     :level 4}

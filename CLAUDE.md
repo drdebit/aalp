@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with the Assertive Accounting Learning Platform (AALP).
 
+## Start here
+
+Read **`HANDOFF.md` → "Start here"** before anything else, then
+`PILOT-LESSONS-PLAN.org` and `LESSON-REPORTING-DESIGN.org`. As of
+2026-09-30 the pilot runs **the lessons** (tutorial levels in
+`tutorials/lesson-sequence`, with check-ins, a Reporting lesson, and the
+capstone's own year), not the Guided Year, which is kept but hidden:
+`AALP_FLOW=lessons` in choochoo's `~/.config/aalp/env` selects it. Much
+of what follows about Year 1/Year 2 describes that hidden path. Three
+oracles in `test/` (JE conformance, balance conformance, served
+problems) are the checks to run after changing the rulebook or the
+templates.
+
 ## Project Overview
 
 This is the **Assertive Accounting Learning Platform (AALP)** - a curriculum-spanning educational web application that teaches accounting through logical assertions rather than traditional classification-based approaches.

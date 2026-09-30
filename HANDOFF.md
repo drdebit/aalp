@@ -1,11 +1,142 @@
-# AALP — where things stand (2026-09-20)
+# AALP — where things stand (2026-09-30)
 
-Written to pick up cold in a new session. Read this, then
-`TUTORIAL-EPISODES.md` for the walkthrough copy.
+Written to pick up cold in a new session. Read **Start here** below,
+then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
+`LESSON-REPORTING-DESIGN.org` (reporting and the capstone). Older
+sections follow, newest first.
 
 ## Start here (next session)
 
-**2026-09-20. The orientation page, and the requires/expects model
+**Next: Matt and Claude go through the app together in the browser, as a
+student would, from the first lesson to the capstone.** Everything below
+has been exercised piecewise — in a browser from the console, and on the
+server — but never in one continuous pass as a student.
+
+### Where the work turned (2026-09-28 → 09-30)
+
+The pilot runs **the lessons, not the Guided Year**. The Guided Year's
+script was eight days of Level 0–1 purchases with no sale and no period
+close; students need more scaffolding than running a business allows;
+and the lessons for every level were built but unreachable. The Guided
+Year's code is kept, hidden (`AALP_FLOW`, below).
+
+**The student's path:** lessons 0, 1, 2, 4, 5, **9 (Reporting)**, 6, 7,
+8 — `tutorials/lesson-sequence`; the numbers are keys, not positions,
+and no number is shown. Each lesson: orientation page → tutorial and
+quiz → practice round (8 of 10, or 5 in a row) → **check-in** (the
+round's result, new words, what the lesson records, its minimal pair,
+then three look-back problems from earlier lessons: informs, never
+relocks). Reporting's round is four report tasks over a fixed company
+year. The Capstone's round is followed by **the student's own year**:
+record Campus Threads' 2026, review and correct it, report on it.
+
+### What was built, in one list
+
+Content
+- Level 3 folded into Level 0 (sales, revenue from the pattern, cost of
+  goods sold, naming the batch). `reports` introduced at Level 5.
+- Opening pages written for Legal (4) and Capstone (8); Level 8's
+  framework table rewritten; level numbers out of all student prose.
+- `fulfills` taught at Level 5 — earning an advance, and now **collecting
+  a receivable and paying a supplier** (both practised there).
+- Design creation expensed (Wage Expense; the design recorded, not
+  carried), taught beside buying a design at Level 2.
+- Labour costed into product moved to **2102**; its four templates are
+  held, marked. `supplies-used` held (duplicates `production-direct`).
+
+The model and grading
+- A purchase states its own purpose (`expects`/`allows`); history no
+  longer places received goods. When the record holds the same pattern,
+  the assertion is **prefilled as a changeable default** with a note.
+- `expects` optional on the business's own obligations; required on
+  claims owed to it, with a **fading prompt** ("bound to pay is not will
+  pay") until the student has shown it (progress `:demonstrated`).
+- `fulfills` **names an open promise** in the record, and keeping it
+  clears that promise's account. Dividends as ACCT 2101 teaches them
+  (DR Dividends, a temporary account). Owner's withdrawal → Owner's
+  Drawing. Grading checks the promise is open and of the right kind.
+- Feedback shows the correct entry once, priced; the student's once.
+  An entry's debit and credit stay together. The live entry no longer
+  prices lines from the problem's answer.
+- Two classifications added: `receivable-collection`, `payable-payment`.
+
+Reporting (see LESSON-REPORTING-DESIGN.org)
+- assertive-engine `20fccd4`: readings on events, patterns and totals
+  over them, several flows per event, `fulfills` targets, reports over
+  reports. AALP supplies the readings (`readings.clj`).
+- `reporting.clj`: Harbor Line's fixed 2026; compositions in five parts
+  graded part by part; accrual and **tax cash** gross margin (Reg.
+  1.471-1(b)(4): inventory cost deductible the later of paid and sold).
+- `capstone.clj`: Campus Threads' year recorded by the student, judged
+  entry by entry, reported on over their own books with the difference
+  from correct books traced to the entries behind it.
+
+### Running it
+
+- choochoo (`ssh choochoo`, needs the GSU VPN): backend
+  `./restart-backend.sh` (reads `~/.config/aalp/env`), shadow-cljs watch
+  already running detached (8081 dev server, 9630, nREPL 7888).
+- **`AALP_FLOW=lessons`** is set in `~/.config/aalp/env`; delete the line
+  and restart the backend to get the Guided Year back.
+- From a laptop: `ssh -f -N -L 8081:localhost:8081 choochoo`, then
+  http://localhost:8081 (hot reload's socket is not tunnelled; reload by
+  hand).
+- Workflow used: edit the Dropbox checkout, scp to choochoo to test,
+  commit locally, push, then fast-forward choochoo after checking its
+  working copy matches (`git diff origin/master` must be empty — note
+  `git diff --stat` exits 0 either way).
+
+### Checks (all green at `cba2e50`)
+
+    P='{:paths ["src/clj" "src/cljs" "resources" "test"]}'
+    clojure -Sdeps "$P" -M -e "(require 'assertive-app.je-conformance) (assertive-app.je-conformance/report)"
+    clojure -Sdeps "$P" -M -e "(require 'assertive-app.balance-conformance) (assertive-app.balance-conformance/report)"
+    clojure -Sdeps "$P" -M -e "(require 'assertive-app.served-check) (assertive-app.served-check/report)"
+    # assertive-engine:  clojure -M:dev:test
+
+Conformance 40 match / 1 partial / 8 gap / 0 conflict (the gaps are
+labour and Level 4 intangibles); both balance records agree; served
+problems 37, 0 issues; engine 56 tests, 0 failures.
+
+### For the walkthrough — what to look at
+
+- [ ] Login lands in the lessons; the progress bar; finished lessons
+      reopen for review.
+- [ ] Level 0: the new selling section; a cash sale and its batch step.
+- [ ] Purpose prefill on a second purchase of the same item.
+- [ ] The claim prompt on a credit sale, and that it fades.
+- [ ] Level 5: earning an advance, a collection, a supplier payment —
+      the promise list, and what the entry says if `fulfills` is left out.
+- [ ] Level 6–7: declaring and paying a dividend; repaying a note.
+- [ ] A check-in with its look-back round.
+- [ ] Reporting: the four tasks, a deliberately wrong part, both margins.
+- [ ] The capstone: record the year with a mistake or two, review,
+      revise, report — and "Course complete".
+- [ ] Wording and layout throughout: anything that reads oddly.
+
+### Open, not blocking
+
+- 19 `@test.com` accounts from earlier sessions remain (the one this
+  session made was removed). Check which the study tooling uses before
+  removing any.
+- Optional: a second fixed company for Reporting (a printer, so
+  production costs reach cost of goods sold).
+- Year 2 still says "Report Builder unlocks at Level 3"; Year 2 is hidden
+  in the pilot, so this waits.
+- The engine's `accrual-revenue-spec` / `cash-revenue-spec` are the
+  paper's first pass (documented as such); AALP does not use them.
+
+### Notes for driving the browser from Claude
+
+- A tab in the background does not redraw (Reagent waits on animation
+  frames): call `reagent.core.flush()` before reading the page, and
+  expect screenshots of a hidden tab to time out.
+- Keep JavaScript results short and free of `=`, `?`, `&` — longer page
+  text was withheld by the tool's filter.
+
+## 2026-09-20
+
+**The orientation page, and the requires/expects model
 reaching the places that had not heard about it.**
 
 ### The gate has a front page now

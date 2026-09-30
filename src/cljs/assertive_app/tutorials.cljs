@@ -1235,13 +1235,13 @@ This is like a credit purchase, but the obligation is a **formal note**, not jus
 
 Monthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month
 
-**Accrual entry:** reports expense (accrual), requires future payment
+**Accrual entry:** reports expense (accrual), requires a future payment — to the lender, which is what names it interest
 → DR Interest Expense, CR Interest Payable
 
-**Interest payment:** provides cash, has-counterparty
+**Interest payment:** provides cash, has-counterparty, fulfills the accrual — the promise this payment keeps
 → DR Interest Payable, CR Cash
 
-**Note repayment:** provides cash, has-counterparty
+**Note repayment:** provides cash, has-counterparty, fulfills the note — the promise made when the money was borrowed
 → DR Notes Payable, CR Cash"}
 
      {:heading "Lending (Notes Receivable)"

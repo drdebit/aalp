@@ -1706,7 +1706,7 @@
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
     :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
-    :note "Production uses equipment purchased earlier. This connects back to your equipment purchase!"
+    :note "Nobody was on the other side: the business used up its own materials and made its own goods. What it consumed leaves Raw Materials Inventory at cost, and what it created enters Finished Goods Inventory at that same cost. is-allowed-by points back at the equipment that made the transformation possible, which is where the record says the business could do this at all."
     :examples ["SP uses t-shirt printer to convert blank shirts to printed shirts"
                "SP uses equipment to transform raw materials into finished goods"]
     :level 2}
@@ -1788,7 +1788,7 @@
     :prohibited #{}
     :description "Equipment purchase with explicit capability recognition"
     :journal-entry [{:debit "Equipment" :credit "Cash"}]
-    :note "Like cash equipment purchase, but student explicitly recognizes the capability created."
+    :note "The business provided cash and received a machine, and said what it allows: a transformation it makes possible without being used up by it. That capacity is what makes the purchase Equipment, an asset held for use, and it is what later production events will point back to with is-allowed-by."
     :examples ["SP purchases t-shirt printer that allows future shirt printing"]
     :level 2}
 
@@ -3194,7 +3194,7 @@ The printed t-shirts are now finished goods ready for sale."
 
    ;; Simpler templates using generic assertions (for introductory problems)
    :production-direct
-   {:narrative-template "On {date}, {company} uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridge to produce {quantity-produced} printed t-shirts.\n\nThe work is done on the t-shirt printer bought earlier."
+   {:narrative-template "On {date}, {company} uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridges to produce {quantity-produced} printed t-shirts.\n\nThe work is done on the t-shirt printer bought earlier."
     :required-assertions
    {:has-date {:date :date}
     ;; SP's recipe is blank shirts AND ink. The record should say so:

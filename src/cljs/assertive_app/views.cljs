@@ -832,7 +832,10 @@
   (let [problem    (state/current-problem)
         vars       (:variables problem)
         from-vars  (map #(get vars %)
-                        [:customer :vendor :employee :owner :counterparty :party :supplier])
+                        ;; Every name a template gives the other party
+                        ;; (grep :has-counterparty {:name in the templates).
+                        [:customer :vendor :employee :owner :counterparty :party :supplier
+                         :designer :lender :borrower :investor])
         events     (concat (:prior-events problem)
                            (state/walkthrough-events)
                            (map :assertions (state/ledger)))
@@ -958,9 +961,13 @@
                                                        (.. % -target -value))}]
            [:select.inline-select
             {:value (or (:physical-item flow) "")
-             :on-change #(do (state/update-flow-parameter! code idx :unit "physical-unit")
-                             (state/update-flow-parameter! code idx :physical-item
-                                                           (.. % -target -value)))}
+             ;; The denomination follows the item: a design made in-house
+             ;; is a right with no physical substance, and saying so is
+             ;; what keeps it off the inventory lines.
+             :on-change #(let [item (.. % -target -value)]
+                           (state/update-flow-parameter! code idx :unit
+                                                         (if (= item "logo-design") "intellectual-property" "physical-unit"))
+                           (state/update-flow-parameter! code idx :physical-item item))}
             [:option {:value ""} "item"]
             (for [opt (assertion-param-options :receives :physical-item)]
               ^{:key (str (name code) "-" idx "-" (:value opt))}
@@ -1712,9 +1719,14 @@
             ;; the thing the episode structure exists to avoid.
             palette (state/walkthrough-palette)
             ;; Flatten available assertions and filter out already selected
+            ;; The old per-kind production words belong to templates the
+            ;; drill holds back (labour costed into product is 2102's);
+            ;; the orientation hides them and so does the menu.
+            held-codes #{:consumes-inventory :consumes-supplies :consumes-labor :creates-finished-goods}
             all-assertions (for [[_domain assertions] available-assertions
                                  assertion assertions
                                  :when (and (not (contains? selected-assertions (keyword (:code assertion))))
+                                            (not (contains? held-codes (keyword (:code assertion))))
                                             (or (nil? palette)
                                                 (contains? palette (keyword (:code assertion)))))]
                              assertion)

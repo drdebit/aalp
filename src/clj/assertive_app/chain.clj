@@ -674,7 +674,7 @@
          :message
          (if (<= available 0)
            (str "You have no " item " to provide. Nothing in your record "
-                "shows SP acquiring or producing any.")
+                "shows the business acquiring or producing any.")
            (str "You have " (fmt available) " " item " on hand, but this "
                 "event provides " (fmt wanted) "."))}))))
 
@@ -693,13 +693,13 @@
            :requested wanted :available available
            :message
            (if (<= available 0)
-             (str "SP has no cash to provide. Nothing in your record shows money "
+             (str "The business has no cash to provide. Nothing in your record shows money "
                   "coming in -- where would the " (fmt wanted) " come from?")
-             (str "SP has " (fmt available) " on record, but this event provides "
+             (str "The business has " (fmt available) " on record, but this event provides "
                   (fmt wanted) "."))})))))
 
 (defn- consumption-problem
-  "Consuming is taking too: production cannot use up what SP does not
+  "Consuming is taking too: production cannot use up what the business does not
    hold."
   [selections events]
   (let [hand (on-hand events)]
@@ -712,7 +712,7 @@
          :message
          (if (<= available 0)
            (str "You have no " item " to use. Production consumes materials "
-                "SP has acquired; nothing in your record shows any.")
+                "the business has acquired; nothing in your record shows any.")
            (str "You have " (fmt available) " " item " on hand, but this "
                 "event consumes " (fmt wanted) "."))})))
       (helds (:consumes selections)))))
@@ -744,12 +744,12 @@
            :consumes used :creates (:item out)
            :message
            (if (seq caps)
-             (str "Nothing in your record says SP can turn " used " into "
-                  (:item out) ". What SP can do: "
+             (str "Nothing in your record says the business can turn " used " into "
+                  (:item out) ". What the business can do: "
                   (str/join "; " (map said caps))
                   ".")
-             (str "Nothing in your record says SP can turn " used " into "
-                  (:item out) ". What did SP acquire that makes this possible, "
+             (str "Nothing in your record says the business can turn " used " into "
+                  (:item out) ". What did the business acquire that makes this possible, "
                   "and what did you say it allows?"))}
 
           ;; The capability was asserted, but SP no longer holds the thing
@@ -757,7 +757,7 @@
           (and (:enabler match) (<= (get held (:enabler match) 0) 0))
           {:kind :capability-not-held
            :enabler (:enabler match)
-           :message (str "SP no longer holds the " (:enabler match)
+           :message (str "The business no longer holds the " (:enabler match)
                          " that made this possible.")})))))
 
 (defn unsupported

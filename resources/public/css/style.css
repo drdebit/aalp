@@ -4377,7 +4377,14 @@ header {
 .costing-lot td { padding: 6px 8px; border-bottom: 1px solid #f4f0e4; }
 .costing-lot:hover td { background: #fdf9ef; }
 .costing-lot.picked td { background: #f6efd9; }
-.costing-radio { width: 1.4em; color: #b39a58; }
+.costing-radio { width: 1.4em; }
+.costing-radio input { accent-color: #b39a58; margin: 0; cursor: pointer; }
+.costing-id label { cursor: pointer; }
+.costing-chosen {
+  margin: 0; font-size: .86em; line-height: 1.55; color: #6a6152;
+  background: #fdf6e3; border-left: 3px solid #d8c48a;
+  padding: .4rem .6rem; border-radius: 2px;
+}
 .costing-id { font-family: 'JetBrains Mono', Menlo, monospace; font-size: .92em; }
 .costing-num { text-align: right; font-variant-numeric: tabular-nums; }
 .costing-empty, .costing-verdict { margin: 10px 0 0; font-size: .86em; color: #7a6a3a; }

@@ -1215,7 +1215,7 @@
                              ["The business expects to receive the" "it paid for"]
                              :else
                              ["The business expects to receive the" "it is owed"])]
-    [sentence-section :expectation "What SP is not sure of:"
+    [sentence-section :expectation "What the business is not sure of:"
      [:div.expects-content
       ;; Show appropriate context based on transaction type
       (cond
@@ -1690,6 +1690,17 @@
    (auto-populate-assertion! code)
    (focus-new-assertion-input!)))
 
+(def unit-kind-level
+  "The lesson at which each kind of thing first appears in a served
+   problem, read off transaction-templates' :required-assertions (a
+   Clojure query over them; rerun it if templates move). Kinds absent
+   here are open from the start."
+  {"monetary-unit" 0
+   "physical-unit" 0
+   "service-unit" 0
+   "intellectual-property" 2
+   "ownership-units" 6})
+
 (defn- add-assertion-menu
   "Menu to add new assertions to the sentence."
   [_selected-assertions _available-assertions]
@@ -1708,7 +1719,15 @@
                                                 (contains? palette (keyword (:code assertion)))))]
                              assertion)
             ;; Assertions that need unit-type sub-menu
-            needs-unit-sub? #{"provides" "receives"}]
+            needs-unit-sub? #{"provides" "receives"}
+            ;; Kinds of thing unlock as the lessons reach them, like the
+            ;; words do: cash, physical units and a service from the
+            ;; first lesson (the printer service is a Level 0 problem),
+            ;; intellectual property with the design purchase at Level 2,
+            ;; ownership units with the owner at Level 6. The templates
+            ;; are the source: see unit-kind-level.
+            level (or (state/current-level) 0)
+            kind-open? (fn [kind] (>= level (get unit-kind-level kind 0)))]
         [:div.add-assertion-menu
          [:button.add-assertion-button
           {:on-click #(do (swap! show-menu? not)
@@ -1734,14 +1753,16 @@
                              (reset! sub-menu nil)
                              (reset! show-menu? false))}
                 "physical units"]
-               [:button.menu-item
-                {:on-click #(do
-                             (add-assertion! assertion-code "ownership-units")
-                             (reset! sub-menu nil)
-                             (reset! show-menu? false))}
-                "ownership units"]
+               (when (kind-open? "ownership-units")
+                 [:button.menu-item
+                  {:on-click #(do
+                               (add-assertion! assertion-code "ownership-units")
+                               (reset! sub-menu nil)
+                               (reset! show-menu? false))}
+                  "ownership units"])
                ;; Work done for the business: used up as it is done.
-               (when (= "receives" (name assertion-code))
+               (when (and (= "receives" (name assertion-code))
+                          (kind-open? "service-unit"))
                  [:button.menu-item
                   {:on-click #(do
                                (add-assertion! assertion-code "service-unit")
@@ -1751,7 +1772,8 @@
                ;; A right with no physical substance. Its own
                ;; denomination, because that absence is the whole of what
                ;; makes an asset intangible rather than equipment.
-               (when (= "receives" (name assertion-code))
+               (when (and (= "receives" (name assertion-code))
+                          (kind-open? "intellectual-property"))
                  [:button.menu-item
                   {:on-click #(do
                                (add-assertion! assertion-code "intellectual-property")
@@ -2170,7 +2192,7 @@
               [:span.dj-live "updates as you build — nothing is recorded until you submit"])]
 
            (if (and (empty? lines) (empty? placeholders))
-             [:p.dj-empty "No journal-entry lines yet -- nothing in SP's rulebook matches these assertions."]
+             [:p.dj-empty "No journal-entry lines yet -- nothing in the rulebook matches these assertions."]
              [:table.dj-table
               [:tbody
                (doall
@@ -2378,6 +2400,11 @@
    of them. Naming it prices both cost lines, from what the record says
    those units cost, and the entry completes.
 
+   Any lot that holds the goods, with enough of them, is a fair answer:
+   which shirts were sold is the business's decision, and the cost of the
+   sale follows from it. Once a lot is named the step says what the other
+   lots would have cost, so that the choice is seen to matter.
+
    Wrong picks are free. This is a query, and a query you got wrong is
    answered by looking again, not by losing the problem."
   []
@@ -2385,15 +2412,28 @@
         needed   (first (filter :needs-lot? (:lines d)))
         holdings (:holdings d)
         provided (:provides (state/selected-assertions))
-        picked   (:from-event provided)]
-    (when needed
+        picked   (:from-event provided)
+        item     (some-> (:physical-item provided) keyword)
+        qty      (some-> (:quantity provided) js/parseFloat)
+        choose!  (fn [id]
+                   (state/update-assertion-parameter! :provides :from-event id)
+                   (api/derive-je!))
+        ;; The lots that could have answered: same goods, enough of them.
+        fits     (when (and item qty)
+                   (filter #(and (= item (:item %)) (>= (:left %) qty) (:unit-cost %)) holdings))
+        chosen   (first (filter #(= (:id %) picked) fits))
+        others   (remove #(= (:id %) picked) fits)]
+    (cond
+      needed
       [:div.costing-step
        [:div.costing-header
         [:h4 "Now cost what went out"]
         [:p.costing-why
          "You have recognized the revenue. The goods that earned it had a cost, and "
-         "that cost belongs against this sale — which means saying which goods went out. "
-         "The record is the only place that can answer it."]]
+         "that cost belongs against this sale. Which cost depends on which goods went "
+         "out, and that is the business's to say: "
+         [:strong "any batch below that holds these goods, with enough left, is a fair answer."]
+         " The cost of goods sold follows from the one you name."]]
        (if (seq holdings)
          [:table.costing-lots
           [:thead [:tr [:th ""] [:th "Batch"] [:th "Date"] [:th "What it holds"] [:th "Left"] [:th "Each"]]]
@@ -2403,10 +2443,21 @@
                ^{:key (:id h)}
                [:tr.costing-lot
                 {:class (when (= (:id h) picked) "picked")
-                 :on-click #(do (state/update-assertion-parameter! :provides :from-event (:id h))
-                                (api/derive-je!))}
-                [:td.costing-radio (if (= (:id h) picked) "●" "○")]
-                [:td.costing-id (:id h)]
+                 ;; The row is a big target for the radio it holds; a
+                 ;; click on the input itself is handled once, by the
+                 ;; input, so the entry is not derived twice.
+                 :on-click (fn [e]
+                             (when-not (= "INPUT" (.. e -target -tagName))
+                               (choose! (:id h))))}
+                [:td.costing-radio
+                 [:input {:type "radio"
+                          :id (str "lot-" (:id h))
+                          :name "costing-lot"
+                          :value (:id h)
+                          :checked (= (:id h) picked)
+                          :aria-label (str "Batch " (:id h))
+                          :on-change #(choose! (:id h))}]]
+                [:td.costing-id [:label {:for (str "lot-" (:id h))} (:id h)]]
                 [:td (:date h)]
                 [:td (name (:item h))]
                 [:td.costing-num (:left h)]
@@ -2416,7 +2467,22 @@
        ;; talking -- the same text the entry shows -- so there is one
        ;; account of what is wrong, not two.
        (when picked
-         [:p.costing-verdict (:unresolved-reason needed)])])))
+         [:p.costing-verdict (:unresolved-reason needed)])]
+
+      ;; Resolved: say what the choice did, and what another would have.
+      chosen
+      [:div.costing-step.costing-done
+       [:p.costing-chosen
+        (str "Costed from " (:id chosen) ": " qty " at " (format-currency (:unit-cost chosen))
+             " each is " (format-currency (* qty (:unit-cost chosen))) ".")
+        (when (seq others)
+          (str " From "
+               (str/join ", or " (map #(str (:id %) " it would have been "
+                                           (format-currency (* qty (:unit-cost %))))
+                                      others))
+               ". Same sale, same revenue; the cost is whichever shirts the business says it sold."))]]
+
+      :else nil)))
 
 (defn drill-stuck-nudge
   "Stuck detection: after consecutive misses, point at the tutorial

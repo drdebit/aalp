@@ -119,11 +119,13 @@ Every cash purchase you record in this lesson uses these four. When in doubt, as
 Those four describe the exchange itself. A business usually wants to record more: what the thing is *for*, and what the transaction implies about the *future*. Two more assertions carry that. **allows** states a purpose. A t-shirt printer turns blank shirts into printed ones, and without **allows** the record cannot tell whether the printer is equipment or stock to resell. **expects** states an implication for the future, and it can carry a purpose too: you bought these shirts expecting to print on them. There is no limit on how much an event may assert. A simple transaction just needs fewer assertions than a complicated one."}
 
      {:heading "Two Kinds of Stuff: Money and Things"
-      :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. In this lesson there are only two kinds:
+      :content "When you fill in **provides** and **receives**, the platform asks what *kind* of thing moved. In this lesson there are three kinds:
 
-A **monetary-unit**. That is, money. Dollars. Cash.
+A **monetary-unit**. That is, money. Dollars. The menu calls it **cash**, because that is the one monetary unit this lesson uses.
 
-A **physical-unit** That is, things. Blank t-shirts, ink cartridges, a t-shirt printer.
+A **physical-unit**. That is, things: blank t-shirts, ink cartridges, a t-shirt printer. The menu calls them **physical units**.
+
+**A service**. Work done for the business — a technician servicing the printer — used up as it is done, so nothing is left to hold afterwards. You will meet one in the practice round.
 
 In a cash purchase, the pattern is always the same:
 Your company **provides** money (monetary-unit), and
@@ -169,9 +171,9 @@ Here is exactly what you'd do, click by click:
 
 **Step 2.** **Has Date** is already filled in with the date of the transaction. Check that it matches the date in the problem — January 8 here — not today's date.
 
-**Step 3.** Click **Provides**. Choose **monetary-unit** (money went out), and enter the amount: 150.
+**Step 3.** Click **Provides**. Choose **cash** (money went out — cash is a monetary-unit), and enter the amount: 150.
 
-**Step 4.** Click **Receives**. Choose **physical-unit** (things came in), pick the item (blank t-shirts), and enter the quantity: 50.
+**Step 4.** Click **Receives**. Choose **physical units** (things came in), pick the item (blank t-shirts), and enter the quantity: 50.
 
 **Step 5.** Click **Has Counterparty** and enter who: TextileDirect.
 
@@ -244,7 +246,7 @@ DR Cost of Goods Sold $100
 CR Finished Goods Inventory $100
 ::
 
-**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. So once your sale is right, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. Pick one and the cost lines fill in from what the record says those shirts cost. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
+**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. So once your sale is right, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. **Any batch that holds those goods, with enough of them, is a fair answer.** The business decides which shirts it sold, and the cost of goods sold follows from that decision: name a batch that cost $5.00 a shirt and the sale costs $125; name one that cost $5.60 and the same sale costs $140 and shows $15 less profit. Same sale, same revenue, different cost — which is why the record keeps *which* batch and not just how many. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.

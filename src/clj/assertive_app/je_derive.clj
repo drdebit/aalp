@@ -313,7 +313,7 @@
               :none-of [{:assertion :receives}]}
     :line {:side :debit :account "Prepaid Expense"}
     :amount :monetary
-    :text "SP paid, and the vendor is now bound to deliver. Nothing has been used up yet; what SP holds is that promise — a right to something still to come, kept for a future use. That is an asset, Prepaid Expense, until the service is received and used. How likely the vendor is to keep the promise is recorded beside it, in `expects`, and changes nothing here."}
+    :text "The business paid, and the vendor is now bound to deliver. Nothing has been used up yet; what the business holds is that promise — a right to something still to come, kept for a future use. That is an asset, Prepaid Expense, until the service is received and used. How likely the vendor is to keep the promise is recorded beside it, in `expects`, and changes nothing here."}
 
    ;; -------- Money paid because a rule said so ------------------------
    ;; Nothing comes back. A tax or a licence fee buys no asset and no
@@ -354,7 +354,7 @@
            :params {:unit "service-unit"}}
     :line {:side :debit :account "Services Expense"}
     :amount :monetary
-    :text "SP received a service — work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What SP paid or owes for it is the money side of the same exchange."}
+    :text "The business received a service — work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What the business paid or owes for it is the money side of the same exchange."}
 
    ;; -------- Labour received ------------------------------------------
    {:id :wage-expense
@@ -362,7 +362,7 @@
            :params {:unit #{"effort" "effort-unit"}}}
     :line {:side :debit :account "Wage Expense"}
     :amount :monetary
-    :text "SP received effort — someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What SP owes or paid for it is the money side of the same exchange."}
+    :text "The business received effort — someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What the business owes or paid for it is the money side of the same exchange."}
 
    ;; -------- Goods provided: revenue needs a counterparty ------------
    ;; Revenue is providing FINISHED GOODS to a counterparty -- goods the
@@ -378,7 +378,7 @@
     :line {:side :credit :account "Revenue"}
     :amount :monetary
     :entry-label "Revenue Recognition"
-    :text "SP's rulebook: providing finished goods to a counterparty is a sale. Revenue is credited for what the counterparty gives in return — or, on credit, for what they are bound to give: the `requires` is what fixes the amount, and what makes goods going out a sale rather than a gift. How likely they are to pay does not change it. Notice: 'Revenue' is a label applied to this PATTERN of assertions, not a fact SP observed."}
+    :text "the rulebook: providing finished goods to a counterparty is a sale. Revenue is credited for what the counterparty gives in return — or, on credit, for what they are bound to give: the `requires` is what fixes the amount, and what makes goods going out a sale rather than a gift. How likely they are to pay does not change it. Notice: 'Revenue' is a label applied to this PATTERN of assertions, not a fact the business observed."}
 
    {:id :cogs
     :when {:assertion :provides
@@ -388,7 +388,7 @@
     :line {:side :debit :account "Cost of Goods Sold"}
     :amount :cost-basis
     :entry-label "Cost Recognition"
-    :text "The shirts SP gave up had a cost. That cost leaves inventory and becomes an expense — at cost, which the assertions about THIS exchange do not carry. (It lives in the production events.)"}
+    :text "The shirts the business gave up had a cost. That cost leaves inventory and becomes an expense — at cost, which the assertions about THIS exchange do not carry. (It lives in the production events.)"}
 
    {:id :cogs-inventory
     :when {:assertion :provides
@@ -411,7 +411,7 @@
     :context {:all-of [{:assertion :provides :params {:unit "physical-unit"}}]}
     :line {:side :debit :account "Accounts Receivable"}
     :amount :flow
-    :text "SP provided goods and someone is now required to provide money: a right to collect. SP's rulebook calls that Accounts Receivable — an asset. The SAME 'requires' assertion becomes a liability when the goods flow the other way."}
+    :text "The business provided goods and someone is now required to provide money: a right to collect. the rulebook calls that Accounts Receivable — an asset. The SAME 'requires' assertion becomes a liability when the goods flow the other way."}
 
    {:id :payable
     :when {:assertion :requires
@@ -420,7 +420,7 @@
               :none-of [{:assertion :provides :params {:unit "physical-unit"}}]}
     :line {:side :credit :account "Accounts Payable"}
     :amount :flow
-    :text "SP received goods and is required to provide money later: an obligation. SP's rulebook calls that Accounts Payable — a liability. The SAME 'requires' assertion becomes an asset when the goods flow the other way."}
+    :text "The business received goods and is required to provide money later: an obligation. the rulebook calls that Accounts Payable — a liability. The SAME 'requires' assertion becomes an asset when the goods flow the other way."}
 
    ;; -------- Money for money: a loan --------------------------------
    ;; Not a trade payable: the `:payable` rule above asks for goods to
@@ -480,7 +480,7 @@
     :context {:all-of [{:assertion :receives :params {:unit "monetary-unit"}}]}
     :line {:side :credit :account "Deferred Revenue (Liability)"}
     :amount :monetary
-    :text "SP took the money first and still owes the goods. Until the goods are provided, the cash is a liability — Deferred Revenue — not earned revenue."}
+    :text "The business took the money first and still owes the goods. Until the goods are provided, the cash is a liability — Deferred Revenue — not earned revenue."}
 
    ;; -------- Production -----------------------------------------------
    {:id :production-out
@@ -1203,7 +1203,7 @@
 
                                               :else
                                               (get not-reflected-texts code
-                                                   "No rule in SP's rulebook produces a journal-entry line from this assertion as it stands."))}))
+                                                   "No rule in the rulebook produces a journal-entry line from this assertion as it stands."))}))
                                  (keys selections)))
         sum-side (fn [side]
                    (reduce + 0 (keep #(when (= side (:side %)) (:amount %)) lines)))

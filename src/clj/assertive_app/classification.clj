@@ -1465,7 +1465,7 @@
     :description "Cash sale with revenue and cost recognition"
     :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
-    :note "When SP provides goods and receives cash, revenue is recognized. Revenue emerges from the assertion pattern — providing physical goods in exchange for monetary units with a counterparty."
+    :note "When the business provides goods and receives cash, revenue is recognized. Revenue emerges from the assertion pattern — providing physical goods in exchange for monetary units with a counterparty."
     :examples ["SP sells printed t-shirts for cash, recognizing revenue and COGS"]
     :level 0}
 
@@ -1571,7 +1571,7 @@
     :requires-position {:receives :raw-materials}
     :description "Credit purchase of raw materials (receive materials now, obligation to pay later)"
     :journal-entry [{:debit "Raw Materials Inventory" :credit "Accounts Payable"}]
-    :note "A credit purchase creates an obligation: SP receives materials immediately and is legally required to provide cash by a due date. A probability on SP's own promise (expects) is SP's to record or not."
+    :note "A credit purchase creates an obligation: the business receives materials immediately and is legally required to provide cash by a due date. A probability on the business's own promise (expects) is the business's to record or not."
     :examples ["SP receives blank t-shirts, must pay vendor $500 in 60 days"
                "SP receives ink cartridges, must pay vendor $125 in 30 days"]
     :level 1}
@@ -1605,7 +1605,7 @@
                           :requires {:action "provides" :unit "monetary-unit"}}
     :description "Credit purchase of equipment (receive equipment now, obligation to pay later)"
     :journal-entry [{:debit "Equipment (Fixed Asset)" :credit "Accounts Payable"}]
-    :note "A credit purchase of equipment creates an obligation: SP receives the equipment immediately and is legally required to provide cash by a due date."
+    :note "A credit purchase of equipment creates an obligation: the business receives the equipment immediately and is legally required to provide cash by a due date."
     :examples ["SP receives t-shirt printer, must pay $3,000 in 60 days"]
     :level 1}
 
@@ -1635,7 +1635,7 @@
                           :requires {:action "provides" :unit "physical-unit"}}
     :description "Deferred revenue (receive payment now, obligation to provide goods later)"
     :journal-entry [{:debit "Cash" :credit "Deferred Revenue (Liability)"}]
-    :note "Deferred revenue creates an obligation: SP receives cash immediately and is legally required to provide goods/services by a due date. This is a liability because SP owes performance, not cash."
+    :note "Deferred revenue creates an obligation: the business receives cash immediately and is legally required to provide goods/services by a due date. This is a liability because the business owes performance, not cash."
     :examples ["SP receives $10,000 advance payment, must deliver custom t-shirts in 60 days"
                "SP receives prepayment for 6-month service contract"]
     :level 1}
@@ -1658,7 +1658,7 @@
                           :expects {:action "receives" :unit #{"physical-unit" "service-unit"}}}
     :description "Prepaid expense (provide payment now, expect to receive goods/services later)"
     :journal-entry [{:debit "Prepaid Expense" :credit "Cash"}]
-    :note "A prepaid expense is an asset representing SP's expectation of receiving future benefits. SP provides cash now and expects to receive services/goods over time. Unlike credit sales, confidence is typically high since vendors are contractually bound."
+    :note "A prepaid expense is an asset representing the business's expectation of receiving future benefits. The business provides cash now and expects to receive services/goods over time. Unlike credit sales, confidence is typically high since vendors are contractually bound."
     :examples ["SP pays $6,000 for 12-month insurance coverage"
                "SP prepays $3,000 for rent covering next 3 months"]
     :level 1}
@@ -2781,8 +2781,8 @@
                                                (str "Your assertions fit, but nothing in your record makes "
                                                     "this "
                                                     (case (first (vals wanted))
-                                                      :capital "a productive asset -- say what it allows SP to do"
-                                                      :raw-materials "an input -- SP needs a capacity that consumes it, or an expectation of selling it"
+                                                      :capital "a productive asset -- say what it allows the business to do"
+                                                      :raw-materials "an input -- the business needs a capacity that consumes it, or an expectation of selling it"
                                                       :finished-goods "something ready to sell"
                                                       :work-in-process "something between stages"
                                                       (str (name (first (vals wanted)))))

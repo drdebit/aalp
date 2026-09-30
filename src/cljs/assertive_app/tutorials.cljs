@@ -812,14 +812,13 @@ The record now carries the reason for the confidence, beside the confidence. Nob
      :example
      {:narrative "On December 31, SP records one month of depreciation on the $3,000 printer, which it expects to use for five years."
       :assertions ["has-date: December 31"
-                   "reports: $50 expense, on a systematic-allocation basis ($3,000 ÷ 60 months)"
-                   "consumes: asset-value"]
+                   "reports: $50 expense, on a systematic-allocation basis ($3,000 ÷ 60 months)"]
       :entry ["DR Depreciation Expense $50" "CR Accumulated Depreciation $50"]}
      :pair
      {:same "The business **reports** an expense that no exchange produced."
-      :a {:when "…and **consumes** value it already held"
+      :a {:when "…allocated over an asset it already holds, so the value used up was its own"
           :becomes "a contra-asset"}
-      :b {:when "…and **requires** a payment still to come"
+      :b {:when "…accrued, and **requires** a payment still to come"
           :becomes "a liability"}
       :point "Same recognition, same absent counterparty. Whether the value was already yours to use up, or is still owed to somebody, decides what the credit lands on."}
      :effect
@@ -860,11 +859,10 @@ Unlike exchanges, adjusting entries have **no counterparty** — they are intern
       :content "Equipment loses value over time. We allocate its cost over its useful life:
 
 **Example: Monthly depreciation on $3,000 printer with 5-year life**
-- reports: expense (systematic-allocation basis)
-- consumes: asset-value
+- reports: expense (systematic-allocation basis), with the calculation: cost, salvage value, useful life
 
 **The Pattern:**
-- Asset value is consumed (credited via contra-account)
+- The asset's recorded value is written down (credited via a contra-account, Accumulated Depreciation) — nothing else has to be asserted; the basis says so
 - Expense is recognized (debited)
 
 → **Journal Entry:** DR Depreciation Expense, CR Accumulated Depreciation
@@ -880,7 +878,7 @@ Note: Accumulated Depreciation is a **contra-asset** that reduces equipment valu
 
 **Prepaid Adjustments** — 'using up' prepaid assets over time:
 - Insurance, rent paid in advance
-- reports: expense (time-based), consumes: prepaid-benefit
+- reports: expense (time-based) — the basis says what is used up: the prepaid asset
 → DR Expense, CR Prepaid Asset
 
 Like production, adjusting entries have **no counterparty** — they're internal recognitions.

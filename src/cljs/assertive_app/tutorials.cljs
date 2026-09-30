@@ -876,6 +876,38 @@ CR Revenue $300
 
 **reports** says how much has been earned and on what basis. **fulfills** says which promise it came out of — you choose it from the promises the record still holds open. The liability that promise put on the books is smaller by what was delivered, and the revenue is recognised now, when it was earned.
 
+The same word records the promises kept most often of all: a customer paying for goods it bought on credit, and the business paying a supplier for goods it bought on credit.
+
+*On March 1, the chess club pays the $125 it owed for the shirts it bought on January 20.*
+
+::assertions
+has-date: March 1
+has-counterparty: the chess club
+receives: $125 (monetary-unit)
+fulfills: the credit sale of January 20
+::
+
+::journal
+DR Cash $125
+CR Accounts Receivable $125
+::
+
+*On April 1, the business pays InkMasters the $40 it owes for ink delivered on March 2.*
+
+::assertions
+has-date: April 1
+has-counterparty: InkMasters
+provides: $40 (monetary-unit)
+fulfills: the ink bought on credit on March 2
+::
+
+::journal
+DR Accounts Payable $40
+CR Cash $40
+::
+
+Nothing is sold or bought on either day. The revenue was earned when the shirts went out; the ink came in when the promise was made. Paying clears what the promise put on the books — a claim, or a debt — and **fulfills** says which one.
+
 You will meet **fulfills** again whenever a promise is kept: a declared dividend paid, a loan repaid, accrued interest settled. It is always the same question — *which earlier promise does this keep?* — and the answer always comes from the record."}]
 
     :quiz
@@ -902,6 +934,12 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
       :choices ["provides monetary-unit, has-counterparty" "reports expense (accrual), requires future payment" "receives physical-unit, reports expense" "consumes asset-value, creates liability"]
       :correct 1
       :explanation "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."}
+
+     {:id :l5-q6
+      :question "A customer pays $125 it owed for shirts bought on credit last month. What does the business record?"
+      :choices ["Revenue of $125, because money came in" "receives $125, fulfills the credit sale — clearing Accounts Receivable" "A new credit sale" "Nothing, because the sale was already recorded"]
+      :correct 1
+      :explanation "The revenue was recognised when the shirts went out. Today a promise is kept: **receives** the money, **fulfills** the credit sale, and the claim it put on the books — Accounts Receivable — is cleared."}
 
      {:id :l5-q5
       :question "A customer paid $600 in advance for 24 shirts. Today the business delivers 12. Which assertions record what happened today?"

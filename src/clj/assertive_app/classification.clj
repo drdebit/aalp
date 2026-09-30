@@ -3472,6 +3472,31 @@ The printed t-shirts are now finished goods ready for sale."
     :level 5
     :variables {:elapsed [1 2 3 4 5 6]}}
 
+   ;; Keeping a trade promise: a customer pays what it owed, the business
+   ;; pays what it owed a supplier. Taught with fulfills, at Level 5. The
+   ;; promise is the one in the record, and fulfills names it.
+   :collect-receivable
+   {:narrative-template "On {date}, {customer} pays {company} the ${amount} it owed for the printed t-shirts it bought on {sale-date}."
+    :required-assertions {:has-date {:date :date}
+                          :receives {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :customer}
+                          :fulfills {:action "requires" :event :promise-id}}
+    :correct-classification :receivable-collection
+    :reads-record [:receivable]
+    :level 5
+    :variables {:date ["2026-03-01"]}}
+
+   :pay-supplier
+   {:narrative-template "On {date}, {company} pays {vendor} the ${amount} it owes for the ink cartridges delivered on {purchase-date}."
+    :required-assertions {:has-date {:date :date}
+                          :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :vendor}
+                          :fulfills {:action "requires" :event :promise-id}}
+    :correct-classification :payable-payment
+    :reads-record [:payable]
+    :level 5
+    :variables {:date ["2026-04-01"]}}
+
    :recognize-unearned-revenue
    ;; The advance being earned is the one in the record, and what has
    ;; been earned is the share of the order delivered -- both of which
@@ -3968,6 +3993,17 @@ The printed t-shirts are now finished goods ready for sale."
                  :requires {:action "provides" :unit "monetary-unit"
                             :quantity (quot (* principal 8 3) 1200)
                             :due-date "2026-04-15"}})
+          ;; Ink bought on account and not yet paid for: a trade debt, for
+          ;; a payment to keep.
+          (contains? needs :payable)
+          (conj {:has-identifier "InkOnCredit-001"
+                 :has-date {:date "2026-03-02"}
+                 :receives {:unit "physical-unit" :physical-item "ink-cartridges" :quantity 4}
+                 :requires {:action "provides" :unit "monetary-unit"
+                            :quantity (* 4 ink-cost) :due-date "2026-04-01"}
+                 :expects {:action "consumes" :physical-item "ink-cartridges"
+                           :creates-item "printed-tshirts" :confidence 95}
+                 :has-counterparty {:name "InkMasters"}})
           ;; The board declared a dividend and has not yet paid it. The
           ;; declaration is the promise; paying keeps it.
           (contains? needs :declared)
@@ -4119,6 +4155,20 @@ The printed t-shirts are now finished goods ready for sale."
                       :loan-date (:date b)
                       :rate rate
                       :interest (long (Math/round (/ (* principal (double rate)) 1200)))))
+        vars)
+
+      ;; A customer pays one of the debts the record says it owes; the
+      ;; business pays the supplier it owes. Paid on the day it falls due.
+      :collect-receivable
+      (if-let [p (first (chain/promises-of events :receivable))]
+        (assoc vars :amount (:amount p) :customer (:counterparty p)
+                    :sale-date (:date p) :promise-id (:id p) :date (:due-date p))
+        vars)
+
+      :pay-supplier
+      (if-let [p (first (chain/promises-of events :payable))]
+        (assoc vars :amount (:amount p) :vendor (:counterparty p)
+                    :purchase-date (:date p) :promise-id (:id p) :date (:due-date p))
         vars)
 
       ;; A payment keeps a promise the record holds, so its figures are

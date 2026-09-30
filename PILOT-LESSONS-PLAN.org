@@ -131,9 +131,12 @@ Built and running on choochoo with =AALP_FLOW=lessons=:
 
 - [X] The capstone ends on the student's own year: record, review and
   correct, report (see LESSON-REPORTING-DESIGN.org). 2026-09-29.
-- [ ] *Collecting a receivable and paying a supplier are practised in no
-  lesson* — the capstone is the first place a student meets them. Add
-  practice templates (credit lesson, or with =fulfills= at Level 5)?
+- [X] *Collecting a receivable and paying a supplier* are practised at
+  Level 5, with =fulfills= (2026-09-29): two templates reading their
+  promise from the practice record, a worked example of each in the
+  lesson, and a quiz question. Left out, =fulfills= makes the entry read
+  as the owner's capital or drawing — the derivation shows why it is
+  needed.
 
 * Content gaps found while planning
 

@@ -39,19 +39,28 @@ The ones that changed how the app behaves, not just what it says:
 
 **Next:** decide the open questions below, then the pilot itself.
 
-### Open after the walkthrough (for Matt)
+### Decided after the walkthrough (2026-10-05)
 
-- A stock issue derives `CR Owner's Capital`, not Common Stock: nothing
-  in the assertions separates a corporation's shares from a
-  proprietor's interest. The check-in table promises Common Stock. Which
-  assertion should carry the difference?
-- Interest *expense* accrues with a `requires` (to the lender) and
-  interest *revenue* with none — the classification prohibits it. The
-  mirror would be `requires: the borrower is to provide`. Asymmetric on
-  purpose, or owed?
-- Level 5's pattern notes are one-liners next to the fuller Level 4 ones.
-- SP remains the tutorials' worked example; practice belongs to other
-  companies. Kept deliberately for now.
+- **Common Stock is the only equity-in account.** Owner's Capital is
+  gone from the rulebook, the templates, the tutorials and the Guided
+  Year's text. 2101 uses the corporation's word, and at this stage a
+  proprietor's interest is the same position; no assertion is asked to
+  tell them apart.
+- **Interest revenue accrues on a promise, like interest expense.**
+  `reports revenue (accrual)` + `requires: the borrower is to provide`
+  derives Interest Receivable / Interest Revenue; with no party named it
+  reads Accrued Receivable / Accrued Revenue, as the expense side reads
+  Accrued Expense / Accrued Liabilities. The promise has its own kind
+  (`:earned`) so a collection can keep it; and keeping any accrued
+  promise now clears the account its party named (Wages Payable,
+  Interest Payable, Interest Receivable), which closed a conformance
+  conflict on the interest payment. The party list offers "the
+  borrower".
+- Level 5's pattern notes read the assertions into the accounts, in the
+  Level 4 style.
+
+Still open: SP remains the tutorials' worked example; practice belongs
+to other companies. Kept deliberately for now.
 
 ### Where the work turned (2026-09-28 → 09-30)
 

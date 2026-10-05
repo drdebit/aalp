@@ -127,10 +127,7 @@
   ;; until the promise named who is owed (2026-09-30); the rulebook
   ;; names them now, and a difference here is a real one again.
   {"Prepaid Insurance" "Prepaid Expense" "Prepaid Rent" "Prepaid Expense"
-   "Deferred Revenue (Liability)" "Unearned Revenue"
-   ;; The residual claim under a different entity form: the same position,
-   ;; a corporation's word for it.
-   "Common Stock" "Owner's Capital"})
+   "Deferred Revenue (Liability)" "Unearned Revenue"})
 
 (defn canonical-account [a]
   (let [a (get account-aliases a a)]

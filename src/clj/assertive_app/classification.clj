@@ -1314,7 +1314,7 @@
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
                   "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
-      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
@@ -1327,7 +1327,7 @@
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
                   "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
-      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
       :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
@@ -1339,7 +1339,7 @@
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
                   "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
-      :equity ["Owner's Capital" "Common Stock" "Retained Earnings" "Owner's Drawing"]
+      :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
       :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
@@ -1929,7 +1929,7 @@
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Depreciation of long-term asset"
     :journal-entry [{:debit "Depreciation Expense" :credit "Accumulated Depreciation"}]
-    :note "Depreciation allocates the cost of a long-term asset over its useful life. This is a pure calculation—no exchange or transformation."
+    :note "Nothing moved today, so no exchange can place this; the business `reports` it instead: an expense, worked out by systematic allocation. The press was paid for when it was bought, and its cost is being spread over the periods it will produce in. This period's share is Depreciation Expense, and the credit is not to Equipment but to Accumulated Depreciation, so the books show both what the press cost and how much of that has been used up."
     :examples ["SP records monthly depreciation on t-shirt printer"
                "SP allocates equipment cost over 5-year useful life"]
     :level 5}
@@ -1944,7 +1944,7 @@
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Allowance for doubtful accounts"
     :journal-entry [{:debit "Bad Debt Expense" :credit "Allowance for Doubtful Accounts"}]
-    :note "Bad debt expense is an estimation of future uncollectible amounts. This is a pure calculation—no exchange or transformation."
+    :note "No exchange today; the business `reports` an expense, and the basis is an estimate: from the confidences it recorded on each credit sale, from the age of what is owed, or from a share of credit sales. Some of what customers owe will never arrive, and the matching rule says the cost of that belongs with the sales that produced the debts, not with the period a customer finally fails to pay. So Bad Debt Expense is charged now, and the Allowance for Doubtful Accounts stands against Accounts Receivable, which is left as it is until a particular customer actually defaults."
     :examples ["SP estimates 2% of receivables will be uncollectible"
                "SP adjusts allowance for doubtful accounts at year-end"]
     :level 5}
@@ -1963,7 +1963,7 @@
     :prohibited #{:has-counterparty :provides :receives}
     :description "Wages earned but not yet paid"
     :journal-entry [{:debit "Wages Expense" :credit "Wages Payable"}]
-    :note "Employees have worked but payroll hasn't been processed yet. The expense is recognized when earned."
+    :note "No exchange today; the business `reports` an expense on the accrual basis, and `requires` says who is owed for it: employees. The work has been done and the business has had the benefit of it in this period, so the cost belongs here, whether or not payday has come. Who the promise is to is what names the accounts: Wages Expense, and Wages Payable until the money goes out and `fulfills` closes it."
     :examples ["SP accrues $500 for wages earned but not yet paid"
                "SP records wages payable at end of pay period"]
     :level 5}
@@ -1979,7 +1979,7 @@
     :prohibited #{:has-counterparty :provides :receives}
     :description "Interest incurred but not yet paid"
     :journal-entry [{:debit "Interest Expense" :credit "Interest Payable"}]
-    :note "Interest accumulates over time on borrowed money. It must be accrued even if not yet due."
+    :note "No exchange today; the business `reports` an expense on the accrual basis, and `requires` says who is owed it: the lender. Interest is the cost of having had the money for the period, and it runs up as time passes, whether or not any is due yet. The lender named on the promise is what makes it Interest Expense and Interest Payable rather than some other accrual."
     :examples ["SP accrues interest on notes payable"
                "SP records interest expense for the month"]
     ;; With the notes, where the student first meets one.
@@ -1991,7 +1991,7 @@
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Recognizing expense from prepaid asset"
     :journal-entry [{:debit "Insurance Expense" :credit "Prepaid Insurance"}]
-    :note "Prepaid expense adjustment allocates previously-paid costs to expense as time passes. This is a pure calculation—no exchange or transformation."
+    :note "No exchange today; the business `reports` an expense worked out from the passage of time. The money went out earlier and bought cover for a term, recorded then as Prepaid Expense, an asset, because the term was still ahead. Part of it is now behind, and that part is used up: the asset falls by this period's share and the expense takes it. The amount is the prepayment divided over its term."
     :examples ["SP recognizes one month of prepaid insurance as expense"
                "SP adjusts prepaid rent for expired portion"]
     :level 5}
@@ -2004,7 +2004,7 @@
     :fulfills-kind #{:advance}
     :description "Earning previously deferred revenue"
     :journal-entry [{:debit "Deferred Revenue (Liability)" :credit "Revenue"}]
-    :note "When performance obligations are satisfied, deferred revenue becomes earned revenue."
+    :note "No exchange today; the business `reports` revenue, on the basis that the performance obligation is now satisfied, and `fulfills` names the advance it was owed for. The customer paid earlier, and the business recorded Unearned Revenue then, a liability, because it still owed the goods or the service. Now it has delivered: the debt is gone and the revenue is earned, in this period, which is the only one it can belong to."
     :examples ["SP earns portion of advance payment by delivering shirts"
                "SP recognizes revenue as service is performed"]
     :level 5}
@@ -2018,7 +2018,7 @@
                           :provides {:unit "ownership-units"}}
     :prohibited #{:requires :expects :consumes :creates}
     :description "Owner contributes capital to business"
-    :journal-entry [{:debit "Cash" :credit "Owner's Capital"}]
+    :journal-entry [{:debit "Cash" :credit "Common Stock"}]
     :note "Owners invest money in exchange for ownership interest. This increases both assets and equity."
     :examples ["SP's parents invest $20,000 for 20% ownership"
                "Owner contributes additional capital to the business"]
@@ -2173,12 +2173,18 @@
     :level 7}
 
    :interest-revenue-accrual
-   {:required #{:has-date :reports}
-    :required-parameters {:reports {:category "revenue" :basis "accrual"}}
-    :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
+   ;; The mirror of :accrued-interest-expense, promise and all (decided
+   ;; 2026-10-05): the borrower is to pay the business, and `requires`
+   ;; says so. An `expects` beside it -- how sure the business is of
+   ;; collecting -- is accepted, as on the note itself.
+   {:required #{:has-date :reports :requires}
+    :required-parameters {:reports {:category "revenue" :basis "accrual"}
+                          :requires {:action "receives" :unit "monetary-unit" :party "borrower"}}
+    :optional #{:expects}
+    :prohibited #{:has-counterparty :provides :receives :consumes :creates}
     :description "Accrue interest earned but not yet received"
     :journal-entry [{:debit "Interest Receivable" :credit "Interest Revenue"}]
-    :note "Interest revenue accrual recognizes interest income earned over time. This is a pure calculation—no exchange or transformation."
+    :note "The mirror of the expense accrual. No exchange today; the business `reports` revenue on the accrual basis, and `requires` says who is to pay it: the borrower. Interest is earned by having lent the money for the period, and it belongs to this period whether or not any has arrived. The borrower named on the promise is what makes it Interest Receivable and Interest Revenue."
     :examples ["SP accrues interest earned on notes receivable"
                "Monthly interest revenue recognition"]
     :level 7}})
@@ -3670,7 +3676,8 @@ The printed t-shirts are now finished goods ready for sale."
    :accrue-interest-revenue
    {:narrative-template "On {date}, {company} accrues ${amount} of interest revenue on the ${principal} note receivable from {borrower}. The note carries {rate}% annual interest."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "revenue" :basis "accrual"}}
+                          :reports {:category "revenue" :basis "accrual"}
+                          :requires {:action "receives" :unit "monetary-unit" :party "borrower"}}
     :correct-classification :interest-revenue-accrual
     :level 7
     :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]

@@ -882,14 +882,15 @@
         ;; role, which is what names the payable: employees are owed
         ;; wages, a lender is owed interest.
         party  (or counterparty-name
-                   (get {"employees" "employees" "lender" "the lender" "supplier" "a supplier"
-                         "customer" "a customer" "owner" "the owner"}
+                   (get {"employees" "employees" "lender" "the lender" "borrower" "the borrower"
+                         "supplier" "a supplier" "customer" "a customer" "owner" "the owner"}
                         (:party params))
                    "the counterparty")
         party-select (when-not counterparty-name
                        [inline-dropdown :requires :party
                         [{:value "employees" :label "employees"}
                          {:value "lender" :label "the lender"}
+                         {:value "borrower" :label "the borrower"}
                          {:value "supplier" :label "a supplier"}
                          {:value "customer" :label "a customer"}
                          {:value "owner" :label "the owner"}]

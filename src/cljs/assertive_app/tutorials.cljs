@@ -1097,13 +1097,13 @@ Each report is checked **part by part** — which events, whose, what condition,
                    "has-counterparty: Pat (owner)"
                    "receives: $20,000 (monetary-unit)"
                    "provides: ownership units"]
-      :entry ["DR Cash $20,000" "CR Owner's Capital $20,000"]}
+      :entry ["DR Cash $20,000" "CR Common Stock $20,000"]}
      :pair
      {:same "SP **receives** $20,000 from a counterparty."
       :a {:when "…having provided printed t-shirts"
           :becomes "Revenue"}
       :b {:when "…having provided a share of the business itself"
-          :becomes "Owner's Capital"}
+          :becomes "Common Stock"}
       :point "Identical money, identical assertion. What SP gave back is the whole difference between earning and being funded — and only one of them makes the business better off by its own effort."}
      :effect
      {:holds "Before: $9,850 cash. After: $29,850. The business holds more, and has done nothing to earn it."
@@ -1128,7 +1128,7 @@ These transactions affect **equity**, not revenue or expense."}
 - receives: $20,000 (monetary-unit)
 - provides: ownership units
 
-→ **Journal Entry:** DR Cash $20,000, CR Owner's Capital $20,000
+→ **Journal Entry:** DR Cash $20,000, CR Common Stock $20,000
 
 Note: This isn't revenue! The company isn't earning money — it's receiving investment."}
 
@@ -1166,7 +1166,7 @@ Equity transactions use the same assertion framework — provides, receives, req
       :question "When an owner invests $10,000 cash into the business, is this revenue?"
       :choices ["Yes — the business is receiving money" "No — it's an equity investment, not earned revenue" "Yes — it increases the cash account" "No — it's an expense"]
       :correct 1
-      :explanation "Owner investment is **not revenue**. Revenue is earned from business operations. An investment increases equity (Owner's Capital), not revenue. DR Cash, CR Owner's Capital."}
+      :explanation "Owner investment is **not revenue**. Revenue is earned from business operations. An investment increases equity (Common Stock), not revenue. DR Cash, CR Common Stock."}
 
      {:id :l6-q2
       :question "What assertions describe an owner withdrawing $1,000 from the business?"
@@ -1259,9 +1259,10 @@ Read that against the credit sale from the credit lesson and it is the same shap
 
 **Interest revenue accrual:**
 - reports: revenue (accrual basis)
+- requires: the borrower is to provide the interest
 → DR Interest Receivable, CR Interest Revenue
 
-Nothing else. No counterparty, no promise, no probability — this is a calculation over time that has already passed, like every other adjusting entry.
+The mirror of the expense accrual, promise and all. No exchange marks the day — a month passed on a note that already exists — so `reports` states the amount, and `requires` says who is to pay it. Naming the borrower is what makes the claim Interest Receivable.
 
 Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 

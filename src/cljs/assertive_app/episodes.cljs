@@ -90,9 +90,9 @@
 
      {:say "So say who. The money came from SP."
       :do {:kind :assert :code :has-counterparty}
-      :then "Owner's Capital, on the right. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. What is left is a claim by the one who put the money in. That is what equity is: not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and never gets a line of its own."}
+      :then "Common Stock, on the right. Why that account? Money came in and nothing went out with it — no goods, no promise to pay it back. What is left is a claim by the one who put the money in. That is what equity is: not a kind of transaction, but the part left over. The who didn't pick that account; nothing going out did. The who says whose claim it is, and never gets a line of its own."}
 
-     {:say "Quick check. What would have made that credit Revenue instead of Owner's Capital?"
+     {:say "Quick check. What would have made that credit Revenue instead of Common Stock?"
       :do {:kind :choose
            :options ["Saying who the money came from"
                      "Shirts going out to them in exchange for it"

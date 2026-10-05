@@ -864,7 +864,7 @@
                     :receives {:unit "monetary-unit" :quantity STARTING_CASH}
                     :provides {:unit "ownership-units" :quantity 100}
                     :has-counterparty {:name "the owner"}}
-       :journal-entry {:debit "Cash" :credit "Owner's Capital" :amount STARTING_CASH}
+       :journal-entry {:debit "Cash" :credit "Common Stock" :amount STARTING_CASH}
        :template-key :owner-invests-cash})
     true))
 
@@ -1125,7 +1125,7 @@
    "Deferred Revenue (Liability)" {:type :liability :statement :balance-sheet :normal :credit}
    "Unearned Revenue" {:type :liability :statement :balance-sheet :normal :credit}
    ;; Equity (Balance Sheet)
-   "Owner's Capital" {:type :equity :statement :balance-sheet :normal :credit}
+   "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
    "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
    "Retained Earnings" {:type :equity :statement :balance-sheet :normal :credit}
    "Owner's Drawing" {:type :equity :statement :balance-sheet :normal :debit}

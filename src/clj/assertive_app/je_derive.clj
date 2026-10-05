@@ -127,7 +127,10 @@
                         {:assertion :modifies}
                         {:assertion :fulfills}
                         {:assertion :consumes}]}
-    :line {:side :credit :account "Owner's Capital"}
+    ;; Common Stock for every owner, proprietor or shareholder: 2101 uses
+    ;; the corporation's word, and at this stage the two are one position
+    ;; (decided 2026-10-05). Nothing in the assertions tells them apart.
+    :line {:side :credit :account "Common Stock"}
     :amount :monetary
     :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue. If the money settles something this party already owed, name the promise it keeps — fulfills — and this line becomes the claim being cleared.)"}
 
@@ -488,21 +491,36 @@
     :text "The business handed over cash against a promise of cash back. Nothing was sold, so the debit is not Accounts Receivable — what a customer owes for goods — but Notes Receivable: money lent, owed back as money."}
 
    ;; -------- Interest earned before it is collected ------------------
-   ;; The mirror of :accrued-expense / :accrued-liability, and unlike
-   ;; those two it takes no `requires` in context: the classification
-   ;; prohibits one. Nothing happened on the day; a month passed on a
-   ;; note that already exists, and the promise was recorded when the
-   ;; money went out.
+   ;; The mirror of the expense accrual, promise and all: the `requires`
+   ;; says who is to pay the business -- the borrower -- and that names
+   ;; the receivable (symmetry decided 2026-10-05; until then revenue
+   ;; accrued with no promise while expense needed one).
    {:id :interest-receivable
     :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "receives" :unit "monetary-unit" :party "borrower"}}]}
     :line {:side :debit :account "Interest Receivable"}
     :amount :reported
-    :text "Interest has been earned by the mere passing of time on money already lent. It is owed to the business whether or not anyone has paid it, so it is an asset now."}
+    :text "Interest has been earned by the mere passing of time on money already lent, and the promise says who owes it: the borrower. It is the business's whether or not anyone has paid it yet, so it is an asset now."}
    {:id :interest-revenue
     :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :context {:all-of [{:assertion :requires :params {:action "receives" :unit "monetary-unit" :party "borrower"}}]}
     :line {:side :credit :account "Interest Revenue"}
     :amount :reported
     :text "And it is revenue of THIS period, not of the period the cash arrives in. No exchange marks the moment, which is why `reports` has to state the amount and the basis it was worked out on."}
+   {:id :accrued-receivable
+    :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :context {:all-of  [{:assertion :requires :params {:action "receives" :unit "monetary-unit"}}]
+              :none-of [{:assertion :requires :params {:party "borrower"}}]}
+    :line {:side :debit :account "Accrued Receivable"}
+    :amount :reported
+    :text "Something has been earned before any money moved, and someone is to pay for it. Say who the promise is from — a borrower — and the record can name what is owed."}
+   {:id :accrued-revenue
+    :when {:assertion :reports :params {:category "revenue" :basis "accrual"}}
+    :context {:all-of  [{:assertion :requires :params {:action "receives" :unit "monetary-unit"}}]
+              :none-of [{:assertion :requires :params {:party "borrower"}}]}
+    :line {:side :credit :account "Accrued Revenue"}
+    :amount :reported
+    :text "And it is revenue of the period it was earned in, not the period the cash arrives."}
 
    ;; -------- Cash in advance of goods --------------------------------
    {:id :deferred-revenue

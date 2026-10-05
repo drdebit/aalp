@@ -874,7 +874,7 @@
   (let [p     (settled-promise context)
         kinds (if (= :debit side)
                 #{:payable :borrowing :declared :accrued}
-                #{:receivable :lending})]
+                #{:receivable :lending :earned})]
     (cond
       (nil? (get-in context [:current :fulfills :event]))
       "(which promise does this keep?)"
@@ -882,8 +882,15 @@
       "(no open promise by that name)"
       (not (contains? kinds (:kind p)))
       (if (= :debit side) "(that promise is not a debt)" "(that promise is not owed to the business)")
+      ;; An accrual's promise names its party, and the party named the
+      ;; account when the accrual was made -- Wages Payable, Interest
+      ;; Payable, Interest Receivable -- so keeping it clears that one.
       :else
-      (get chain/promise-accounts (:kind p)))))
+      (or (get {[:accrued "employees"] "Wages Payable"
+                [:accrued "lender"]    "Interest Payable"
+                [:earned  "borrower"]  "Interest Receivable"}
+               [(:kind p) (:party p)])
+          (get chain/promise-accounts (:kind p))))))
 
 (defn- prepaid-expense-account
   "What to call the expense when a prepayment is used up. Named for what

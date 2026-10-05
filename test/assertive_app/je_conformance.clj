@@ -169,7 +169,7 @@
    {:has-identifier "Interest-001"
     :has-date {:date "2026-03-31"}
     :reports {:category "expense" :basis "accrual" :amount 180}
-    :requires {:action "provides" :unit "monetary-unit" :quantity 180 :due-date "2026-04-15"}}
+    :requires {:action "provides" :unit "monetary-unit" :quantity 180 :due-date "2026-04-15" :party "lender"}}
    {:has-identifier "CreditSale-R"
     :has-date {:date "2026-02-01"}
     :provides {:unit "physical-unit" :physical-item "printed-tshirts" :quantity 5}

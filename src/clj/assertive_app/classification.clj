@@ -4051,7 +4051,7 @@ The printed t-shirts are now finished goods ready for sale."
                            :amount (quot (* principal 8 3) 1200)}
                  :requires {:action "provides" :unit "monetary-unit"
                             :quantity (quot (* principal 8 3) 1200)
-                            :due-date "2026-04-15"}})
+                            :due-date "2026-04-15" :party "lender"}})
           ;; Ink bought on account and not yet paid for: a trade debt, for
           ;; a payment to keep.
           (contains? needs :payable)

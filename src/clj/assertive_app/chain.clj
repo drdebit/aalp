@@ -428,7 +428,9 @@
 
      :declared    a distribution declared: money is to go to the owners
      :accrued     an expense incurred before it is paid: money is to go
-                  out for work done or interest run up"
+                  out for work done or interest run up
+     :earned      the mirror: revenue earned before it is collected,
+                  money to come in for interest run up on money lent"
   [assertions requires]
   (let [act       (some-> (:action requires) name)
         money?    (= "monetary-unit" (some-> (:unit requires) name))
@@ -452,7 +454,11 @@
       (and money? (= "provides" act)
            (= "expense" (some-> (get-in assertions [:reports :category]) name))
            (= "accrual" (some-> (get-in assertions [:reports :basis]) name)))
-      :accrued)))
+      :accrued
+      (and money? (= "receives" act)
+           (= "revenue" (some-> (get-in assertions [:reports :category]) name))
+           (= "accrual" (some-> (get-in assertions [:reports :basis]) name)))
+      :earned)))
 
 (defn promise-kind-of
   "The kind of promise an event made, whether or not it has since been
@@ -471,7 +477,8 @@
    :borrowing  "Notes Payable"
    :lending    "Notes Receivable"
    :declared   "Dividends Payable"
-   :accrued    "Accrued Liabilities"})
+   :accrued    "Accrued Liabilities"
+   :earned     "Accrued Receivable"})
 
 (defn promises
   "The promises the record still carries, one per `requires` asserted.
@@ -513,8 +520,12 @@
                                 (:receivable :payable) (num-qty (:quantity req))
                                 (:prepaid :lending)    (monetary-qty (:provides a))
                                 (:advance :borrowing)  (monetary-qty (:receives a))
-                                (:declared :accrued)   (num-qty (:quantity req)))
-                      :counterparty (get-in a [:has-counterparty :name])}
+                                (:declared :accrued :earned) (num-qty (:quantity req)))
+                      :counterparty (get-in a [:has-counterparty :name])
+                      ;; Whom an accrual's promise is to or from, as a
+                      ;; role: it is what names the payable or receivable
+                      ;; the payment later clears.
+                      :party (some-> (:party req) name)}
                (:physical-item req) (assoc :item (name (:physical-item req)))
                (:service-item req)  (assoc :item (name (:service-item req)))
                (get-in a [:expects :confidence])

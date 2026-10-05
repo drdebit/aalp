@@ -1127,6 +1127,7 @@
 (def ^:private promise-kind-labels
   {"declared"   "dividend declared"
    "accrued"    "accrued"
+   "earned"     "earned, not yet collected"
    "borrowing"  "note signed"
    "payable"    "owed to a supplier"
    "receivable" "owed by a customer"

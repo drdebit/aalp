@@ -1126,7 +1126,6 @@
    "Unearned Revenue" {:type :liability :statement :balance-sheet :normal :credit}
    ;; Equity (Balance Sheet)
    "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
-   "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
    "Retained Earnings" {:type :equity :statement :balance-sheet :normal :credit}
    "Owner's Drawing" {:type :equity :statement :balance-sheet :normal :debit}
    ;; Revenue (Income Statement)

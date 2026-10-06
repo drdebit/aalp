@@ -3709,6 +3709,15 @@
      (when-let [r (:reminder o)]
        [:p.or-reminder (process-inline r)])]))
 
+(defn- read-again-button
+  "A lesson's reading, opened for review; nothing when there is no lesson."
+  [level]
+  (when level
+    [:button.gate-nav-btn
+     {:on-click #(do (api/start-section-clock!)
+                     (state/start-tutorial-quiz! level :review-only? true))}
+     (str "← Read " (lesson-title level) " again")]))
+
 (defn tutorial-gate
   "Gate overlay shown when tutorial hasn't been completed for this level."
   [level]
@@ -3719,14 +3728,9 @@
       ;; one to read again. Matt passed the welcome page and had no way
       ;; back to it (2026-10-06).
       (when (state/lessons-mode?)
-        (let [prev (last (tutorials/earlier-lessons level))]
-          [:div.gate-nav
-           [:button.gate-nav-btn {:on-click #(state/open-welcome!)} "← About this course"]
-           (when prev
-             [:button.gate-nav-btn
-              {:on-click #(do (api/start-section-clock!)
-                              (state/start-tutorial-quiz! prev :review-only? true))}
-              (str "← Read " (lesson-title prev) " again")])]))
+        [:div.gate-nav
+         [:button.gate-nav-btn {:on-click #(state/open-welcome!)} "← About this course"]
+         [read-again-button (last (tutorials/earlier-lessons level))]])
       [:h2 (if (state/lessons-mode?)
              (lesson-title level)
              (str "Welcome to " (:title tutorial)))]
@@ -4569,6 +4573,13 @@
         goal (if (state/lessons-mode?) "to finish this lesson." "to start recording.")]
     [:div.drill-container
      [:div.drill-header
+      ;; The same way back as the lesson's page. Matt, passing the welcome
+      ;; page mid-round, landed here with only a small "Review Tutorial"
+      ;; at the bottom to find the reading by (2026-10-06).
+      (when (state/lessons-mode?)
+        [:div.gate-nav
+         [read-again-button level]
+         [read-again-button (last (tutorials/earlier-lessons level))]])
       [:h2 (str "Practice round " round)]
       [:p.drill-sandbox-note
        (str (if (state/lessons-mode?)
@@ -4583,7 +4594,8 @@
        (str "This round: " correct " correct of " attempted " attempted"
             (when (and streak-pass (>= streak 2))
               (str " · " streak " in a row")))]
-      [tutorial-review-button level]]
+      (when-not (state/lessons-mode?)
+        [tutorial-review-button level])]
      [:div.three-column-layout
       [narrative-panel]
       [sentence-builder]
@@ -4730,9 +4742,11 @@
             [:button.lesson-step
              {:class (cond done? "done" here? "current" :else "ahead")
               :title (str (lesson-title l)
-                          (cond done? " — done; click to review" here? " — you are here" :else ""))
-              :disabled (not done?)
-              :on-click #(when done?
+                          (cond done? " — done; click to review"
+                                here? " — you are here; click to read it"
+                                :else ""))
+              :disabled (not (or done? here?))
+              :on-click #(when (or done? here?)
                            (api/start-section-clock!)
                            (state/start-tutorial-quiz! l :review-only? true))}])))]
      [:div.lesson-now

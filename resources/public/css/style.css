@@ -4627,6 +4627,7 @@ header {
 }
 
 .lesson-step.current {
+    cursor: pointer;
     background: #c9a227;
 }
 

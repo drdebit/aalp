@@ -3422,8 +3422,10 @@
       (set! (.-scrollTop body) 0))))
 
 (defn tutorial-reader
-  "Paginated section reader for tutorial content."
-  [sections section-index on-prev on-next on-take-quiz review-only?]
+  "Paginated section reader for tutorial content. On the first section
+   Previous becomes Back, and `on-back` returns to the lesson's page;
+   there was no way backwards from here but the X."
+  [sections section-index on-prev on-next on-take-quiz review-only? & [on-back]]
   (let [current-section (nth sections section-index nil)
         total (count sections)
         is-first? (= section-index 0)
@@ -3437,9 +3439,9 @@
       [render-markdown (:content current-section)]]
      [:div.tutorial-reader-footer
       [:button.nav-btn.prev
-       {:disabled is-first?
-        :on-click on-prev}
-       "Previous"]
+       {:disabled (and is-first? (nil? on-back))
+        :on-click (if is-first? on-back on-prev)}
+       (if is-first? "← Back" "Previous")]
       [:div.section-dots
        (for [i (range total)]
          ^{:key i}
@@ -3464,8 +3466,9 @@
          "Next"])]]))
 
 (defn quiz-component
-  "Renders MC quiz questions with radio buttons."
-  [questions answers on-answer on-submit retry?]
+  "Renders MC quiz questions with radio buttons. `on-back` returns to the
+   reading, for a student who wants to look something up first."
+  [questions answers on-answer on-submit retry? & [on-back]]
   (let [all-answered? (every? #(contains? answers (:id %)) questions)]
     [:div.quiz-container
      [:h2.quiz-title (if retry? "Retry Missed Questions" "Tutorial Quiz")]
@@ -3488,6 +3491,8 @@
                       :on-change #(on-answer (:id q) cidx)}]
              [:span.choice-text choice]])]])]
      [:div.quiz-actions
+      (when on-back
+        [:button.quiz-back-btn {:on-click on-back} "← Back to the reading"])
       [:button.quiz-submit-btn
        {:disabled (not all-answered?)
         :on-click on-submit}
@@ -3576,13 +3581,15 @@
                                         :direction "on"})
                (state/set-tutorial-quiz-section! (inc section-idx)))
           #(state/advance-to-quiz!)
-          review-only?]
+          review-only?
+          #(state/close-tutorial-quiz!)]
 
          :quiz
          [quiz-component quiz-questions answers
           state/set-quiz-answer!
           #(grade-and-show-results! level quiz-questions answers)
-          retry?]
+          retry?
+          #(state/back-to-reading! (dec (count sections)))]
 
          :results
          [quiz-results-display results missed level
@@ -3708,6 +3715,18 @@
   (let [tutorial (tutorials/get-level-tutorial level)]
     [:div.tutorial-gate
      [:div.gate-content
+      ;; Backwards from here: the welcome page, and the lesson before this
+      ;; one to read again. Matt passed the welcome page and had no way
+      ;; back to it (2026-10-06).
+      (when (state/lessons-mode?)
+        (let [prev (last (tutorials/earlier-lessons level))]
+          [:div.gate-nav
+           [:button.gate-nav-btn {:on-click #(state/open-welcome!)} "← About this course"]
+           (when prev
+             [:button.gate-nav-btn
+              {:on-click #(do (api/start-section-clock!)
+                              (state/start-tutorial-quiz! prev :review-only? true))}
+              (str "← Read " (lesson-title prev) " again")])]))
       [:h2 (if (state/lessons-mode?)
              (lesson-title level)
              (str "Welcome to " (:title tutorial)))]

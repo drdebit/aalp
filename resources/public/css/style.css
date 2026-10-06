@@ -4911,3 +4911,16 @@ header {
   color: inherit; border-radius: 12px; cursor: pointer;
 }
 .about-course-btn:hover { background: rgba(255,255,255,0.15); }
+
+/* Ways back from a lesson's page and from the quiz. */
+.gate-nav { display: flex; gap: 18px; justify-content: flex-start; margin-bottom: 10px; }
+.gate-nav-btn {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: #5a7391; font-size: 0.9em;
+}
+.gate-nav-btn:hover { text-decoration: underline; color: #2c3e50; }
+.quiz-back-btn {
+  background: none; border: none; cursor: pointer; margin-right: 18px;
+  color: #5a7391; font-size: 0.95em;
+}
+.quiz-back-btn:hover { text-decoration: underline; color: #2c3e50; }

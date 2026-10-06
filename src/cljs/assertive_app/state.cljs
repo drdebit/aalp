@@ -1150,6 +1150,13 @@
   (swap! app-state assoc-in [:tutorial-quiz :phase] :quiz)
   (swap! app-state assoc-in [:tutorial-quiz :quiz-answers] {}))
 
+(defn back-to-reading!
+  "From the quiz back to the reading, at its last section: the student
+   wants to look something up before answering."
+  [last-index]
+  (swap! app-state update :tutorial-quiz assoc
+         :phase :reading :section-index (max 0 last-index) :quiz-answers {}))
+
 (defn set-quiz-answer! [question-id choice-idx]
   "Record the user's answer for a quiz question."
   (swap! app-state assoc-in [:tutorial-quiz :quiz-answers question-id] choice-idx))

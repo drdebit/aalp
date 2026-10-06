@@ -138,17 +138,19 @@
     :amount :monetary
     :text "Money came in, and what the business gave for it was a share of itself: ownership units. That is still an exchange — cash for an ownership interest — and the interest it gave is a claim by the one who put the money in against whatever the business has. That claim is equity, and the money paid for it is Common Stock. It is not owed back: the business took on no obligation to repay, so it is not a liability."}
 
-;; -------- Money out with nothing coming in: the owner's draw -------
-   ;; The mirror of :owner-capital. Nothing came in, nothing is promised,
-   ;; no earlier promise is being kept, and no law is the reason: the
-   ;; money went to the one whose claim the business's equity is, and
-   ;; the claim is smaller for it. A temporary account, closed to capital
-   ;; at year end, as Dividends is closed to Retained Earnings.
+;; -------- Money out for ownership: the owner's draw -------------
+   ;; The mirror of :owner-capital, and an exchange like it: the business
+   ;; pays cash and receives back ownership units -- part of the owner's
+   ;; claim on it. It used to be the residual of money out to a named
+   ;; party with nothing else said, which put Owner's Drawing on the first
+   ;; assertion of every cash purchase (Matt, 2026-10-06). A temporary
+   ;; account, closed to capital at year end, as Dividends is closed to
+   ;; Retained Earnings.
    {:id :owner-drawing
     :when {:assertion :provides :params {:unit "monetary-unit"}}
-    :context {:all-of  [{:assertion :has-counterparty}]
-              :none-of [{:assertion :receives}
-                        {:assertion :requires}
+    :context {:all-of  [{:assertion :has-counterparty}
+                        {:assertion :receives :params {:unit #{"ownership-units" "ownership-unit"}}}]
+              :none-of [{:assertion :requires}
                         {:assertion :fulfills}
                         {:assertion :modifies}
                         {:assertion :reports}
@@ -158,7 +160,7 @@
                         {:assertion :is-protected-by}]}
     :line {:side :debit :account "Owner's Drawing"}
     :amount :flow
-    :text "Money went out and nothing came back for it. The business received no goods or service, made no promise, kept none, and no law required the payment. What is left is a distribution to the owner: their claim on the business is smaller by what they took. Owner's Drawing records it for the period and is closed to capital at year end. (If something DID come in for this money, say so — receives — and this line becomes what was bought. If the money settles a debt already on the books, name the promise it keeps — fulfills — and this line becomes the debt being cleared.)"}
+    :text "Money went out, and what came back for it was ownership units: part of the owner's claim on the business. That is still an exchange — cash for an ownership interest, the reverse of an investment — and the owner's claim is smaller by what they took. Owner's Drawing records it for the period and is closed to capital at year end. It is not an expense: nothing was used up earning revenue."}
 
    ;; -------- Keeping an earlier promise --------------------------------
    ;; `fulfills` names the promise, and the record says what it was: which

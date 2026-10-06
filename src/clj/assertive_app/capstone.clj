@@ -117,9 +117,10 @@
              :requires {:action "receives" :unit "monetary-unit" :quantity 880 :due-date "2027-01-19"}
              :expects {:action "receives" :unit "monetary-unit" :confidence 85}}}
    {:id "T11" :date "2026-12-10" :classification :owner-withdrawal
-    :narrative "On December 10, the owner takes $1,500 out of the business for personal use."
+    :narrative "On December 10, the owner takes $1,500 out of the business for personal use, giving up that much of their ownership interest."
     :answer {:has-date {:date "2026-12-10"} :has-counterparty {:name "the owner"}
-             :provides {:unit "monetary-unit" :quantity 1500}}}])
+             :provides {:unit "monetary-unit" :quantity 1500}
+             :receives {:unit "ownership-units"}}}])
 
 (def ^:private by-id (into {} (map (juxt :id identity)) transactions))
 

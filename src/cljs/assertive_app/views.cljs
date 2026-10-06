@@ -1881,7 +1881,7 @@
                        (clojure.string/join " + "
                          (for [f fs]
                            (cond (= "monetary-unit" (:unit f)) (str "$" (:quantity f))
-                                 (= "ownership-units" (:unit f)) (str (:quantity f) " ownership units")
+                                 (= "ownership-units" (:unit f)) (if (:quantity f) (str (:quantity f) " ownership units") "ownership units")
                                  ;; A service the record names reads better
                                  ;; than "a service" -- and an adjusting
                                  ;; entry points back at it by name.

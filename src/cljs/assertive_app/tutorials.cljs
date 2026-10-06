@@ -1162,8 +1162,10 @@ Dividends is a temporary account, like an expense: it is closed to Retained Earn
 → DR Dividends Payable, CR Cash
 
 **Owner Withdrawals** (sole proprietorships):
-- provides: cash (monetary-unit), has-counterparty: owner
+- provides: cash (monetary-unit), receives: ownership units, has-counterparty: owner
 → DR Owner's Drawing, CR Cash
+
+A withdrawal is an exchange too, the reverse of an investment: the business pays out cash and gets back part of the owner's ownership interest.
 
 Note: Neither dividends nor withdrawals are expenses — they're returns of capital."}
 
@@ -1188,9 +1190,9 @@ Equity transactions use the same assertion framework — provides, receives, req
 
      {:id :l6-q2
       :question "What assertions describe an owner withdrawing $1,000 from the business?"
-      :choices ["receives monetary-unit, has-counterparty" "provides monetary-unit, has-counterparty" "reports expense, provides monetary-unit" "requires monetary-unit, has-counterparty"]
+      :choices ["receives monetary-unit, has-counterparty" "provides monetary-unit, receives ownership units, has-counterparty" "reports expense, provides monetary-unit" "requires monetary-unit, has-counterparty"]
       :correct 1
-      :explanation "The company **provides** cash (monetary-unit) to the owner (**has-counterparty**). This creates DR Owner's Drawing, CR Cash. It's not an expense."}
+      :explanation "The company **provides** cash (monetary-unit) to the owner (**has-counterparty**) and **receives** back ownership units — part of the owner's interest. This creates DR Owner's Drawing, CR Cash. It's not an expense."}
 
      {:id :l6-q3
       :question "In the two-step dividend process, what happens at declaration?"
@@ -1335,12 +1337,12 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
                    "fulfills: the dividend declared on March 15"]
       :entry ["DR Dividends Payable $500" "CR Cash $500"]}
      :pair
-     {:same "The business **provides** $500 to its owners, and nothing comes back."
+     {:same "The business **provides** $500 to its owners."
       :a {:when "…keeping the promise its board made — **fulfills** the declaration"
           :becomes "Dividends Payable — a debt paid"}
-      :b {:when "…keeping no promise, and bound by no law"
+      :b {:when "…and **receives** back ownership units — part of the owner's interest"
           :becomes "Owner's Drawing — equity taken out"}
-      :point "The same payment, to the same people. Whether it keeps an earlier promise decides whether the business paid what it owed or its owner took money out."}
+      :point "The same payment, to the same people. Whether it keeps an earlier promise or buys back part of the owner's interest decides whether the business paid what it owed or its owner took money out."}
      :effect
      {:holds "Before: $500 more cash, and $500 owed to the shareholders. After: both gone."
       :may-or-must "Before: the business must pay the shareholders by April 15. After: nothing is owed, and the record ties the payment to the declaration it kept."}

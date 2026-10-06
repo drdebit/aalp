@@ -228,6 +228,34 @@ Key insights from the example:
 - How do we handle the chain: state law → business formation → equity issuance?
 - Do we need to track member/shareholder identities for dividend distributions?
 
+### Owner's interest beyond 2101 (to revisit)
+
+Matt, 2026-10-06. Since that day, investment and withdrawal are both
+exchanges for **ownership units**: Common Stock derives only when the
+business `provides` ownership units for cash, and Owner's Drawing only
+when it `receives` them back for cash. Neither is a residual of money
+moving with nothing else said any more. For 2101 this is right: it is
+close to how GAAP treats it, and "receiving shares of stock" is legible
+to an intro student. He is not fully happy with it, though.
+
+**For assertive accounting itself it is too thin.** The money an owner
+puts in buys a *basket of legal rights* -- to vote, to a share of
+residual assets, to distributions when declared, to information -- and
+those rights should be recorded, not collapsed into a count of units.
+That points towards ownership modelled with the legal-framework
+assertions (`is-allowed-by` the formation event, `requires` reporting to
+members, `allows` voting and distributions), much as the research
+example's equity issuance already does, and away from ownership units as
+the whole of it.
+
+**Open questions:**
+- What are the rights in the basket, and which belong in the record of
+  the issuance versus the formation event?
+- How does a withdrawal or a dividend read against those rights -- which
+  right is exercised, and what is given up?
+- How much of this, if any, reaches 2101, or does it wait for later
+  courses?
+
 ---
 
 ## Terminology Decisions

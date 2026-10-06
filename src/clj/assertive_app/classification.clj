@@ -2094,14 +2094,15 @@
     :level 6}
 
    :owner-withdrawal
-   {:required #{:has-date :provides :has-counterparty}
-    :required-parameters {:provides {:unit "monetary-unit"}}
+   {:required #{:has-date :provides :receives :has-counterparty}
+    :required-parameters {:provides {:unit "monetary-unit"}
+                          :receives {:unit "ownership-units"}}
     ;; Keeping an earlier promise is not a draw, however alike the cash
     ;; looks: the derivation's :owner-drawing rule excludes it too.
-    :prohibited #{:receives :requires :expects :fulfills}
+    :prohibited #{:requires :expects :fulfills}
     :description "Owner withdraws capital from business"
     :journal-entry [{:debit "Owner's Drawing" :credit "Cash"}]
-    :note "In sole proprietorships and partnerships, owners can withdraw funds. This reduces equity."
+    :note "In sole proprietorships and partnerships, owners can withdraw funds. The business pays cash and receives back part of the owner's ownership interest, so equity is smaller by what they took."
     :examples ["SP withdraws $1,000 for personal use"
                "Partner takes monthly draw from business"]
     :level 6}
@@ -3595,9 +3596,10 @@ The printed t-shirts are now finished goods ready for sale."
                 :declaration-date ["January 15" "March 15" "June 15" "September 15"]}}
 
    :owner-withdraws-cash
-   {:narrative-template "On {date}, {owner} withdraws ${amount} from {company} for personal use. This is recorded as an owner's draw against the owner's capital account."
+   {:narrative-template "On {date}, {owner} withdraws ${amount} from {company} for personal use, giving up that much of their ownership interest in the business. This is recorded as an owner's draw against the owner's capital account."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
+                          :receives {:unit "ownership-units"}
                           :has-counterparty {:name :owner}}
     :correct-classification :owner-withdrawal
     :level 6

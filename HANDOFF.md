@@ -55,9 +55,12 @@ Common Stock derives only when the business `provides` ownership units
 (it had been the residual of any money in from a named party, so it
 appeared on the first assertion of every cash sale; Matt: "Common stock
 is still an exchange, just for ownership interest"), and the practice
-round links back to the lessons reading. **Open:** Owners Drawing is
-still the residual of money out to a named party; Matt wants it treated
-as an exchange too.
+round links back to the lesson's reading. Owner's Drawing is the mirror:
+the business `provides` cash and `receives` back ownership units (it had
+been the residual of money out to a named party). Matt is content with
+ownership units for 2101 but wants owner's interest revisited for
+assertive accounting itself -- see DESIGN.md, "Owner's interest beyond
+2101".
 
 **The walkthrough is done (2026-09-30).** Matt and Claude went through
 every lesson in the pilot's order as a student — 0, 1, 2, 4, 5, 9, 6, 7,

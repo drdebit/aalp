@@ -37,7 +37,7 @@
 
 Most accounting courses teach bookkeeping as a placement of dollars into accounts. When a business buys equipment, debit this and credit that; when it sells on credit, a different set of debits and credits. Each kind of transaction has its own mapping to the accounts.
 
-This platform teaches those mappings too, but by a different route. Instead of moving directly to the accounts, you will first declare what is true about the event. The business provided money and received a printer. The event occurred on January 3, and involved another party called PrinterWorld. The business bought the printer to print logos on blank shirts. These are called **assertions** and they often take the form of ordinary words such as *provides* and *receives* to describe who, when, and what the thing is for.
+This platform teaches those mappings too, but in a slightly different way. Instead of affecting the accounts directly, you will declare what is true about the event. The business provided money and received a printer. The event occurred on January 3, and involved another party called PrinterWorld. The business bought the printer to print logos on blank shirts. These declarations are called **assertions** and they often take the form of ordinary words such as *provides* and *receives* to describe who, when, and what the thing is for.
 
 The journal entries come out of these assertions. If the business bought shirts to print, they are classified as raw materials; if they were bought to sell on as they are, the same shirts are finished goods. The account follows from the assertions, based on the generally accepted accounting principles you will encounter everywhere else in 2101.
 

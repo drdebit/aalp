@@ -85,6 +85,7 @@
              ;; prompt to a student who had faded it, until their next
              ;; answer brought progress back.
              :demonstrated (:demonstrated prog)
+             :welcomed? (:welcomed? prog)
              :flow (:flow prog)}))
         {:status 400 :body {:error "Valid email required"}})))
 
@@ -127,6 +128,13 @@
             (progress/mark-tutorial-completed! (:db/id user) level)
             (response/response {:success true :level level}))
           {:status 400 :body {:error "Invalid level (must be 0-9)"}}))
+      {:status 401 :body {:error "Authentication required"}}))
+
+  (POST "/api/welcome" request
+    ;; The welcome page has been read: it is not shown again.
+    (if-let [user (:user request)]
+      (do (progress/mark-welcomed! (:db/id user))
+          (response/response {:success true}))
       {:status 401 :body {:error "Authentication required"}}))
 
     ;; ==================== Assertions & Classification ====================

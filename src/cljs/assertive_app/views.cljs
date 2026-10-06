@@ -5208,22 +5208,48 @@
           "Course complete →"]]]
        nil)]))
 
+(defn- welcome-view
+  "What accounting by assertion is. Once, before the first lesson's gate;
+   afterwards from the header's \"About this course\", where the button
+   reads Back instead of Begin."
+  []
+  (let [{:keys [heading body lessons-heading lessons button]} tutorials/welcome
+        reopened? (state/welcomed?)]
+    [:div.tutorial-gate.welcome-page
+     [:div.gate-content
+      [:h2 heading]
+      [render-markdown body]
+      [:h3 lessons-heading]
+      [render-markdown lessons]
+      [:button.gate-start-btn
+       {:on-click #(if reopened?
+                     (state/close-welcome!)
+                     (api/welcome-seen!))}
+       (if reopened? "Back" button)]]]))
+
 (defn lessons-app-content []
-  (let [level (state/current-level)]
+  (let [level (state/current-level)
+        welcome? (or (not (state/welcomed?)) (state/welcome-open?))]
     [:div.app-container.lessons-mode
      [:header
       [:div.header-left
-       [:h1 "Assertive Accounting"]]
+       [:h1 "Assertive Accounting"]
+       (when (and (state/welcomed?) (not welcome?))
+         [:button.about-course-btn
+          {:on-click #(state/open-welcome!)
+           :title "The welcome page, again"}
+          "About this course"])]
       [:div.user-header
        [:div.user-info
         [:span.user-email (:email (state/user))]]
        [:button.logout-button
         {:on-click #(api/logout!)}
         "Sign Out"]]]
-     [lesson-progress-bar]
+     (when-not welcome? [lesson-progress-bar])
      (when (state/tutorial-quiz-active?)
        [tutorial-quiz-flow])
      (cond
+       welcome?                   [welcome-view]
        (state/checkin)            [checkin-view]
        (state/reporting-active?)  [reporting-view level]
        (state/capstone-active?)   [capstone-view level]

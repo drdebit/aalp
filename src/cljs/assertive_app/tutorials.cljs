@@ -28,6 +28,24 @@
 
 ;; ==================== Level Tutorials ====================
 
+(def welcome
+  "The welcome page: what accounting by assertion is, shown once before
+   the first lesson's gate and reopenable from the header. Text agreed
+   with Matt 2026-10-06 (WELCOME-PAGE.org)."
+  {:heading "Accounting by assertion"
+   :body "Every business keeps a record of the events that affect it: what it buys, what it sells, what it owes and is owed. That record becomes the business's books, and keeping those books is what accounting is. In this course you will learn to keep the books.
+
+Most accounting courses teach bookkeeping as a placement of dollars into accounts. When a business buys equipment, debit this and credit that; when it sells on credit, a different set of debits and credits. Each transaction maps to the accounts in a slightly different way.
+
+This platform will also teach those mappings, but in a slightly different way. Instead of moving directly to the accounts, you will first declare what is true about the event. The business provided money and received a printer. The event occurred on January 3, and involved another party called PrinterWorld. The business bought the printer to print logos on blank shirts. These are called **assertions** and they often take the form of ordinary words such as *provides* and *receives* to describe who, when, and what the thing is for.
+
+The journal entries come out of these assertions. If the business bought shirts to print, they are classified as raw materials; if they were bought to sell on as they are, the same shirts are finished goods. The account follows from the assertions, based on the generally accepted accounting principles you will encounter everywhere else in 2101.
+
+Simple events take a few assertions. Complicated ones take more. Assertions are designed so that you can say as many true things about an event as you like. But only some of these assertions will affect the journal entry."
+   :lessons-heading "How the lessons go"
+   :lessons "Each lesson opens with a short reading and a few questions, followed by practice problems. You will periodically look back at earlier lessons to refresh your memory. The practice problems belong to small businesses like the one in the readings, each with its own books, and mistakes in practice cost nothing. The course ends with a year of one business's books, which you keep, check, correct and report on yourself."
+   :button "Begin"})
+
 (def level-tutorials
   "Tutorial content and quiz questions keyed by level."
   {0

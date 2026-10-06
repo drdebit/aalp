@@ -46,6 +46,13 @@
              abandoned. Browser-only state before this, and lost on
              every reload."}
 
+   {:db/ident :user/welcomed
+    :db/valueType :db.type/boolean
+    :db/cardinality :db.cardinality/one
+    :db/doc "The student has read the welcome page -- what accounting by
+             assertion is -- which is shown once, before the first
+             lesson's gate (WELCOME-PAGE.org, 2026-10-06)."}
+
    ;; ==================== Progress Entity ====================
    ;; One per user, tracks overall progress
    {:db/ident :progress/user

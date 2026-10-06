@@ -511,6 +511,18 @@
                 (println "Tutorial" level "completion saved"))
      :error-handler (silent-error-handler "Error saving tutorial completion:")}))
 
+(defn welcome-seen!
+  "Begin was pressed on the welcome page: not shown again for this account."
+  []
+  (state/set-welcomed!)
+  (POST (str api-base "/welcome")
+    {:format :json
+     :headers (auth-headers)
+     :response-format :json
+     :keywords? true
+     :handler (fn [_] nil)
+     :error-handler (silent-error-handler "Error saving the welcome page:")}))
+
 ;; ==================== Data Fetching ====================
 
 (defn fetch-assertions! [level]

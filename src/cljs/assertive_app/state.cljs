@@ -356,6 +356,7 @@
            :current-level (:current-level user-data 0)
            :unlocked-levels unlocked
            :completed-tutorials completed
+           :welcomed? (boolean (:welcomed? user-data))
            :flow (:flow user-data)
            :progress {:current-level (:current-level user-data 0)
                       :unlocked-levels (vec unlocked)
@@ -393,7 +394,18 @@
     (swap! app-state assoc
            :progress progress-data
            :unlocked-levels unlocked
-           :completed-tutorials completed)))
+           :completed-tutorials completed
+           :welcomed? (boolean (:welcomed? progress-data)))))
+
+;; ==================== The welcome page ====================
+;; Shown once per account before the first lesson's gate, and reopenable
+;; from the header afterwards (WELCOME-PAGE.org).
+
+(defn welcomed? [] (boolean (:welcomed? @app-state)))
+(defn set-welcomed! [] (swap! app-state assoc :welcomed? true))
+(defn welcome-open? [] (boolean (:welcome-open? @app-state)))
+(defn open-welcome! [] (swap! app-state assoc :welcome-open? true))
+(defn close-welcome! [] (swap! app-state dissoc :welcome-open?))
 
 ;; ==================== App Mode ====================
 

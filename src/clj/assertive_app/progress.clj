@@ -7,7 +7,7 @@
 ;; Number of correct answers needed at a level to unlock the next level
 (def CORRECT_TO_UNLOCK 5)
 
-(declare get-completed-tutorials demonstrated)
+(declare get-completed-tutorials demonstrated welcomed?)
 
 (defn flow
   "Which path students take through the platform: \"lessons\", the tutorial
@@ -47,6 +47,7 @@
                                      :unlocked-next unlocked}]))
      :completed-tutorials (get-completed-tutorials user-id)
      :demonstrated (demonstrated db user-id)
+     :welcomed? (welcomed? db user-id)
      :flow (flow)}))
 
 (defn- find-level-progress
@@ -314,6 +315,17 @@
                 [(not= ?t :guided)]]
               db user-id (vec (claim-classifications))))
     (conj :claim-expects)))
+
+(defn- welcomed?
+  "Has this student read the welcome page? Shown once, before the first
+   lesson; a fresh account has not."
+  [db user-id]
+  (boolean (:user/welcomed (d/pull db [:user/welcomed] user-id))))
+
+(defn mark-welcomed!
+  "The student pressed Begin on the welcome page."
+  [user-id]
+  @(d/transact (schema/get-conn) [[:db/add user-id :user/welcomed true]]))
 
 (defn get-completed-tutorials
   "Get set of tutorial levels the user has completed."

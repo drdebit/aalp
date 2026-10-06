@@ -64,8 +64,11 @@ to other companies. Kept deliberately for now.
 
 Noted for after the pilot (2026-10-06), both as org files in the repo:
 - `WELCOME-PAGE.org` — a page shown once before the first lesson's
-  gate, saying what accounting by assertion is. Text agreed with Matt;
-  not wired in yet (needs a once-per-account flag).
+  gate, saying what accounting by assertion is. **Wired in 2026-10-06**:
+  `:user/welcomed` on the user, `POST /api/welcome` on Begin, the flag
+  in the login and progress responses; reopenable from the header's
+  "About this course", where the button reads Back. Text lives in
+  `tutorials/welcome`.
 - `REVERSE-MODE-DESIGN.org` — the student writes the entry, the system
   maps it to the assertion pattern and asks them to fill the gaps the
   entry cannot say (what the equipment allows, whom the promise is to).

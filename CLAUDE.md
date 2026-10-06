@@ -456,6 +456,21 @@ POST /api/simulation/advance-period - Advance to next period
 
 ## Development Setup
 
+### Where development happens (2026-10-06)
+
+On **choochoo**, in `~/clojure/aalp`, which runs the app and is where Matt
+edits over TRAMP. The shadow-cljs watcher there rebuilds and hot-reloads
+the browser on every save of a `.cljs`/`.css` file. `.clj` changes need
+the backend restarted (`./restart-backend.sh`) or the buffer loaded into
+the nREPL on 7888. Commit and push from choochoo; the Dropbox checkout
+on Matt's laptop is a mirror to `git pull --ff-only` into.
+
+**Never `git checkout -- src` on choochoo**: Matt's saved, uncommitted
+edits live in that tree (one was wiped that way on 2026-10-06). Check
+`git status` before anything that rewrites files. From the laptop,
+`ssh -f -N choochoo-dev` tunnels 8081, 9630 and 7888.
+
+
 ### Starting the Services
 
 ```bash

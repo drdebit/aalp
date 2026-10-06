@@ -1,4 +1,4 @@
-# AALP — where things stand (2026-09-30)
+# AALP — where things stand (2026-10-06)
 
 Written to pick up cold in a new session. Read **Start here** below,
 then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
@@ -6,6 +6,49 @@ then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
 sections follow, newest first.
 
 ## Start here (next session)
+
+**Development now happens on choochoo directly (from 2026-10-06).**
+Matt edits over TRAMP in `~/clojure/aalp` on choochoo, where the
+shadow-cljs watcher rebuilds and hot-reloads the browser on save. The
+Dropbox checkout is a mirror: pull into it, never push from it ahead of
+choochoo. Rules for a session working there:
+
+- **Never run `git checkout -- src` on choochoo.** Matt's saved but
+  uncommitted edits live in that tree. On 2026-10-06 a checkout used to
+  revert a test comment wiped an edit he had just saved; it was
+  recovered from his Emacs buffer. Look at `git status` first, and leave
+  his files alone.
+- `.cljs` / `.css`: save, and the page updates in a second or two
+  (watcher + hot-reload socket on 9630). `.clj`: the backend does not
+  reload files -- connect CIDER to nREPL 7888 and `C-c C-k` the buffer,
+  or `./restart-backend.sh` (~45 s, detached: `setsid nohup ... &`).
+- Commit on choochoo (author Matt when the edit is his), `git push
+  origin master` works from there, then `git pull --ff-only` in Dropbox.
+- From Matt's laptop the tunnel is `ssh -f -N choochoo-dev` (ssh config
+  in system-configs, host mini-revere): 8081 app, 9630 hot reload, 7888
+  nREPL. On the VPN the app is also at choochoo.dyn.gsu.edu:8081 and hot
+  reload works there without a tunnel.
+- Test accounts from this work: `walk-0930@test.com` (course complete),
+  `welcome-1006@test.com`, `welcome-1006b@test.com` (on the first gate).
+  Login is email-only; an unknown address creates an account.
+
+**Where the student-facing text lives**, for text edits as Matt walks
+through: lesson pages, readings, quizzes and the welcome page in
+`src/cljs/assertive_app/tutorials.cljs` (`level-tutorials`, `welcome`);
+pattern descriptions and notes, and problem narratives, in
+`classification.clj` (`classifications`, `transaction-templates`);
+"Why these accounts?" explanations in `je_derive.clj` (`rulebook`
+`:text`, `not-reflected-texts`); buttons and labels in `views.cljs`;
+report feedback in `reporting.clj`; the capstone's year in
+`capstone.clj`. Reading content is light markdown: `**bold**`,
+`*italic*`, blank line between paragraphs.
+
+**Matt is doing his own walkthrough** on a fresh account and editing
+text as he goes. The 2026-10-06 session added, all live: the welcome
+page (once per account, `:user/welcomed`), back navigation (lesson page
+→ welcome / previous lesson; first section → lesson page; quiz →
+reading), Common Stock throughout, interest revenue accrued on a
+promise, fuller Level 5 notes, and `REVERSE-MODE-DESIGN.org`.
 
 **The walkthrough is done (2026-09-30).** Matt and Claude went through
 every lesson in the pilot's order as a student — 0, 1, 2, 4, 5, 9, 6, 7,
@@ -139,13 +182,11 @@ Reporting (see LESSON-REPORTING-DESIGN.org)
   already running detached (8081 dev server, 9630, nREPL 7888).
 - **`AALP_FLOW=lessons`** is set in `~/.config/aalp/env`; delete the line
   and restart the backend to get the Guided Year back.
-- From a laptop: `ssh -f -N -L 8081:localhost:8081 choochoo`, then
-  http://localhost:8081 (hot reload's socket is not tunnelled; reload by
-  hand).
-- Workflow used: edit the Dropbox checkout, scp to choochoo to test,
-  commit locally, push, then fast-forward choochoo after checking its
-  working copy matches (`git diff origin/master` must be empty — note
-  `git diff --stat` exits 0 either way).
+- From a laptop: `ssh -f -N choochoo-dev`, then http://localhost:8081;
+  the tunnel carries 8081, 9630 (hot reload) and 7888 (nREPL).
+- Workflow **until 2026-10-06**: edit the Dropbox checkout, scp to
+  choochoo, commit locally, push, fast-forward choochoo. **Now**: work
+  on choochoo directly and pull into Dropbox -- see "Start here".
 
 ### Checks (all green at `cba2e50`)
 

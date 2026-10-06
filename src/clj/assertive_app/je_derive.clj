@@ -113,15 +113,19 @@
     :amount :flow
     :text "Money the business holds is Cash — an asset. Some went out."}
 
-   ;; -------- Money in with nothing going out: the residual ----------
-   ;; The residual is a claim BY somebody, so the record has to know who
-   ;; before it can name it. Without this, money in with nothing else said
-   ;; yet -- the first assertion of a sale, say -- read as Owner's Capital,
-   ;; a finished-looking answer to a question the record had not been
-   ;; asked (cohort c7, two learners).
+   ;; -------- Money in for ownership: an exchange like any other -------
+   ;; Common Stock is what the business gave for the money -- a share of
+   ;; ownership -- so the student has to say so: `provides` ownership
+   ;; units. It used to be the residual of money in with a counterparty
+   ;; and nothing else said, which put Common Stock on the first
+   ;; assertion of every cash sale; Matt, 2026-10-06: "Common stock is
+   ;; still an exchange, just for ownership interest." Money in with
+   ;; nothing given now stays unbalanced, and the placeholder asks what
+   ;; the business gave up.
    {:id :owner-capital
     :when {:assertion :receives :params {:unit "monetary-unit"}}
-    :context {:all-of  [{:assertion :has-counterparty}]
+    :context {:all-of  [{:assertion :has-counterparty}
+                        {:assertion :provides :params {:unit #{"ownership-units" "ownership-unit"}}}]
               :none-of [{:assertion :provides :params {:unit "physical-unit"}}
                         {:assertion :requires}
                         {:assertion :modifies}
@@ -132,7 +136,7 @@
     ;; (decided 2026-10-05). Nothing in the assertions tells them apart.
     :line {:side :credit :account "Common Stock"}
     :amount :monetary
-    :text "Money came in and nothing went out with it. The business gave up no goods, took on no obligation to repay, and settled nothing owed. What is left is a claim by the one who put the money in — the counterparty says who — against whatever the business has, and that is what equity IS. Not a kind of transaction, but the part left over once you have accounted for what the business owes. (If goods DID go out to somebody for this money, say so — provides — and this line becomes Revenue. If the money settles something this party already owed, name the promise it keeps — fulfills — and this line becomes the claim being cleared.)"}
+    :text "Money came in, and what the business gave for it was a share of itself: ownership units. That is still an exchange — cash for an ownership interest — and the interest it gave is a claim by the one who put the money in against whatever the business has. That claim is equity, and the money paid for it is Common Stock. It is not owed back: the business took on no obligation to repay, so it is not a liability."}
 
 ;; -------- Money out with nothing coming in: the owner's draw -------
    ;; The mirror of :owner-capital. Nothing came in, nothing is promised,

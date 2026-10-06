@@ -461,8 +461,9 @@ POST /api/simulation/advance-period - Advance to next period
 On **choochoo**, in `~/clojure/aalp`, which runs the app and is where Matt
 edits over TRAMP. The shadow-cljs watcher there rebuilds and hot-reloads
 the browser on every save of a `.cljs`/`.css` file. `.clj` changes need
-the backend restarted (`./restart-backend.sh`) or the buffer loaded into
-the nREPL on 7888. Commit and push from choochoo; the Dropbox checkout
+the backend restarted (`./restart-backend.sh`). The nREPL on 7888 belongs
+to the shadow-cljs JVM, not the backend, so loading a `.clj` buffer there
+does not reach the running app. Commit and push from choochoo; the Dropbox checkout
 on Matt's laptop is a mirror to `git pull --ff-only` into.
 
 **Never `git checkout -- src` on choochoo**: Matt's saved, uncommitted
@@ -503,7 +504,7 @@ The `!` character triggers shell history expansion in some contexts, causing the
 | Backend API | 3000 | http://localhost:3000/api |
 | Frontend (shadow-cljs) | 8081 | http://localhost:8081 |
 | shadow-cljs dashboard | 9630 | http://localhost:9630 |
-| nREPL | 7888 | For Emacs/CIDER connection |
+| nREPL (shadow-cljs JVM, not the backend) | 7888 | CIDER for ClojureScript |
 
 ### Remote Access (via nginx)
 

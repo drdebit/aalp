@@ -20,13 +20,15 @@ choochoo. Rules for a session working there:
   his files alone.
 - `.cljs` / `.css`: save, and the page updates in a second or two
   (watcher + hot-reload socket on 9630). `.clj`: the backend does not
-  reload files -- connect CIDER to nREPL 7888 and `C-c C-k` the buffer,
-  or `./restart-backend.sh` (~45 s, detached: `setsid nohup ... &`).
+  reload files and has no nREPL of its own, so run
+  `./restart-backend.sh` (~45 s, detached: `setsid nohup ... &`). The
+  nREPL on 7888 is the **shadow-cljs** JVM (`shadow.user`), not the
+  backend: loading a `.clj` file there changes nothing the app serves.
 - Commit on choochoo (author Matt when the edit is his), `git push
   origin master` works from there, then `git pull --ff-only` in Dropbox.
 - From Matt's laptop the tunnel is `ssh -f -N choochoo-dev` (ssh config
   in system-configs, host mini-revere): 8081 app, 9630 hot reload, 7888
-  nREPL. On the VPN the app is also at choochoo.dyn.gsu.edu:8081 and hot
+  shadow-cljs nREPL (ClojureScript, not the backend). On the VPN the app is also at choochoo.dyn.gsu.edu:8081 and hot
   reload works there without a tunnel.
 - Test accounts from this work: `walk-0930@test.com` (course complete),
   `welcome-1006@test.com`, `welcome-1006b@test.com` (on the first gate).
@@ -48,7 +50,14 @@ text as he goes. The 2026-10-06 session added, all live: the welcome
 page (once per account, `:user/welcomed`), back navigation (lesson page
 → welcome / previous lesson; first section → lesson page; quiz →
 reading), Common Stock throughout, interest revenue accrued on a
-promise, fuller Level 5 notes, and `REVERSE-MODE-DESIGN.org`.
+promise, fuller Level 5 notes, and `REVERSE-MODE-DESIGN.org`. Later that day:
+Common Stock derives only when the business `provides` ownership units
+(it had been the residual of any money in from a named party, so it
+appeared on the first assertion of every cash sale; Matt: "Common stock
+is still an exchange, just for ownership interest"), and the practice
+round links back to the lessons reading. **Open:** Owners Drawing is
+still the residual of money out to a named party; Matt wants it treated
+as an exchange too.
 
 **The walkthrough is done (2026-09-30).** Matt and Claude went through
 every lesson in the pilot's order as a student — 0, 1, 2, 4, 5, 9, 6, 7,
@@ -179,7 +188,7 @@ Reporting (see LESSON-REPORTING-DESIGN.org)
 
 - choochoo (`ssh choochoo`, needs the GSU VPN): backend
   `./restart-backend.sh` (reads `~/.config/aalp/env`), shadow-cljs watch
-  already running detached (8081 dev server, 9630, nREPL 7888).
+  already running detached (8081 dev server, 9630, nREPL 7888 -- shadow-cljss, not the backends).
 - **`AALP_FLOW=lessons`** is set in `~/.config/aalp/env`; delete the line
   and restart the backend to get the Guided Year back.
 - From a laptop: `ssh -f -N choochoo-dev`, then http://localhost:8081;

@@ -1,0 +1,102 @@
+#+TITLE: Reverse mode — from the entry back to the assertions
+#+AUTHOR: Matt DeAngelis, with Claude
+#+DATE: 2026-10-06
+
+Noted, not built. Raised by Matt on 2026-10-06 while reading the welcome
+page draft: the platform teaches assertions → entry, and students will
+spend the rest of 2101 reading entries written by other people. They
+need the other direction too. This records the idea and the design
+decisions so far, for after the pilot.
+
+* The idea
+
+The student writes a journal entry. The system does not grade it as an
+entry; it reads it, and shows what the business would have had to
+assert for that entry to fall out of the rulebook. Then it asks the
+student to finish the description.
+
+The point is dual fluency in the other direction. An entry is a lossy
+summary of an event; the assertive record is richer. Reverse mode makes
+the student feel the loss and repair it.
+
+* Why the map is one-to-many, and why that is the lesson
+
+Several assertion sets derive the same entry:
+
+| entry                             | what it leaves unsaid                              |
+|-----------------------------------+----------------------------------------------------|
+| DR Cash / CR Common Stock         | nothing further: an owner put money in             |
+| DR Equipment / CR Cash            | what the machine allows the business to do         |
+| DR Finished Goods / CR Cash       | that the goods were bought to sell on as they are  |
+| DR Raw Materials / CR Cash        | that the goods were bought to be used up making something |
+| DR Interest Expense / CR Interest Payable | that the promise is to the lender          |
+| DR Accounts Receivable / CR Revenue, DR COGS / CR Finished Goods | which batch the goods came out of; how sure the business is of being paid |
+
+So the system cannot show /the/ assertions. It can show what the entry
+*commits* the business to having said, and what it leaves open.
+
+* The construction (Matt, 2026-10-06)
+
+Map the entry to the assertion *pattern*, then ask the student to fill
+in the gaps from the narrative.
+
+- The accounts imply the skeleton. Equipment implies a capacity, so the
+  system adds an =allows= to the sentence -- but leaves blank *what* the
+  equipment allows, and the student fills that from the text. Raw
+  Materials implies an =expects= to consume, blank as to what is made.
+  Interest Payable implies a =requires= to a party, blank as to whom.
+  Accounts Receivable implies a =requires= from the customer and an
+  =expects= with a confidence the student has to judge.
+- The student completes the sentence; the derivation runs forward on
+  the completed sentence; it must reproduce the entry they started
+  from. That is the check, and it needs no new grading machinery.
+- This emphasises the meaning of the entry while keeping the fact that
+  the assertive base is richer: the entry gave the skeleton, the record
+  needed the rest.
+
+* How it can be built cheaply
+
+Everything needed is already in the codebase:
+
+- =classification/classifications= maps each pattern to its entry.
+  Inverting is a lookup: every pattern whose =:journal-entry= matches
+  the student's accounts.
+- =je_conformance/canonical-selection= already synthesises an assertion
+  set from a pattern's spec (required assertions and their required
+  parameters). Move it out of =test/= into the app.
+- Intersect the candidates' assertion sets for what the entry commits
+  to; diff them for what is open. Parameters the spec leaves =:any=
+  (the item, the party, the confidence, the batch) are exactly the gaps
+  to hand the student.
+- Run each completed sentence back through =je-derive/derive-je= to
+  confirm it reproduces the entry. All forty served patterns conform
+  (oracle, 2026-10-05), so the inversion is exact over the course's
+  vocabulary.
+- The entry input exists: =je-constructor= in views.cljs (debit,
+  credit, amount from dropdowns), built for the old "construct" mode.
+  The old "reverse" problem type (entry shown, student picks
+  assertions) is the same exercise without the gap-filling, and is only
+  reachable from the free-practice selector; it should be retired into
+  this.
+
+* Two forms
+
+1. *A problem type in each lesson's practice.* "Here is an entry a
+   bookkeeper wrote for this event. Say what the business must have
+   asserted, and finish what the entry could not say." The entry comes
+   from the lesson's own patterns; the narrative is the usual one.
+   Modest work once the inversion exists.
+2. *An explorer on the sentence builder.* "Start from the entry": the
+   student writes debits and credits, the sentence fills in with the
+   skeleton and blanks, and they see what they have and have not said.
+   For the student who thinks in entries and wants to translate.
+
+* Open
+
+- Which lessons get the problem type first. Cash Transactions (the
+  purpose gap: raw materials versus finished goods) and Legal (the
+  =allows= gap) make the point most sharply.
+- Whether the explorer should also run outside a problem, as a place to
+  type any 2101 entry and see its assertive reading.
+- Amounts: the construct input takes one amount; a sale with cost of
+  goods sold has two lines at two figures.

@@ -1,0 +1,59 @@
+#+TITLE: Welcome page — draft
+#+AUTHOR: Claude, for Matt
+#+DATE: 2026-10-06
+
+A page shown once, after the first sign-in and before the Cash
+Transactions gate. One button at the end. Draft for Matt to read before
+anything is wired in. The January framing it draws on is in
+=fc5aff7:src/cljs/assertive_app/tutorials.cljs= ("Learning Double-Entry
+Through Assertions", "Why This Approach Works").
+
+* The page
+
+** Heading
+
+Accounting by assertion
+
+** Body
+
+Every business keeps a record of the events that affect it: what it buys, what
+it sells, what it owes and is owed. That record becomes the business's books, and
+keeping those books is what accounting is. In this course you will learn to keep the books.
+
+Most accounting courses teach bookkeeping as a placement of dollars into accounts. When a business buys equipment, debit this and credit that;
+when it sells on credit, a different set of debits and credits. Each transaction maps to the accounts in a slightly different way. 
+
+This platform will also teach those mappings, but in a slightly different way. Instead of moving directly to the accounts, you will first declare what is true about the event. The
+business provided money and received a printer. The event occurred on January 3,
+and involved another party called PrinterWorld. The business bought the printer to print
+logos on blank shirts. These are called *assertions* and they often take the form of ordinary words such as /provides/ and /receives/ to describe who, when, and what the thing is for.
+
+The journal entries come out of these assertions. If the business bought shirts to print, they are classified as raw materials; if they were bought to sell on as they are, the same shirts
+are finished goods. The account follows from the assertions, based on the generally accepted accounting principles you will encounter everywhere else in 2101.
+
+Simple events take a few assertions. Complicated ones take more. Assertions are designed so that you can say as many true things about an event as you like. But only some of these assertions will affect the journal entry. 
+
+** How the lessons go
+
+Each lesson opens with a short reading and a few questions, followed by practice problems. You will periodically look back at earlier lessons to refresh your memory. The practice problems belong to small businesses like the one in the readings, each with its own
+books, and mistakes in practice cost nothing. The course ends with a
+year of one business's books, which you keep, check, correct and report
+on yourself.
+
+** Button
+
+Begin
+
+* Notes on placement
+
+- Shown once per account, before the Level 0 gate; after that the
+  lesson list is the landing page. Needs a =:welcomed= flag in progress
+  or a completed-tutorials sentinel, so it does not reappear.
+- "Review" from the lesson list could also reopen it, as the lessons
+  can be reopened.
+- The example (a printer from PrinterWorld, January 3) is the Level 0
+  worked example's company, so the first lesson picks up where this
+  leaves off.
+- Open: whether the page should carry the four-fact coffee example
+  from Cash Transactions section 2, or leave that to the lesson. The
+  draft leaves it to the lesson.

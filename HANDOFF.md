@@ -62,6 +62,14 @@ The ones that changed how the app behaves, not just what it says:
 Still open: SP remains the tutorials' worked example; practice belongs
 to other companies. Kept deliberately for now.
 
+Noted for after the pilot (2026-10-06), both as org files in the repo:
+- `WELCOME-PAGE.org` — a page shown once before the first lesson's
+  gate, saying what accounting by assertion is. Text agreed with Matt;
+  not wired in yet (needs a once-per-account flag).
+- `REVERSE-MODE-DESIGN.org` — the student writes the entry, the system
+  maps it to the assertion pattern and asks them to fill the gaps the
+  entry cannot say (what the equipment allows, whom the promise is to).
+
 ### Where the work turned (2026-09-28 → 09-30)
 
 The pilot runs **the lessons, not the Guided Year**. The Guided Year's

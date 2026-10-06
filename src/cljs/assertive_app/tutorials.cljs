@@ -39,7 +39,7 @@ Most accounting courses teach bookkeeping as a placement of dollars into account
 
 This platform teaches those mappings too, but in a slightly different way. Instead of affecting the accounts directly, you will declare what is true about the event. The business provided money and received a printer. The event occurred on January 3, and involved another party called PrinterWorld. The business bought the printer to print logos on blank shirts. These declarations are called **assertions** and they often take the form of ordinary words such as *provides* and *receives* to describe who, when, and what the thing is for.
 
-The journal entries come out of these assertions. If the business bought shirts to print, they are classified as raw materials; if they were bought to sell on as they are, the same shirts are finished goods. The account follows from the assertions, based on the generally accepted accounting principles you will encounter everywhere else in 2101.
+The journal entries derive from these assertions. If the business bought shirts to print, they are classified as raw materials; if they were bought to sell on as they are, the same shirts are finished goods. The account follows from the assertions, based on the generally accepted accounting principles you will encounter everywhere else in financial accounting.
 
 Simple events take a few assertions. Complicated ones take more. Assertions are designed so that you can say as many true things about an event as you like. But only some of these assertions will affect the journal entry."
    :lessons-heading "How the lessons go"
@@ -111,7 +111,7 @@ That one sentence contains four facts:
 That's it. That's a complete record of a transaction. In this platform, each of those four facts is called an **assertion** — a statement about the transaction that is true. You'll record business events by selecting the assertions that describe them."}
 
      {:heading "Meet the Four Assertions"
-      :content "Four assertions describe what **moved**. Here they are, using the coffee example:
+      :content "Four assertions describe a simple exchange. Here they are, using the coffee example:
 
 **has-date** — *when* did it happen?
 (This morning. In business: the transaction date.)
@@ -248,9 +248,9 @@ receives: $250 (monetary-unit)
 
 No **expects** here: what came in is money, and money does not need a purpose to be money.
 
-**Revenue is not an assertion.** There is nothing to select that says *this is revenue*. The assertions record what happened: goods went to a customer, money came in. Turning that pattern into an account is the work of a set of rules, and the rules this platform applies are GAAP's, the ones taught in ACCT 2101. Under those rules this pattern is revenue, earned when the goods are provided. You supply the record; the rules read it. A different set of rules could read the same record differently, which is why the two are kept apart.
+**Revenue itself is not an assertion.** There is nothing to classify a sale as  *revenue*. Assertions record what happened: goods went to a customer, money came in. The revenue rules applied by this platform are GAAP's, the ones taught in ACCT 2101. Under those rules this event qualifies as revenue, recognized when the goods are provided. A different set of revenue recognition rules could recognize this pattern differently.
 
-**A sale is two entries.** The first records what the sale earned:
+**A sale under GAAP is composed of two entries.** The first records what the sale earned:
 
 ::journal
 DR Cash $250
@@ -264,7 +264,7 @@ DR Cost of Goods Sold $100
 CR Finished Goods Inventory $100
 ::
 
-**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. So once your sale is right, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. **Any batch that holds those goods, with enough of them, is a fair answer.** The business decides which shirts it sold, and the cost of goods sold follows from that decision: name a batch that cost $5.00 a shirt and the sale costs $125; name one that cost $5.60 and the same sale costs $140 and shows $15 less profit. Same sale, same revenue, different cost — which is why the record keeps *which* batch and not just how many. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
+**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. Once your sale is recorded, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. **Any batch that holds those goods, with enough of them, is a fair answer.** The business decides which shirts it sold, and the cost of goods sold follows from that decision: name a batch that cost $5.00 a shirt and the sale costs $125; name one that cost $5.60 and the same sale costs $140 and shows $15 less profit. Same sale, same revenue, different cost — which is why the record keeps *which* batch and not just how many. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.

@@ -3645,7 +3645,7 @@
         "No new words in this lesson. Everything below, rearranged — which is where the interesting accounts come from."])
      (when (seq known)
        [:p.or-known
-        [:span.or-label "Already yours: "]
+        [:span.or-label "From previous lessons: "]
         (str/join ", " (sort (map :label known)))])]))
 
 (defn orientation-panel
@@ -3675,7 +3675,7 @@
 
      (when-let [ex (:example o)]
        [:div.or-slot
-        [:h5 "One worked through"]
+        [:h5 "Example"]
         [:p.or-narrative (process-inline (:narrative ex))]
         [assertion-lines (:assertions ex)]
         [journal-lines (:entry ex)]])

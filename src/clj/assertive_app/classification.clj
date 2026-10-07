@@ -263,7 +263,7 @@
    - :data-source - For data-driven calcs, describes what data is needed"
   {:systematic-allocation
    {:label "Systematic Allocation (Depreciation or Amortisation)"
-    :description "Spreads the cost of a long-term asset over its useful life"
+    :description "Spreads the cost of a productive asset over its useful life"
     :formula [:divide [:subtract :asset-cost :salvage-value] :useful-life]
     :formula-display "(Asset Cost - Salvage Value) ÷ Useful Life"
     ;; Which asset is being written down. The calculation is identical
@@ -1495,7 +1495,7 @@
 
    :cash-equipment-purchase
    (cash-exchange
-     "Cash purchase of equipment (provide cash, receive long-term asset)"
+     "Cash purchase of equipment (provide cash, receive productive asset)"
      [{:debit "Equipment (Fixed Asset)" :credit "Cash"}]
      :note "The business provided cash and received a machine, and said what the machine allows: a transformation it makes possible without being used up by it. That capacity is what makes the purchase Equipment, an asset held for use. Without allows the record could not tell a printer bought to print on from a printer bought to sell."
      :provides-unit "monetary-unit"
@@ -1541,7 +1541,7 @@
 
    :merchandise-purchase
    (cash-exchange
-     "Cash purchase of goods to sell on (provide cash, receive merchandise)"
+     "Cash purchase of goods to sell on (provide cash, receive merchandise for sale)"
      [{:debit "Finished Goods Inventory" :credit "Cash"}]
      :note "The business provided cash and received goods, and said what it expects to do with them: sell them on as they are. That purpose is what makes them Finished Goods Inventory, stock waiting for a buyer. The same goods bought to use up making something would be Raw Materials Inventory."
      ;; And here the purpose is the whole difference. Same shirts, same
@@ -1927,7 +1927,7 @@
    {:required #{:has-date :reports}
     :required-parameters {:reports {:category "expense" :basis "systematic-allocation"}}
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
-    :description "Depreciation of long-term asset"
+    :description "Depreciation of productive asset"
     :journal-entry [{:debit "Depreciation Expense" :credit "Accumulated Depreciation"}]
     :note "Nothing moved today, so no exchange can place this; the business `reports` it instead: an expense, worked out by systematic allocation. The press was paid for when it was bought, and its cost is being spread over the periods it will produce in. This period's share is Depreciation Expense, and the credit is not to Equipment but to Accumulated Depreciation, so the books show both what the press cost and how much of that has been used up."
     :examples ["SP records monthly depreciation on t-shirt printer"

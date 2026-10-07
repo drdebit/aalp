@@ -74,11 +74,15 @@ Simple events take a few assertions. Complicated ones take more. Assertions are 
       :entry ["DR Raw Materials Inventory $150" "CR Cash $150"]}
      :pair
      {:same "SP **provides** money and **receives** something, from a counterparty."
-      :a {:when "Receives 50 blank t-shirts, expects to print on them"
+      ;; Equipment first, so the point below follows the two shirt rows
+      ;; it is about.
+      :a {:when "Receives a t-shirt printer, allows it to print blank shirts into printed ones"
+          :becomes "Equipment"}
+      :b {:when "Receives 50 blank t-shirts, expects to print on them"
           :becomes "Raw Materials Inventory"}
-      :b {:when "Receives 50 blank t-shirts, expects to sell them on as they are"
+      :c {:when "Receives 50 blank t-shirts, expects to sell them on as they are"
           :becomes "Finished Goods Inventory"}
-      :point "The purpose changed. Same shirts, same money, same vendor — and a different account falls out, because what the business said it bought them for is what decides where they belong."}
+      :point "Same shirts, same money, same vendor: a different account classification. Asset accounts are chosen according to their anticipated future use."}
      :effect
      {:holds "Before: $10,000 cash. After: $9,850 cash and 50 shirts. The business is no poorer — it swapped one asset for another."
       :may-or-must "Before: nothing. After: the shirts are committed to printing. Nothing in the journal entry records that, and it is the reason they are raw materials rather than stock for sale."}

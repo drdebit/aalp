@@ -3686,7 +3686,8 @@
         [:p.or-pair-same (process-inline (:same p))]
         [:div.or-pair-rows
          (doall
-           (for [[k side] [[:a (:a p)] [:b (:b p)]]]
+           ;; :c when a lesson has a third case (Level 0: equipment).
+           (for [k [:a :b :c] :let [side (get p k)] :when side]
              ^{:key k}
              [:div.or-pair-row
               [:span.or-pair-when (process-inline (:when side))]
@@ -4797,13 +4798,14 @@
                [:td (:description c)]
                [:td.checkin-entry
                 (str/join "; " (for [e (:entry c)] (str "DR " (:debit e) " / CR " (:credit e))))]])]]])
-       (when-let [{:keys [a b point]} (:pair (tutorials/orientation-for level))]
+       (when-let [{:keys [point] :as pair} (:pair (tutorials/orientation-for level))]
          [:div.checkin-section
-          [:h3 "The one to remember"]
+          [:h3 "Ones to remember"]
           ;; Written for the orientation, which renders markdown; plain
           ;; text here, so the emphasis marks go.
-          [:p (str/replace (str (:when a)) "**" "") " → " [:strong (:becomes a)]]
-          [:p (str/replace (str (:when b)) "**" "") " → " [:strong (:becomes b)]]
+          (for [side (keep pair [:a :b :c])]
+            ^{:key (:becomes side)}
+            [:p (str/replace (str (:when side)) "**" "") " → " [:strong (:becomes side)]])
           [:p.checkin-point (str/replace (str point) "**" "")]])
        [:div.checkin-actions
         (if earlier?

@@ -543,7 +543,7 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
     ;; transformation or a sale depending on whether anyone was on the
     ;; other side.
     :orientation
-    {:framing "Every event so far had someone on the other side. This lesson is the first where the business acts on its own things, and nobody else is involved at all."
+    {:framing "Every event so far had someone on the other side. This lesson is the first where the business acts on its own, with no counterparty."
      :protocol ["Everything from the first two lessons still applies — but check first: **was anyone on the other side?** If not, this is not an exchange."
                 "What was used up? — **consumes**"
                 "What came into being? — **creates**"
@@ -560,8 +560,8 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
       :a {:when "Consumed, and printed shirts created — nobody else involved"
           :becomes "Finished Goods Inventory"}
       :b {:when "Provided to a counterparty, who pays for them"
-          :becomes "a sale"}
-      :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and earning it."}
+          :becomes "Revenue and Cost of Goods Sold"}
+      :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and creating profit."}
      :effect
      {:holds "Before: 10 blank shirts. After: 10 printed ones. Nothing was gained or lost — value changed form."
       :may-or-must "Before: the shirts were committed to printing. After: that commitment is discharged, and the printer's **allows** has been drawn on once more."}
@@ -579,9 +579,9 @@ This lesson introduces **internal transformations** — using your resources to 
 
 **creates** — Produces new resources (outputs from production)
 
-**is-allowed-by** — Links to the equipment that enables production
+**is-allowed-by** — Links to productive and legal capacities that enable production
 
-Notice: **No counterparty!** This happens entirely within your business.
+**No counterparty!** This happens entirely within your business.
 
 Remember the t-shirt printer from the first lesson? The printer **allows** production — and production references this connection through **is-allowed-by**. Equipment enables transformation."}
 
@@ -623,7 +623,7 @@ Now you can see where the goods you sell come from — and why each batch carrie
 ::assertions
 provides: $400 (monetary-unit)
 receives: a logo design (intellectual-property)
-allows: printing blank shirts into printed ones
+allows: printing this specific design onto blank shirts
 ::
 
 ::journal

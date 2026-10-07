@@ -332,7 +332,7 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
     ;; One new word, six new classifications. This is the level where
     ;; the framework's claim is most visible, so the pair does the work.
     :orientation
-    {:framing "This lesson adds exactly one word — and with it the business can say what somebody still owes, in either direction."
+    {:framing "This lesson adds one assertion. With it, the business can say what a party owes, in either direction."
      :protocol ["Everything from the first lesson still applies: what moved today, and what for."
                 "Then: was a promise made about the future? — **requires**, naming who must do what, by when"
                 "Then: is the outcome in the business's hands? If not, how likely is it? — **expects**"]
@@ -345,16 +345,16 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
                    "expects: 92% confident of receiving it"]
       :entry ["DR Accounts Receivable $625" "CR Revenue $625"]}
      :pair
-     {:same "The business makes one assertion, **requires**, about money that has not moved."
+     {:same "The business makes one assertion, **requires**, about money that has not yet changed hands."
       :a {:when "Goods came IN, and money is to go out"
           :becomes "Accounts Payable — a debt"}
-      :b {:when "Goods went OUT, and money is to come in"
+      :b {:when "Goods went OUT, and money will come in"
           :becomes "Accounts Receivable — a claim"}
       :point "The same word, in the same place in the sentence. Which way the goods went is the entire difference between owing and being owed."}
      :effect
      {:holds "Before: 25 shirts. After: no shirts, and a claim on CampusBoutique worth $625."
-      :may-or-must "Before: nothing owed either way. After: somebody else must pay — and SP has recorded how sure it is they will. That confidence is in no journal entry anywhere, and at year end it is what the allowance for doubtful accounts is built from."}
-     :reminder "One assertion, requires. When the goods have moved and the money is still due, it is a claim or a debt, by which way the goods went. When the money has moved and the goods are still due, the promise is about goods — and the lesson comes to those two cases too."}
+      :may-or-must "Before: nothing owed either way. After: somebody else must pay — and SP has recorded how sure it is they will. That confidence is not reflected in the journal entry, but is used to create the allowance for doubtful accounts at period end."}
+     :reminder "One new assertion: requires. It records the presence of an unmet obligation."}
     :sections
     [{:heading "Buying Now, Paying Later"
       :content "In the first lesson everything happened at once: cash out, goods in, done.
@@ -363,7 +363,7 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
 
 You owe **the garage** — the people who did the work. That is what makes it credit, and businesses do it constantly: buying **on credit**, or \"on account\".
 
-So on the day the ink cartridges arrive, what happened? You received cartridges and provided nothing. No money moved — and yet something real did, something the books have to carry: **you now owe money**.
+So on the day the ink cartridges arrive, what happened? You received cartridges and provided nothing. No money changed hands, but a promise did: **you now owe money**.
 
 This lesson is about recording promises."}
 
@@ -393,28 +393,26 @@ DR Raw Materials Inventory $100
 CR Accounts Payable $100
 ::
 
-Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created — accountants call money you owe vendors **Accounts Payable**. A `requires` where SP owes is what accountants call a **liability**."}
+Cartridges came in (debit, same as always). But instead of cash going out, a **debt** was created. Accountants call money you owe vendors **Accounts Payable**. A **requires** asserting that SP owes a counterparty is what accountants call a **liability**."}
 
      {:heading "Promises and Probabilities"
-      :content "**requires** records a promise. **expects** records a probability. They are different kinds of statement, not two halves of one choice — a transaction may carry one, the other, both, or neither.
+      :content "**requires** records a promise. **expects** records a probability. They are different kinds of statements, not two halves of one choice: a transaction may carry one, the other, both, or neither.
 
 You have used **expects** already. Every time you bought materials you said what they were for — *we expect to use these up making printed t-shirts* — and that is an expectation about a future event with a number on how sure you are. What changes here is only where it points: at somebody else's action instead of your own plan.
 
-That raises a fair question, and it is worth answering now. If you can put a probability on your own plan, why not on your own promise? Because they are not alike. You decide whether you pay a bill you agreed to pay; nothing else gets a vote. You do not entirely decide whether those shirts get printed — the press may break, the order may be cancelled, you may sell the blanks on instead. **A probability on your own promise is idle. A probability on your own plan is not.**
-
 **requires** — a named party must do a specific thing by a specific date. Either direction: SP owes, or SP is owed.
 
-**expects** — how likely an outcome is, as a confidence level.
+**expects** — how likely an outcome is, with a confidence level.
 
 *A customer owes SP $250.* Both. **requires** records the promise — that is where Accounts Receivable comes from — and **expects** records how likely the money is to arrive: say 92%.
 
 *SP owes InkMasters $100.* The promise: **requires**. That is Accounts Payable.
 
-*SP pays a vendor in advance.* Whether the goods turn up is the vendor's doing, so SP records how sure it is: **expects**.
+*SP pays a vendor in advance.* Whether the goods turn up relies on the vendor, so SP records how sure it is using **expects**.
 
-Notice what is missing from the second one: no **expects**. The rule is that a promise carries a probability. **The one exception is the business's own promise.** SP decides whether it pays its own bills; it agreed to pay, and it means to, so there is nothing to estimate, and by convention no number is recorded. (Nothing forbids one. It would just be idle.) Everywhere else, if the outcome is not the business's to decide, the number belongs on the record. A business owed $50,000 that expects 92% of it stands somewhere different from one expecting 60%."}
+Note that we use **expects** to record other people's promises but not our own. Theoretically we could, and there are circumstances such as financial distress when we probably should. This platform assumes a that we intend to keep our own promises with 100% probability. But an **expects** assertion could be added to these events if there is doubt about whether we will keep our promise."}
      {:heading "Selling on Credit: The Other Chair"
-      :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid** — the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
+      :content "Now flip it around: this time **SP is the one who delivers first and waits to be paid**; in our earlier example, this is the garage's side of the story. A customer takes SP's t-shirts today and promises to pay later.
 
 **Example: SP sells 10 printed t-shirts to CampusBoutique on 30-day credit for $250.**
 
@@ -438,16 +436,16 @@ requires: SP is to receive $250 (monetary-unit) by the due date — the customer
 expects: 92% confident of receiving that $250
 ::
 
-The confidence number isn't busywork — at year-end it feeds directly into estimating how much of what customers owe will actually arrive (accountants call this *bad debt*). You're doing real accounting judgment when you set it.
+The confidence number isn't busywork: at year-end it feeds directly into estimating how much of what customers owe will actually arrive (accountants call this *bad debt*). You're exercising real accounting judgment when you set it.
 
-**The journal entry:** a promise from a customer is money SP is owed — accountants call that an **asset** named **Accounts Receivable**. And giving up goods in exchange for a payment promise? Double-entry calls that **Revenue**:
+**The journal entry:** a promise from a customer is money SP is owed. This promise becomes an **asset** named **Accounts Receivable**. And giving up goods in exchange for a payment promise? GAAP calls that **Revenue**:
 
 ::journal
 DR Accounts Receivable $250
 CR Revenue $250
 ::
 
-Notice *when* the revenue appears: today, the day the shirts went out — not next month when the money arrives. SP has done its part, and what is left is a claim on the customer. Recording revenue when it is earned rather than when it is collected is what accrual accounting means, and a credit sale is the first place you can see the difference."}
+Notice *when* the revenue appears: today, the day the shirts went out — not next month when the money arrives. SP has done its part, and what is left is a claim on the customer. Recording revenue when it is earned rather than when it is collected is at the heart of accrual accounting, and a credit sale is a simple place where you can see the difference."}
 
      {:heading "Paying in Advance (Both Directions)"
       :content "Two last patterns — this time the MONEY moves first and the goods or services come later. Same tools, same question about who controls the outcome.
@@ -456,7 +454,7 @@ Notice *when* the revenue appears: today, the day the shirts went out — not ne
 
 - receives: $500 cash — money came IN today
 - requires: SP must deliver the shirts by the promised date
-- In SP's hands? Yes — SP decides whether it delivers, so there is nothing to estimate: **expects** is optional (usually left off)
+- Is the promise in SP's hands? Yes. SP decides whether it delivers, so there is nothing to estimate: **expects** is optional (usually left off)
 
 ::journal
 DR Cash $500
@@ -469,15 +467,15 @@ That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP
 
 - provides: $600 cash — money went OUT today
 - expects: SP will receive coverage over the coming year, with a confidence level
-- Any promise? Yes — the policy binds the insurer to provide cover, so **requires** records it, the same as any other promise.
-- In SP's hands? **No** — the insurer delivers, not SP, so SP also records how sure it is of getting what it paid for → **expects**.
+- Is there a promise? Yes. The policy binds the insurer to provide coverage, so **requires** records it, the same as any other promise.
+- Is the promise in SP's hands? **No**. The insurer delivers, not SP, so SP also records how sure it is of getting what it paid for → **expects**.
 
 ::journal
 DR Prepaid Expense $600
 CR Cash $600
 ::
 
-SP paid but hasn't USED anything yet — the right to future coverage is something SP owns: an **asset** (*Prepaid Expense*).
+SP paid but hasn't USED anything yet. The right to future coverage is something SP owns: an **asset** (*Prepaid Expense*).
 
 **The whole level in one table:**
 
@@ -488,21 +486,21 @@ SP paid but hasn't USED anything yet — the right to future coverage is somethi
 | Customer pays in advance | SP owes delivery | Yes — SP decides whether it delivers | **requires** (expects optional) |
 | SP pays in advance | Vendor owes delivery | No — the vendor delivers, not SP | **requires** + **expects** |
 
-Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, there is nothing to estimate. If it is not, **expects** carries how likely the promise is to be kept.
+Every row records the promise with **requires**. What the third column decides is whether a probability goes beside it: **is the outcome in SP's hands?** If it is, we assume 100%. If it is not, **expects** records how likely the promise is to be kept.
 
-**And where the promise sits decides the account.** This is the same one assertion, `requires`, four times over:
+**The promise determines the account classification.**  The same assertion, **requires**, under different conditions:
 
 - In a credit purchase or a credit sale it stands **in place of** money that did not move. So the line that would have been Cash is something else instead: **Accounts Payable** when SP owes, **Accounts Receivable** when SP is owed.
-- In a prepayment it sits **beside** money that really did move. Cash is still credited — and the promise becomes the thing SP got for it: **Prepaid Expense** when SP paid ahead, **Deferred Revenue** when SP was paid ahead.
+- In a prepayment it sits **beside** money that really did move. Cash is still credited and the promise is what SP got in exchange. This is a **prepaid Expense** when SP paid ahead. It is **Deferred Revenue** when SP was paid before delivering.
 
-Nothing here is a rule to memorise. The account follows from where the promise sits and which way the goods went, and you can watch it happen: take the `requires` out of a credit sale and look at the panel. Accounts Receivable disappears — and so does the amount on the Revenue line, because in a credit sale the promise is the only thing that says how much money is involved. No money moved. Without the promise, the record does not know what the shirts were worth."}
+The account is determined by who makes the promise and for what. You can experiment with this during practice: place **requires** on different sides of the exchange and see what happens to the entry."}
 
      {:heading "How to Approach Every Credit Problem"
-      :content "A recipe you can follow every single time:
+      :content "A recipe you can follow:
 
 **Step 1.** Read the narrative. Ask: did money move TODAY? Did goods move TODAY? Record only what actually moved: **provides** for out, **receives** for in. If it didn't move today, don't select it.
 
-**Step 2.** Ask: was a promise made about the FUTURE? If yes, select **requires** and fill in what must be provided, how much, and by when — it's all in the narrative.
+**Step 2.** Ask: was a promise made about the FUTURE? If yes, select **requires** and fill in what must be provided, how much, and by when.
 
 **Step 3.** Ask who controls the outcome. If it is not SP — a customer paying, a vendor delivering — add **expects** with how sure SP is that it happens.
 
@@ -510,7 +508,7 @@ Nothing here is a rule to memorise. The account follows from where the promise s
 
 **Step 5.** Read your sentence back — does it retell the story? Submit, then study the derived journal entry panel: click each line and see which of your assertions produced it.
 
-If you get stuck during practice, the **Review Tutorial** button brings you back here. Mistakes in practice cost nothing — that's what it's for."}]
+If you get stuck during practice, the **Review Tutorial** button brings you back here. Mistakes during practice are part of the process."}]
 
     :quiz
     [{:id :l1-q1

@@ -135,6 +135,14 @@
     :db/cardinality :db.cardinality/one
     :db/doc "EDN string of assertions map"}
 
+   ;; The same answer in full form: requires/expects/allows each holding
+   ;; the event it predicts (engine canonical form, built by the AALP
+   ;; adapter). Saved from 2026-10-07; earlier attempts have none.
+   {:db/ident :attempt/canonical
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN string of the event in engine canonical (nested) form"}
+
    {:db/ident :attempt/je-debit-account
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
@@ -374,6 +382,11 @@
     :db/valueType :db.type/string
     :db/cardinality :db.cardinality/one
     :db/doc "Historical: event ID in the old persistent engine store"}
+
+   {:db/ident :ledger-entry/canonical
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "EDN string of the entry in engine canonical (nested) form"}
 
    ;; ==================== Telemetry ====================
    ;; What happened between serving a problem and answering it. Attempts

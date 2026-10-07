@@ -16,7 +16,8 @@
             [clojure.edn :as edn]
             [clojure.string :as str]
             [assertive-app.cost-basis :as cost]
-            [assertive-app.chain :as chain]))
+            [assertive-app.chain :as chain]
+            [assertive-app.engine :as engine]))
 
 ;; ==================== Configuration ====================
 
@@ -987,7 +988,13 @@
                           a
                           (assoc a :has-identifier
                                  (event-identifier a (inc (count (get-ledger user-id))))))))
-        tx-data (cond-> {:ledger-entry/id (java.util.UUID/randomUUID)
+        entry-id (java.util.UUID/randomUUID)
+        ;; The row's id is the event id when the record is loaded, so the
+        ;; full form is named by it too.
+        canonical (engine/canonical-edn (:assertions entry)
+                                        {:event-id entry-id
+                                         :template-key (:template-key entry)})
+        tx-data (cond-> {:ledger-entry/id entry-id
                           :ledger-entry/user user-id
                           :ledger-entry/date (:date entry)
                           :ledger-entry/period (:period entry)
@@ -999,7 +1006,9 @@
                           :ledger-entry/created-at (java.util.Date.)
                           :ledger-entry/template-key (:template-key entry)}
                   (:engine-event-id entry)
-                  (assoc :ledger-entry/engine-event-id (:engine-event-id entry)))]
+                  (assoc :ledger-entry/engine-event-id (:engine-event-id entry))
+                  canonical
+                  (assoc :ledger-entry/canonical canonical))]
     @(d/transact (schema/get-conn) [tx-data])))
 
 (defn update-ledger-entry!
@@ -1011,10 +1020,12 @@
    which units went out, which is an assertion being added to it rather
    than a correction of one."
   [entry-id assertions journal-entry]
-  @(d/transact (schema/get-conn)
-     [{:ledger-entry/id entry-id
-       :ledger-entry/assertions (pr-str assertions)
-       :ledger-entry/journal-entry (pr-str journal-entry)}]))
+  (let [canonical (engine/canonical-edn assertions {:event-id entry-id})]
+    @(d/transact (schema/get-conn)
+       [(cond-> {:ledger-entry/id entry-id
+                 :ledger-entry/assertions (pr-str assertions)
+                 :ledger-entry/journal-entry (pr-str journal-entry)}
+          canonical (assoc :ledger-entry/canonical canonical))])))
 
 (defn record-events
   "A student's record, as events ready to be loaded for computation.

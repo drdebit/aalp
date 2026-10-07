@@ -1,6 +1,7 @@
 (ns assertive-app.progress
   "Progress tracking and level unlocking for AALP."
   (:require [assertive-app.schema :as schema]
+            [assertive-app.engine :as engine]
             [clojure.edn :as edn]
             [datomic.api :as d]))
 
@@ -131,6 +132,9 @@
    - :classification-result - map from classify-transaction (:closest, :exact-matches)
    - :drill-entry - :tutorial or :test-out when the attempt is a tutorial-drill problem
    - :seconds-elapsed - raw serve-to-submit seconds (uncapped; outliers handled at analysis)
+   - :event-id - the event the answer records, when it is not the problem id
+                 (the capstone's transaction id)
+   - :company - whose books: asserts the full form's events
 
    Progress is only counted toward level unlock when template-level >= level.
    This ensures students only advance by completing problems at their current level,
@@ -138,7 +142,8 @@
   [{:keys [user-id problem-id problem-type level template-level template-key
            selected-assertions je-debit je-credit je-amount
            correct feedback-status drill-entry seconds-elapsed
-           correct-classification classification-result]}]
+           correct-classification classification-result
+           event-id company]}]
   (let [now (java.util.Date.)
         ;; Extract classification diff from the result
         closest (:closest classification-result)
@@ -159,6 +164,18 @@
 
                      selected-assertions
                      (assoc :attempt/selected-assertions (pr-str selected-assertions))
+
+                     ;; The same answer in full form. The event is named
+                     ;; by the problem (or the capstone's transaction), so
+                     ;; what it predicts is <id>/requires and can be named.
+                     (map? selected-assertions)
+                     (as-> tx (if-let [c (engine/canonical-edn
+                                           selected-assertions
+                                           {:event-id (or event-id problem-id)
+                                            :asserted-by company
+                                            :template-key template-key})]
+                                (assoc tx :attempt/canonical c)
+                                tx))
 
                      je-debit
                      (assoc :attempt/je-debit-account je-debit)

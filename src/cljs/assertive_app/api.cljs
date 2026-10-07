@@ -597,6 +597,8 @@
         correct-classification (:correct-classification problem)]
     (POST (str api-base "/classify")
       {:params (cond-> {:selected-assertions (state/selected-assertions)
+                        ;; Whose books: asserts the full form saved with it.
+                        :company (:company problem)
                         :correct-classification correct-classification
                         ;; The company's record, so the grader reads the
                         ;; same paragraph the derived panel does.

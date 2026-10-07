@@ -27,7 +27,8 @@
             [assertive-engine.store.memory :as mem]
             [assertive-engine.compute.collects :as collects]
             [assertive-engine.compute.derive :as derive]
-            [clojure.tools.logging :as log]))
+            [clojure.tools.logging :as log]
+            [clojure.walk :as walk]))
 
 ;; ---------------------------------------------------------------------------
 ;; Building a store for one record
@@ -43,6 +44,32 @@
        (catch Exception e#
          (log/warn e# "Engine query failed (non-fatal)")
          nil))))
+
+(defn canonical-edn
+  "One AALP event in full form, as EDN, to save beside the flat map.
+
+   The flat map is what the sentence builder, the grader and the
+   derivation read, and it stays. This is the record the flat map stands
+   for: each `requires`, `expects` and `allows` holding the event it
+   predicts, nested and named by where it is predicted
+   (<event-id>/requires), so a later event can name it. Matt,
+   2026-10-07: the structure must be complete and recoverable, however
+   it is simplified for the student.
+
+   Nil when there is nothing to build, or when the adapter cannot read
+   the map: a full form that fails costs the analysis one row, never the
+   student their answer."
+  [assertions {:keys [event-id asserted-by template-key]}]
+  (when (and (map? assertions) (seq assertions))
+    (try
+      (pr-str (aalp/aalp->canonical
+                (cond-> {:assertions (walk/keywordize-keys assertions)}
+                  event-id     (assoc :event-id (str event-id))
+                  asserted-by  (assoc :asserted-by asserted-by)
+                  template-key (assoc :template-key (keyword template-key)))))
+      (catch Exception e
+        (log/warn e "Could not build the full form of an event" {:event-id event-id})
+        nil))))
 
 (defn store-of
   "An engine store holding one student's record and nothing else.

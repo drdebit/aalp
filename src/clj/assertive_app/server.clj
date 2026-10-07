@@ -219,6 +219,7 @@
                                   :template-level (:template-level body)
                                   :template-key (:template-key body)
                                   :selected-assertions selected-assertions-raw
+                                  :company (:company body)
                                   :correct correct?
                                   :feedback-status (name (get-in result [:feedback :status] :indeterminate))
                                   :correct-classification correct-classification
@@ -319,6 +320,10 @@
         (progress/record-attempt!
           {:user-id (:db/id user)
            :problem-id (str "capstone-" tx)
+           ;; The books name the event by its transaction id (T03), so the
+           ;; full form does too.
+           :event-id tx
+           :company capstone/company
            :problem-type "capstone"
            :level 8
            :selected-assertions sel

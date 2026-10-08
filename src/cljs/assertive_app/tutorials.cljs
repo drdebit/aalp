@@ -747,153 +747,115 @@ Printing **plain** shirts still needs only the printer. In the practice round yo
 
    4
    {:title "Level 4: Legal and Regulatory Context"
-    :subtitle "What stands behind a transaction, and when it changes the entry"
-    ;; Three words for the party that was always there. The pair is the
-    ;; lesson's own table in miniature: required and allowed put the same
-    ;; payment in different places, and the question that separates them
-    ;; is whether anything lasting came of it.
+    :subtitle "When a rule requires a payment, and names the expense"
+    ;; 2101 keeps the one legal assertion that changes the entry: money
+    ;; paid because a rule required it. What a law allows or protects --
+    ;; the UCC, forming an LLC, contracts, copyright -- changes nothing a
+    ;; 2101 entry shows, and waits for Intermediate (Matt, 2026-10-08).
     :orientation
-    {:framing "This lesson names the third party behind every exchange — the law — so the business can say what compelled a transaction, what made it possible, and what protects it."
-     :protocol ["Everything so far still applies: what moved, which way, what was promised, how sure."
-                "Then look outside the two parties. Did a rule **compel** this? — **is-required-by**"
-                "Did a law **make it possible** — a company that can exist, a sale the law will enforce? — **is-allowed-by**"
-                "Does a law **protect** what was agreed or made? — **is-protected-by**"
-                "If money went out and nothing came in, the law is doing the work the goods usually do. Read it before anything else."]
+    {:framing "Every payment so far bought something. This lesson is about payments that buy nothing the business can keep: money paid because a rule required it. The rule is what names the expense."
+     :protocol ["Everything so far still applies: what changed hands, which way, what was promised, how sure."
+                "If money went out and nothing came in, ask why it was paid. Did a rule **require** it? — **is-required-by**"
+                "Name the rule — the tax code, or the regulator that requires a license. The rule is what names the expense."]
      :example
      {:narrative "On March 12, Northside Tees pays $500 in quarterly estimated income taxes."
       :assertions ["has-date: March 12"
+                   "has-counterparty: the IRS"
                    "provides: $500 (cash)"
                    "is-required-by: the tax code"]
-      :entry ["DR Tax Expense $500" "CR Cash $500"]}
+      :entry ["DR Income Tax Expense $500" "CR Cash $500"]}
+     :pair-heading "The same payment, a different rule"
      :pair
-     {:same "The business **provides** money under a law, and nothing comes back."
-      :a {:when "…because a rule **required** it: the quarterly tax"
-          :becomes "Tax Expense — this period's cost"}
-      :b {:when "…because a law **allowed** it: the filing that forms the LLC"
-          :becomes "Organization Costs — carried, because the company lasts"}
-      :point "The reason changed — required by a rule, or allowed by a law — and with it the question the record answers: did something lasting come of the payment?"}
+     {:same "The business **provides** money because a rule required it, and nothing comes back."
+      :a {:when "…the tax code required it: the quarterly estimated tax"
+          :becomes "Income Tax Expense"}
+      :b {:when "…a regulator required it: the license to operate a print shop"
+          :becomes "Licenses Expense"}
+      :point "No goods and no service came back, so nothing is held afterward. What decides the account is the rule that required the payment."}
      :effect
      {:holds "Before: $500 more cash. After: $500 less, and nothing new held. The tax bought this period's right to operate, and that is used up as the period goes."
       :may-or-must "Before: the business must pay its quarterly estimate. After: that duty is met, and the record says which rule imposed it — something no journal entry names."}
-     :reminder "The law was a party to every exchange. Naming it sometimes changes the entry, and always changes what the record can answer."}
+     :reminder "Money out with nothing coming back has no account of its own. The rule that required it names the expense."}
     :sections
     [{:heading "The Third Party Who Was Always There"
       :content "Every transaction so far has been between two parties who chose to deal with each other. SP and a vendor. SP and a customer.
 
-*A customer owes SP $250 and does not pay.* What actually makes that promise worth recording? Not the customer's good intentions. Something outside the two of them: a body of law that would make the customer pay, and a court that would enforce it.
+But some payments are not chosen. *Northside Tees pays $500 in quarterly estimated income taxes.* Nobody sold Northside anything. It paid because a rule outside the two parties required it.
 
-That third party has been there the whole time, and the record has not mentioned it once.
-
-This lesson gives it three assertions. Sometimes naming the law changes the journal entry. More often it does not — and the cases where it does not are the more interesting ones."}
+That third party — the law — stands behind business all the time. This lesson names it where naming it changes the journal entry: when a rule requires the business to pay, and nothing comes back."}
 
      {:heading "New Assertion: 'Is Required By' (money out because a rule said so)"
       :content "**is-required-by** — names the law or rule that made this event compulsory.
 
-*On 12 March, Northside Tees pays $500 in quarterly estimated income taxes.*
+*On March 12, Northside Tees pays the IRS $500 in quarterly estimated income taxes.*
 
 ::assertions
 has-date: the payment date
+has-counterparty: the IRS
 provides: $500 (cash)
 is-required-by: the tax code
 ::
 
-Notice what is missing: **no receives**. Money went out and nothing came in. In the lessons so far that never happened — every payment bought something, and the something was what you debited.
+Notice what is missing: **no receives**. There is a counterparty — the IRS — but money went out and nothing came in. In the lessons so far that never happened — every payment bought something, and the something was what you debited.
 
 ::journal
-DR Tax Expense $500
+DR Income Tax Expense $500
 CR Cash $500
 ::
 
-So where does the debit come from? From **is-required-by**. Money that leaves under a rule, with nothing coming back, has bought no asset the business can hold or sell. What it bought is the right to keep operating this period, and that is gone when the period is. It is an **expense**, and the rule that compelled it is what names the expense: the tax code gives Tax Expense, a regulator's license fee gives Compliance Expense.
+So where does the debit come from? From **is-required-by**. Money that leaves under a rule, with nothing coming back, has bought no asset the business can hold or sell. What it bought is the right to keep operating this period, and that is gone when the period is. It is an **expense**, and the rule that compelled it is what names the expense.
 
 This is the first assertion you have met that decides an account on its own, with no flow of goods to read."}
 
-     {:heading "'Is Allowed By', Again — Now Pointing at a Statute"
-      :content "You have used **is-allowed-by** before. In the production lesson it pointed at the press: the printer is what made printing possible.
-
-Now it points at a law.
-
-*Riverside Print Co. pays $150 to the state to form an LLC.*
+     {:heading "A License: Same Pattern, Different Rule"
+      :content "*Northside Tees pays the county $200 for the license it needs to operate a print shop.*
 
 ::assertions
-has-date: the filing date
-provides: $150 (cash)
-is-allowed-by: state business law
+has-date: the payment date
+has-counterparty: the county
+provides: $200 (cash)
+is-required-by: licenses and permits
 ::
-
-Same assertion, same question — *what made this event possible?* — and two kinds of answer. A machine, or a statute. A business cannot print shirts without a press, and cannot exist as an LLC without a law that provides for one.
 
 ::journal
-DR Organization Costs $150
-CR Cash $150
+DR Licenses Expense $200
+CR Cash $200
 ::
 
-Compare that with the tax payment. Both are money out under a rule, and they land in different places. The tax bought this period and nothing more. The filing fee brought the entity itself into existence, and the entity is still there next year — so its cost is **carried**, not expensed at once.
+The shape is the tax payment's: money out, nothing in, a rule that required it. The rule is different, and so is the expense it names. The tax code gives **Income Tax Expense**; a regulator's requirement gives **Licenses Expense**.
 
-The assertions say which is which. You did not have to know that formation fees are capitalized; you had to say what made the event possible, and whether anything lasting came of it."}
+And if the assertions name no rule at all? Then money went out, nothing came in, and nothing says why. The entry has no debit to make, and it stays unbalanced until the record says what the payment was for."}
 
-     {:heading "'Is Protected By' — and an Entry That Does Not Change"
-      :content "**is-protected-by** — names the law that protects what this event created or agreed.
-
-*Maple Street Prints delivers 25 printed t-shirts to CorporateClient under a written contract for $625, payable in 60 days.*
-
-Work through it as a credit sale, because that is what it is:
-
-- **provides** 25 printed t-shirts, **has-counterparty** CorporateClient
-- **requires**: the customer must pay $625 by the due date
-- **expects**: how confident is SP of collecting?
-- and now **is-protected-by**: contract law
-
-::journal
-DR Accounts Receivable $625
-CR Revenue $625
-::
-
-**The legal assertion changes nothing in the entry.** The same four lines would follow without it.
-
-That is the point, and it is worth sitting with. Double-entry has room for what a transaction is worth and no room for what stands behind it, so a signed contract and a handshake post identically. But they are not the same, and the difference is exactly what your **expects** number is about: SP is more confident of collecting from a customer it could sue than from one it could not.
-
-The record now carries the reason for the confidence, beside the confidence. Nobody has to remember it, and at year end you can ask the record which receivables are contract-backed and which are not — a question the journal entries cannot answer at all."}
-
-     {:heading "The Whole Level in One Table"
-      :content "| Assertion | Answers | Changes the entry? |
-|-----------|---------|--------------------|
-| **is-allowed-by** | What made this possible? | Sometimes — a formation fee becomes Organization Costs |
-| **is-required-by** | What compelled this? | Yes — money out under a rule is an expense |
-| **is-protected-by** | What stands behind this? | No — but it is why the confidence is what it is |
+     {:heading "The Whole Lesson in One Table"
+      :content "| Payment | is-required-by | Entry |
+|---------|----------------|-------|
+| Quarterly estimated tax | the tax code | DR Income Tax Expense, CR Cash |
+| License to operate | licenses and permits | DR Licenses Expense, CR Cash |
 
 **The recipe, extended:**
 
-**Step 1–4.** As before. What moved, which way, what was promised, how sure.
+**Steps 1–4.** As before. What moved, which way, what was promised, how sure.
 
-**Step 5.** Ask what was outside the two parties. Did a rule compel this payment (**is-required-by**)? Did a law make the event possible (**is-allowed-by**)? Does one protect what was agreed or made (**is-protected-by**)?
-
-**Step 6.** If money went out and nothing came in, the legal assertion is doing the work the goods usually do. Read it before you name the account."}]
+**Step 5.** If money went out and nothing came in, ask whether a rule required it. If one did, say so with **is-required-by** — the rule names the expense."}]
 
     :quiz
     [{:id :l4-q1
       :question "SP pays $500 in quarterly taxes. Why is the debit an expense rather than an asset?"
       :choices ["Because taxes are always expenses" "Because nothing came back that SP can hold or sell — is-required-by names money out under a rule" "Because the amount is small" "Because SP has no choice about paying"]
       :correct 1
-      :explanation "There is no **receives**. Money left and nothing came in, so there is no asset to carry forward — what it bought was this period's right to operate. **is-required-by** is what tells the entry that, and it names the expense: tax code gives Tax Expense, a regulator's rules give Compliance Expense."}
+      :explanation "There is no **receives**. Money left and nothing came in, so there is no asset to carry forward — what it bought was this period's right to operate. **is-required-by** is what tells the entry that, and it names the expense: the tax code gives Income Tax Expense, a regulator's rules give Licenses Expense."}
 
      {:id :l4-q2
-      :question "SP pays $150 to form an LLC, and $500 in taxes. Both are money out under a rule. Why do they land in different accounts?"
-      :choices ["The LLC fee is larger over time" "Formation brings the entity into existence, which lasts beyond this period, so its cost is carried; the tax buys this period only" "Taxes use is-required-by and fees use is-allowed-by, and that is the whole difference" "One is federal and one is state"]
+      :question "Northside pays $200 for the license a regulator requires it to hold to operate. What is the entry?"
+      :choices ["DR License (asset), CR Cash" "DR Licenses Expense, CR Cash" "DR Income Tax Expense, CR Cash" "No entry — a license is not a transaction"]
       :correct 1
-      :explanation "Something lasting came of the filing — the entity itself — so the cost is carried as **Organization Costs**. Nothing lasting came of the tax. The assertions differ too (**is-allowed-by** against **is-required-by**), and that difference is real, but what it records is which of the two happened."}
+      :explanation "Money out, nothing in, and a rule that required it — the tax payment's shape. The rule here is a regulator's, so it names **Licenses Expense**."}
 
      {:id :l4-q3
-      :question "A credit sale under a written contract. What does adding is-protected-by change?"
-      :choices ["The revenue is recognized later" "Nothing in the journal entry — but it records why SP's confidence is as high as it is" "Accounts Receivable becomes Contract Receivable" "It replaces the requires assertion"]
+      :question "SP pays $500 and nothing comes back, but the assertions name no rule. What does the entry show?"
+      :choices ["Income Tax Expense" "An unbalanced entry: nothing says why the money left, so there is no debit" "Owner's Drawing" "Cash Expense"]
       :correct 1
-      :explanation "The entry is the same credit sale: DR Accounts Receivable, CR Revenue. What the law changes is how collectible the promise is, which is what **expects** measures — and now the reason sits in the record beside the number, where it can be queried."}
-
-     {:id :l4-q4
-      :question "You used is-allowed-by in the production lesson to point at the t-shirt printer. Now it points at the UCC. Is that the same assertion?"
-      :choices ["No — they happen to share a name" "Yes — it asks what made the event possible, and the answer can be a machine or a law" "No — the production one should have been is-required-by" "Yes, but only because the platform has not separated them yet"]
-      :correct 1
-      :explanation "One question, two kinds of answer. A press makes printing possible; the UCC makes a sale of goods an enforceable exchange rather than two people handing each other things. An event can rest on both at once."}]}
+      :explanation "Money out with nothing in has no account of its own. Until the record says why it was paid — a rule that required it, or something received — there is nothing to debit."}]}
 
    5
    {:title "Level 5: Adjusting Entries"
@@ -904,8 +866,8 @@ The record now carries the reason for the confidence, beside the confidence. Nob
     :orientation
     {:framing "Two new words. **reports**, because every entry so far followed from something that happened, and these follow from time passing: with no exchange to fix the amount, the business has to state it and say how it was worked out. And **fulfills**, for when what happened is an earlier promise being kept."
      :protocol ["There is no event to read. Ask instead: **what did the passing of the period do?**"
-                "Something was used up quietly, or something was earned or incurred before any money moved."
-                "Then: how much, and on what basis? — **reports**, carrying the calculation, because no exchange is here to fix the amount."
+                "Something was used up quietly, or something was earned or incurred before any money changed hands."
+                "Then: how much, and on what basis? — **reports**, carrying the calculation, because the need for a report is the only event that occurs."
                 "Then, as always: does this leave somebody owing something? — **requires**"
                 "Or does it keep a promise already on the books — an advance now earned? — **fulfills**, naming it"]
      :example
@@ -1409,7 +1371,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
                 "Was a promise made, or kept? — **requires**, **fulfills**. If it is owed to the business, how sure? — **expects**"
                 "Did goods change form? — **consumes**, **creates**, **is-allowed-by**"
                 "Did time pass rather than anything happen? — **reports**, and how it was worked out"
-                "Did a law compel, allow or protect it? — **is-required-by**, **is-allowed-by**, **is-protected-by**"]
+                "Did a rule require the payment? — **is-required-by**, which names the expense"]
      :example
      {:narrative "On April 15, Northside Tees pays the $500 dividend its board declared on March 15."
       :assertions ["has-date: April 15"
@@ -1455,7 +1417,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
 | Assertion | Used For | Journal Entry Effect |
 |-----------|----------|---------------------|
-| **is-allowed-by** / **is-required-by** / **is-protected-by** | The law, contract or standard behind a transaction | Names it; the entry changes only where the law itself creates the cost — a tax, a license, the cost of forming the company |
+| **is-required-by** | The rule that required a payment | Names the expense when money went out and nothing came back — a tax, a license |
 
 **Transformation Assertions:**
 
@@ -1489,8 +1451,8 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 - Use consumes/creates for production
 - is-allowed-by links to enabling equipment
 
-**Legal Context** — taxes, licenses, forming the company, contracts and protections:
-- is-allowed-by, is-required-by and is-protected-by name what stands behind the transaction
+**Legal Context** — taxes and licenses:
+- is-required-by names the rule behind a payment that buys nothing, and that rule names the expense
 - Usually beside an exchange; sometimes the law is the whole reason money moved
 
 **Adjusting Entries** — the end of a period:
@@ -1587,7 +1549,9 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
    ;; The bought design, a design's variety, plain printing and the
    ;; printer: the second half of production, practiced as one, mostly
    ;; the design and printing it.
-   3 {:levels [2 3] :weights {:design-variety-printing 4 :cash-design-purchase 3 :production-direct 2}}})
+   3 {:levels [2 3] :weights {:design-variety-printing 4 :cash-design-purchase 3 :production-direct 2}}
+   ;; Taxes and licenses only: a short lesson, a short round.
+   4 {:levels [4] :weights {:pay-taxes 1 :business-license 1}}})
 
 (defn drill-config [level]
   (merge default-drill-config (get drill-configs level)))

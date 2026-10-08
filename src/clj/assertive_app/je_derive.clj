@@ -368,7 +368,7 @@
            :params {:framework #{"tax-code" "sec-regulations"}}}
     :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
               :none-of [{:assertion :receives}]}
-    :line {:side :debit :account "Tax Expense"}
+    :line {:side :debit :account "Income Tax Expense"}
     :amount :monetary
     :text "The business paid because the tax code required it, and nothing came back that it could keep. `is-required-by` is what makes this an expense rather than a purchase: money went out under a rule, not in exchange for a thing."}
 
@@ -377,7 +377,7 @@
            :params {:framework #{"industry-regs" "environmental-regs"}}}
     :context {:all-of [{:assertion :provides :params {:unit "monetary-unit"}}]
               :none-of [{:assertion :receives}]}
-    :line {:side :debit :account "Compliance Expense"}
+    :line {:side :debit :account "Licenses Expense"}
     :amount :monetary
     :text "A license or a certification the regulator demands. The business is no richer for it — it is allowed to carry on, this period, which is not a thing it holds."}
 

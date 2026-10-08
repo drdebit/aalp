@@ -250,7 +250,12 @@
                                                   (all-physical-item-options :max-level level :used-up-only? true)
                                                   ;; Default: keep as-is
                                                   (:options param-spec))))
-                                       param-spec)])))
+                                       ;; A fixed list may hold choices for later
+                                       ;; courses: offer what this level teaches.
+                                       (if (sequential? (:options param-spec))
+                                         (assoc param-spec :options
+                                                (filterv #(<= (or (:level %) 0) level) (:options param-spec)))
+                                         param-spec))])))
                      assertion))
                  assertions)])))
 
@@ -921,16 +926,22 @@
      :structure {:is-required-by :framework}
      :parameters {:framework {:type :dropdown
                               :label "Requiring framework"
+                              ;; 2101 offers the two rules its problems use; the
+                              ;; rest wait for later courses (:level 99). A zoning
+                              ;; permit was not recognizably "industry-specific"
+                              ;; (Matt, 2026-10-08) -- the value stays, the words
+                              ;; say what it is.
                               :options [{:value "tax-code" :label "Tax Code (IRS/State)"}
-                                        {:value "sec-regulations" :label "SEC Regulations"}
-                                        {:value "employment-law" :label "Employment Law (min wage, etc.)"}
-                                        {:value "environmental-regs" :label "Environmental Regulations"}
-                                        {:value "industry-regs" :label "Industry-Specific Regulations"}]}}}
+                                        {:value "industry-regs" :label "Licenses and permits (city, county, state)"}
+                                        {:value "sec-regulations" :label "SEC Regulations" :level 99}
+                                        {:value "employment-law" :label "Employment Law (min wage, etc.)" :level 99}
+                                        {:value "environmental-regs" :label "Environmental Regulations" :level 99}]}}}
 
     {:code :is-protected-by
      :label "Is Protected By"
      :description "Names the law that protects what this event created or agreed"
-     :level 4
+     ;; Not offered in 2101: it never changes a 2101 entry. Intermediate.
+     :level 99
      :domain :legal-regulatory
      :parameterized true
      :sentence {:fragment "protected by"
@@ -1302,7 +1313,7 @@
               "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
       :revenue ["Revenue" "Service Revenue"]
-      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Tax Expense" "Compliance Expense"
+      :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Income Tax Expense" "Licenses Expense"
                 "Reporting Expense" "Organization Costs"]}
 
    5 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
@@ -1314,7 +1325,7 @@
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
-                "Tax Expense" "Compliance Expense" "Reporting Expense"]}
+                "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}
 
    6 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
               "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
@@ -1326,7 +1337,7 @@
       :revenue ["Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
-                "Tax Expense" "Compliance Expense" "Reporting Expense"]}
+                "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}
 
    ;; The capstone reviews everything, so it sees everything.
    8 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
@@ -1339,7 +1350,7 @@
       :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
-                "Tax Expense" "Compliance Expense" "Reporting Expense" "Organization Costs"]}
+                "Income Tax Expense" "Licenses Expense" "Reporting Expense" "Organization Costs"]}
 
    7 {:asset ["Cash" "Accounts Receivable" "Notes Receivable" "Interest Receivable"
               "Raw Materials Inventory" "Finished Goods Inventory" "Finished Goods Inventory"
@@ -1351,7 +1362,7 @@
       :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
-                "Tax Expense" "Compliance Expense" "Reporting Expense"]}})
+                "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}})
 
 (defn get-accounts-for-level
   "Returns all accounts available at the specified level."
@@ -1913,25 +1924,27 @@
     :level 4}
 
    :tax-required-filing
-   {:required #{:provides :is-required-by}
+   ;; Paid TO somebody -- the IRS, the state -- though nothing comes back.
+   {:required #{:provides :is-required-by :has-counterparty}
     :required-parameters {:provides {:unit "monetary-unit"}
                           :is-required-by {:framework "tax-code"}}
     :prohibited #{:receives}
     :description "Tax payment required by law"
-    :journal-entry [{:debit "Tax Expense" :credit "Cash"}]
-    :note "The business provided cash and nothing came back, and it said what compelled the payment: the tax code. Money that leaves under a rule, with no asset coming in, has bought only the right to keep operating this period, and that is gone when the period is. So it is an expense, and the rule that compelled it names it: Tax Expense."
+    :journal-entry [{:debit "Income Tax Expense" :credit "Cash"}]
+    :note "The business provided cash and nothing came back, and it said what compelled the payment: the tax code. Money that leaves under a rule, with no asset coming in, has bought only the right to keep operating this period, and that is gone when the period is. So it is an expense, and the rule that compelled it names it: Income Tax Expense."
     :examples ["SP files and pays quarterly estimated taxes"
                "SP remits sales tax as required by state law"]
     :level 4}
 
    :regulatory-compliance
-   {:required #{:provides :is-required-by}
+   ;; Paid to whoever issues the license.
+   {:required #{:provides :is-required-by :has-counterparty}
     :required-parameters {:provides {:unit "monetary-unit"}
                           :is-required-by {:framework "industry-regs"}}
     :prohibited #{}
     :description "Payment for regulatory compliance"
-    :journal-entry [{:debit "Compliance Expense" :credit "Cash"}]
-    :note "The business provided cash and nothing came back, and it said what compelled the payment: a regulation the business must satisfy to trade. Like the tax, the money bought this period's permission and nothing the business can hold or sell, so it is an expense of the period, named by the rule that required it: Compliance Expense."
+    :journal-entry [{:debit "Licenses Expense" :credit "Cash"}]
+    :note "The business provided cash and nothing came back, and it said what compelled the payment: a regulation the business must satisfy to trade. Like the tax, the money bought this period's permission and nothing the business can hold or sell, so it is an expense of the period, named by the rule that required it: Licenses Expense."
     :examples ["SP pays for required business license"
                "SP obtains industry-required certification"]
     :level 4}
@@ -3430,6 +3443,10 @@ The printed t-shirts are now finished goods ready for sale."
                           :has-counterparty {:name :customer}
                           :is-allowed-by {:framework "ucc"}}
     :correct-classification :sale-under-ucc
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["RetailCo" "WholesaleBuyer" "CorporateClient"]
@@ -3450,6 +3467,10 @@ The printed t-shirts are now finished goods ready for sale."
                           :is-allowed-by {:framework "employment-law"}
                           :is-required-by {:framework "employment-law"}}
     :correct-classification :employment-under-law
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :employee ["Alex" "Jordan" "Taylor" "Morgan"]
@@ -3472,6 +3493,10 @@ The printed t-shirts are now finished goods ready for sale."
     ;; would have to carry a wage, from a hire the practice companies do
     ;; not yet make.
     :derivation-pending true
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :hours [8 16 24 40]
@@ -3486,32 +3511,46 @@ The printed t-shirts are now finished goods ready for sale."
     :correct-classification :trademark-protected-brand
     ;; Same as the copyright design above: no rate, so no amounts.
     :derivation-pending true
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :brand-element ["company logo" "brand name" "product line name" "distinctive slogan"]}}
 
    :pay-taxes
-   {:narrative-template "On {date}, {company} calculates and pays ${amount} in {tax-type}, as the tax code demands. Failure to pay would bring penalties and interest."
+   {:narrative-template "On {date}, {company} calculates and pays {tax-collector} ${amount} in {tax-type}, as the tax code demands. Failure to pay would bring penalties and interest."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :tax-collector}
                           :is-required-by {:framework "tax-code"}}
     :correct-classification :tax-required-filing
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [500 1000 2500 5000 10000]
-                :tax-type ["quarterly estimated income taxes" "sales tax" "payroll taxes" "state franchise tax"]}}
+                ;; Income taxes only: the entry is Income Tax Expense. Sales
+                ;; tax collected is a liability paid over, payroll taxes are
+                ;; Payroll Tax Expense, and a franchise tax is not an income
+                ;; tax (2026-10-08). Paired: who collects which.
+                :tax-type ["quarterly estimated federal income taxes" "quarterly estimated state income taxes"]
+                :tax-collector ["the IRS" "the state Department of Revenue"]}}
 
    :business-license
-   {:narrative-template "On {date}, {company} pays ${amount} for its {license-type}, which {authority} rules demand before it may trade at all."
+   {:narrative-template "On {date}, {company} pays {issuer} ${amount} for its {license-type}, which {authority} rules demand before it may trade at all."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
+                          :has-counterparty {:name :issuer}
                           :is-required-by {:framework "industry-regs"}}
     :correct-classification :regulatory-compliance
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
+                ;; Paired by position (all four lists are four long): each
+                ;; license with the authority that issues it.
                 :amount [100 250 500 1000]
-                :license-type ["business license" "seller's permit" "occupational license" "zoning permit"]
-                :authority ["city" "county" "state" "federal"]}}
+                :license-type ["business license" "occupational license" "seller's permit" "zoning permit"]
+                :authority ["city" "county" "state" "city"]
+                :issuer ["the city" "the county" "the state" "the city"]}}
 
    :form-llc
    {:narrative-template "On {date}, {company} pays ${amount} to the state to form an LLC (Limited Liability Company). State business law makes this structure available, and it keeps the owner's personal assets out of reach of the business's creditors."
@@ -3519,6 +3558,10 @@ The printed t-shirts are now finished goods ready for sale."
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :is-allowed-by {:framework "state-business-law"}}
     :correct-classification :business-formation
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :amount [100 150 250 500]}}
@@ -3537,6 +3580,10 @@ The printed t-shirts are now finished goods ready for sale."
                           :expects {:action "receives" :unit "monetary-unit" :confidence :confidence}
                           :is-protected-by {:framework "contract-law"}}
     :correct-classification :contract-protected-agreement
+    ;; Not taught in ACCT 2101: what a law allows or protects changes nothing
+    ;; a 2101 entry shows, and organization costs are not in its material
+    ;; (iCollege, 2026-10-08). Kept for Intermediate (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 4
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :customer ["MajorRetailer" "CorporateClient" "WholesaleBuyer"]

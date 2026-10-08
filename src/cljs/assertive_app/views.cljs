@@ -907,7 +907,7 @@
                         ;; Every name a template gives the other party
                         ;; (grep :has-counterparty {:name in the templates).
                         [:customer :vendor :employee :owner :counterparty :party :supplier
-                         :designer :lender :borrower :investor])
+                         :designer :lender :borrower :investor :tax-collector :issuer])
         events     (concat (:prior-events problem)
                            (state/walkthrough-events)
                            (map :assertions (state/ledger)))
@@ -1228,10 +1228,11 @@
             {:on-click #(state/update-assertion-parameter! :is-allowed-by :capacity (conj cur ""))}
             "+ another"]])
         [item-select :is-allowed-by :capacity (:capacity params)])
-      ;; Laws are Level 4's subject; before it, what made an event
-      ;; possible is a capacity the business bought (Matt, 2026-10-08).
+      ;; A law that allows an event never changes a 2101 entry; in 2101,
+      ;; what made an event possible is a capacity the business bought.
+      ;; Offered again in Intermediate (Matt, 2026-10-08).
       (when (and (seq (assertion-param-options :is-allowed-by :framework))
-                 (>= (or (state/current-level) 0) 4))
+                 (>= (or (state/current-level) 0) 99))
         [:span
          [:span " under "]
          [framework-select :is-allowed-by (:framework params) "which law?"]])

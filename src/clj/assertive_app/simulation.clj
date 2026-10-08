@@ -1152,8 +1152,8 @@
    "Bad Debt Expense" {:type :expense :statement :income-statement :normal :debit}
    "Interest Expense" {:type :expense :statement :income-statement :normal :debit}
    "Insurance Expense" {:type :expense :statement :income-statement :normal :debit}
-   "Tax Expense" {:type :expense :statement :income-statement :normal :debit}
-   "Compliance Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Income Tax Expense" {:type :expense :statement :income-statement :normal :debit}
+   "Licenses Expense" {:type :expense :statement :income-statement :normal :debit}
    "Reporting Expense" {:type :expense :statement :income-statement :normal :debit}
    "Organization Costs" {:type :expense :statement :income-statement :normal :debit}})
 

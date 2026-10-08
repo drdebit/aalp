@@ -546,7 +546,7 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
     ;; transformation or a sale depending on whether anyone was on the
     ;; other side.
     :orientation
-    {:framing "Every event so far had someone on the other side. This lesson is the first where the business acts on its own, with no counterparty."
+    {:framing "Every event we've covered so far has had someone on the other side. This lesson is the first where the business acts on its own, with no counterparty."
      :protocol ["Everything from the first two lessons still applies — but check first: **was anyone on the other side?** If not, this is not an exchange."
                 "What was used up? — **consumes**"
                 "What came into being? — **creates**"
@@ -564,11 +564,11 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
           :becomes "Finished Goods Inventory"}
       :b {:when "Provided to a counterparty, who pays for them"
           :becomes "Revenue and Cost of Goods Sold"}
-      :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and creating profit."}
+      :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and making a profit."}
      :effect
      {:holds "Before: 10 blank shirts. After: 10 printed ones. Nothing was gained or lost — value changed form."
       :may-or-must "Before: the shirts were committed to printing. After: that commitment is discharged, and the printer's **allows** has been drawn on once more."}
-     :reminder "No counterparty is not a missing assertion. It is the assertion that makes this a transformation."}
+     :reminder "No counterparty is not a missing assertion because a transformation has no counterparty."}
     :sections
     [{:heading "Internal Transformations"
       :content "The first two lessons covered **exchange transactions** — trading with external parties using provides, receives, requires, expects, and has-counterparty.

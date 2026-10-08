@@ -56,7 +56,7 @@ Simple events take a few assertions. Complicated ones take more. Assertions are 
     ;; so it cannot drift. Slot 3 is a way of READING the event and must
     ;; not resolve to an account before the assertions are made -- a
     ;; procedure over accounts is the pedagogy this platform exists to
-    ;; replace. Slot 6, the minimal pair, is the centrepiece.
+    ;; replace. Slot 6, the minimal pair, is the centerpiece.
     :orientation
     {:framing "Every event in this lesson is a trade. The business says what it gave, what it got, and why it wanted the one in place of the other."
      :protocol ["What went out? — **provides**"
@@ -147,7 +147,7 @@ A **monetary-unit**. That is, money. Dollars. The menu calls it **cash**, becaus
 
 A **physical-unit**. That is, things: blank t-shirts, ink cartridges, a t-shirt printer. The menu calls them **physical units**.
 
-**A service**. Work done for the business — a technician servicing the printer — used up as it is done, so nothing is left to hold afterwards. You will meet one in the practice round.
+**A service**. Work done for the business — a technician servicing the printer — used up as it is done, so nothing is left to hold afterward. You will meet one in the practice round.
 
 In a cash purchase, the pattern is always the same:
 Your company **provides** money (monetary-unit), and
@@ -223,7 +223,7 @@ DR Raw Materials Inventory $150
 CR Cash $150
 ::
 
-In this example, cash is money the business holds. It is an **asset** because it can be put to future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts. That future use is what \"Raw Materials Inventory\" indicates. A printer is held to *make* things and is still there afterwards, so it is \"Equipment.\" Money spent on maintenance buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterwards?* 
+In this example, cash is money the business holds. It is an **asset** because it can be put to future use. The shirts are an asset too, and a more specific one: they are held to be *used up* making printed shirts. That future use is what \"Raw Materials Inventory\" indicates. A printer is held to *make* things and is still there afterward, so it is \"Equipment.\" Money spent on maintenance buys nothing that lasts, so it is an **expense**. Every account name is an answer to the same question: *what is this for, and what is left afterward?* 
 
 That is where your assertions come in. The system can only choose the accounts for your journal entry by knowing the effect of the transaction on the business, and you are the one who specifies that effect. Whether the amounts are recorded as debits or credits is based on the accounting equation. The platform fills in that part for you.
 
@@ -725,7 +725,7 @@ DR Tax Expense $500
 CR Cash $500
 ::
 
-So where does the debit come from? From **is-required-by**. Money that leaves under a rule, with nothing coming back, has bought no asset the business can hold or sell. What it bought is the right to keep operating this period, and that is gone when the period is. It is an **expense**, and the rule that compelled it is what names the expense: the tax code gives Tax Expense, a regulator's licence fee gives Compliance Expense.
+So where does the debit come from? From **is-required-by**. Money that leaves under a rule, with nothing coming back, has bought no asset the business can hold or sell. What it bought is the right to keep operating this period, and that is gone when the period is. It is an **expense**, and the rule that compelled it is what names the expense: the tax code gives Tax Expense, a regulator's license fee gives Compliance Expense.
 
 This is the first assertion you have met that decides an account on its own, with no flow of goods to read."}
 
@@ -751,7 +751,7 @@ CR Cash $150
 
 Compare that with the tax payment. Both are money out under a rule, and they land in different places. The tax bought this period and nothing more. The filing fee brought the entity itself into existence, and the entity is still there next year — so its cost is **carried**, not expensed at once.
 
-The assertions say which is which. You did not have to know that formation fees are capitalised; you had to say what made the event possible, and whether anything lasting came of it."}
+The assertions say which is which. You did not have to know that formation fees are capitalized; you had to say what made the event possible, and whether anything lasting came of it."}
 
      {:heading "'Is Protected By' — and an Entry That Does Not Change"
       :content "**is-protected-by** — names the law that protects what this event created or agreed.
@@ -926,7 +926,7 @@ DR Deferred Revenue (Liability) $300
 CR Revenue $300
 ::
 
-**reports** says how much has been earned and on what basis. **fulfills** says which promise it came out of — you choose it from the promises the record still holds open. The liability that promise put on the books is smaller by what was delivered, and the revenue is recognised now, when it was earned.
+**reports** says how much has been earned and on what basis. **fulfills** says which promise it came out of — you choose it from the promises the record still holds open. The liability that promise put on the books is smaller by what was delivered, and the revenue is recognized now, when it was earned.
 
 The same word records the promises kept most often of all: a customer paying for goods it bought on credit, and the business paying a supplier for goods it bought on credit.
 
@@ -991,7 +991,7 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
       :question "A customer pays $125 it owed for shirts bought on credit last month. What does the business record?"
       :choices ["Revenue of $125, because money came in" "receives $125, fulfills the credit sale — clearing Accounts Receivable" "A new credit sale" "Nothing, because the sale was already recorded"]
       :correct 1
-      :explanation "The revenue was recognised when the shirts went out. Today a promise is kept: **receives** the money, **fulfills** the credit sale, and the claim it put on the books — Accounts Receivable — is cleared."}
+      :explanation "The revenue was recognized when the shirts went out. Today a promise is kept: **receives** the money, **fulfills** the credit sale, and the claim it put on the books — Accounts Receivable — is cleared."}
 
      {:id :l5-q5
       :question "A customer paid $600 in advance for 24 shirts. Today the business delivers 12. Which assertions record what happened today?"
@@ -1075,7 +1075,7 @@ Mixing the bases gives a number that means nothing."}
 3. **Change** it into the cash-basis cost of goods sold.
 4. **Build** both gross margins from your reports.
 
-Each report is checked **part by part** — which events, whose, what condition, when, what is totalled — not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault."}]
+Each report is checked **part by part** — which events, whose, what condition, when, what is totaled — not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault."}]
 
     :quiz
     [{:id :l9-q1
@@ -1323,7 +1323,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
     ;; is every lesson's patterns mixed, so the protocol is every lesson's
     ;; question in the order an event raises them.
     :orientation
-    {:framing "Nothing new to learn: every word is already yours. The practice round mixes every lesson, so each event has to be read from the beginning, not recognised."
+    {:framing "Nothing new to learn: every word is already yours. The practice round mixes every lesson, so each event has to be read from the beginning, not recognized."
      :protocol ["What moved today, and which way? — **provides**, **receives**"
                 "Who was on the other side? — **has-counterparty**. If nobody, it is a transformation or an adjustment."
                 "If something came in: what is it for? — **expects**, or **allows** for a machine"
@@ -1369,7 +1369,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 | Assertion | Used For | Journal Entry Effect |
 |-----------|----------|---------------------|
 | **expects** (on goods bought) | What the business means to do with them | Picks the account: Raw Materials if they will be used up making something, Finished Goods if they will be sold as they are |
-| **allows** (on a machine bought) | What it makes possible | Places it as Equipment: it produces, and is still there afterwards |
+| **allows** (on a machine bought) | What it makes possible | Places it as Equipment: it produces, and is still there afterward |
 | **expects** (on a promise owed to the business) | How likely it is to be kept | No line now — at period end it becomes the allowance for doubtful accounts, and Bad Debt Expense |
 
 **Legal Context:**
@@ -1392,7 +1392,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 |-----------|----------|---------------------|
 | **reports** | Calculated recognitions (adjustments) | Debit/Credit per type |
 
-**Key insight, recalled from earlier lessons:** providing the goods earns the revenue, which fixes *when* it is recorded; and revenue needs no assertion of its own, because it emerges from the exchange pattern. Adjusting entries have no exchange to emerge from — so they need `reports` to say what is being recognised, and how it was worked out."}
+**Key insight, recalled from earlier lessons:** providing the goods earns the revenue, which fixes *when* it is recorded; and revenue needs no assertion of its own, because it emerges from the exchange pattern. Adjusting entries have no exchange to emerge from — so they need `reports` to say what is being recognized, and how it was worked out."}
 
      {:heading "Transaction Categories"
       :content "Every transaction falls into one of these categories:

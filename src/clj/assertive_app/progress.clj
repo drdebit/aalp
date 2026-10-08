@@ -364,7 +364,7 @@
   "Keep the practice round in progress, so closing the app does not mean
    redoing it. `nil` clears it -- the round was passed, or abandoned.
 
-   Stored as EDN rather than modelled: this is a resume point, not a
+   Stored as EDN rather than modeled: this is a resume point, not a
    record of anything. What the round MEANT is already in the attempt
    history, which is what analytics reads."
   [user-id drill]

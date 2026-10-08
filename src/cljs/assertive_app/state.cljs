@@ -399,7 +399,7 @@
 
 ;; ==================== The welcome page ====================
 ;; Shown once per account before the first lesson's gate, and reopenable
-;; from the header afterwards (WELCOME-PAGE.org).
+;; from the header afterward (WELCOME-PAGE.org).
 
 (defn welcomed? [] (boolean (:welcomed? @app-state)))
 (defn set-welcomed! [] (swap! app-state assoc :welcomed? true))

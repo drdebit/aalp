@@ -165,7 +165,7 @@
      {:value (name item-key)
       ;; The bare name. Saying "(raw materials for production)" in the
       ;; dropdown hands the student the classification the record is
-      ;; supposed to derive; one wrote afterwards that the system "has a
+      ;; supposed to derive; one wrote afterward that the system "has a
       ;; lookup table" and that nothing they asserted decided anything.
       :label (:label item-def)})))
 
@@ -180,7 +180,7 @@
      {:value (name item-key)
       ;; The bare name. Saying "(raw materials for production)" in the
       ;; dropdown hands the student the classification the record is
-      ;; supposed to derive; one wrote afterwards that the system "has a
+      ;; supposed to derive; one wrote afterward that the system "has a
       ;; lookup table" and that nothing they asserted decided anything.
       :label (:label item-def)})))
 
@@ -262,12 +262,12 @@
    - :data-driven? - If true, calculation uses data from prior assertions (e.g., bad debt)
    - :data-source - For data-driven calcs, describes what data is needed"
   {:systematic-allocation
-   {:label "Systematic Allocation (Depreciation or Amortisation)"
+   {:label "Systematic Allocation (Depreciation or Amortization)"
     :description "Spreads the cost of a productive asset over its useful life"
     :formula [:divide [:subtract :asset-cost :salvage-value] :useful-life]
     :formula-display "(Asset Cost - Salvage Value) ÷ Useful Life"
     ;; Which asset is being written down. The calculation is identical
-    ;; either way -- 2101 says intangibles are amortised "in the same way
+    ;; either way -- 2101 says intangibles are amortized "in the same way
     ;; that plant assets are depreciated" -- so naming the asset is the
     ;; only thing that can tell the entry which it is. The record already
     ;; says whether that asset has physical substance.
@@ -975,7 +975,7 @@
                                     {:value "service-value" :label "Equal to value of service performed"}
                                     {:value "earned" :label "Performance obligation satisfied"}
                                     ;; Adjusting entries (Level 5+)
-                                    {:value "systematic-allocation" :label "Systematic allocation over time (depreciation or amortisation)"}
+                                    {:value "systematic-allocation" :label "Systematic allocation over time (depreciation or amortization)"}
                                     {:value "estimation" :label "Estimation from recorded confidences (bad debt)"}
                                     {:value "aging" :label "Aging of receivables (bad debt)"}
                                     {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
@@ -1534,7 +1534,7 @@
    (cash-exchange
      "Cash purchase of a service (provide cash, receive work done -- an expense)"
      [{:debit "Services Expense" :credit "Cash"}]
-     :note "The business provided cash and received a service: work done for it, used up as it was done. Nothing is left to hold afterwards, so there is no asset to carry; what the work cost is an expense of the period."
+     :note "The business provided cash and received a service: work done for it, used up as it was done. Nothing is left to hold afterward, so there is no asset to carry; what the work cost is an expense of the period."
      :provides-unit "monetary-unit"
      :receives-unit "service-unit"
      :examples ["SP pays $60 to have the printer serviced"])
@@ -1735,11 +1735,11 @@
                "SP provides consulting services"]
     :level 2}
 
-   ;; Made in-house, a design is expensed: GAAP does not capitalise an
+   ;; Made in-house, a design is expensed: GAAP does not capitalize an
    ;; internally created intangible. What the business pays for the
    ;; designer's hours is Wage Expense, and the design itself is recorded
    ;; -- created, owned -- with no line. Bought, the same design is an
-   ;; asset (:design-purchase). Revised 2026-09-29; it used to capitalise.
+   ;; asset (:design-purchase). Revised 2026-09-29; it used to capitalize.
    :design-creation
    {:required #{:has-date :has-counterparty :receives :provides :creates}
     :required-parameters {:receives {:unit "effort-unit"}
@@ -2066,7 +2066,7 @@
     :prohibited #{:provides :requires :expects}
     :description "Collecting what a customer owed for goods already provided"
     :journal-entry [{:debit "Cash" :credit "Accounts Receivable"}]
-    :note "The claim is cleared by the payment. Nothing is earned today: the revenue was recognised when the goods went out."
+    :note "The claim is cleared by the payment. Nothing is earned today: the revenue was recognized when the goods went out."
     :level 5}
 
    :payable-payment
@@ -2584,7 +2584,7 @@
 
    Falls back to the transaction's monetary amount only for template
    lines the rulebook does not yet derive (the L4-L7 build-out queue),
-   so partial coverage degrades to the old behaviour rather than to a
+   so partial coverage degrades to the old behavior rather than to a
    blank. nil means the record does not price this line; downstream must
    render it as unknown and must never invent a figure."
   ([journal-entry assertions-map] (augment-journal-entry journal-entry assertions-map nil))
@@ -3166,7 +3166,7 @@ The printed t-shirts are now finished goods ready for sale."
     :correct-classification :production-full
     ;; Held back from the drill (2026-09-29): its own correct answer
     ;; derives an empty or unclassified entry -- written in a retired vocabulary (consumes-inventory, consumes-labor, creates-finished-goods) the sentence builder does not offer, so the answer cannot be stated. production-direct is its replacement.
-    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; Labor belongs to 2102 (decided 2026-09-29): costing labor into
     ;; product is managerial. Kept for that course, not served in 2101.
     :derivation-pending true
     :level 2
@@ -3193,7 +3193,7 @@ The printed t-shirts are now finished goods ready for sale."
     :correct-classification :production-inventory-labor
     ;; Held back from the drill (2026-09-29): its own correct answer
     ;; derives an empty or unclassified entry -- the same retired vocabulary as production-tshirt-printing.
-    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; Labor belongs to 2102 (decided 2026-09-29): costing labor into
     ;; product is managerial. Kept for that course, not served in 2101.
     :derivation-pending true
     :level 2
@@ -3228,8 +3228,8 @@ The printed t-shirts are now finished goods ready for sale."
                           :creates {:unit "physical-unit"}}
     :correct-classification :production-with-labor
     ;; Held back from the drill (2026-09-29): its own correct answer
-    ;; derives an empty or unclassified entry -- its answer names units only, and no rule turns consumed effort into a wage owed; labour costed into product is closer to 2102 than 2101.
-    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; derives an empty or unclassified entry -- its answer names units only, and no rule turns consumed effort into a wage owed; labor costed into product is closer to 2102 than 2101.
+    ;; Labor belongs to 2102 (decided 2026-09-29): costing labor into
     ;; product is managerial. Kept for that course, not served in 2101.
     :derivation-pending true
     :level 2
@@ -3274,7 +3274,7 @@ The printed t-shirts are now finished goods ready for sale."
     :correct-classification :service-delivery
     ;; Held back from the drill (2026-09-29): its own correct answer
     ;; derives an empty or unclassified entry -- its answer names units only, and no rule turns consumed effort into a wage owed.
-    ;; Labour belongs to 2102 (decided 2026-09-29): costing labour into
+    ;; Labor belongs to 2102 (decided 2026-09-29): costing labor into
     ;; product is managerial. Kept for that course, not served in 2101.
     :derivation-pending true
     :level 2
@@ -3346,7 +3346,7 @@ The printed t-shirts are now finished goods ready for sale."
     :correct-classification :copyright-protected-creation
     ;; Held back from the drill: the narrative gives hours but no rate, so
     ;; nothing in the event says what the design cost and the entry comes
-    ;; out with no amounts at all. Pricing labour is the open question
+    ;; out with no amounts at all. Pricing labor is the open question
     ;; behind production-with-labor and design-creation too -- the record
     ;; would have to carry a wage, from a hire the practice companies do
     ;; not yet make.
@@ -3790,7 +3790,7 @@ The printed t-shirts are now finished goods ready for sale."
    Variables with unique lengths are selected independently."
   [variables]
   (let [;; Only option lists take part in pairing. A variable whose value
-        ;; is a marker (:calculated, :student-input) is derived afterwards
+        ;; is a marker (:calculated, :student-input) is derived afterward
         ;; by resolve-derived-variables; counting it here threw, and every
         ;; template carrying a due date failed to generate at all.
         listed (filter (fn [[_k options]] (sequential? options)) variables)
@@ -3837,8 +3837,8 @@ The printed t-shirts are now finished goods ready for sale."
 (def practice-companies
   "Practice problems belong to other businesses, never to SP. Each problem
    is read against that company's own small record and nothing else, so
-   nothing a student practises on carries over -- a mini-game before the
-   real books, recognisable as such.
+   nothing a student practices on carries over -- a mini-game before the
+   real books, recognizable as such.
 
    Two kinds of business, on purpose. A printer holds blank shirts as an
    input; a shop that sells blank shirts on holds the very same item as
@@ -3924,7 +3924,7 @@ The printed t-shirts are now finished goods ready for sale."
          :expects {:action "provides" :unit "physical-unit"
                    :physical-item "blank-tshirts" :confidence 95}
          :has-counterparty {:name "TextileDirect"}}]})
-  ;; A blank shirt costs about what the catalogue says it costs. It used
+  ;; A blank shirt costs about what the catalog says it costs. It used
   ;; to range $3-$6, and with a sale price drawn from an unrelated array
   ;; the implied margin wandered from nothing to tenfold.
   (let [shirt-cost (rand-nth [4 5])
@@ -4042,7 +4042,7 @@ The printed t-shirts are now finished goods ready for sale."
                             :physical-item "printed-tshirts" :quantity ordered
                             :due-date "2026-03-15"}
                  :has-counterparty {:name "LocalSportsTeam"}})
-          ;; A quarter's interest on the loan, recognised at the quarter
+          ;; A quarter's interest on the loan, recognized at the quarter
           ;; end and still owed: an accrual is a promise like any other,
           ;; and paying it keeps that promise. Eight per cent on a
           ;; multiple of 1,200 is whole dollars.
@@ -4300,7 +4300,7 @@ The printed t-shirts are now finished goods ready for sale."
       (and (:quantity vars) (:cogs vars) (pos? printed) unit)
       (as-> v (let [asked (long (:quantity v))
                     q     (min asked printed)
-                    ;; What the goods sell for is the catalogue's price for
+                    ;; What the goods sell for is the catalog's price for
                     ;; THESE goods, times how many went out. It used to be
                     ;; an array drawn independently of the quantity, so a
                     ;; sale clamped from fifty shirts to twenty kept the
@@ -4324,7 +4324,7 @@ The printed t-shirts are now finished goods ready for sale."
       (as-> v (assoc v :amount (* (long (:quantity v))
                                   (long (get-in physical-items [:printed-tshirts :sell-price] 25)))))
 
-      ;; And what goods COST is the catalogue's cost for them. A credit
+      ;; And what goods COST is the catalog's cost for them. A credit
       ;; purchase drew its amount from [100 250 500 1000] and its quantity
       ;; from [20 50 100] with nothing tying the two together, so fifty
       ;; shirts could arrive for $100 -- $2 each, in a record that prices

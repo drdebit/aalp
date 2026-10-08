@@ -201,7 +201,7 @@
                     cash? "Total the money received."
                     :else "Total what was received or promised for the goods: a credit sale is revenue at the price agreed, before any money arrives."))))
 
-(defn- normalise [c]
+(defn- normalize [c]
   {:flow (:flow c) :party (when (contains? parties (:party c)) (:party c))
    :paid (true? (:paid c)) :period (if (= "year" (:period c)) "year" "all")
    :total (:total c)})
@@ -211,8 +211,8 @@
    -> {:correct? bool :parts [{:part k :ok? bool :message s}]}"
   [report composition]
   (when-let [want (get canonical report)]
-    (let [have (normalise composition)
-          want (normalise want)
+    (let [have (normalize composition)
+          want (normalize want)
           parts (vec (for [p part-order
                            :let [ok? (= (get have p) (get want p))]]
                        (cond-> {:part p :ok? ok?}

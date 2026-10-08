@@ -53,7 +53,7 @@
    A transformation consumes more than one thing: printing a shirt takes
    a blank shirt AND ink. The research model writes `consumes` as a list
    for exactly this reason, and a single map is just the one-element
-   case. Normalising here means every rule downstream fires once per
+   case. Normalizing here means every rule downstream fires once per
    thing consumed rather than once per assertion, which is what makes a
    multi-input production entry come out with a credit per input."
   [v]
@@ -225,7 +225,7 @@
    ;; -------- Adjusting entries: a calculation recorded as an event ------
    ;; `reports` carries a category, a basis, and the amount the
    ;; calculation builder produced. Each basis is a different reason to
-   ;; recognise something the exchanges did not: use of a long-lived
+   ;; recognize something the exchanges did not: use of a long-lived
    ;; asset, doubt about a receivable, a cost incurred before it is paid,
    ;; a prepaid used up, an advance earned.
    {:id :depreciation
@@ -242,7 +242,7 @@
     :text "The asset is not written down directly: what has been used up so far accumulates beside it, so the original cost stays visible."}
 
    ;; The same calculation, spread the same way, over a thing with no
-   ;; physical substance. 2101: intangibles are amortised "in the same
+   ;; physical substance. 2101: intangibles are amortized "in the same
    ;; way that plant assets are depreciated" -- so the arithmetic is
    ;; identical and only the denomination of the asset differs. Nothing
    ;; here is looked up; the record said what kind of thing it was when
@@ -252,7 +252,7 @@
     :denomination :intangible
     :line {:side :debit :account "Amortization Expense"}
     :amount :reported
-    :text "An intangible is used up over its life just as a machine is, and the part used this period is an expense. It is called amortisation rather than depreciation only because the thing has no physical substance -- which is what you said when you recorded acquiring it."}
+    :text "An intangible is used up over its life just as a machine is, and the part used this period is an expense. It is called amortization rather than depreciation only because the thing has no physical substance -- which is what you said when you recorded acquiring it."}
    {:id :amortization-contra
     :when {:assertion :reports :params {:category "expense" :basis "systematic-allocation"}}
     :denomination :intangible
@@ -356,7 +356,7 @@
     :text "The business paid, and the vendor is now bound to deliver. Nothing has been used up yet; what the business holds is that promise — a right to something still to come, kept for a future use. That is an asset, Prepaid Expense, until the service is received and used. How likely the vendor is to keep the promise is recorded beside it, in `expects`, and changes nothing here."}
 
    ;; -------- Money paid because a rule said so ------------------------
-   ;; Nothing comes back. A tax or a licence fee buys no asset and no
+   ;; Nothing comes back. A tax or a license fee buys no asset and no
    ;; service the business could resell or carry; what it buys is the
    ;; right to keep operating this period, which is gone when the period
    ;; is. So it is an expense, and the rule that compelled it is what
@@ -377,7 +377,7 @@
               :none-of [{:assertion :receives}]}
     :line {:side :debit :account "Compliance Expense"}
     :amount :monetary
-    :text "A licence or a certification the regulator demands. The business is no richer for it — it is allowed to carry on, this period, which is not a thing it holds."}
+    :text "A license or a certification the regulator demands. The business is no richer for it — it is allowed to carry on, this period, which is not a thing it holds."}
 
    {:id :organization-costs
     :when {:assertion :is-allowed-by
@@ -396,13 +396,13 @@
     :amount :monetary
     :text "The business received a service — work done for it, used up as it was done. Nothing is left to keep for a future use, so there is no asset to carry forward: it is a cost of the period. What the business paid or owes for it is the money side of the same exchange."}
 
-   ;; -------- Labour received ------------------------------------------
+   ;; -------- Labor received ------------------------------------------
    {:id :wage-expense
     :when {:assertion :receives
            :params {:unit #{"effort" "effort-unit"}}}
     :line {:side :debit :account "Wage Expense"}
     :amount :monetary
-    :text "The business received effort — someone's labour. Labour is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What the business owes or paid for it is the money side of the same exchange."}
+    :text "The business received effort — someone's labor. Labor is consumed as it is given: there is no asset to carry forward, so it is an expense in the period. What the business owes or paid for it is the money side of the same exchange."}
 
    ;; -------- Goods provided: revenue needs a counterparty ------------
    ;; Revenue is providing FINISHED GOODS to a counterparty -- goods the
@@ -556,7 +556,7 @@
 
 (def position-texts
   "Why the item landed in this account. The position is read off the
-   chain (and SP's catalogue of what kind of thing each item is), so the
+   chain (and SP's catalog of what kind of thing each item is), so the
    explanation names the reasoning rather than the item."
   ;; Each says what the thing IS to the business and why -- its future
   ;; use -- which is what the account name stands for. Why an asset sits
@@ -815,7 +815,7 @@
 (defn- resolve-position
   "The position of the item this line is about, read from the chain the
    student has recorded (including the event being booked) plus SP's
-   catalogue of what kind of thing each item is."
+   catalog of what kind of thing each item is."
   [flow context]
   (let [item (:physical-item flow)
         ;; The event being booked is part of its own chain: the materials
@@ -1009,7 +1009,7 @@
 
 (defn- side-sentence
   "The side of a line, as a consequence rather than a convention to
-   memorise. The assertions say two things: the direction -- more of it
+   memorize. The assertions say two things: the direction -- more of it
    (received, made) or less (provided, used up) -- and what kind of
    thing it is. The only ingredient that is not asserted is the
    convention itself: assets and expenses have their home on the left,
@@ -1076,7 +1076,7 @@
                                                        (= (:position rule) (resolve-position % context)))
                                                    ;; ...and whether it has physical
                                                    ;; substance, which is what separates
-                                                   ;; depreciation from amortisation.
+                                                   ;; depreciation from amortization.
                                                    ;; Silence is read as physical: the
                                                    ;; ordinary case, and what every entry
                                                    ;; written before this assumed.

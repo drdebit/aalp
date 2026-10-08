@@ -188,7 +188,7 @@
           {} events))
 
 (def ^:private kind->position
-  "SP's catalogue, used ONLY as a convenience fallback -- see
+  "SP's catalog, used ONLY as a convenience fallback -- see
    inventory-position. Nothing here is a fact the assertions could not
    state for themselves."
   {:raw-material  :raw-materials
@@ -216,9 +216,9 @@
    is the honest answer, and it is where the student has work to do. To
    place a transaction in an account you must first say what the thing
    is, and nil is the system declining to say it for you."
-  ;; The three-arity form takes a catalogue and ignores it, so callers
+  ;; The three-arity form takes a catalog and ignores it, so callers
   ;; need not all change at once.
-  ([events item _ignored-catalogue] (inventory-position events item))
+  ([events item _ignored-catalog] (inventory-position events item))
   ([events item]
    (let [item  (some-> item name)
          roles (get (item-roles events) item)]
@@ -266,7 +266,7 @@
    This is the assertion that carries physical substance. A student who
    records a design as intellectual property has SAID it has none; that
    is the whole of the distinction 2101 draws, and it belongs in the
-   record rather than in a catalogue. nil means nothing has said."
+   record rather than in a catalog. nil means nothing has said."
   [events item]
   (let [item (some-> item name)]
     (->> events
@@ -282,7 +282,7 @@
    separates them is physical substance, and the record says that: a
    thing denominated in intellectual property has none.
 
-   The catalogue is consulted only where the record is silent, for
+   The catalog is consulted only where the record is silent, for
    entries made before the denomination was asserted. It is a fallback,
    not the answer."
   ([position item item-kinds] (position-account position item item-kinds nil))
@@ -296,7 +296,7 @@
 
 (defn inventory-account
   "The account an item's movements hit, given the chain and the firm's
-   catalogue. nil when neither determines a position."
+   catalog. nil when neither determines a position."
   ([events item] (inventory-account events item nil))
   ([events item item-kinds]
    (some-> (inventory-position events item item-kinds)
@@ -654,7 +654,7 @@
 
    A capability is asserted, not configured: an event that receives a
    thing and states what that thing allows -- turns blanks into printed
-   shirts -- is what makes production possible afterwards.
+   shirts -- is what makes production possible afterward.
 
    -> [{:enabler item :consumes #{item ...} :creates item}]"
   [events]

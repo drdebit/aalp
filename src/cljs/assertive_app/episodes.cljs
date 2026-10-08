@@ -150,8 +150,8 @@
       :do {:kind :assert :code :allows}
       :then "And it's back. Nothing about the printer changed; what the record says about it did. That is the whole trick, and you will see it again."}
 
-     {:say "One thing to hold on to before moving on. Every account name is an answer to the same question: what is this thing for, and what is left afterwards?"
-      :then "Cash is money the business holds — an asset, because it can be put to any future use. The printer is held to make things and is still there afterwards: Equipment. Shirts will be held to be used up making printed ones: Raw Materials. Money spent on a repair buys nothing that lasts: an expense. The record can only name a thing once it knows what it is for, and you are the one who says so."}
+     {:say "One thing to hold on to before moving on. Every account name is an answer to the same question: what is this thing for, and what is left afterward?"
+      :then "Cash is money the business holds — an asset, because it can be put to any future use. The printer is held to make things and is still there afterward: Equipment. Shirts will be held to be used up making printed ones: Raw Materials. Money spent on a repair buys nothing that lasts: an expense. The record can only name a thing once it knows what it is for, and you are the one who says so."}
 
      {:say "Next, a design to print — and then blank t-shirts."
       :then "Because of what you said today, the record will already know what the shirts are for."}]}
@@ -186,7 +186,7 @@
       :do {:kind :assert :code :has-counterparty}
       :then "Balanced. Two very different things, one reason, one account family."}
 
-     ;; The other answer to "what is left afterwards?": nothing. A second
+     ;; The other answer to "what is left afterward?": nothing. A second
      ;; event in the same episode, so the contrast sits beside the design
      ;; rather than a whole episode later.
      {:say "Same afternoon, and the contrast. The printer needs a service: a technician from PrinterWorld comes out and SP pays $60. New event — start with when."
@@ -224,7 +224,7 @@
       ;; either is the right answer, and the printer came first.
       :do {:kind :pick-event :event-ids #{:printer :design}}
       :miss "Not that one. Look for an event that says what blank t-shirts are for."
-      :then "The printer, on January 2nd — and the design, the day after, said the same. The shirts are an input because the record already says what turns blank t-shirts into printed ones; you said so when you bought the things that do it. The reason for today's account was written down days ago, and you have just put your finger on it. Every account name works like this: the record says what a thing is for, and everything that comes in afterwards is read against that."}
+      :then "The printer, on January 2nd — and the design, the day after, said the same. The shirts are an input because the record already says what turns blank t-shirts into printed ones; you said so when you bought the things that do it. The reason for today's account was written down days ago, and you have just put your finger on it. Every account name works like this: the record says what a thing is for, and everything that comes in afterward is read against that."}
 
      {:say "Finish it off: who sold them? TextileDirect."
       :do {:kind :assert :code :has-counterparty}

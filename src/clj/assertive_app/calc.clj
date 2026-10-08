@@ -21,7 +21,7 @@
 
 (defn systematic-allocation
   "(Cost − Salvage) ÷ Life ÷ periods per year. Depreciation, and
-   amortisation, which is the same arithmetic on a thing you cannot
+   amortization, which is the same arithmetic on a thing you cannot
    touch."
   [{:keys [asset-cost salvage-value useful-life periods-per-year]}]
   (when-let [c (n asset-cost)]

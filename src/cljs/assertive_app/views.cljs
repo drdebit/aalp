@@ -811,7 +811,7 @@
        :else
        [:span.unit-label (case (:unit params)
                            "service-unit" "a service"
-                           "effort-unit" "hours of labour"
+                           "effort-unit" "hours of labor"
                            "time-unit" "time"
                            "ownership-units" "ownership units"
                            "cash")])
@@ -1609,7 +1609,7 @@
                           ;; these, so they have to be on the record.
                           (state/update-assertion-parameter! :reports :inputs inputs))
                         ;; ...and WHICH asset was written down, where the
-                        ;; calculation asked. Depreciation and amortisation
+                        ;; calculation asked. Depreciation and amortization
                         ;; are the same arithmetic; only the asset differs,
                         ;; and the record already knows whether that asset
                         ;; has physical substance.
@@ -1734,7 +1734,7 @@
 
 (def held-codes
   "The old per-kind production words. Their templates are held back
-   from the drill (labour costed into product is 2102's), so neither the
+   from the drill (labor costed into product is 2102's), so neither the
    menu, the orientation nor the check-in shows them."
   #{:consumes-inventory :consumes-supplies :consumes-labor :creates-finished-goods})
 
@@ -1762,7 +1762,7 @@
             palette (state/walkthrough-palette)
             ;; Flatten available assertions and filter out already selected
             ;; The old per-kind production words belong to templates the
-            ;; drill holds back (labour costed into product is 2102's);
+            ;; drill holds back (labor costed into product is 2102's);
             ;; the orientation hides them and so does the menu.
             all-assertions (for [[_domain assertions] available-assertions
                                  assertion assertions
@@ -1832,7 +1832,7 @@
                                (add-assertion! assertion-code "effort-unit")
                                (reset! sub-menu nil)
                                (reset! show-menu? false))}
-                  "labour"])
+                  "labor"])
                ;; A right with no physical substance. Its own
                ;; denomination, because that absence is the whole of what
                ;; makes an asset intangible rather than equipment.
@@ -1998,7 +1998,7 @@
         [:span.wt-episode (str "Episode " (inc episode) " — " (:title ep))]
         [:span.wt-progress (str "step " (inc step) " of " (episodes/step-count episode))]]
 
-       ;; The last step's closing line stays, greyed, until this step is
+       ;; The last step's closing line stays, grayed, until this step is
        ;; done: a student who clicks Next before reading it can still.
        (when (and (not done?) (pos? step))
          (when-let [prev (:then (episodes/step episode (dec step)))]
@@ -2220,7 +2220,7 @@
    the revenue entry stands complete, then the question, then the lines
    the question is about. Its presence also silences the per-line notes
    on those lines, which would otherwise repeat the panel's own text
-   twice, a centimetre below it."
+   twice, a centimeter below it."
   [& _]
   (let [expanded (r/atom nil)
         ;; The provenance column and the context line: the densest text
@@ -3656,7 +3656,7 @@
    procedure over accounts would import exactly the pedagogy this
    platform replaces, so the protocol is a way of READING an event and
    never resolves to an account before the assertions are made. The
-   minimal pair is the centrepiece -- two sentences differing in one
+   minimal pair is the centerpiece -- two sentences differing in one
    word, landing in two accounts -- and it is the sharpest thing we can
    show a student who is about to ask whether they already know this."
   [level]
@@ -3740,7 +3740,7 @@
       ;; The gate asks the student to decide whether they already know
       ;; this level; it used to ask that over a title, a subtitle and one
       ;; line of boilerplate, which made "do I already know this?" a
-      ;; gamble rather than a judgement. Both exits are unchanged.
+      ;; gamble rather than a judgment. Both exits are unchanged.
       [orientation-panel level]
       [:p.gate-choose "Read the tutorial, or take the practice round straight away."]
       [:button.gate-start-btn
@@ -5005,7 +5005,7 @@
     [:div.drill-container
      [:div.drill-header
       [:h2 "Reporting practice"]
-      [:p.drill-sandbox-note "One company's year, the same for everyone. Reports preview freely as you build them; each one is checked part by part — which events, whose, what condition, when, what is totalled — not just by its figure."]]
+      [:p.drill-sandbox-note "One company's year, the same for everyone. Reports preview freely as you build them; each one is checked part by part — which events, whose, what condition, when, what is totaled — not just by its figure."]]
      [:div.two-column-layout.rp-layout
       [report-record-panel collected]
       [:div.rp-side
@@ -5245,7 +5245,7 @@
 
 (defn- welcome-view
   "What accounting by assertion is. Once, before the first lesson's gate;
-   afterwards from the header's \"About this course\", where the button
+   afterward from the header's \"About this course\", where the button
    reads Back instead of Begin."
   []
   (let [{:keys [heading body lessons-heading lessons button]} tutorials/welcome

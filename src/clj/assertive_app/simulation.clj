@@ -751,7 +751,7 @@
                                      "to print with"
                                      "to print on")
                           ;; And the thing's NAME, not its key. "50
-                          ;; blank-tshirts" is the catalogue identifier
+                          ;; blank-tshirts" is the catalog identifier
                           ;; leaking into a sentence a student reads.
                           :inventory-type (or (some-> (:physical-item vars) keyword
                                                       (->> (get classification/physical-items))
@@ -1208,13 +1208,13 @@
       balances)))
 
 (def item-kinds
-  "SP's catalogue: what KIND of thing each item is. Firm policy, declared
+  "SP's catalog: what KIND of thing each item is. Firm policy, declared
    once, never asserted by a student."
   (into {} (map (fn [[k v]] [k (:category v)])) classification/physical-items))
 
 (defn derivation-context-for
   "Everything the derivation needs to read positions and costs off this
-   student's own record: the events themselves, the firm's catalogue, and
+   student's own record: the events themselves, the firm's catalog, and
    the cost basis those events establish.
 
    Raw materials / work in process / finished goods are resolved from

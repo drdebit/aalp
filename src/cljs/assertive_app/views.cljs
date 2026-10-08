@@ -684,9 +684,11 @@
        :on-click write}]
      (if set?
        [:span.confidence-value (str value "%")]
-       ;; Where the row already asks "How sure?", asking again beside the
-       ;; slider reads as a stutter.
-       [:span.confidence-value.unset (or unset-label "not set — how sure?")])])))
+       ;; Short, and the same width as a figure (see .confidence-value):
+       ;; a longer label here re-wrapped the sentence on the first click,
+       ;; and the slider moved out from under the pointer (Matt,
+       ;; 2026-10-07).
+       [:span.confidence-value.unset (or unset-label "not set")])])))
 
 (defn- customer-context-display
   "Display customer payment history context for confidence decisions."
@@ -1118,7 +1120,15 @@
         [:span
          [:span " under "]
          [framework-select :is-allowed-by (:framework params) "which law?"]])
-      [remove-assertion-button :is-allowed-by]]]))
+      [remove-assertion-button :is-allowed-by]]
+     ;; Filled in by the builder, not the student: say so, and say why.
+     (when-let [id (state/capacity-auto)]
+       (when (= id (:capacity params))
+         [:div.obligation-gloss.capacity-auto
+          (str "Filled in for you. What this uses and makes matches what "
+               (str/join " and " (if (sequential? id) id [id]))
+               " allows, so that is what made it possible. "
+               "Capacity bought earlier is what lets the business do this now.")]))]]))
 
 ;; Kept promises. Which one this keeps is the student's to say -- the
 ;; same question the batch picker asks of a sale, pointed at the record's
@@ -1190,9 +1200,13 @@
    Note that a probability here is not idle, though a probability on
    your own PROMISE would be. You decide whether you pay a bill you have
    agreed to pay; you do not entirely decide whether these get printed.
-   The press may break, or the order may be cancelled, or you may end up
-   selling the blanks on."
-  [params]
+   The press may break, or the order may be canceled, or you may end up
+   selling the blanks on.
+
+   `owes?`: the business has promised to pay for them, so the
+   expectation may instead be about that promise -- offered as a third
+   choice, which hands the pane to the payment sentence."
+  [params owes?]
   ;; No default. Which of the two this is IS the question -- it is what
   ;; separates raw materials from merchandise -- so the control opens
   ;; unanswered rather than showing a choice the student never made.
@@ -1221,7 +1235,9 @@
                         (state/update-assertion-parameter! :expects :creates-item nil)))}
        [:option {:value ""} "do what with them?"]
        [:option {:value "consumes"} "use them up making something"]
-       [:option {:value "provides"} "sell them on as they are"]]
+       [:option {:value "provides"} "sell them on as they are"]
+       (when owes?
+         [:option {:value "pay"} "pay what it owes for them"])]
       (when (= "consumes" chosen)
         [:span
          [:span " — making "]
@@ -1241,11 +1257,14 @@
       [pattern-note :expects params]]]))
 
 (defn- render-money-expectation
-  [params counterparty-name customer-profiles vendor-profiles is-prepaid?]
+  [params counterparty-name customer-profiles vendor-profiles is-prepaid? owes?]
   ;; Split around the unit, because "expects to receive what it paid for
   ;; WITH services WITH 95% confidence" has two `with`s doing different
   ;; jobs and reads as neither.
-  (let [[before after] (cond (= "provides" (:action params))
+  ;; Which way it points follows the promise when the expectation has not
+  ;; said: on a purchase on credit it is the business's own payment.
+  (let [[before after] (cond (or (= "provides" (:action params))
+                                 (and (nil? (:action params)) owes?))
                              ["The business expects to provide the" "it owes"]
                              is-prepaid?
                              ["The business expects to receive the" "it paid for"]
@@ -1277,11 +1296,11 @@
 
    Goods in: what they are FOR. Anything else: how likely somebody
    else's future action is. One assertion, two sentences, because a
-   student reading either should recognise what it says."
-  [params counterparty-name customer-profiles vendor-profiles is-prepaid? buying-goods?]
+   student reading either should recognize what it says."
+  [params counterparty-name customer-profiles vendor-profiles is-prepaid? buying-goods? owes?]
   (if buying-goods?
-    [render-purpose-section params]
-    [render-money-expectation params counterparty-name customer-profiles vendor-profiles is-prepaid?]))
+    [render-purpose-section params owes?]
+    [render-money-expectation params counterparty-name customer-profiles vendor-profiles is-prepaid? owes?]))
 
 ;; ==================== Calculation Builder Components ====================
 

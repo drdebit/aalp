@@ -247,6 +247,7 @@
   (swap! app-state (fn [st]
                      (-> st
                          (assoc :selected-assertions {} :pattern-sources {} :selection-order [])
+                         (dissoc :capacity-auto)
                          ;; A calculation belongs to the problem it was done
                          ;; for; its inputs and result do not carry over.
                          (assoc-in [:calculation :inputs] {})
@@ -256,7 +257,81 @@
   "Replace the whole selection map (used by the drill's worked example
    to fill the sentence builder with the canonical assertions)."
   [assertions]
-  (swap! app-state assoc :selected-assertions (or assertions {}) :pattern-sources {} :selection-order []))
+  (swap! app-state #(-> %
+                        (assoc :selected-assertions (or assertions {}) :pattern-sources {} :selection-order [])
+                        (dissoc :capacity-auto))))
+
+;; ==================== Capacity, found for the student ====================
+;; A production says what it used up and what it made; the record already
+;; holds the event whose `allows` names that same transformation -- the
+;; printer bought to turn blank shirts and ink into printed ones. When the
+;; two match, the builder adds `is-allowed-by` that event itself and says
+;; so. The student is reminded where the capacity came from, and meets the
+;; assertion that later lessons (is-allowed-by a law, is-required-by one)
+;; ask them to state. Matt, 2026-10-07.
+;;
+;; Once per problem: a student who removes it is not overruled.
+
+(defn capacity-auto
+  "The event this problem's `is-allowed-by` was filled in from, or nil."
+  []
+  (:capacity-auto @app-state))
+
+(defn- record-events [st]
+  (if (:walkthrough st)
+    (vec (:walkthrough-events st))
+    (:prior-events (:current-problem st))))
+
+(defn- flows-of [v]
+  (cond (nil? v) [] (sequential? v) v (map? v) [v] :else []))
+
+(defn- items-of [v]
+  (set (keep #(some-> (:physical-item %) not-empty) (flows-of v))))
+
+(defn- allowing-events
+  "The record's events whose `allows` covers what this selection consumes
+   and creates: the same output, and inputs they name. A printer allows
+   printed shirts of any design; a design allows only its own variety,
+   so printing Night Owl shirts is allowed by both. -> one id, several,
+   or nil."
+  [st sel]
+  (let [ins  (items-of (:consumes sel))
+        outs (flows-of (:creates sel))
+        out  (first outs)
+        item (some-> (:physical-item out) not-empty)
+        vty  (some-> (:variety out) not-empty)]
+    (when (and (seq ins) item (= 1 (count outs)))
+      (let [ids (vec (keep (fn [ev]
+                             (let [al     (:allows ev)
+                                   can-in (set (or (seq (:consumes-items al))
+                                                   (some-> (:consumes-item al) vector)))
+                                   makes  (some-> (:creates-variety al) not-empty)]
+                               (when (and (:has-identifier ev)
+                                          (= item (:creates-item al))
+                                          (every? can-in ins)
+                                          (or (nil? makes) (= makes vty)))
+                                 (:has-identifier ev))))
+                           (record-events st)))]
+        (case (count ids) 0 nil 1 (first ids) ids)))))
+
+(defn- resolve-capacity [st]
+  (let [sel (:selected-assertions st)]
+    (if (or (contains? st :capacity-auto)
+            (contains? sel :is-allowed-by))
+      st
+      (if-let [id (allowing-events st sel)]
+        (-> st
+            (assoc-in [:selected-assertions :is-allowed-by] {:capacity id})
+            (update :selection-order (fnil conj []) :is-allowed-by)
+            (assoc :capacity-auto id))
+        st))))
+
+(add-watch app-state ::capacity
+           (fn [_ _ old new]
+             (when (not= (:selected-assertions old) (:selected-assertions new))
+               (let [resolved (resolve-capacity new)]
+                 (when-not (identical? resolved new)
+                   (reset! app-state resolved))))))
 
 ;; ==================== Time-on-task ====================
 ;; Every attempt carries raw serve-to-submit seconds (instrumentation

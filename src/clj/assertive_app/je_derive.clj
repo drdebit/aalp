@@ -1135,6 +1135,10 @@
                                                   (keep identity [(monetary-source selections)])))))]
                         {:side (:side line)
                          :account (resolve-line-account (:account line) matched-params context)
+                         ;; What the line is about, for telling two lines
+                         ;; in one account apart (blank shirts and ink).
+                         :item (when (:physical-item matched-params)
+                                 (item-phrase (chain/flow-item matched-params)))
                          ;; The typed quantity is the real value; :amount is
                          ;; its scalar projection, kept for the wire and the
                          ;; ledger. Every posted amount is money by

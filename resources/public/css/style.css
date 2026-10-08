@@ -39,7 +39,9 @@ header .subtitle {
 /* Three-column layout */
 .three-column-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    /* minmax(0, 1fr): a column may not grow to fit its widest control
+       and squeeze the other two (a long select did, in production). */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
     min-height: 600px;
 }
@@ -4270,6 +4272,10 @@ header {
 .walkthrough-entry { background:#fff; border:1px solid #dfe5ea; border-radius:4px; padding:.85rem 1rem; }
 .walkthrough-entry h2 { font-size:1rem; margin:0 0 .6rem; color:#24405c; }
 .allows-content, .allowed-by-content { display:flex; flex-wrap:wrap; align-items:center; gap:.3rem; }
+/* Flex items will not shrink below their content by default; these may,
+   so a long select stays inside the pane. */
+.allows-content > *, .allowed-by-content > * { min-width: 0; max-width: 100%; }
+.allowed-by-content select, .allows-content select { max-width: 100%; }
 
 /* ==================== Journal entries line up ====================
    An entry is a column of amounts, and reading one means comparing those
@@ -4328,7 +4334,9 @@ header {
 
 /* ---- Transformations: what went in, what came out ------------------- */
 .transformation-content { display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
-.transformation-row { display: flex; align-items: center; gap: .4rem; }
+.transformation-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.sentence-builder select, .sentence-builder .inline-select { max-width: 100%; }
+.dj-item { color: #6b7280; font-weight: 400; }
 .add-flow {
   background: none; border: 1px dashed #b9c4cd; color: #4a5c6b;
   border-radius: 3px; padding: .15rem .5rem; font-size: .78rem; cursor: pointer;

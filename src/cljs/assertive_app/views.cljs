@@ -1159,10 +1159,15 @@
           :when (and (:allows ev) (:has-identifier ev))
           :let [al (:allows ev)
                 ins (or (seq (:consumes-items al)) (some-> (:consumes-item al) vector))]]
+      ;; Short: a select is as wide as its longest option, and the
+      ;; recipe spelled out in full pushed the pane past its column.
+      ;; What it allows is said by the note under the pane.
       {:value (:has-identifier ev)
-       :label (str (:has-identifier ev) " — " (get-in ev [:has-date :date]) ": "
-                   (or (get-in ev [:receives :physical-item]) "capability")
-                   ", allows " (clojure.string/join " and " ins) " → " (:creates-item al))})))
+       :label (let [recd (:receives ev)
+                    what (cond (:variety recd) (str (variety-label (:variety recd)) " design")
+                               (:physical-item recd) (str/replace (:physical-item recd) "-" " ")
+                               :else "capability")]
+                (str (:has-identifier ev) " — " what ", " (get-in ev [:has-date :date])))})))
 
 (defn- framework-select
   "A dropdown over the legal frameworks the server offers for this
@@ -1189,7 +1194,7 @@
     [sentence-section :capability "This is:"
      [:div
      [:div.allowed-by-content
-      [:span "enabled by "]
+      [:span "allowed by "]
       (if caps
         ;; More than one thing can make an event possible: printing a
         ;; design's variety rests on the printer AND the design.
@@ -1219,7 +1224,10 @@
             {:on-click #(state/update-assertion-parameter! :is-allowed-by :capacity (conj cur ""))}
             "+ another"]])
         [item-select :is-allowed-by :capacity (:capacity params)])
-      (when (seq (assertion-param-options :is-allowed-by :framework))
+      ;; Laws are Level 4's subject; before it, what made an event
+      ;; possible is a capacity the business bought (Matt, 2026-10-08).
+      (when (and (seq (assertion-param-options :is-allowed-by :framework))
+                 (>= (or (state/current-level) 0) 4))
         [:span
          [:span " under "]
          [framework-select :is-allowed-by (:framework params) "which law?"]])
@@ -2033,7 +2041,7 @@
                                          (flow (:requires ev))
                                          (when-let [d (get-in ev [:requires :due-date])] (str " by " d))))
                (:expects ev) (conj (str "expects, " (get-in ev [:expects :confidence]) "% sure"))
-               (:is-allowed-by ev) (conj (str "enabled by " (get-in ev [:is-allowed-by :capacity]))))]
+               (:is-allowed-by ev) (conj (str "allowed by " (get-in ev [:is-allowed-by :capacity]))))]
     (str (or (get-in ev [:has-date :date]) "—") ": " (clojure.string/join "; " bits))))
 
 (defn- chain-contents
@@ -2302,8 +2310,8 @@
                                     (not= "monetary-unit" (get-in selected [:expects :unit])))
                                ;; Bought on credit: the business owes for them.
                                (= "provides" (get-in selected [:requires :action]))]
-             :consumes        [render-transformation-section :consumes "This uses up:"]
-             :creates         [render-transformation-section :creates "This makes:"]
+             :consumes        [render-transformation-section :consumes "This consumes:"]
+             :creates         [render-transformation-section :creates "This creates:"]
              :allows          [render-allows-section (:allows selected)]
              :is-allowed-by   [render-is-allowed-by-section (:is-allowed-by selected)]
              :is-required-by  [render-legal-framework-section :is-required-by (:is-required-by selected)]
@@ -2343,6 +2351,13 @@
       (name code))))
 
 (declare format-currency)
+
+;; Two lines in one account -- blank shirts and ink both leaving Raw
+;; Materials -- are told apart by what each one is (Matt, 2026-10-08).
+(defn- repeated-account-item [line lines]
+  (when (and (:item line)
+             (< 1 (count (filter #(= (:account %) (:account line)) lines))))
+    (:item line)))
 
 (defn derived-je-panel
   "Dual fluency: the journal entry derived live from the student's own
@@ -2438,6 +2453,8 @@
                        [:td.dj-drcr (if (= "debit" (:side line)) "DR" "CR")]
                        [:td.dj-account {:class (:side line)}
                         (:account line)
+                        (when-let [it (repeated-account-item line lines)]
+                          [:span.dj-item (str " — " it)])
                         (when-let [el (:entry-label line)]
                           [:span.dj-entry-label el])]
                        [:td.dj-amount {:class (when (:unresolved? line) "dj-unpriced")
@@ -3036,7 +3053,9 @@
                     ^{:key (str "correct-" i)}
                     [:tr.dj-line {:class (name (:side line))}
                      [:td.dj-drcr (if (= "debit" (name (:side line))) "DR" "CR")]
-                     [:td.dj-account {:class (name (:side line))} (:account line)]
+                     [:td.dj-account {:class (name (:side line))} (:account line)
+                      (when-let [it (repeated-account-item line correct-lines)]
+                        [:span.dj-item (str " — " it)])]
                      [:td.dj-amount (if-let [a (:amount line)] (format-currency a) "—")]])]]
                 ;; Two classifications can post identically -- a contract
                 ;; sale and a credit sale, which is the point of Level 4 --

@@ -558,6 +558,9 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
                    "creates: 10 printed t-shirts (finished goods)"
                    "is-allowed-by: the t-shirt printer"]
       :entry ["DR Finished Goods Inventory $30" "CR Raw Materials Inventory $30"]}
+     ;; Not the same words: a transformation and a sale are two kinds of
+     ;; event that both move inventory (Matt, 2026-10-08).
+     :pair-heading "The same shirts, a different event"
      :pair
      {:same "Ten blank t-shirts leave the shelf."
       :a {:when "Consumed, and printed shirts created — nobody else involved"

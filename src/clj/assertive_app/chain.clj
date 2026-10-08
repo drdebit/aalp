@@ -726,12 +726,14 @@
   (vec (keep (fn [assertions]
                (let [allows  (:allows assertions)
                      inputs  (allows-inputs allows)
-                     creates (:creates-item allows)
+                     ;; A design's capacity makes ITS variety; the
+                     ;; printer's makes printed shirts in general.
+                     creates (item-id (:creates-item allows) (:creates-variety allows))
                      enabler (:item (held (:receives assertions)))]
                  (when (and (seq inputs) creates)
                    {:enabler  enabler
                     :consumes (set inputs)
-                    :creates  (name creates)})))
+                    :creates  creates})))
              events)))
 
 (defn- fmt [n] (if (and (number? n) (== n (long n))) (long n) n))
@@ -812,8 +814,14 @@
             match (first (filter #(and (every? (:consumes %) (map :item ins))
                                        (= (:creates %) (:item out)))
                                  caps))
-            said  (fn [c] (str (str/join " and " (sort (:consumes c))) " into " (:creates c)))
-            used  (str/join " and " (map :item ins))]
+            ;; Goods in words: printed-tshirts/mountain-sunrise reads
+            ;; "printed t-shirts (Mountain Sunrise)".
+            words (fn [id] (let [v (variety-of id)
+                                 b (str/replace (base-item id) "-" " ")
+                                 b (str/replace b "tshirts" "t-shirts")]
+                             (if v (str b " (" (variety-name v) ")") b)))
+            said  (fn [c] (str (str/join " and " (map words (sort (:consumes c)))) " into " (words (:creates c))))
+            used  (str/join " and " (map (comp words :item) ins))]
         (cond
           (nil? match)
           {:kind :no-capability
@@ -821,11 +829,11 @@
            :message
            (if (seq caps)
              (str "Nothing in your record says the business can turn " used " into "
-                  (:item out) ". What the business can do: "
-                  (str/join "; " (map said caps))
+                  (words (:item out)) ". What the business can do: "
+                  (str/join "; " (distinct (map said caps)))
                   ".")
              (str "Nothing in your record says the business can turn " used " into "
-                  (:item out) ". What did the business acquire that makes this possible, "
+                  (words (:item out)) ". What did the business acquire that makes this possible, "
                   "and what did you say it allows?"))}
 
           ;; The capability was asserted, but SP no longer holds the thing

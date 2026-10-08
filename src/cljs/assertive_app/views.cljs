@@ -1123,7 +1123,9 @@
 ;; Kept promises. Which one this keeps is the student's to say -- the
 ;; same question the batch picker asks of a sale, pointed at the record's
 ;; promises instead of its lots -- so nothing is preselected, even when
-;; the record holds only one.
+;; the record holds only one. The choice is the promise itself
+;; (CreditSale-R/requires), not the event it was made in: many things can
+;; happen in one event (Matt, 2026-10-07).
 (def ^:private promise-kind-labels
   {"declared"   "dividend declared"
    "accrued"    "accrued"
@@ -1147,7 +1149,8 @@
         [inline-dropdown :fulfills :event
          (for [p open]
            {:value (:id p)
-            :label (str (:id p) " — " (get promise-kind-labels (name (:kind p)) (name (:kind p)))
+            :label (str "the promise made in " (or (:event p) (:id p))
+                        " — " (get promise-kind-labels (name (:kind p)) (name (:kind p)))
                         " " (:date p)
                         (when (:amount p) (str ", " (format-currency (:amount p))))
                         (when (:counterparty p) (str ", " (:counterparty p))))})

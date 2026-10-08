@@ -865,7 +865,7 @@
    record it is re-derived against, and its own `fulfills` would otherwise
    report the promise it keeps as already kept."
   [context]
-  (when-let [id (some-> (get-in context [:current :fulfills :event]) name not-empty)]
+  (when-let [id (chain/kept-promise (:current context))]
     (let [current (:current context)
           events  (remove #(or (= % current)
                                (and (:has-identifier current)
@@ -1302,7 +1302,9 @@
      ;; delivering rather than paying, so it has no account a payment
      ;; clears, but it is kept all the same, and named the same way.
      :open-promises (vec (for [p (chain/promises (:events chain-ctx))]
-                           (cond-> (select-keys p [:id :kind :date :due-date :amount :counterparty])
+                           (cond-> (assoc (select-keys p [:id :kind :date :due-date :amount :counterparty])
+                                          ;; The event the promise was made in, for the label.
+                                          :event (chain/promise-event-id (:id p)))
                              (get chain/promise-accounts (:kind p))
                              (assoc :account (get chain/promise-accounts (:kind p))))))
      :holdings (vec (for [it (distinct (keep :item (mapcat (fn [ev] (concat (chain-physicals (:receives ev)) (chain-physicals (:creates ev))))

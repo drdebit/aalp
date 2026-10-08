@@ -6,6 +6,7 @@
    needs the opposite: the same year for everyone, so the answers are
    knowable and a composition can be checked against the right one."
   (:require [assertive-app.readings :as readings]
+            [assertive-app.chain :as chain]
             [assertive-app.engine :as engine]
             [assertive-engine.compute.collects :as collects]
             [clojure.string :as str]))
@@ -56,7 +57,7 @@
       :has-counterparty {:name "Ridgeway Middle School"}}
      {:has-identifier "Collect-000" :has-date {:date "2026-01-15"}
       :receives {:unit "monetary-unit" :quantity 450}
-      :fulfills {:action "requires" :event "Sale-000"}
+      :fulfills {:action "requires" :event "Sale-000/requires"}
       :has-counterparty {:name "Ridgeway Middle School"}}
      {:has-identifier "Shirts-002" :has-date {:date "2026-02-02"}
       :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 150}
@@ -69,7 +70,7 @@
       :has-counterparty {:name "the chess club"}}
      {:has-identifier "Pay-001" :has-date {:date "2026-03-04"}
       :provides {:unit "monetary-unit" :quantity 750}
-      :fulfills {:action "requires" :event "Shirts-002"}
+      :fulfills {:action "requires" :event "Shirts-002/requires"}
       :has-counterparty {:name "PrintSupplyCo"}}
      {:has-identifier "Sale-002" :has-date {:date "2026-04-10"}
       :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 80 :from-event "Shirts-002"}
@@ -78,7 +79,7 @@
       :has-counterparty {:name "Fairview Running Club"}}
      {:has-identifier "Collect-002" :has-date {:date "2026-05-08"}
       :receives {:unit "monetary-unit" :quantity 720}
-      :fulfills {:action "requires" :event "Sale-002"}
+      :fulfills {:action "requires" :event "Sale-002/requires"}
       :has-counterparty {:name "Fairview Running Club"}}
      {:has-identifier "Service-001" :has-date {:date "2026-06-01"}
       :provides {:unit "monetary-unit" :quantity 300}
@@ -260,7 +261,7 @@
                                   (when-let [r (:requires e)]
                                     [(str "requires: " (if (= "receives" (some-> (:action r) name)) "to receive" "to provide")
                                           " $" (:quantity r) " by " (:due-date r))])
-                                  (when-let [f (get-in e [:fulfills :event])] [(str "keeps the promise of " f)])))}))
+                                  (when-let [p (chain/kept-promise e)] [(str "keeps the promise made in " (chain/promise-event-id p))])))}))
 
 (defn record-view
   "What the student sees of a fixed record."

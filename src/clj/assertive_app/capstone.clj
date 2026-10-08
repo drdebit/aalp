@@ -66,7 +66,7 @@
     :narrative "On January 9, Westside Soccer pays the $360 it owed for the shirts it bought in December."
     :answer {:has-date {:date "2026-01-09"} :has-counterparty {:name "Westside Soccer"}
              :receives {:unit "monetary-unit" :quantity 360}
-             :fulfills {:action "requires" :event "Sale-P"}}}
+             :fulfills {:action "requires" :event "Sale-P/requires"}}}
    {:id "T02" :date "2026-01-20" :classification :merchandise-purchase-on-credit
     :narrative "On January 20, Campus Threads takes delivery of 200 blank t-shirts from PrintSupplyCo, to sell on as they are, and agrees to pay $1,000 by February 19."
     :answer {:has-date {:date "2026-01-20"} :has-counterparty {:name "PrintSupplyCo"}
@@ -82,7 +82,7 @@
     :narrative "On February 19, Campus Threads pays PrintSupplyCo the $1,000 it owes for January's shirts."
     :answer {:has-date {:date "2026-02-19"} :has-counterparty {:name "PrintSupplyCo"}
              :provides {:unit "monetary-unit" :quantity 1000}
-             :fulfills {:action "requires" :event "T02"}}}
+             :fulfills {:action "requires" :event "T02/requires"}}}
    {:id "T05" :date "2026-03-15" :classification :sale-on-credit
     :narrative "On March 15, Campus Threads sells 100 of January's shirts (T02) to Lakeside Rowing Club for $950, to be paid by April 14. It is 90% sure they will pay."
     :answer {:has-date {:date "2026-03-15"} :has-counterparty {:name "Lakeside Rowing Club"}
@@ -93,7 +93,7 @@
     :narrative "On April 10, Lakeside Rowing Club pays the $950 it owes."
     :answer {:has-date {:date "2026-04-10"} :has-counterparty {:name "Lakeside Rowing Club"}
              :receives {:unit "monetary-unit" :quantity 950}
-             :fulfills {:action "requires" :event "T05"}}}
+             :fulfills {:action "requires" :event "T05/requires"}}}
    {:id "T07" :date "2026-05-01" :classification :service-purchase
     :narrative "On May 1, Campus Threads pays CleanSweep $250 to deep-clean the stockroom."
     :answer {:has-date {:date "2026-05-01"} :has-counterparty {:name "CleanSweep"}

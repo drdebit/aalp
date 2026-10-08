@@ -1381,7 +1381,7 @@
    assessed on it."
   [assertions-map kinds context]
   (or (:standalone? context)
-      (let [id (some-> (get-in assertions-map [:fulfills :event]) name not-empty)]
+      (let [id (chain/kept-promise assertions-map)]
         (boolean (and id (some #(and (= id (:id %)) (contains? kinds (:kind %)))
                                (chain/promises (:events context))))))))
 
@@ -3529,7 +3529,7 @@ The printed t-shirts are now finished goods ready for sale."
    {:narrative-template "On {date}, {company} delivers {delivered} of the {ordered} printed t-shirts {customer} paid ${total} for in advance on {advance-date}. That much of the advance has now been earned: ${earned}."
     :required-assertions {:has-date {:date :date}
                           :reports {:category "revenue" :basis "earned" :amount :earned}
-                          :fulfills {:action "requires" :event "Deposit-001"}}
+                          :fulfills {:action "requires" :event "Deposit-001/requires"}}
     :correct-classification :unearned-revenue-adjustment
     :reads-record [:advance]
     :level 5
@@ -3586,7 +3586,7 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name "Shareholders"}
-                          :fulfills {:action "requires" :event "Dividend-001"}}
+                          :fulfills {:action "requires" :event "Dividend-001/requires"}}
     :correct-classification :dividend-payment
     ;; The dividend paid is the one in the record, and fulfills names it.
     :reads-record [:declared]
@@ -3630,7 +3630,7 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :lender}
-                          :fulfills {:action "requires" :event "Loan-001"}}
+                          :fulfills {:action "requires" :event "Loan-001/requires"}}
     :correct-classification :notes-payable-payment
     :reads-record [:borrowing]
     :level 7
@@ -3645,7 +3645,7 @@ The printed t-shirts are now finished goods ready for sale."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           :has-counterparty {:name :lender}
-                          :fulfills {:action "requires" :event "Interest-001"}}
+                          :fulfills {:action "requires" :event "Interest-001/requires"}}
     :correct-classification :interest-payment
     :reads-record [:accrued-interest]
     :level 7

@@ -49,7 +49,7 @@
 (defn- money-in [e] (reduce + 0 (keep money (flows (:receives e)))))
 
 (defn- kept-event [e by-id]
-  (some-> (get-in e [:fulfills :event]) name by-id))
+  (some-> (chain/kept-promise e) chain/promise-event-id by-id))
 
 (defn- role-by-promise [kind]
   (case kind
@@ -117,7 +117,7 @@
    order."
   [events]
   (let [by-id    (into {} (keep (fn [e] (when-let [i (id-of e)] [i e]))) events)
-        kept-ids (into #{} (keep #(some-> (get-in % [:fulfills :event]) name)) events)
+        kept-ids (into #{} (keep #(some-> (chain/kept-promise %) chain/promise-event-id)) events)
         basis    (cost/cost-basis events)]
     (into {}
           (for [e events

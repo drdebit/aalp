@@ -480,6 +480,29 @@
    :accrued    "Accrued Liabilities"
    :earned     "Accrued Receivable"})
 
+;; A promise is named by where it is made: the event that asserts the
+;; `requires`, then /requires -- the engine's id for the same predicted
+;; event, so the flat record and the full form name it alike. Many things
+;; can happen in one event, so `fulfills` names the promise, never just
+;; the event it was made in (Matt, 2026-10-07). An older answer that
+;; names the event still reads as that event's promise.
+
+(defn promise-id
+  "The id of the promise an event's `requires` makes."
+  [event-id]
+  (str (name event-id) "/requires"))
+
+(defn promise-event-id
+  "The event a promise was made in."
+  [pid]
+  (some-> pid name (str/replace #"/requires$" "")))
+
+(defn kept-promise
+  "The promise an event's `fulfills` names, as a promise id; nil if none."
+  [e]
+  (when-let [id (some-> (get-in e [:fulfills :event]) name not-empty)]
+    (if (str/ends-with? id "/requires") id (promise-id id))))
+
 (defn promises
   "The promises the record still carries, one per `requires` asserted.
 
@@ -496,10 +519,10 @@
    -> [{:id :kind :date :due-date :action :unit :quantity :counterparty
         :item :confidence :months}]"
   [events]
-  (let [settled (into #{} (keep #(some-> (get-in % [:fulfills :event]) name) events))]
+  (let [settled (into #{} (keep kept-promise) events)]
     (vec (for [a events
                :let [req  (:requires a)
-                     id   (some-> (:has-identifier a) name)
+                     id   (some-> (:has-identifier a) promise-id)
                      kind (when req (promise-kind a req))]
                :when (and kind (not (contains? settled id)))]
            (let [date (get-in a [:has-date :date])

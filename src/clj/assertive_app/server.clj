@@ -374,9 +374,18 @@
 
   ;; What a lesson's problems produce, for the check-in after it: each
   ;; pattern the level serves, and the entry its answer posts.
-  (GET "/api/lessons/summary" [level]
+  (GET "/api/lessons/summary" [level levels]
+    ;; `levels`: a check-in that closes more than one lesson (2,3).
     (response/response
-      {:classifications (classification/level-summary (Integer/parseInt (or level "0")))}))
+      {:classifications (if (seq levels)
+                          ;; One row per classification: plain and design
+                          ;; printing are both direct production.
+                          (->> (clojure.string/split levels #",")
+                               (mapcat #(classification/level-summary (Integer/parseInt %)))
+                               (reduce (fn [acc row] (if (some #(= (:classification %) (:classification row)) acc)
+                                                       acc (conj acc row)))
+                                       []))
+                          (classification/level-summary (Integer/parseInt (or level "0"))))}))
 
   (POST "/api/validate-je" {body :body :as request}
     (let [student-je {:debit-account (:debit-account body)

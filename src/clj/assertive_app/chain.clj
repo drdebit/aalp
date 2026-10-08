@@ -25,6 +25,48 @@
    thing cost."
   (:require [clojure.string :as str]))
 
+;; ---------------------------------------------------------------------------
+;; Varieties
+;; ---------------------------------------------------------------------------
+;; A design allows printing ITS variety -- "Printed T-Shirts, Night Owl" --
+;; and each variety is its own good: its own batches, its own cost, and a
+;; sale draws from the variety it names. A flow keeps :physical-item (what
+;; kind of thing: labels, accounts, the catalog) and adds :variety. The
+;; record's stock is kept per item-id, which joins the two. No variety is
+;; the plain one: shirts printed with the company's own logo, which needs
+;; only the printer (Matt, 2026-10-08; DESIGNS-AND-VARIETIES.org).
+
+(defn item-id
+  "The stock a flow belongs to: the item, and its variety if it has one."
+  [physical-item variety]
+  (when physical-item
+    (let [base (name physical-item)
+          v    (some-> variety name not-empty)]
+      (if v (str base "/" v) base))))
+
+(defn base-item
+  "The catalog item behind an item-id."
+  [id]
+  (some-> id name (str/replace #"/.*$" "")))
+
+(defn flow-item
+  "The item-id of a flow's goods."
+  [flow]
+  (item-id (:physical-item flow) (:variety flow)))
+
+(defn variety-of
+  "The variety part of an item-id, or nil for the plain one."
+  [id]
+  (some-> id name (->> (re-find #"/(.+)$")) second))
+
+(defn variety-name
+  "A variety as it is written: night-owl reads Night Owl."
+  [v]
+  (some->> (some-> v name not-empty)
+           (#(str/split % #"-"))
+           (map str/capitalize)
+           (str/join " ")))
+
 (defn- held
   "The item, count and denomination of a flow that brings a thing into
    the business or sends one out.
@@ -41,7 +83,7 @@
                      "physical-unit"         :physical
                      "intellectual-property" :intangible
                      nil)]
-    (when-let [item (some-> (:physical-item params) name)]
+    (when-let [item (flow-item params)]
       {:item item
        :denomination denom
        :units (let [q (:quantity params)]
@@ -56,7 +98,7 @@
    purchase -- and so may the platform now that events carry
    identifiers; an item name is still read, for older records."
   [cap events]
-  (let [cap (name cap)
+  (let [cap (name (if (sequential? cap) (first cap) cap))
         by-id (into {} (for [e events
                              :let [id (some-> (:has-identifier e) name)
                                    it (:item (held (:receives e)))]
@@ -144,8 +186,8 @@
                         acc)
                   acc (reduce (fn [acc i] (update acc i (fnil conj #{}) :consumable))
                               acc (allows-inputs allows))
-                  acc (if-let [i (:creates-item allows)]
-                        (update acc (name i) (fnil conj #{}) :producible)
+                  acc (if-let [i (item-id (:creates-item allows) (:creates-variety allows))]
+                        (update acc i (fnil conj #{}) :producible)
                         acc)
                   ;; And the same fact stated by the BUYER, at the moment
                   ;; of buying. `allows` is the machine's claim about what
@@ -290,7 +332,7 @@
    (if (and (= :capital position)
             (or (= :intangible denomination)
                 (and (nil? denomination)
-                     (= :intangible (get item-kinds (keyword (or item "")))))))
+                     (= :intangible (get item-kinds (keyword (or (base-item item) "")))))))
      "Design (Intangible Asset)"
      (position-accounts position))))
 
@@ -343,7 +385,7 @@
   (let [item (some-> item name)
         drawn (reduce (fn [acc assertions]
                         (reduce (fn [acc {:keys [from-event] :as f}]
-                                  (if (and from-event (= item (some-> (:physical-item f) name)))
+                                  (if (and from-event (= item (flow-item f)))
                                     (update acc (name from-event) (fnil + 0) (or (:units (held f)) 0))
                                     acc))
                                 acc

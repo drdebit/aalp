@@ -331,7 +331,10 @@
   "What the lesson's problems produce, for its check-in."
   [level]
   (GET (str api-base "/lessons/summary")
-    {:params {:level level}
+    ;; A check-in can close more than one lesson (Production, then
+    ;; Intellectual Property): ask for all of them.
+    {:params (let [ls (tutorials/checkin-levels level)]
+               (if (next ls) {:levels (clojure.string/join "," ls)} {:level level}))
      :headers (auth-headers)
      :response-format :json
      :keywords? true
@@ -553,7 +556,12 @@
                       ;; round can be passed without them.
                       :missed (vec (if (or below levels) [] (get-in @state/app-state [:drill :missed] [])))}
                below (assoc :below below)
-               levels (assoc :levels (vec levels)))
+               levels (assoc :levels (vec levels))
+               ;; A round that keeps to its own lessons' patterns
+               ;; (Intellectual Property: production and designs only).
+               (and (nil? below) (nil? levels) (state/drill-active?)
+                    (:levels (tutorials/drill-config level)))
+               (assoc :levels (vec (:levels (tutorials/drill-config level)))))
      :format :json
      :headers (auth-headers)
      :response-format :json

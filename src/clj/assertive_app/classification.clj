@@ -1393,6 +1393,35 @@
         (boolean (and id (some #(and (= id (:id %)) (contains? kinds (:kind %)))
                                (chain/promises (:events context))))))))
 
+;; ==================== Designs and their varieties ====================
+;; A design allows printing ITS variety; each variety is its own good
+;; (chain/item-id). Problems name the design and students select it, as
+;; they select a batch (Matt, 2026-10-08; DESIGNS-AND-VARIETIES.org).
+
+(def design-names
+  "Designs a problem can name, as [variety-id name]."
+  [["night-owl" "Night Owl"] ["mountain-sunrise" "Mountain Sunrise"]
+   ["neon-tiger" "Neon Tiger"] ["lunar-moth" "Lunar Moth"] ["desert-bloom" "Desert Bloom"]])
+
+(defn variety-allowed?
+  "Is what this event prints allowed by what it cites? A variety needs the
+   design whose `allows` makes it, named in `is-allowed-by`; a design
+   named there must be the one for the variety printed. Plain printed
+   shirts cite no design. A standalone problem has no record and is not
+   assessed on it."
+  [assertions-map context]
+  (or (:standalone? context)
+      (let [flows   (let [v (:creates assertions-map)] (cond (nil? v) [] (sequential? v) v :else [v]))
+            printed (set (keep #(some-> (:variety %) name not-empty) flows))
+            cap     (get-in assertions-map [:is-allowed-by :capacity])
+            cited   (set (map name (if (sequential? cap) cap (when cap [cap]))))
+            allowed (set (for [e (:events context)
+                               :when (contains? cited (some-> (:has-identifier e) name))
+                               :let [v (get-in e [:allows :creates-variety])]
+                               :when v]
+                           (name v)))]
+        (= printed allowed))))
+
 (defn cash-exchange
   "Template for cash exchange transactions (simultaneous exchange, no future obligation).
    entity-provides and entity-receives can be :cash or :goods/:services
@@ -1533,6 +1562,13 @@
      ;; tell a design from a press when their `allows` are identical.
      :receives-unit "intellectual-property"
      :physical-item "logo-design"
+     ;; What the design allows -- printing ITS variety -- is required,
+     ;; as on the printer: the capacity is what makes it an asset, and
+     ;; the problem names which design it is (Matt, 2026-10-08).
+     :also-required #{:allows}
+     :also-params {:receives {:unit "intellectual-property" :physical-item "logo-design" :variety :any}
+                   :allows {:creates-variety :any}}
+     :level 3
      :permits #{:allows}
      :also-required #{:allows}
      :requires-position {:receives :capital}
@@ -1711,6 +1747,9 @@
                           ;; Points at what allowed it -- the printer event,
                           ;; or the printer -- and must be supplied.
                           :is-allowed-by {:capacity :any}}
+    ;; Printing a design's variety rests on the design as well as the
+    ;; printer, and the record says which design makes which variety.
+    :checks-variety? true
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
     :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]
@@ -1749,11 +1788,17 @@
    ;; -- created, owned -- with no line. Bought, the same design is an
    ;; asset (:design-purchase). Revised 2026-09-29; it used to capitalize.
    :design-creation
-   {:required #{:has-date :has-counterparty :receives :provides :creates}
+   {:required #{:has-date :has-counterparty :receives :provides :creates :allows}
     :required-parameters {:receives {:unit "effort-unit"}
                           :provides {:unit "monetary-unit"}
-                          :creates {:unit "intellectual-property"}}
-    :prohibited #{:requires :expects :consumes :allows}
+                          :creates {:unit "intellectual-property" :variety :any}
+                          :allows {:creates-variety :any}}
+    ;; What the design lets the business do -- print it -- is the same
+    ;; capacity however the design was got, so it is required here as on
+    ;; a bought design. Only the entry differs: GAAP carries the bought
+    ;; one and expenses the wages behind the made one (Matt, 2026-10-08;
+    ;; see DESIGNS-AND-VARIETIES.org).
+    :prohibited #{:requires :expects :consumes}
     :description "Creating a design in-house, paying the designer for the work"
     :journal-entry [{:debit "Wage Expense" :credit "Cash"}]
     :note "The design is recorded as created and owned, but GAAP does not carry an internally created design as an asset: the wages it took are an expense."
@@ -2342,7 +2387,7 @@
               (let [flows (let [v (get assertions-map assertion-code)]
                             (cond (nil? v) [] (sequential? v) v :else [v]))]
                 (some (fn [flow]
-                        (= wanted (chain/inventory-position events (:physical-item flow))))
+                        (= wanted (chain/inventory-position events (chain/flow-item flow))))
                       flows)))
             requirement))))
 
@@ -2434,7 +2479,10 @@
      :fulfills-unmet (let [kinds (:fulfills-kind classification)]
                        (when (and kinds context (contains? assertion-keys :fulfills)
                                   (not (fulfills-requirement-met? assertions-map kinds context)))
-                         kinds))}))
+                         kinds))
+     :variety-unmet (and (:checks-variety? classification) context
+                         (contains? assertion-keys :creates)
+                         (not (variety-allowed? assertions-map context)))}))
 
 (defn- format-param-key
   "Convert parameter key to human-readable form."
@@ -2535,6 +2583,11 @@
                 fulfills-unmet]} hint-data
         hints []]
     (cond-> hints
+      ;; A design's variety printed without citing the design, or a
+      ;; design cited for shirts it does not print.
+      (:variety-unmet hint-data)
+      (conj "What was printed and what allowed it have to agree. Shirts of a design's variety are allowed by the printer AND that design (is-allowed-by both); plain printed shirts need only the printer.")
+
       ;; Fulfills is present but keeps the wrong promise, or none.
       (seq fulfills-unmet)
       (conj (str "Fulfills has to name the promise this keeps: "
@@ -2669,7 +2722,7 @@
 
         exact-matches (for [[class-key {:keys [required prohibited optional required-parameters
                                               requires-missing-parameters requires-position
-                                              fulfills-kind]}] classifications
+                                              fulfills-kind checks-variety?]}] classifications
                             :when (and
                                    ;; All required assertions present
                                    (clojure.set/subset? required assertion-keys)
@@ -2690,6 +2743,9 @@
                                    ;; A payment keeps a particular promise.
                                    (or (nil? fulfills-kind)
                                        (fulfills-requirement-met? assertions-map fulfills-kind context))
+                                   ;; A design's variety needs that design.
+                                   (or (not checks-variety?)
+                                       (variety-allowed? assertions-map context))
                                    ;; Check parameters match if required-parameters specified
                                    (or (nil? required-parameters)
                                        (every? (fn [[assertion-code required-params]]
@@ -2987,24 +3043,31 @@
                 :amount [3000]}}
 
    :cash-design-purchase
-   {:narrative-template "On {date}, {company} pays {vendor} ${amount} for a logo design it will print on its blank t-shirts."
+   {:narrative-template "On {date}, {company} pays {vendor} ${amount} for a logo design, {design-name}, that it will print on its blank t-shirts."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
                           ;; A right, not a thing. The denomination is the
                           ;; assertion that says so, and it is what makes
                           ;; the entry book to an intangible rather than to
                           ;; equipment -- the same `allows` sits on both.
-                          :receives {:unit "intellectual-property" :physical-item "logo-design" :quantity 1}
-                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
+                          :receives {:unit "intellectual-property" :physical-item "logo-design" :variety :design :quantity 1}
+                          ;; It allows printing ITS variety, not printed
+                          ;; shirts in general: that is the printer's.
+                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"
+                                   :creates-variety :design}
                           :has-counterparty {:name :vendor}}
     :correct-classification :design-purchase
     ;; Intangibles are Topic 7 in ACCT 2101 -- after merchandising,
     ;; inventories and receivables -- and are taught at "identify the
     ;; basic issues" depth. Level 0 put them before the first cash sale.
-    :level 2
+    ;; Their own lesson, Intellectual Property, after plain production.
+    :level 3
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
                 :vendor ["Ada Okafor, designer" "Pixel & Thread Studio" "a freelance illustrator"]
-                :amount [300 400 500]}}
+                :amount [300 400 500]
+                ;; Paired with each other (five long), and with nothing else.
+                :design (mapv first design-names)
+                :design-name (mapv second design-names)}}
 
    :cash-service-purchase
    {:narrative-template "On {date}, {company} pays {vendor} ${amount} to {service}."
@@ -3248,6 +3311,24 @@ The printed t-shirts are now finished goods ready for sale."
                 :ink-consumed [1 2]
                 :product ["printed t-shirts" "custom t-shirts" "branded shirts"]}}
 
+   ;; A design's variety: the printer AND the design allow it. The record
+   ;; carries the design (:reads-record [:design]) and the problem names
+   ;; it, read back from there.
+   :design-variety-printing
+   {:narrative-template "On {date}, {company} uses {quantity-consumed} blank t-shirts and {ink-consumed} ink cartridges to print {quantity-consumed} t-shirts with its {design-name} design.\n\nThe work is done on the t-shirt printer bought earlier."
+    :required-assertions
+    {:has-date {:date :date}
+     :consumes [{:unit "physical-unit" :physical-item "blank-tshirts" :quantity :quantity-consumed}
+                {:unit "physical-unit" :physical-item "ink-cartridges" :quantity :ink-consumed}]
+     :creates {:unit "physical-unit" :physical-item "printed-tshirts" :variety :design :quantity :quantity-consumed}
+     :is-allowed-by {:capacity ["Printer-001" "Design-001"]}}
+    :correct-classification :production-direct
+    :reads-record [:design]
+    :level 3
+    :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14" "2026-06-05" "2026-07-17" "2026-08-11" "2026-09-23" "2026-10-07" "2026-11-18" "2026-12-02"]
+                :quantity-consumed [10 20 30 40]
+                :ink-consumed [1 2]}}
+
    :production-labor
    {:narrative-template "On {date}, {company}'s production staff spends {hours} hours operating the printing equipment, applying their labor to the manufacturing process."
     :required-assertions {:has-date {:date :date}
@@ -3277,13 +3358,20 @@ The printed t-shirts are now finished goods ready for sale."
                 :supplies ["ink cartridges" "specialty inks" "printing supplies" "packaging materials"]}}
 
    :design-creation
-   {:narrative-template "On {date}, {company}'s designer, {designer}, spends {hours} hours creating a new {design-type} for the upcoming product line, and is paid ${amount} for the work ({hours} hours at ${rate} an hour)."
+   {:narrative-template "On {date}, {company}'s designer, {designer}, spends {hours} hours creating a new {design-type}, {design-name}, for the upcoming product line, and is paid ${amount} for the work ({hours} hours at ${rate} an hour)."
     :required-assertions {:has-date {:date :date}
                           :has-counterparty {:name :designer}
                           :receives {:unit "effort-unit" :quantity :hours}
                           :provides {:unit "monetary-unit" :quantity :amount}
-                          :creates {:unit "intellectual-property" :physical-item "logo-design" :quantity 1}}
+                          :creates {:unit "intellectual-property" :physical-item "logo-design" :variety :design :quantity 1}
+                          :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"
+                                   :creates-variety :design}}
     :correct-classification :design-creation
+    ;; Not taught in ACCT 2101: its material covers purchased intangibles
+    ;; only (iCollege, 2026-10-08). Kept for Intermediate, where an
+    ;; internally generated intangible is a callback to this lesson
+    ;; (Matt, 2026-10-08).
+    :held-for "Intermediate"
     :level 2
     ;; Paired: hours, rate and amount agree.
     :variables {:date ["2026-01-08" "2026-02-03" "2026-03-10" "2026-04-22" "2026-05-14"]
@@ -3291,7 +3379,9 @@ The printed t-shirts are now finished goods ready for sale."
                 :rate [30 25 30 35 25]
                 :amount [240 250 360 560 500]
                 :designer ["Maya Ortiz" "Sam Lee" "Priya Nair" "Jordan Blake" "Alex Kim"]
-                :design-type ["logo" "t-shirt design" "graphic design" "logo" "t-shirt design"]}}
+                :design-type ["logo" "t-shirt design" "graphic design" "logo" "t-shirt design"]
+                :design (mapv first design-names)
+                :design-name (mapv second design-names)}}
 
    :service-creation
    {:narrative-template "On {date}, {company}'s team spends {hours} hours on {service} for a customer order."
@@ -4092,6 +4182,16 @@ The printed t-shirts are now finished goods ready for sale."
                  :expects {:action "consumes" :physical-item "ink-cartridges"
                            :creates-item "printed-tshirts" :confidence 95}
                  :has-counterparty {:name "InkMasters"}})
+          ;; A design bought earlier, which allows printing its variety.
+          (contains? needs :design)
+          (conj (let [[v nm] (rand-nth design-names)]
+                  {:has-identifier "Design-001"
+                   :has-date {:date "2026-01-06"}
+                   :provides {:unit "monetary-unit" :quantity 400}
+                   :receives {:unit "intellectual-property" :physical-item "logo-design" :variety v :quantity 1}
+                   :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"
+                            :creates-variety v}
+                   :has-counterparty {:name (str nm " Studio")}}))
           ;; The board declared a dividend and has not yet paid it. The
           ;; declaration is the promise; paying keeps it.
           (contains? needs :declared)
@@ -4176,6 +4276,12 @@ The printed t-shirts are now finished goods ready for sale."
   [vars backstory template-key]
   (let [events (:events backstory)]
     (case template-key
+
+      ;; The design the record holds, by name.
+      :design-variety-printing
+      (if-let [v (some #(get-in % [:allows :creates-variety]) events)]
+        (assoc vars :design v :design-name (chain/variety-name v))
+        vars)
 
       ;; What depreciates is what the record calls capital: a thing that
       ;; enables production without being used up by it. That is the same
@@ -4373,7 +4479,7 @@ The printed t-shirts are now finished goods ready for sale."
    teaches something its drill never serves."
   [level]
   (vec (for [k (distinct (mapcat (fn [[tk t]]
-                                   (when (and (= level (:level t)) (not (:derivation-pending t)))
+                                   (when (and (= level (:level t)) (not (:derivation-pending t)) (not (:held-for t)))
                                      ;; A reseller's problems carry the
                                      ;; merchandise classification instead
                                      ;; (generate-problem), so the level
@@ -4409,7 +4515,9 @@ The printed t-shirts are now finished goods ready for sale."
                                           ;; teaches the wrong thing about the
                                           ;; derivation, which is the point of
                                           ;; the exercise.
-                                          (not (:derivation-pending (val %))))
+                                          (not (:derivation-pending (val %)))
+                                          ;; Kept for a later course, not served in 2101.
+                                          (not (:held-for (val %))))
                                    transaction-templates)
         ;; A streak can end a round before a pattern has come up at all,
         ;; and a fresh round could pass without meeting the pattern that
@@ -4485,8 +4593,11 @@ The printed t-shirts are now finished goods ready for sale."
                    (assoc-in [:required-assertions :expects]
                              {:action "provides" :unit "physical-unit"
                               :physical-item "blank-tshirts" :confidence :confidence})
-                   ;; A practice production points at the company's printer event.
-                   (get-in template [:required-assertions :is-allowed-by])
+                   ;; A practice production points at the company's printer event
+                   ;; -- unless the template already names its events (a
+                   ;; design's variety cites the printer AND the design).
+                   (and (get-in template [:required-assertions :is-allowed-by])
+                        (not (sequential? (get-in template [:required-assertions :is-allowed-by :capacity]))))
                    (assoc-in [:required-assertions :is-allowed-by :capacity] "Printer-001")
                    (and (= kind :reseller) (contains? #{:cash-sale :credit-sale} template-key))
                    (update :required-assertions assoc-in [:provides :physical-item] "blank-tshirts"))

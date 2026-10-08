@@ -28,7 +28,8 @@
    Returns nil rather than a number when the record does not support an
    answer. A sale of goods never acquired or produced is not priced at
    zero -- it is unpriced, and that is a thing for the student to see."
-  (:require [clojure.string :as str]))
+  (:require [assertive-app.chain :as chain]
+            [clojure.string :as str]))
 
 (defn- num-or-nil [v]
   (cond (number? v) v
@@ -42,7 +43,7 @@
 (defn- physical [params]
   (when (= "physical-unit" (some-> (:unit params) name))
     (when-let [n (num-or-nil (:quantity params))]
-      (cond-> {:item (some-> (:physical-item params) name) :units n}
+      (cond-> {:item (chain/flow-item params) :units n}
         (:from-event params) (assoc :from-event (name (:from-event params)))))))
 
 (defn- physicals

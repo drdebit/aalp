@@ -21,7 +21,8 @@
    rather than guarded. When cross-cohort analytics makes a standing
    index worth having, it can be added as a cache over the same record
    without changing what is authoritative."
-  (:require [assertive-engine.adapter.aalp :as aalp]
+  (:require [assertive-app.chain :as chain]
+            [assertive-engine.adapter.aalp :as aalp]
             [assertive-engine.model.event :as event]
             [assertive-engine.store.protocol :as store]
             [assertive-engine.store.memory :as mem]
@@ -45,6 +46,23 @@
          (log/warn e# "Engine query failed (non-fatal)")
          nil))))
 
+(defn- with-varieties
+  "A variety is part of what the goods ARE in the full form: the adapter
+   names goods by :physical-item, so a flow's variety goes into it
+   (printed-tshirts/night-owl), and a design's `allows` names the variety
+   it creates the same way."
+  [assertions]
+  (let [flow  (fn [f] (if (and (map? f) (:variety f))
+                        (-> f (assoc :physical-item (chain/flow-item f)) (dissoc :variety))
+                        f))
+        flows (fn [v] (if (sequential? v) (mapv flow v) (flow v)))]
+    (cond-> (reduce (fn [a k] (if (contains? a k) (update a k flows) a))
+                    assertions [:provides :receives :consumes :creates])
+      (get-in assertions [:allows :creates-variety])
+      (update :allows #(-> %
+                           (assoc :creates-item (chain/item-id (:creates-item %) (:creates-variety %)))
+                           (dissoc :creates-variety))))))
+
 (defn canonical-edn
   "One AALP event in full form, as EDN, to save beside the flat map.
 
@@ -63,7 +81,7 @@
   (when (and (map? assertions) (seq assertions))
     (try
       (pr-str (aalp/aalp->canonical
-                (cond-> {:assertions (walk/keywordize-keys assertions)}
+                (cond-> {:assertions (with-varieties (walk/keywordize-keys assertions))}
                   event-id     (assoc :event-id (str event-id))
                   asserted-by  (assoc :asserted-by asserted-by)
                   template-key (assoc :template-key (keyword template-key)))))

@@ -38,6 +38,8 @@
    falls back to the id with its hyphens opened out rather than failing
    on an item it has not been told about."
   [item]
+  (if-let [v (chain/variety-of item)]
+    (str (item-phrase (chain/base-item item)) " (" (chain/variety-name v) ")")
   (let [id (some-> item name)]
     (case id
       "blank-tshirts"   "blank t-shirts"
@@ -45,7 +47,7 @@
       "ink-cartridges"  "ink cartridges"
       "t-shirt-printer" "t-shirt printers"
       "logo-design"     "logo designs"
-      (some-> id (str/replace "-" " ")))))
+      (some-> id (str/replace "-" " "))))))
 
 (defn as-flows
   "A flow assertion's value as a sequence.
@@ -718,7 +720,7 @@
        ;; a decision. Where the record holds nothing, the honest answer
        ;; is still that there is no cost to find.
        :cost-basis (let [p    matched-params
-                         item (:physical-item p)
+                         item (chain/flow-item p)
                          ;; Every lot the business holds, not only lots of
                          ;; the item sold: naming the wrong one is a thing a
                          ;; student can do, and the record has to be able to
@@ -794,11 +796,11 @@
        ;; the total of everything consumed, since the output is worth the
        ;; sum of what made it.
        :input-cost (let [p matched-params]
-                     (priced (:physical-item p) (:quantity p)
+                     (priced (chain/flow-item p) (:quantity p)
                              "The consumed materials have no recorded cost yet — nothing in the ledger records acquiring them."))
        :total-input-cost
        (let [inputs (as-flows (:consumes selections))
-             costs  (map #(cost/cost-of basis (:physical-item %) (:quantity %) (:from-event %)) inputs)]
+             costs  (map #(cost/cost-of basis (chain/flow-item %) (:quantity %) (:from-event %)) inputs)]
          (if (and (seq costs) (every? some? costs))
            {:quantity (q/monetary (reduce + costs)) :unresolved? false}
            {:quantity nil :unresolved? true
@@ -817,7 +819,7 @@
    student has recorded (including the event being booked) plus SP's
    catalog of what kind of thing each item is."
   [flow context]
-  (let [item (:physical-item flow)
+  (let [item (chain/flow-item flow)
         ;; The event being booked is part of its own chain: the materials
         ;; it consumes are being consumed now, which is what makes them
         ;; inputs rather than merely things once bought.
@@ -837,7 +839,7 @@
    The event being booked is excluded: its assertions are already on
    display."
   [flow context]
-  (let [item    (:physical-item flow)
+  (let [item    (chain/flow-item flow)
         current (:current context)
         events  (concat (:events context) [current])]
     (when-let [{:keys [because]} (chain/position-basis events item)]
@@ -977,11 +979,11 @@
   (if (= :position account)
     (or (some-> (resolve-position flow context)
                 (chain/position-account
-                  (:physical-item flow)
+                  (chain/flow-item flow)
                   (:item-kinds context)
                   (chain/item-denomination
                     (concat (:events context) [(:current context)])
-                    (:physical-item flow))))
+                    (chain/flow-item flow))))
         ;; Not an account. The record has not said what this thing is,
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.
@@ -1031,7 +1033,7 @@
   [v]
   (for [f (cond (nil? v) [] (sequential? v) v :else [v])
         :when (= "physical-unit" (some-> (:unit f) name))
-        :let [item (some-> (:physical-item f) name)]
+        :let [item (chain/flow-item f)]
         :when item]
     {:item item}))
 
@@ -1084,7 +1086,7 @@
                                                        (= (:denomination rule)
                                                           (or (chain/item-denomination
                                                                 (concat (:events context) [(:current context)])
-                                                                (:physical-item %))
+                                                                (chain/flow-item %))
                                                               :physical))))
                                              flows)
                               {:keys [ok? used]} (context-satisfied? selections (or (:context rule) {}))]
@@ -1322,7 +1324,7 @@
                           b (chain/batches (:events chain-ctx) it)
                           :when (pos? (:left b))]
                       (assoc b :item it :unit-cost (get-in chain-ctx [:cost-basis :by-event (:id b) :unit-cost]))))
-     :batches (let [items (distinct (keep :physical-item (concat (as-flows (:provides selections))
+     :batches (let [items (distinct (keep chain/flow-item (concat (as-flows (:provides selections))
                                                                 (as-flows (:consumes selections)))))]
                (into {} (for [it items
                               :let [bs (chain/batches (:events chain-ctx) it)]

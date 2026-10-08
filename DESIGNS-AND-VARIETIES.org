@@ -1,0 +1,135 @@
+#+TITLE: Designs, capacity and printed varieties
+#+AUTHOR: Matt DeAngelis (with Claude)
+#+DATE: 2026-10-08
+
+* The problem
+
+Level 2 (Production and Transformation) serves nine kinds of problem in
+one practice round: turning blanks and ink into printed shirts, printing
+with labor, supplies used up, a design bought, a design made in-house, a
+capability bought, a service delivered. The intellectual-property cases
+sit among the printer and production problems, and a student meets
+"bought design: an asset" and "made design: an expense" with nothing
+around them to make the difference stand out.
+
+Three further problems surfaced walking through it (2026-10-07):
+
+- A design was offered as an *input* in =allows= ("turn blank shirts and
+  ink and Logo Design into printed shirts"). Printing needs the design,
+  but does not use it up the way it uses up blanks and ink. Fixed
+  2026-10-07: the =allows= input menu lists only things that are used up.
+- A bought design required =allows=; a made one did not (it was
+  prohibited until 2026-10-07, then optional). Whether the business
+  bought the design or made it does not change what it can now do. Only
+  the entry differs, because GAAP carries one and expenses the other.
+- A design's =allows= named the same output as the printer's: printed
+  shirts. The printer prints anything; a design, which costs money to
+  produce, adds a /specific/ capacity -- printing that design -- and later
+  sales distinguish between prints. The two capacities should not look
+  the same.
+
+* Decisions
+
+** The bought design comes first, and mirrors equipment
+
+The purchased intangible is taught first, because it is the same story as
+buying a printer: the business pays for something that enables
+production, says what it allows, and the record carries it as an asset
+-- Design (Intangible Asset), as the printer is Equipment. The design made
+in-house is then the special case, and is identified as one: the same
+capacity, recorded the same way, and an entry GAAP will not give an
+asset, so the designer's wages are an expense.
+
+** =allows= on every design, bought or made
+
+Required on both. The capacity is the economic substance and does not
+depend on how the design was acquired. The feedback says plainly what
+differs (the entry) and what does not (the capacity). Assertions record
+the substance; hints make clear which of them reach the entry.
+
+** A design allows printing /its/ variety
+
+The printer allows turning blanks and ink into printed shirts. A design
+allows turning them into printed shirts /of that design/: "Printed
+T-Shirts -- Night Owl". Each variety is its own good, with its own
+batches and costs, and a sale names the variety it draws from.
+
+- Problems name the design ("the Night Owl design"); students select it,
+  as they select the batch a sale came out of.
+- Before costly designs are introduced, printed shirts are a plain
+  variety: the company's own logo. Production up to that point prints the
+  plain variety and needs only the printer.
+- A production of a design's variety rests on two things, the printer
+  and the design, so it is =is-allowed-by= both. The builder fills both in
+  when the transformation matches (see "Capacity, found for the
+  student" in =state.cljs=).
+
+* What it takes
+
+** Step 1: the lesson(s) and =allows= on both designs
+
+- [X] The split (Matt, 2026-10-08): Production and Transformation
+  (Level 2) is plain printing only; passing its round leads straight
+  into *Intellectual Property* (Level 3, new), with one check-in at the
+  end of both (=:continues?=, =:checkin-covers [2 3]=). Level 3's reading
+  teaches the bought design as the parallel to equipment, its value as
+  a new product line, and printing a design's variety; its round keeps
+  to Levels 2-3 (bought design, design printing, plain printing, the
+  printer).
+- [X] The made design is not taught in 2101 (its material covers
+  purchased intangibles only): =:held-for "Intermediate"=, kept for a
+  callback there.
+- [X] Require =allows= on =:design-creation= as on =:design-purchase=
+  (2026-10-08).
+- [ ] Feedback on the two design patterns: the capacity is the same, the
+  entry differs, and why (GAAP: purchased intangibles are carried,
+  internally generated ones expensed).
+- [ ] If split: a new entry in =tutorials/lesson-sequence= after
+  Production, its reading, quiz, drill config and check-in; the design,
+  capability and service templates move to it; =unit-kind-level= unlocks
+  intellectual property (and labor, if it goes with the made design)
+  there rather than at Production.
+
+** Step 2: varieties and several =is-allowed-by=
+
+- [X] Varieties as goods (2026-10-08). A flow keeps =:physical-item=
+  and adds =:variety=; stock is kept per =chain/item-id=
+  (=printed-tshirts/night-owl=), so on-hand, batches, cost basis,
+  positions and the batch picker separate varieties without further
+  change. No variety is the plain one (company logo).
+- [X] A design's =allows= creates its variety (=:creates-variety=); the
+  printer's creates printed shirts generally. The automatic
+  =is-allowed-by= cites the printer for plain shirts and the printer and
+  the design for a variety.
+- [X] Several =is-allowed-by= on one event: =:capacity= may be a vector.
+  Sentence builder (+ another), grader, and the saved full form (a
+  vector of ids, which the engine accepts). New record check
+  =variety-allowed?= on =:production-direct=: what is printed and the
+  designs cited must agree.
+- [X] Problems name designs (=design-names=); the bought and made
+  designs ask "which design?", and a new template,
+  =:design-variety-printing=, prints a design's variety from a practice
+  record that carries =Design-001= (=:reads-record [:design]=).
+- [ ] Sales name the variety: templates, the capstone (unaffected -- it
+  resells blanks), the reporting lesson's record, and practice problems
+  that sell printed shirts.
+- [ ] The three oracles, the batch round trip and the report figures
+  before and after.
+
+* Open
+
+- [ ] Does ACCT 2101 teach internally generated intangibles? Checked
+  2026-10-08 in iCollege (Alison Hollingsworth's Spring 2026 section):
+  intangibles appear only in Topic 7, Long-term Assets, as rights
+  "amortized in the same way that plant assets ... are depreciated";
+  the one exercise is a /purchased/ patent; searches for "internally"
+  and "research" find nothing. The McGraw Hill text was not checked.
+  So the course's own material teaches purchased intangibles only.
+  Decided: dropped from 2101, held for Intermediate.
+- [ ] The engine adapter saves a design received as intellectual
+  property without its name (the item is dropped for IP units). For the
+  engine session.
+- [ ] The plain variety's name: the company's own logo, named per
+  company, or one generic "plain printed".
+- [ ] Does =creates= on a made design name the variety it will allow, or
+  only the design? (=allows= names the variety either way.)

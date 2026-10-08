@@ -13,6 +13,10 @@
 ;; unknown rather than inventing a figure (the cost of goods sold lives
 ;; in the production events, not in the exchange being recorded).
 
+
+;; Defined with the lessons, used earlier by the drill.
+(declare lesson-title)
+
 (defn je-amount-str
   [amount]
   (cond
@@ -740,6 +744,61 @@
 
 (declare format-currency)
 
+;; ==================== Designs and varieties ====================
+;; A design allows printing ITS variety, and each variety is its own good.
+;; The problem names the design; the student selects it, as they select a
+;; batch (Matt, 2026-10-08; DESIGNS-AND-VARIETIES.org). Nothing is
+;; preselected.
+
+(defn- variety-label [v]
+  (->> (str/split (str v) #"-") (map str/capitalize) (str/join " ")))
+
+(defn- design-options
+  "The designs this problem can mean: the one its narrative names, and
+   those the company's record holds."
+  []
+  (let [p      (state/current-problem)
+        events (if (state/walkthrough-active?) (state/walkthrough-events) (:prior-events p))
+        named  (some-> (get-in p [:variables :design]) name)
+        held   (keep #(some-> (get-in % [:allows :creates-variety]) name) events)]
+    (vec (for [v (distinct (remove nil? (cons named held)))]
+           {:value v :label (variety-label v)}))))
+
+(defn- client-flow-item
+  "The stock a flow draws on: the item, and its variety. Mirrors
+   chain/flow-item on the server, whose keys the batches come back under."
+  [flow]
+  (let [base (some-> (:physical-item flow) name)
+        v    (some-> (:variety flow) name not-empty)]
+    (when base (if v (str base "/" v) base))))
+
+(defn- variety-select
+  "Which design's variety, for printed shirts; \"plain\" is the company's
+   own logo, which needs only the printer."
+  [value on-change]
+  (let [opts (design-options)]
+    (when (seq opts)
+      [:select.inline-select
+       {:value (or value "")
+        :on-change #(on-change (not-empty (.. % -target -value)))}
+       [:option {:value ""} "plain (company logo)"]
+       (for [o opts]
+         ^{:key (str "variety-" (:value o))}
+         [:option {:value (:value o)} (str (:label o) " design")])])))
+
+(defn- design-select
+  "Which design this is, for a design bought or made."
+  [value on-change]
+  (let [opts (design-options)]
+    [:select.inline-select
+     {:value (or value "")
+      :class (when-not value "unset")
+      :on-change #(on-change (not-empty (.. % -target -value)))}
+     [:option {:value ""} "which design?"]
+     (for [o opts]
+       ^{:key (str "design-" (:value o))}
+       [:option {:value (:value o)} (:label o)])]))
+
 (defn- render-provides-fragment
   "Render the 'provides' part of the sentence."
   [params]
@@ -752,6 +811,9 @@
      (if (= (:unit params) "physical-unit")
        [:span
         [inline-dropdown :provides :physical-item item-options (:physical-item params) "item"]
+        (when (= "printed-tshirts" (:physical-item params))
+          [variety-select (:variety params)
+           #(state/update-assertion-parameter! :provides :variety %)])
         ;; Which batch? The chain lists what could be sold and what each
         ;; batch cost; naming one prices the sale from it (specific
         ;; identification). Unnamed, the average prices it.
@@ -767,7 +829,7 @@
         ;; to open a costing step: naming the batch is part of recording
         ;; the sale.
         (when-let [bs (and (or (state/walkthrough-active?) (state/capstone-active?))
-                           (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item params) ""))])))]
+                           (seq (get-in (state/derived-je) [:batches (keyword (or (client-flow-item params) ""))])))]
           [:span
            [:span.connector " from "]
            [inline-dropdown :provides :from-event
@@ -808,6 +870,10 @@
         [inline-dropdown :receives :physical-item
          [{:value "logo-design" :label "Logo Design"}]
          (:physical-item params) "which right?"]
+        (when (= "logo-design" (:physical-item params))
+          [:span [:span.connector " called "]
+           [design-select (:variety params)
+            #(state/update-assertion-parameter! :receives :variety %)]])
         [:span.unit-label " (no physical substance)"]]
 
        :else
@@ -1000,10 +1066,17 @@
             (for [opt (assertion-param-options :receives :physical-item)]
               ^{:key (str (name code) "-" idx "-" (:value opt))}
               [:option {:value (:value opt)} (:label opt)])]
+           (case (:physical-item flow)
+             "printed-tshirts" [variety-select (:variety flow)
+                                #(state/update-flow-parameter! code idx :variety %)]
+             "logo-design"     [:span [:span.connector " called "]
+                                [design-select (:variety flow)
+                                 #(state/update-flow-parameter! code idx :variety %)]]
+             nil)
            ;; Which batch was used up? As on a sale: name it and the
            ;; input costs what that batch cost.
            (when-let [bs (and (= code :consumes)
-                              (seq (get-in (state/derived-je) [:batches (keyword (or (:physical-item flow) ""))])))]
+                              (seq (get-in (state/derived-je) [:batches (keyword (or (client-flow-item flow) ""))])))]
              [:select.inline-select
               {:value (or (:from-event flow) "")
                :on-change #(state/update-flow-parameter! code idx :from-event (.. % -target -value))}
@@ -1062,6 +1135,15 @@
        "+ another input"]
       [:span " into "]
       [item-select :allows :creates-item (:creates-item params)]
+      ;; A design allows printing ITS variety. Asked only where this
+      ;; event acquires or makes a design.
+      (when (and (= "printed-tshirts" (:creates-item params))
+                 (some #(= "logo-design" (:physical-item %))
+                       (concat (state/flows :receives) (state/flows :creates))))
+        [:span [:span.connector " of the "]
+         [design-select (:creates-variety params)
+          #(state/update-assertion-parameter! :allows :creates-variety %)]
+         [:span " design"]])
       [remove-assertion-button :allows]
       [pattern-note :allows params]]]))
 
@@ -1105,16 +1187,37 @@
   [params]
   (let [caps (seq (chain-capabilities))]
     [sentence-section :capability "This is:"
+     [:div
      [:div.allowed-by-content
       [:span "enabled by "]
       (if caps
-        [:select.inline-select
-         {:value (or (:capacity params) "")
-          :on-change #(state/update-assertion-parameter! :is-allowed-by :capacity (.. % -target -value))}
-         [:option {:value ""} "which event?"]
-         (for [c caps]
-           ^{:key (str "cap-" (:value c))}
-           [:option {:value (:value c)} (:label c)])]
+        ;; More than one thing can make an event possible: printing a
+        ;; design's variety rests on the printer AND the design.
+        (let [cur  (let [c (:capacity params)]
+                     (cond (sequential? c) (vec c) (some? c) [c] :else [""]))
+              put! (fn [v] (let [v (vec (remove str/blank? v))]
+                             (state/update-assertion-parameter! :is-allowed-by :capacity
+                                                                (case (count v) 0 nil 1 (first v) v))))]
+          [:span
+           (doall
+             (for [[i c] (map-indexed vector cur)]
+               ^{:key (str "cap-row-" i)}
+               [:span
+                (when (pos? i) [:span " and "])
+                [:select.inline-select
+                 {:value (or c "")
+                  :on-change #(put! (assoc cur i (.. % -target -value)))}
+                 [:option {:value ""} "which event?"]
+                 (for [o caps]
+                   ^{:key (str "cap-" i "-" (:value o))}
+                   [:option {:value (:value o)} (:label o)])]
+                (when (> (count cur) 1)
+                  [:button.remove-flow
+                   {:title "Remove this one"
+                    :on-click #(put! (vec (keep-indexed (fn [j x] (when (not= i j) x)) cur)))} "×"])]))
+           [:button.add-flow
+            {:on-click #(state/update-assertion-parameter! :is-allowed-by :capacity (conj cur ""))}
+            "+ another"]])
         [item-select :is-allowed-by :capacity (:capacity params)])
       (when (seq (assertion-param-options :is-allowed-by :framework))
         [:span
@@ -1228,11 +1331,18 @@
        {:value (or chosen "")
         :class (when-not chosen "unset")
         :on-change #(let [v (.. % -target -value)]
-                      (state/update-assertion-parameter! :expects :action v)
-                      (state/update-assertion-parameter!
-                        :expects :unit (when (= v "provides") "physical-unit"))
-                      (when (= v "provides")
-                        (state/update-assertion-parameter! :expects :creates-item nil)))}
+                      (if (= v "pay")
+                        ;; The promise, not the goods: money the business
+                        ;; provides. The pane becomes the payment sentence.
+                        (do (state/update-assertion-parameter! :expects :action "provides")
+                            (state/update-assertion-parameter! :expects :unit "monetary-unit")
+                            (state/update-assertion-parameter! :expects :physical-item nil)
+                            (state/update-assertion-parameter! :expects :creates-item nil))
+                        (do (state/update-assertion-parameter! :expects :action v)
+                            (state/update-assertion-parameter!
+                              :expects :unit (when (= v "provides") "physical-unit"))
+                            (when (= v "provides")
+                              (state/update-assertion-parameter! :expects :creates-item nil)))))}
        [:option {:value ""} "do what with them?"]
        [:option {:value "consumes"} "use them up making something"]
        [:option {:value "provides"} "sell them on as they are"]
@@ -1768,7 +1878,7 @@
   {"monetary-unit" 0
    "physical-unit" 0
    "service-unit" 0
-   "intellectual-property" 2
+   "intellectual-property" 3
    "effort-unit" 2
    "ownership-units" 6})
 
@@ -2182,8 +2292,16 @@
             {:requires        [render-requires-section (:requires selected) counterparty-name is-purchase?]
              :expects         [render-expects-section (:expects selected) counterparty-name
                                customer-profiles vendor-profiles is-prepaid?
-                               ;; Goods came in: this expectation is about them.
-                               (= "physical-unit" (get-in selected [:receives :unit]))]
+                               ;; Goods came in: this expectation is about
+                               ;; them -- unless `allows` already says what
+                               ;; they are for (a printer), or the student
+                               ;; has chosen to rate the payment instead.
+                               ;; Then it can only be about money.
+                               (and (= "physical-unit" (get-in selected [:receives :unit]))
+                                    (not (contains? selected :allows))
+                                    (not= "monetary-unit" (get-in selected [:expects :unit])))
+                               ;; Bought on credit: the business owes for them.
+                               (= "provides" (get-in selected [:requires :action]))]
              :consumes        [render-transformation-section :consumes "This uses up:"]
              :creates         [render-transformation-section :creates "This makes:"]
              :allows          [render-allows-section (:allows selected)]
@@ -2516,7 +2634,7 @@
         picked   (:from-event provided)
         ;; Names, not keywords: the holdings come back from JSON with
         ;; string values, and the selection's item is a string too.
-        item     (some-> (:physical-item provided) name)
+        item     (client-flow-item provided)
         qty      (some-> (:quantity provided) js/parseFloat)
         choose!  (fn [id]
                    (state/update-assertion-parameter! :provides :from-event id)
@@ -2641,6 +2759,18 @@
                        (state/set-current-problem! nil)
                        (api/start-capstone-round! level))}
        "Round passed — now your own year →"]
+
+      ;; Half of a pair: straight on to the next lesson's page, and the
+      ;; check-in comes at the end of that one.
+      (and passed? (state/lessons-mode?) (tutorials/continues? level))
+      [:button.primary.drill-pass-btn
+       {:on-click #(do (api/complete-tutorial! level)
+                       (state/end-drill!)
+                       (api/save-drill-state! nil)
+                       (state/clear-feedback!)
+                       (state/set-current-problem! nil)
+                       (api/enter-lessons!))}
+       (str "Round passed — on to " (some-> (tutorials/lesson-after level) lesson-title) " →")]
 
       (and passed? (state/lessons-mode?))
       [:button.primary.drill-pass-btn
@@ -2912,6 +3042,9 @@
                 ;; sale and a credit sale, which is the point of Level 4 --
                 ;; and then the fault is upstream of the entry.
                 (when same-entry?
+                  ;; Most often a transaction GAAP says less about than
+                  ;; happened -- a design made in-house. The entry is
+                  ;; right; what is missing is the rest of the record.
                   [:p.je-same-accounts
                    "Your assertions already produce the correct entry, so what is missing does not change it. It records what happened that the entry leaves out — and the record needs it all the same."])])
              ;; The note explains the entry above it: after a miss that
@@ -4799,7 +4932,7 @@
        (when (:attempted drill)
          [:p.checkin-round (str "Practice round: " (:correct drill) " of " (:attempted drill) " right.")])
        (let [words (->> (state/vocabulary)
-                        (filter #(= level (:level %)))
+                        (filter #(contains? (set (tutorials/checkin-levels level)) (:level %)))
                         (remove #(held-codes (keyword (:code %)))))]
          [:div.checkin-section
           [:h3 "What you can now say"]

@@ -68,8 +68,8 @@ Simple events take a few assertions. Complicated ones take more. Assertions are 
      {:narrative "On January 8, SP purchases 50 blank t-shirts from TextileDirect for $150 cash, to print on."
       :assertions ["has-date: January 8"
                    "has-counterparty: TextileDirect"
-                   "provides: $150 (monetary-unit)"
-                   "receives: 50 blank t-shirts (physical-unit)"
+                   "provides: $150 (cash)"
+                   "receives: 50 blank t-shirts (physical units)"
                    "expects: to use them up making printed t-shirts — 95% sure"]
       :entry ["DR Raw Materials Inventory $150" "CR Cash $150"]}
      :pair
@@ -150,8 +150,8 @@ A **physical-unit**. That is, things: blank t-shirts, ink cartridges, a t-shirt 
 **A service**. Work done for the business — a technician servicing the printer — used up as it is done, so nothing is left to hold afterward. You will meet one in the practice round.
 
 In a cash purchase, the pattern is always the same:
-Your company **provides** money (monetary-unit), and
-**receives** things (physical-unit)
+Your company **provides** money (cash), and
+**receives** things (physical units)
 
 You'll also enter *quantities*: the dollar amount for the money, and the quantity of the things."}
 
@@ -165,8 +165,8 @@ Nothing about a shirt tells you which. **You have to say.**
 ::assertions
 has-date: the purchase date
 has-counterparty: TextileDirect
-provides: $500 (monetary-unit)
-receives: 100 blank t-shirts (physical-unit)
+provides: $500 (cash)
+receives: 100 blank t-shirts (physical units)
 expects: to use them up making printed t-shirts — 95% sure
 ::
 
@@ -206,8 +206,8 @@ Here is exactly what you'd do, click by click:
 ::assertions
 has-date: January 8
 has-counterparty: TextileDirect
-provides: $150 (monetary-unit)
-receives: 50 blank t-shirts (physical-unit)
+provides: $150 (cash)
+receives: 50 blank t-shirts (physical units)
 expects: to use them up making printed t-shirts — 95% sure
 ::
 
@@ -246,8 +246,8 @@ The panel is live: it redraws as you build, and nothing is recorded until you su
 ::assertions
 has-date: March 3
 has-counterparty: CampusBoutique
-provides: 10 printed t-shirts (physical-unit)
-receives: $250 (monetary-unit)
+provides: 10 printed t-shirts (physical units)
+receives: $250 (cash)
 ::
 
 No **expects** here: what came in is money, and money does not need a purpose to be money.
@@ -292,9 +292,9 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
 
      {:id :l0-q1
       :question "When SP buys blank t-shirts for $500 cash, which assertion describes what SP gives up?"
-      :choices ["receives (monetary-unit)" "provides (monetary-unit)" "requires (monetary-unit)" "expects (monetary-unit)"]
+      :choices ["receives (cash)" "provides (cash)" "requires (cash)" "expects (cash)"]
       :correct 1
-      :explanation "SP **provides** cash (monetary-unit) to the supplier. 'Provides' always describes what your company gives up in an exchange."}
+      :explanation "SP **provides** cash to the supplier. 'Provides' always describes what your company gives up in an exchange."}
 
      {:id :l0-q2
       :question "In a cash purchase, what does the 'has-counterparty' assertion indicate?"
@@ -310,9 +310,9 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
 
      {:id :l0-q4
       :question "Which set of assertions correctly describes SP buying ink cartridges for $200 cash?"
-      :choices ["provides physical-unit, receives monetary-unit, has-counterparty" "provides monetary-unit, receives physical-unit, has-counterparty" "requires monetary-unit, receives physical-unit, has-counterparty" "provides monetary-unit, creates physical-unit, has-counterparty"]
+      :choices ["provides physical units, receives cash, has-counterparty" "provides cash, receives physical units, has-counterparty" "requires cash, receives physical units, has-counterparty" "provides cash, creates physical units, has-counterparty"]
       :correct 1
-      :explanation "SP **provides** cash (monetary-unit), **receives** ink cartridges (physical-unit), and there is a vendor (**has-counterparty**). 'Requires' is for credit transactions, and 'creates' is for production."}
+      :explanation "SP **provides** cash, **receives** ink cartridges (physical units), and there is a vendor (**has-counterparty**). 'Requires' is for credit transactions, and 'creates' is for production."}
 
      {:id :l0-q5
       :question "How is revenue recognized in assertive accounting?"
@@ -340,7 +340,7 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
      {:narrative "On February 3, SP sells 25 printed t-shirts to CampusBoutique. CampusBoutique agrees to pay $625 within 30 days."
       :assertions ["has-date: February 3"
                    "has-counterparty: CampusBoutique"
-                   "provides: 25 printed t-shirts (physical-unit)"
+                   "provides: 25 printed t-shirts (physical units)"
                    "requires: SP is to receive $625 by March 5 — the customer's promise"
                    "expects: 92% confident of receiving it"]
       :entry ["DR Accounts Receivable $625" "CR Revenue $625"]}
@@ -375,8 +375,8 @@ When SP buys ink cartridges on 30-day credit for $100, here's the full descripti
 ::assertions
 has-date: the purchase date
 has-counterparty: InkMasters
-receives: 50 ink cartridges (physical-unit)
-requires: SP must provide $100 (monetary-unit) by the due date
+receives: 50 ink cartridges (physical units)
+requires: SP must provide $100 (cash) by the due date
 ::
 
 Compare that to a cash purchase, and notice **what changed**:
@@ -431,8 +431,8 @@ And now the part SP does not control: will this customer actually pay? So SP rec
 ::assertions
 has-date: the sale date
 has-counterparty: CampusBoutique
-provides: 10 printed t-shirts (physical-unit)
-requires: SP is to receive $250 (monetary-unit) by the due date — the customer's promise
+provides: 10 printed t-shirts (physical units)
+requires: SP is to receive $250 (cash) by the due date — the customer's promise
 expects: 92% confident of receiving that $250
 ::
 
@@ -538,6 +538,9 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
    2
    {:title "Level 2: Production and Transformation"
     :subtitle "Transform raw materials into finished goods"
+    ;; Passing this round leads straight into Intellectual Property, with
+    ;; one check-in at the end of both (Matt, 2026-10-08).
+    :continues? true
     ;; The first level where nothing crosses the business boundary. The
     ;; pair turns on exactly that: ten shirts leaving the shelf is a
     ;; transformation or a sale depending on whether anyone was on the
@@ -613,39 +616,7 @@ Production may also consume labor and supplies — the journal entry captures al
 
 Both blank t-shirts and printed t-shirts are your assets. Production just changes the form of your inventory.
 
-Now you can see where the goods you sell come from — and why each batch carries its own cost."}
-
-     {:heading "A Design: Bought, or Made"
-      :content "A business can get a design two ways, and the record treats them differently.
-
-**Bought.** *Northside pays a studio $400 for a logo it will print on its shirts.* The business receives a design — a right, not a thing, so it is denominated in **intellectual property** — and it lasts:
-
-::assertions
-provides: $400 (monetary-unit)
-receives: a logo design (intellectual-property)
-allows: printing this specific design onto blank shirts
-::
-
-::journal
-DR Design (Intangible Asset) $400
-CR Cash $400
-::
-
-**Made.** *Northside's own designer spends 8 hours creating a logo, and is paid $240 for the work.* What the business receives is the designer's **effort**, and it pays for it. What it makes is the design:
-
-::assertions
-has-counterparty: the designer
-receives: 8 hours (effort-unit)
-provides: $240 (monetary-unit)
-creates: a logo design (intellectual-property)
-::
-
-::journal
-DR Wage Expense $240
-CR Cash $240
-::
-
-The design is there in both — the business owns it either way. But GAAP does not put a design the business made itself on the balance sheet: what it cost is an expense as it is incurred. So **creates** is recorded, and produces no line. The record keeps what double-entry leaves out."}]
+Now you can see where the goods you sell come from — and why each batch carries its own cost."}]
 
     :quiz
     [{:id :l2-q1
@@ -666,6 +637,111 @@ The design is there in both — the business owns it either way. But GAAP does n
       :correct 2
       :explanation "What you **create** (finished goods) is debited, and what you **consume** (raw materials) is credited. Value moves between your own asset accounts."}]}
 
+   3
+   {:title "Level 3: Intellectual Property"
+    :subtitle "Buy a design, and print a new line of shirts"
+    ;; The second half of production (DESIGNS-AND-VARIETIES.org). A design
+    ;; is bought the way the printer was, and is worth having for one
+    ;; reason: it lets the business sell shirts it could not sell before.
+    ;; Its check-in closes Production and Transformation as well.
+    :checkin-covers [2 3]
+    :orientation
+    {:framing "The printer gave the business the capacity to print. A design gives it something new to print and sell: a new line of shirts. This lesson records buying that capacity, and then using it."
+     :protocol ["Buying a design is a purchase, like buying the printer: **provides** cash, **receives** the design, from a counterparty."
+                "It is a right, not a thing, so the design is denominated in **intellectual property**. The problem names which design it is."
+                "What does it make possible? — **allows**: turning blank shirts and ink into shirts of *that* design."
+                "Printing those shirts rests on two capacities — **is-allowed-by** the printer and the design."]
+     :example
+     {:narrative "On June 5, Northside pays Pixel & Thread Studio $400 for a logo design, Night Owl, that it will print on its blank t-shirts."
+      :assertions ["has-date: June 5"
+                   "has-counterparty: Pixel & Thread Studio"
+                   "provides: $400 (cash)"
+                   "receives: a logo design called Night Owl (intellectual property)"
+                   "allows: turning blank t-shirts and ink into Night Owl t-shirts"]
+      :entry ["DR Design (Intangible Asset) $400" "CR Cash $400"]}
+     :pair
+     {:same "Northside pays for something that lets it print shirts, and will use it for years."
+      :a {:when "A t-shirt printer — a machine, counted in physical units"
+          :becomes "Equipment"}
+      :b {:when "The Night Owl design — a right, counted in intellectual property"
+          :becomes "Design (Intangible Asset)"}
+      :point "Both are capacities the business bought and will keep using, so both are assets. What separates them is physical substance: a right has none."}
+     :effect
+     {:holds "Before: $400 cash. After: the Night Owl design. The business is no poorer; it swapped cash for a right."
+      :may-or-must "Before: it could print only plain shirts with its own logo. After: it can print and sell Night Owl shirts too — a new product line."}
+     :reminder "A design allows printing its own shirts. Plain printed shirts still need only the printer."}
+    :sections
+    [{:heading "Another Capacity, Bought"
+      :content "You have already recorded a business buying the capacity to make things: the t-shirt printer. It **provides** cash, **receives** the printer, and says what the printer **allows** — turning blank shirts and ink into printed shirts. That capacity is what makes the printer an asset, Equipment, rather than an expense.
+
+A design is bought the same way, and for the same kind of reason. *Northside pays Pixel & Thread Studio $400 for a logo design, Night Owl, that it will print on its blank t-shirts.*
+
+::assertions
+provides: $400 (cash)
+receives: a logo design called Night Owl (intellectual property)
+allows: turning blank t-shirts and ink into Night Owl t-shirts
+::
+
+::journal
+DR Design (Intangible Asset) $400
+CR Cash $400
+::
+
+The one difference is what the business received. The printer is a thing you can touch. The design is a **right** — the right to print Night Owl — and a right has no physical substance. The record says so by denominating it in **intellectual property**, and that is what makes it an **intangible** asset rather than equipment."}
+
+     {:heading "What the Design Is Worth: A New Product Line"
+      :content "The printer will print anything. Until now, the shirts it made were plain printed shirts with the company's own logo.
+
+The Night Owl design is worth $400 to Northside because it lets the business sell something it could not sell before: **Night Owl t-shirts**. That is the value of this intellectual property — it expands the product line into a new shirt design.
+
+So the design allows something narrower than the printer does. The printer allows printed shirts in general; the design allows printing **its own** design:
+
+::assertions
+allows: turning blank t-shirts and ink into Night Owl t-shirts
+::
+
+And Night Owl shirts are a product of their own. They have their own batches and their own cost, and when they are sold, the sale names Night Owl shirts — just as a sale names the batch the goods came out of. Plain printed shirts carry on as before."}
+
+     {:heading "Printing a Design: Two Capacities"
+      :content "When Northside prints Night Owl shirts, two things made it possible: the printer, which does the printing, and the design, which says what is printed.
+
+*On August 11, Northside uses 20 blank t-shirts and 2 ink cartridges to print 20 t-shirts with its Night Owl design.*
+
+::assertions
+consumes: 20 blank t-shirts (physical units)
+consumes: 2 ink cartridges (physical units)
+creates: 20 Night Owl t-shirts (physical units)
+is-allowed-by: the printer purchase, and the Night Owl design purchase
+::
+
+::journal
+DR Finished Goods Inventory
+CR Raw Materials Inventory
+::
+
+The entry is the same as for plain shirts: value moves from raw materials into finished goods, at what the materials cost. What is new is in the record. These shirts are Night Owl shirts, and they rest on two earlier purchases. When what you consume and create matches what those purchases allow, the sentence builder finds both and fills in **is-allowed-by** for you.
+
+Printing **plain** shirts still needs only the printer. In the practice round you will meet both, so read each problem for which shirts are printed."}]
+
+    :quiz
+    [{:id :l3-q1
+      :question "Northside pays $400 for a logo design it will print on its shirts. Why is the design recorded as an asset?"
+      :choices ["Because cash was paid for it" "Because it is a capacity the business will keep using to make products, as the printer is" "Because designs never lose value" "Because it has physical substance"]
+      :correct 1
+      :explanation "Like the printer, the design is a capacity the business bought and will keep using: it **allows** printing Night Owl shirts. That is what makes it an asset."}
+
+     {:id :l3-q2
+      :question "What separates the bought design from the bought printer in the journal entry?"
+      :choices ["The design is an expense" "The design has no physical substance, so it is an intangible asset rather than equipment" "The printer is not an asset" "Nothing; both are Equipment"]
+      :correct 1
+      :explanation "Both are assets. The design is a right, denominated in **intellectual property**, with no physical substance — so it is **Design (Intangible Asset)**, not Equipment."}
+
+     {:id :l3-q3
+      :question "Northside prints 20 Night Owl t-shirts. What is the production allowed by?"
+      :choices ["Only the printer" "Only the Night Owl design" "The printer and the Night Owl design" "Nothing; production needs no is-allowed-by"]
+      :correct 2
+      :explanation "The printer does the printing and the design says what is printed, so the production is **is-allowed-by** both. Plain shirts would need only the printer."}]}
+
    4
    {:title "Level 4: Legal and Regulatory Context"
     :subtitle "What stands behind a transaction, and when it changes the entry"
@@ -683,7 +759,7 @@ The design is there in both — the business owns it either way. But GAAP does n
      :example
      {:narrative "On March 12, Northside Tees pays $500 in quarterly estimated income taxes."
       :assertions ["has-date: March 12"
-                   "provides: $500 (monetary-unit)"
+                   "provides: $500 (cash)"
                    "is-required-by: the tax code"]
       :entry ["DR Tax Expense $500" "CR Cash $500"]}
      :pair
@@ -714,7 +790,7 @@ This lesson gives it three assertions. Sometimes naming the law changes the jour
 
 ::assertions
 has-date: the payment date
-provides: $500 (monetary-unit)
+provides: $500 (cash)
 is-required-by: the tax code
 ::
 
@@ -738,7 +814,7 @@ Now it points at a law.
 
 ::assertions
 has-date: the filing date
-provides: $150 (monetary-unit)
+provides: $150 (cash)
 is-allowed-by: state business law
 ::
 
@@ -935,7 +1011,7 @@ The same word records the promises kept most often of all: a customer paying for
 ::assertions
 has-date: March 1
 has-counterparty: the chess club
-receives: $125 (monetary-unit)
+receives: $125 (cash)
 fulfills: the credit sale of January 20
 ::
 
@@ -949,7 +1025,7 @@ CR Accounts Receivable $125
 ::assertions
 has-date: April 1
 has-counterparty: InkMasters
-provides: $40 (monetary-unit)
+provides: $40 (cash)
 fulfills: the ink bought on credit on March 2
 ::
 
@@ -983,7 +1059,7 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
 
      {:id :l5-q4
       :question "Which assertions describe accruing wages that employees have earned but not yet been paid?"
-      :choices ["provides monetary-unit, has-counterparty" "reports expense (accrual), requires future payment" "receives physical-unit, reports expense" "consumes asset-value, creates liability"]
+      :choices ["provides cash, has-counterparty" "reports expense (accrual), requires future payment" "receives physical units, reports expense" "consumes asset-value, creates liability"]
       :correct 1
       :explanation "Wage accrual **reports** an expense (on an accrual basis — incurred but not paid) and **requires** future payment (creating Wages Payable). No cash changes hands yet."}
 
@@ -1115,7 +1191,7 @@ Each report is checked **part by part** — which events, whose, what condition,
      {:narrative "On April 2, Pat invests $20,000 in SP in exchange for a 20% ownership interest."
       :assertions ["has-date: April 2"
                    "has-counterparty: Pat (owner)"
-                   "receives: $20,000 (monetary-unit)"
+                   "receives: $20,000 (cash)"
                    "provides: ownership units"]
       :entry ["DR Cash $20,000" "CR Common Stock $20,000"]}
      :pair
@@ -1145,7 +1221,7 @@ These transactions affect **equity**, not revenue or expense."}
 
 **Example: Pat invests $20,000 for 20% ownership**
 - has-counterparty: Pat (owner)
-- receives: $20,000 (monetary-unit)
+- receives: $20,000 (cash)
 - provides: ownership units
 
 → **Journal Entry:** DR Cash $20,000, CR Common Stock $20,000
@@ -1164,7 +1240,7 @@ Dividends is a temporary account, like an expense: it is closed to Retained Earn
 → DR Dividends Payable, CR Cash
 
 **Owner Withdrawals** (sole proprietorships):
-- provides: cash (monetary-unit), receives: ownership units, has-counterparty: owner
+- provides: cash, receives: ownership units, has-counterparty: owner
 → DR Owner's Drawing, CR Cash
 
 A withdrawal is an exchange too, the reverse of an investment: the business pays out cash and gets back part of the owner's ownership interest.
@@ -1192,9 +1268,9 @@ Equity transactions use the same assertion framework — provides, receives, req
 
      {:id :l6-q2
       :question "What assertions describe an owner withdrawing $1,000 from the business?"
-      :choices ["receives monetary-unit, has-counterparty" "provides monetary-unit, receives ownership units, has-counterparty" "reports expense, provides monetary-unit" "requires monetary-unit, has-counterparty"]
+      :choices ["receives cash, has-counterparty" "provides cash, receives ownership units, has-counterparty" "reports expense, provides cash" "requires cash, has-counterparty"]
       :correct 1
-      :explanation "The company **provides** cash (monetary-unit) to the owner (**has-counterparty**) and **receives** back ownership units — part of the owner's interest. This creates DR Owner's Drawing, CR Cash. It's not an expense."}
+      :explanation "The company **provides** cash to the owner (**has-counterparty**) and **receives** back ownership units — part of the owner's interest. This creates DR Owner's Drawing, CR Cash. It's not an expense."}
 
      {:id :l6-q3
       :question "In the two-step dividend process, what happens at declaration?"
@@ -1217,7 +1293,7 @@ Equity transactions use the same assertion framework — provides, receives, req
      {:narrative "On June 1, SP borrows $10,000 from First National at 8% for twelve months."
       :assertions ["has-date: June 1"
                    "has-counterparty: First National"
-                   "receives: $10,000 (monetary-unit)"
+                   "receives: $10,000 (cash)"
                    "requires: SP is to provide $10,000 by June 1 next year"]
       :entry ["DR Cash $10,000" "CR Notes Payable $10,000"]}
      :pair
@@ -1245,7 +1321,7 @@ Key concepts:
 
 **Example: Borrow $10,000 at 8% for 12 months**
 - has-counterparty: Bank
-- receives: $10,000 (monetary-unit)
+- receives: $10,000 (cash)
 - requires: future repayment
 
 → **Journal Entry:** DR Cash $10,000, CR Notes Payable $10,000
@@ -1271,7 +1347,7 @@ Monthly interest on $10,000 at 8%: $10,000 x 8% / 12 = ~$67/month
 
 **Example: Lend $5,000 to supplier**
 - has-counterparty: Supplier
-- provides: $5,000 (monetary-unit)
+- provides: $5,000 (cash)
 - requires: the supplier is to provide $5,000 plus interest at maturity
 - expects: 90% confident of collecting it
 
@@ -1297,7 +1373,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
      {:id :l7-q2
       :question "Which assertions describe SP borrowing $10,000 from a bank via a promissory note?"
-      :choices ["provides monetary-unit, has-counterparty" "receives monetary-unit, requires future repayment, has-counterparty" "reports revenue, receives monetary-unit" "expects monetary-unit, has-counterparty"]
+      :choices ["provides cash, has-counterparty" "receives cash, requires future repayment, has-counterparty" "reports revenue, receives cash" "expects cash, has-counterparty"]
       :correct 1
       :explanation "SP **receives** cash, **requires** future repayment (creating Notes Payable), and the bank is the **counterparty**. This is like a credit purchase — receives now, pays later."}
 
@@ -1309,7 +1385,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 
      {:id :l7-q4
       :question "When SP lends money to a supplier, which assertion creates the Notes Receivable?"
-      :choices ["requires (monetary-unit)" "provides (monetary-unit)" "expects (monetary-unit)" "reports (revenue)"]
+      :choices ["requires (cash)" "provides (cash)" "expects (cash)" "reports (revenue)"]
       :correct 0
       :explanation "**requires** creates the Notes Receivable. The borrower is bound to repay, and a promise is what makes an asset — whichever way it runs. SP also **provides** the cash now, and **expects** records how likely repayment is, which affects the allowance rather than the receivable."}]}
 
@@ -1335,7 +1411,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
      {:narrative "On April 15, Northside Tees pays the $500 dividend its board declared on March 15."
       :assertions ["has-date: April 15"
                    "has-counterparty: Shareholders"
-                   "provides: $500 (monetary-unit)"
+                   "provides: $500 (cash)"
                    "fulfills: the dividend declared on March 15"]
       :entry ["DR Dividends Payable $500" "CR Cash $500"]}
      :pair
@@ -1501,8 +1577,11 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
   {:round-size 10 :pass-count 8 :streak-pass 5})
 
 (def ^:private drill-configs
-  "Per-level overrides of the drill mastery bar."
-  {})
+  "Per-level overrides of the drill mastery bar. :levels keeps a round to
+   those lessons' patterns rather than reviewing everything before it."
+  {;; The bought design, a design's variety, plain printing and the
+   ;; printer: the second half of production, practiced as one.
+   3 {:levels [2 3]}})
 
 (defn drill-config [level]
   (merge default-drill-config (get drill-configs level)))
@@ -1516,7 +1595,8 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 (def ^:private stuck-sections
   {0 {:provides 2 :receives 2 :has-counterparty 2 :has-date 2 :default 2}
    1 {:requires 1 :expects 2 :default 5}
-   2 {:consumes 1 :creates 1 :is-allowed-by 1 :default 1}})
+   2 {:consumes 1 :creates 1 :is-allowed-by 1 :default 1}
+   3 {:receives 0 :allows 1 :is-allowed-by 2 :default 0}})
 
 (defn stuck-section
   "Where to send a stuck student: the section teaching the given missed
@@ -1562,7 +1642,7 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
   "The order students meet the lessons in. The numbers are keys, not
    positions: Reporting (9) comes after Adjusting Entries, where every
    kind of event its reports read has been taught."
-  [0 1 2 4 5 9 6 7 8])
+  [0 1 2 3 4 5 9 6 7 8])
 
 (defn all-levels
   "Every lesson, in the order students meet them."
@@ -1573,6 +1653,22 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
   "The lessons before this one in the sequence."
   [level]
   (vec (take-while #(not= % level) (all-levels))))
+
+(defn continues?
+  "Does passing this lesson's round lead straight into the next lesson,
+   with the check-in coming at the end of that one?"
+  [level]
+  (true? (get-in level-tutorials [level :continues?])))
+
+(defn lesson-after
+  "The lesson that follows this one in the sequence, or nil."
+  [level]
+  (second (drop-while #(not= % level) (all-levels))))
+
+(defn checkin-levels
+  "The lessons a check-in closes: its own, or those it says it covers."
+  [level]
+  (or (get-in level-tutorials [level :checkin-covers]) [level]))
 
 (defn capstone-lesson?
   "Does this lesson end with the student's own year?"

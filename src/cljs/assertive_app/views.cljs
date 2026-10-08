@@ -2913,7 +2913,7 @@
                 ;; and then the fault is upstream of the entry.
                 (when same-entry?
                   [:p.je-same-accounts
-                   "Your assertions produce this same entry. What is wrong is behind it, in the assertions."])])
+                   "Your assertions already produce the correct entry, so what is missing does not change it. It records what happened that the entry leaves out — and the record needs it all the same."])])
              ;; The note explains the entry above it: after a miss that
              ;; is the correct one, and the student's nearest match's note
              ;; (depreciation, say, under a service purchase) misled.

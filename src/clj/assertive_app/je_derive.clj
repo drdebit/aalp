@@ -586,7 +586,7 @@
   ;; 2021. So nothing here gates on a confidence figure being high enough.
   {:expects "A probability is not a money amount, so nothing is posted here. `requires` does the work in this entry — the promise is what makes the goods going out a sale, fixes the amount, and puts the claim on the books. What this number does is later, and in one place: at period end the allowance for doubtful accounts is estimated from these confidences, and the charge for it is Bad Debt Expense, matched against the sales that produced the debts. It is also what lets you compare later what you expected with what occurred."
    :is-allowed-by "The authority for an event is not itself an exchange, so no account carries it. Keeping it is what lets an entry be traced back to the rule that permitted it."
-   :allows "Nothing has changed hands yet, so there is nothing for double-entry to measure today. It still decides how later events are classified — you have seen it do that."
+   :allows "`allows` records a capacity: what the thing acquired lets the business do later — turn blank shirts and ink into printed shirts, say. A capacity is not an amount of money, so it is not a line of its own. It still does two jobs. When the business pays for something, saying what it allows is what makes it an asset held for use: a printer that allows printing is Equipment, not stock to resell. And when a later event uses the capacity, it points back here with `is-allowed-by`."
    :is-required-by "A rule that compels a payment does reach the entry: money out under a rule buys nothing the business can hold, so it is an expense, and the rule is what names it. Nothing was paid under this one, so no account carries it."
    :requires "A promise is recorded here. It reaches the entry as a claim in money — something owed, or owing — when the pattern says so; this one does not add a line of its own."
    :fulfills "The promise this event keeps is named here, and the entry reads it: the account that promise has sat in since it was made is the one cleared or drawn down. Naming it adds no line of its own — it says which line the others are about."
@@ -1276,6 +1276,11 @@
                                                    (nil? (:requires selections))
                                                    (contains? #{"consumes" "provides"} (get-in selections [:expects :action])))
                                               "A probability is not a money amount, so nothing is posted here. What this expectation says — what the goods are for — is what decided their account; the number beside it records how firm the plan is, and it stays in the record for comparison with what the business actually did."
+
+                                              ;; Something made in-house: what it allows
+                                              ;; is true, and decides nothing about its cost.
+                                              (and (= :allows code) (contains? selections :creates))
+                                              "`allows` records what this lets the business do — print the design onto shirts. That is true, and the record keeps it, so a later production can point back here with `is-allowed-by`. It does not change today's entry. The design was made in-house, so what it cost is the designer's wages, an expense, whatever it allows. Bought from someone else, the same design would be an asset, Design (Intangible Asset)."
 
                                               (claim? code)
                                               "Double-entry measures in money, and 200 units is a count rather than an amount — that is the monetary unit assumption doing its job, and it is what keeps every entry addable. The units stay in your record, and the ownership schedule is worked out from them."

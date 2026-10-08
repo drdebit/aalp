@@ -173,10 +173,16 @@
   "Every physical item, for assertions that name a thing without a
    direction -- what a capability turns into what, say, where the item is
    neither provided nor received but transformed."
-  [& {:keys [max-level] :or {max-level 99}}]
+  [& {:keys [max-level used-up-only?] :or {max-level 99}}]
   (vec
    (for [[item-key item-def] physical-items
-         :when (<= (:unlock-level item-def) max-level)]
+         :when (and (<= (:unlock-level item-def) max-level)
+                    ;; What a capability turns INTO something is used up
+                    ;; doing it. A design is needed to print, and so is
+                    ;; the printer, but neither is consumed the way blanks
+                    ;; and ink are (Matt, 2026-10-07).
+                    (not (and used-up-only?
+                              (#{:intangible :equipment} (:category item-def)))))]
      {:value (name item-key)
       ;; The bare name. Saying "(raw materials for production)" in the
       ;; dropdown hands the student the classification the record is
@@ -240,6 +246,8 @@
                                                   (equipment-options :max-level level)
                                                   :derives-from-physical-items
                                                   (all-physical-item-options :max-level level)
+                                                  :derives-from-physical-items-used-up
+                                                  (all-physical-item-options :max-level level :used-up-only? true)
                                                   ;; Default: keep as-is
                                                   (:options param-spec))))
                                        param-spec)])))
@@ -725,7 +733,7 @@
      ;; the one-element case wherever the record still carries it.
      :parameters {:consumes-items {:type :multi-dropdown
                                    :label "turns"
-                                   :options :derives-from-physical-items
+                                   :options :derives-from-physical-items-used-up
                                    :help "What this thing takes in -- every input"}
                   :creates-item {:type :dropdown
                                  :label "into"
@@ -2502,6 +2510,24 @@
    :lending "the note a borrower signed"
    :advance "the advance a customer paid"})
 
+(def ^:private missing-questions
+  "What each assertion records, asked of the transaction. A list of names
+   (\"Missing assertions: Has Counterparty, Creates\") tells a student
+   what to click, not what they left out of the story -- and when the
+   entry is already right, the story is all that is missing."
+  {:has-date         "When did it happen? (has-date)"
+   :has-counterparty "Who was on the other side? (has-counterparty)"
+   :provides         "What went out? (provides)"
+   :receives         "What came in? (receives)"
+   :consumes         "What was used up? (consumes)"
+   :creates          "What did this make? (creates)"
+   :requires         "What is promised for later, and by whom? (requires)"
+   :fulfills         "Which earlier promise does this keep? (fulfills)"
+   :is-allowed-by    "What made this possible? (is-allowed-by)"
+   :is-required-by   "What rule required it? (is-required-by)"
+   :is-protected-by  "What protects what was made? (is-protected-by)"
+   :reports          "What is being recognized, and on what basis? (reports)"})
+
 (defn format-hints
   "Format hints from dynamic hint data into human-readable strings."
   [hint-data]
@@ -2526,11 +2552,12 @@
       ;; Expects" on a purchase as a mistake about the payment. The retry
       ;; is a new problem, so the hint has to carry the distinction.
       (seq missing-assertions)
-      (conj (str "Missing assertions: "
-                (clojure.string/join ", " (map #(if (= :expects %)
-                                                  (expects-hint-label (:expects-spec hint-data))
-                                                  (get assertion-labels % (name %)))
-                                               missing-assertions))))
+      (conj (str "Missing: "
+                (clojure.string/join " · " (map #(cond
+                                                   (= :expects %) (expects-hint-label (:expects-spec hint-data))
+                                                   (missing-questions %) (missing-questions %)
+                                                   :else (get assertion-labels % (name %)))
+                                                missing-assertions))))
 
       ;; Present tense for what happened; a promise for what is due. The
       ;; student who writes "receives cash" on a credit sale has put a

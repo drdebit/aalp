@@ -4500,7 +4500,7 @@ The printed t-shirts are now finished goods ready for sale."
   "Generate a random problem at the specified level.
    Can generate forward (narrative -> assertions), reverse (journal entry -> assertions),
    or construct (narrative -> create journal entry) problems."
-  [level & {:keys [problem-type show-assertions served missed below levels] :or {problem-type :forward show-assertions false}}]
+  [level & {:keys [problem-type show-assertions served missed below levels weights] :or {problem-type :forward show-assertions false}}]
   (let [available-templates (filter #(and (<= (:level (val %)) level)
                                           ;; A retention check looks back:
                                           ;; only patterns from before `below`.
@@ -4536,10 +4536,21 @@ The printed t-shirts are now finished goods ready for sale."
         ;; five-streak covers five patterns, and at level 1 two of three c8
         ;; learners never met the credit sale.
         unserved-here (filter #(= level (:level (val %))) unserved)
-        [template-key template] (rand-nth (seq (cond (seq owed) owed
-                                                     (seq unserved-here) unserved-here
-                                                     (seq unserved) unserved
-                                                     :else available-templates)))
+        ;; A round may weight its patterns: Production is mostly
+        ;; production, not the printer purchase that sets it up (Matt,
+        ;; 2026-10-08). Every pattern still comes up once before weights
+        ;; apply, since unserved ones are drawn first.
+        weight-of (fn [[k _]] (double (or (get weights k) (get weights (name k)) 1)))
+        pick (fn [pool]
+               (let [pool (vec pool)
+                     r (* (rand) (reduce + (map weight-of pool)))]
+                 (loop [[t & more] pool acc 0.0]
+                   (let [acc (+ acc (weight-of t))]
+                     (if (or (< r acc) (empty? more)) t (recur more acc))))))
+        [template-key template] (pick (cond (seq owed) owed
+                                            (seq unserved-here) unserved-here
+                                            (seq unserved) unserved
+                                            :else available-templates))
         ;; Use indexed selection for same-length variable arrays to keep values paired
         ;; A reseller can only be handed problems that make sense for a
         ;; shop with no press: buying or selling its shirts, paying for a

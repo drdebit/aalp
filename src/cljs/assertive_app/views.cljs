@@ -2305,7 +2305,11 @@
                                ;; they are for (a printer), or the student
                                ;; has chosen to rate the payment instead.
                                ;; Then it can only be about money.
-                               (and (= "physical-unit" (get-in selected [:receives :unit]))
+                               (and (or (= "physical-unit" (get-in selected [:receives :unit]))
+                                        ;; ...or made: what the business means to
+                                        ;; do with what it printed (Matt, 2026-10-08).
+                                        (and (contains? selected :creates)
+                                             (not (contains? selected :receives))))
                                     (not (contains? selected :allows))
                                     (not= "monetary-unit" (get-in selected [:expects :unit])))
                                ;; Bought on credit: the business owes for them.

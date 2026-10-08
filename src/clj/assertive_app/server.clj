@@ -259,7 +259,8 @@
                                                   :served (:served body)
                                                   :missed (:missed body)
                                                   :below (:below body)
-                                                  :levels (:levels body))]
+                                                  :levels (:levels body)
+                                                  :weights (:weights body))]
       (response/response problem)))
 
   ;; ==================== The reporting lesson ====================

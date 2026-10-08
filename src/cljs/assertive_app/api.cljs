@@ -561,7 +561,9 @@
                ;; (Intellectual Property: production and designs only).
                (and (nil? below) (nil? levels) (state/drill-active?)
                     (:levels (tutorials/drill-config level)))
-               (assoc :levels (vec (:levels (tutorials/drill-config level)))))
+               (assoc :levels (vec (:levels (tutorials/drill-config level))))
+               (and (state/drill-active?) (:weights (tutorials/drill-config level)))
+               (assoc :weights (:weights (tutorials/drill-config level))))
      :format :json
      :headers (auth-headers)
      :response-format :json

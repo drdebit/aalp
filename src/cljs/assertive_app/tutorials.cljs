@@ -1582,9 +1582,12 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 (def ^:private drill-configs
   "Per-level overrides of the drill mastery bar. :levels keeps a round to
    those lessons' patterns rather than reviewing everything before it."
-  {;; The bought design, a design's variety, plain printing and the
-   ;; printer: the second half of production, practiced as one.
-   3 {:levels [2 3]}})
+  {;; Mostly printing; the printer purchase that sets it up comes too.
+   2 {:levels [2] :weights {:production-direct 4}}
+   ;; The bought design, a design's variety, plain printing and the
+   ;; printer: the second half of production, practiced as one, mostly
+   ;; the design and printing it.
+   3 {:levels [2 3] :weights {:design-variety-printing 4 :cash-design-purchase 3 :production-direct 2}}})
 
 (defn drill-config [level]
   (merge default-drill-config (get drill-configs level)))

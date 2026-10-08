@@ -2360,11 +2360,12 @@
 
 (declare format-currency)
 
-;; Two lines in one account -- blank shirts and ink both leaving Raw
-;; Materials -- are told apart by what each one is (Matt, 2026-10-08).
+;; Lines about particular goods name them once an entry has more than one
+;; such line: blank shirts and ink leaving Raw Materials, and the Night
+;; Owl shirts entering Finished Goods (Matt, 2026-10-08).
 (defn- repeated-account-item [line lines]
   (when (and (:item line)
-             (< 1 (count (filter #(= (:account %) (:account line)) lines))))
+             (< 1 (count (filter :item lines))))
     (:item line)))
 
 (defn derived-je-panel

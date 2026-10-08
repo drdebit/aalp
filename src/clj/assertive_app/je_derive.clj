@@ -1275,6 +1275,15 @@
                                                    (not= "monetary-unit" (get-in selections [:requires :unit])))
                                               "A probability is not a money amount, so nothing is posted here. `requires` does the work in this entry — the vendor's promise is what the business paid for, and it is what sits on the books as a prepaid asset. What this number does is later: as the term runs the asset is used up and expensed, and if the vendor fails to deliver the business will have recorded, in advance, how sure it was."
 
+                                              ;; A purpose for goods the business MADE:
+                                              ;; they are finished goods because they were
+                                              ;; made, so the purpose places nothing.
+                                              (and (= :expects code)
+                                                   (contains? selections :creates)
+                                                   (not (contains? selections :receives))
+                                                   (contains? #{"consumes" "provides"} (get-in selections [:expects :action])))
+                                              "A probability is not a money amount, so nothing is posted here, and this expectation does not change the entry either: what the business made is finished goods because it made it. What it records is the plan — to sell what was made — and how firm that plan is. It stays in the record, and a later sale can be compared with it."
+
                                               ;; A purpose, with a number on it: what
                                               ;; the goods are for is what placed them,
                                               ;; and the number says how firm the plan is.

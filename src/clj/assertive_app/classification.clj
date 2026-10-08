@@ -1750,6 +1750,10 @@
     ;; Printing a design's variety rests on the design as well as the
     ;; printer, and the record says which design makes which variety.
     :checks-variety? true
+    ;; What the business means to do with what it made -- sell it -- is
+    ;; true and welcome, as in the paper's SP example; it is not taught
+    ;; here and changes nothing on the entry (Matt, 2026-10-08).
+    :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
     :description "Direct production: Raw materials → Finished Goods (enabled by equipment)"
     :journal-entry [{:debit "Finished Goods Inventory" :credit "Raw Materials Inventory"}]

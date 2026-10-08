@@ -506,7 +506,11 @@
         ;; Goods IN and an expectation: what they are for -- and that one
         ;; is guessed at nothing, because choosing between using them and
         ;; selling them on is the question being asked.
-        (when-not (= "physical-unit" (get-in (state/selected-assertions) [:receives :unit]))
+        ;; ...and goods MADE, the same question about what was printed
+        ;; (Matt, 2026-10-08).
+        (when-not (let [sel (state/selected-assertions)]
+                    (or (= "physical-unit" (get-in sel [:receives :unit]))
+                        (and (contains? sel :creates) (not (contains? sel :receives)))))
         (let [sel (state/selected-assertions)
               ;; On the business's own promise the expected event is the
               ;; business providing what it owes.

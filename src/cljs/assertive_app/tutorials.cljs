@@ -875,29 +875,30 @@ And if the assertions name no rule at all? Then money went out, nothing came in,
       :assertions ["has-date: December 31"
                    "reports: $50 expense, on a systematic-allocation basis ($3,000 ÷ 60 months)"]
       :entry ["DR Depreciation Expense $50" "CR Accumulated Depreciation $50"]}
+     ;; An accrual adds requires, so not "the same words" (Matt, 2026-10-08).
+     :pair-heading "The same expense, a different credit"
      :pair
-     {:same "The business **reports** an expense that no exchange produced."
-      :a {:when "…allocated over an asset it already holds, so the value used up was its own"
-          :becomes "a contra-asset"}
-      :b {:when "…accrued, and **requires** a payment still to come"
-          :becomes "a liability"}
-      :point "Same recognition, same absent counterparty. Whether the value was already yours to use up, or is still owed to somebody, decides what the credit lands on."}
+     {:same "At the end of the period, the business **reports** an expense that no exchange produced."
+      :a {:when "…the printer's cost, spread over the years it will be used"
+          :becomes "Accumulated Depreciation — the printer is carried at less"}
+      :b {:when "…wages employees have earned but not yet been paid; **requires** names who is owed"
+          :becomes "Wages Payable — owed to the employees"}
+      :point "Both reduce this period's income. What differs is the credit: depreciation uses up part of something the business already holds; an accrual records a debt to someone who has done the work."}
      :effect
-     {:holds "Before: a printer carried at $3,000. After: the same printer, carried at $2,950. Nothing moved, and the business is poorer."
-      :may-or-must "Before and after: nothing is owed to anyone. That is what separates depreciation from an accrual, and it is visible only in which assertions are present."}
-     :reminder "An adjusting entry is not a new kind of accounting. It is the same sentence with no counterparty and an explicit amount."}
+     {:holds "Before: the printer carried at $3,000. After: carried at $2,950 — $50 of its usefulness used up this month. No cash moved."
+      :may-or-must "Nothing is owed to anyone, before or after. An accrual would add a promise — **requires** — and that is the difference you can see in the assertions."}
+     :reminder "An adjusting entry records what the passing of time did. There is no exchange to read, so **reports** states the amount and how it was worked out."}
     :sections
     [{:heading "End-of-Period Adjustments"
       :content "At the end of each accounting period, adjusting entries make sure revenues and expenses are recorded in the **correct period**. That is the **accrual basis** of accounting: under the **revenue recognition principle**, revenue is recorded when it is earned, and under the **expense recognition (matching) principle**, expenses are recorded when they are incurred to earn it — whenever the cash moves.
 
 You have already done this once. In the credit lesson, a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply the same rule where no exchange marks the moment, only the passing of time.
 
-You have already done this once. In the credit lesson, a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply that same rule to everything else.
+They come in two kinds:
+- **Accruals** — earned or incurred *before* cash moves. **Accrued revenue** (earned, but not collected) and **accrued expenses** (incurred, but not yet paid), such as wages employees have earned.
+- **Deferrals** — cash moved *first*. **Unearned revenue** (cash received in advance) becomes revenue as it is earned, and a **prepaid expense** (cash paid, expense not yet incurred) becomes an expense as it is used up.
 
-Adjusting entries ensure:
-- Expenses are recognized when incurred (not just when paid)
-- Revenues are recognized when earned (not just when received) — the credit lesson's rule, now applied where no exchange marks the moment
-- Assets reflect their current value"}
+**Depreciation** works like a prepaid expense over a longer life: the cost of an asset used for years, spread over those years."}
 
      {:heading "The 'Reports' Assertion"
       :content "Adjusting entries add one new assertion, and it carries the weight here:
@@ -916,7 +917,9 @@ Common bases:
 - **accrual** — Wages/interest (recognizing expense before payment)
 - **time-based** — Prepaid expenses (recognizing expired benefits)
 
-Unlike exchanges, adjusting entries have **no counterparty** — they are internal recognitions of economic reality."}
+**A note on the journal entries.** An assertive record holds assertions, not journal entries. The entries in these lessons are what double-entry would record for the same events. For most events, double-entry's accounts already hold the totals the statements need, which is why only these end-of-period adjustments have to be worked out. In an assertive record, every total on a statement is a report: the year's sales as much as the wages still owed.
+
+Nothing is exchanged when a report is issued, so there is no **has-counterparty**. Where somebody is owed — employees for wages, a lender for interest — **requires** names them."}
 
      {:heading "Depreciation"
       :content "Equipment loses value over time. We allocate its cost over its useful life:
@@ -932,22 +935,32 @@ Unlike exchanges, adjusting entries have **no counterparty** — they are intern
 
 Note: Accumulated Depreciation is a **contra-asset** that reduces equipment value on the balance sheet."}
 
-     {:heading "Accrued Expenses and Prepaid Adjustments"
-      :content "**Accrued Expenses** — expenses incurred before payment:
-- Wages: employees worked but payday hasn't arrived
-- Interest: accumulates daily on loans
-- reports: expense (accrual basis), requires: a future payment — and to whom: employees for wages, the lender for interest. The promise's party is what names the payable.
-→ DR Expense, CR Payable
+     {:heading "Accrued Expenses and Prepaid Expenses"
+      :content "**Accrued expenses** (incurred, but not yet paid): employees have worked but payday hasn't arrived, or interest has built up on a loan. The promise to pay is already in the record — it was made when the employees did the work, or when the loan was signed. At the end of the period, the business reports the expense that has built up:
 
-**Prepaid Adjustments** — 'using up' prepaid assets over time:
-- Insurance, rent paid in advance
-- reports: expense (time-based) — the basis says what is used up: the prepaid asset
-→ DR Expense, CR Prepaid Asset
+::assertions
+reports: wage expense, on an accrual basis
+::
 
-Like production, adjusting entries have **no counterparty** — they're internal recognitions.
+The report does not create the debt. It gathers what the record already says is owed, so the statements can show it. Who is owed names the payable: employees give **Wages Payable**, a lender gives **Interest Payable**.
 
-**Why adjusting entries need 'reports' but sales don't:**
-In a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."}
+→ DR Wage Expense, CR Wages Payable
+
+**Prepaid expenses** (cash paid, expense not yet incurred): insurance or rent paid in advance is used up as time passes. At the end of the period the business reports the part that has been used up:
+
+::assertions
+reports: insurance expense, on a time basis
+::
+
+What was used up is part of the prepaid asset, so the prepaid asset goes down.
+
+→ DR Insurance Expense, CR Prepaid Expense
+
+As in production, nothing is exchanged today, so there is no **has-counterparty**.
+
+**Why adjusting entries need `reports` but sales don't:**
+
+A sale changes the financial statements by *happening*. The day the shirts go out, the entry is made, and the accounts carry it from then on: the year's sales revenue is simply every sale added up.
 
 A prepaid expense, an unpaid wage or the printer changes the statements by *existing*. Nothing happens on any particular day — a little of the insurance is used up every day, wages build up every hour worked, the printer wears a little every month. No event marks those changes, so at the end of the period the business has to work out what time has done, and say so. This is one of the uses for **reports**: the amount, and how it was worked out."}
 
@@ -1016,9 +1029,9 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
 
      {:id :l5-q2
       :question "Why don't adjusting entries have a 'has-counterparty' assertion?"
-      :choices ["Because they always involve cash" "Because they are estimates, not actual transactions" "Because they are internal recognitions, not exchanges with external parties" "Because they only affect the income statement"]
+      :choices ["Because they always involve cash" "Because they are estimates, not actual transactions" "Because nothing is exchanged with another party that day" "Because they only affect the income statement"]
       :correct 2
-      :explanation "Adjusting entries are **internal recognitions** of economic reality (like equipment losing value or wages being earned). No external party is involved in these entries."}
+      :explanation "Nothing is exchanged on the day of an adjusting entry: no one hands the business anything or takes anything from it. **has-counterparty** is for exchanges. Where somebody is owed — employees, for accrued wages — **requires** names them."}
 
      {:id :l5-q3
       :question "What is the journal entry for recording monthly depreciation on equipment?"
@@ -1081,7 +1094,9 @@ It does two things, and only two:
 1. **Collect** the events that answer the question — the sales, say, and not the purchases.
 2. **Total** something about them — what the customers paid, or what the goods cost.
 
-Nothing in the record changes when you report on it. What changes is what you know about the year."}
+Nothing in the record changes when you report on it. What changes is what you know about the year.
+
+This is where an assertive record and double-entry part ways most clearly. Double-entry keeps running totals — accounts — so the year's sales revenue is already sitting in an account when the year ends. An assertive record keeps the events themselves, and every total is a report built from them: the sales, the cost of the goods sold, the wages still owed. The journal entries you have seen throughout are double-entry's equivalents of those events, shown because they are what 2101 teaches."}
 
      {:heading "Whose Money? The Counterparty's Role"
       :content "Money comes in from customers when they pay, from owners when they invest, from lenders when they lend. Only the first is revenue.

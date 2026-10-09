@@ -227,11 +227,43 @@ say, which is rare.
 | difference of reports                    | =combine-and-record!=                    |                                                         |
 | reported before                          | =recorded-report=, =replay-report=       | a pattern: reports over these events, before this date  |
 
+* What changes in Reporting (decided with Matt, 2026-10-09)
+
+The composer is the student's first meeting with this interface, so it
+is this interface, not a form of its own. Four things change from the
+2026-09-29 version; the sentence with its mirror, the free preview with
+the collected events marked, Harbor Line's year and the sequence of
+tasks all stay.
+
+1. *Chips, not slots.* Five fixed slots in a fixed order told the
+   student there were exactly five things to decide. As in the sentence
+   builder, the student adds the criteria the report needs, from the
+   menu. An omission is then real -- leave out "the other party is a
+   customer" and the owner's investment is collected -- and the feedback
+   names the event it let in.
+2. *The paid-for condition is the first "but not".* A checkbox today,
+   a one-off. The cash-basis cost of goods sold task is "change the
+   accrual report with one condition", which is the exclude clause with
+   one chip: the Report Builder's original demonstration, two reports
+   differing by one chip. So Reporting introduces "but not" at that
+   step rather than leaving it to Adjusting Entries.
+3. *A right report goes into the record.* The reading says a report is
+   itself something asserted, and now the record panel shows it: a
+   report composed right is recorded as an event, and the difference
+   tasks (gross margin, ending inventory) select recorded reports rather
+   than compositions held in client state. The same mechanism later
+   years use to select what was reported before.
+4. *Feedback by difference*, as under Grading, in place of the per-part
+   messages.
+
+The check for the rewrite is that the same tasks over the same record
+reach the same figures, not that the behavior is the same.
+
 * By lesson
 
-- *Reporting*: the five parts as now, plus ending inventory (a "to the
-  report date" chip and a difference row). No excludes on screen; the
-  mirror shows the same query it does today.
+- *Reporting*: chips from groups 1, 2, 3, 6 and 7, "but not" arriving
+  with the cash-basis task, plus ending inventory (a "to the report
+  date" chip and a difference row over recorded reports).
 - *Adjusting Entries*: the exclude clause, groups 4, 5 and 8, the share
   calculations, and the entry derived from the selection. First-year
   problems first; later years once the first-year path is whole.
@@ -244,9 +276,9 @@ say, which is rare.
 * Order of work
 
 1. The criteria vocabulary and the flat-map / full-form shape of a
-   recorded report, with the Reporting composer rewritten over them and
-   behaving exactly as it does now (the walkthrough of 2026-09-29 as the
-   check).
+   recorded report, with the Reporting composer rewritten over them as
+   "What changes in Reporting" says; the walkthrough of 2026-09-29
+   reaches the same figures.
 2. Ending inventory in Reporting.
 3. Extension-based grading with diff feedback, over Reporting's four
    reports first, where the canonical answers are known and tested.
@@ -258,21 +290,23 @@ say, which is rare.
 6. Lesson and quiz text; =fulfills= to Level 1; Level 7.
 7. Later years, hidden records, the full menu.
 
-* Open
+* Open (Matt agreed with the recommendations, 2026-10-09)
 
-- [ ] The student-facing words for each chip. The Reporting composer's
+- [X] The student-facing words for each chip. The Reporting composer's
       phrasings ("the business provides goods", "the other party is a
       customer") are the register; group 4 and 5 need theirs.
-- [ ] Whether Reporting stays include-only, with "but not" arriving at
-      Adjusting Entries (recommended: yes -- five parts were enough
-      there and the exclude clause is a new idea worth its own moment).
-- [ ] For an adjustment, a pick of the one event ("the prepayment of
+- [X] Whether Reporting stays include-only. Decided 2026-10-09: no --
+      "but not" arrives with the cash-basis cost of goods sold, one chip
+      (see "What changes in Reporting"). The first recommendation here
+      was to hold it for Adjusting Entries; the paid-for condition is
+      the better first exclude.
+- [X] For an adjustment, a pick of the one event ("the prepayment of
       January 5") or criteria ("money out for a service still to come,
       open at the report date")? Recommended: both, graded alike by
       extension -- the pick for first-year problems, criteria once
       records hold more than one such event.
-- [ ] How much of a calculation's inputs the student types. Recommended:
+- [X] How much of a calculation's inputs the student types. Recommended:
       only what the record does not hold, and move salvage and useful
       life onto the acquisition event so that it holds them.
-- [ ] When to build the hidden records: with step 3, or only once a
+- [X] When to build the hidden records: with step 3, or only once a
       near-miss is actually seen in the pilot's attempts.

@@ -99,9 +99,15 @@
       :requires {:action "receives" :unit "monetary-unit" :quantity 500 :due-date "2027-01-05"}
       :expects {:action "receives" :unit "monetary-unit" :confidence 85}
       :has-counterparty {:name "Harbor Youth League"}}
-     {:has-identifier "Draw-001" :has-date {:date "2026-12-15"}
+     ;; A dividend declared and paid: money out that is not the cost of
+     ;; goods (it was an owner's draw until 2026-10-08; 2101 is corporate).
+     {:has-identifier "Dividend-001" :has-date {:date "2026-12-01"}
+      :reports {:category "distribution" :basis "declared" :amount 1000}
+      :requires {:action "provides" :unit "monetary-unit" :quantity 1000 :due-date "2026-12-15"}}
+     {:has-identifier "DivPay-001" :has-date {:date "2026-12-15"}
       :provides {:unit "monetary-unit" :quantity 1000}
-      :has-counterparty {:name "the owner"}}]}})
+      :has-counterparty {:name "Stockholders"}
+      :fulfills {:action "requires" :event "Dividend-001/requires"}}]}})
 
 (defn record-for-engine
   "A fixed record as engine-ready events, each carrying its readings.

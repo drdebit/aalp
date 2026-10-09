@@ -116,11 +116,18 @@
              :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 80 :from-event "T08"}
              :requires {:action "receives" :unit "monetary-unit" :quantity 880 :due-date "2027-01-19"}
              :expects {:action "receives" :unit "monetary-unit" :confidence 85}}}
-   {:id "T11" :date "2026-12-10" :classification :owner-withdrawal
-    :narrative "On December 10, the owner takes $1,500 out of the business for personal use, giving up that much of their ownership interest."
-    :answer {:has-date {:date "2026-12-10"} :has-counterparty {:name "the owner"}
+   ;; A dividend, declared then paid: 2101 is about corporations, and an
+   ;; owner's draw is a sole proprietor's (Matt, 2026-10-08).
+   {:id "T11" :date "2026-12-10" :classification :dividend-declaration
+    :narrative "On December 10, Campus Threads' board declares a cash dividend of $1,500, to be paid to its stockholders on December 20."
+    :answer {:has-date {:date "2026-12-10"}
+             :reports {:category "distribution" :basis "declared"}
+             :requires {:action "provides" :unit "monetary-unit" :quantity 1500 :due-date "2026-12-20"}}}
+   {:id "T12" :date "2026-12-20" :classification :dividend-payment
+    :narrative "On December 20, Campus Threads pays its stockholders the $1,500 dividend declared on December 10."
+    :answer {:has-date {:date "2026-12-20"} :has-counterparty {:name "Stockholders"}
              :provides {:unit "monetary-unit" :quantity 1500}
-             :receives {:unit "ownership-units"}}}])
+             :fulfills {:action "requires" :event "T11/requires"}}}])
 
 (def ^:private by-id (into {} (map (juxt :id identity)) transactions))
 

@@ -3770,6 +3770,9 @@ The printed t-shirts are now finished goods ready for sale."
                           :receives {:unit "ownership-units"}
                           :has-counterparty {:name :owner}}
     :correct-classification :owner-withdrawal
+    ;; An owner's draw is a sole proprietor's; 2101's equity topic is
+    ;; corporations (common stock, dividends). Not served (2026-10-08).
+    :held-for "Sole proprietorships"
     :level 6
     :variables {:date ["2026-01-15" "2026-02-15" "2026-03-15" "2026-04-15" "2026-05-15" "2026-06-15" "2026-07-15" "2026-08-15" "2026-09-15" "2026-10-15" "2026-11-15" "2026-12-15"]
                 :owner ["SP (Owner)" "Alex (Partner)" "Jordan (Partner)"]

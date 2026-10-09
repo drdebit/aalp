@@ -853,7 +853,7 @@ And if the assertions name no rule at all? Then money went out, nothing came in,
 
      {:id :l4-q3
       :question "SP pays $500 and nothing comes back, but the assertions name no rule. What does the entry show?"
-      :choices ["Income Tax Expense" "An unbalanced entry: nothing says why the money left, so there is no debit" "Owner's Drawing" "Cash Expense"]
+      :choices ["Income Tax Expense" "An unbalanced entry: nothing says why the money left, so there is no debit" "Dividends" "Cash Expense"]
       :correct 1
       :explanation "Money out with nothing in has no account of its own. Until the record says why it was paid — a rule that required it, or something received — there is nothing to debit."}]}
 
@@ -949,8 +949,10 @@ Like production, adjusting entries have **no counterparty** — they're internal
 **Why adjusting entries need 'reports' but sales don't:**
 In a sale, revenue follows from the exchange pattern — you provided goods and received payment, so revenue emerges. In an adjusting entry, there's no exchange — you need `reports` to explicitly assert what's being recognized and how it was calculated."}
 
-     {:heading "Earning an Advance: Keeping a Promise"
-      :content "In the credit lesson, a customer paid ahead for shirts not yet made. The business recorded the cash and a promise — **requires** it to provide the shirts — and the promise sat on the books as **Deferred Revenue**, a liability.
+A prepaid expense, an unpaid wage or the printer changes the statements by *existing*. Nothing happens on any particular day — a little of the insurance is used up every day, wages build up every hour worked, the printer wears a little every month. No event marks those changes, so at the end of the period the business has to work out what time has done, and say so. This is one of the uses for **reports**: the amount, and how it was worked out."}
+
+     {:heading "Unearned Revenue: Keeping a Promise"
+      :content "In the credit lesson, a customer paid ahead for shirts not yet made. The business recorded the cash and a promise — **requires** it to provide the shirts — and the promise sat on the books as **Unearned Revenue** (cash received in advance), a liability.
 
 *On March 20, Blue Heron Printing delivers 12 of the 24 shirts LocalSportsTeam paid $600 for in advance. That much of the advance is now earned: $300.*
 
@@ -1147,7 +1149,7 @@ Each report is checked **part by part** — which events, whose, what condition,
 
    6
    {:title "Level 6: Equity Transactions"
-    :subtitle "Record owner investments, withdrawals, and dividends"
+    :subtitle "Record stock issued to owners, and dividends"
     :orientation
     {:framing "No new words again. What is new is who is on the other side — and that an owner is not a customer, however similar the money looks."
      :protocol ["Read the exchange exactly as you always have: what went out, what came in, who was on the other side."
@@ -1176,10 +1178,9 @@ Each report is checked **part by part** — which events, whose, what condition,
     [{:heading "Owner Transactions"
       :content "So far, we've focused on operating transactions — buying, selling, producing, and adjusting. Now we'll record transactions with **owners**:
 
-- **Owner investments** — Putting money into the business
-- **Owner withdrawals** — Taking money out of the business
+- **Owner investments** — Putting money into the business, for stock
 - **Stock issuance** — Corporations selling shares
-- **Dividends** — Returning profits to shareholders
+- **Dividends** — Returning profits to stockholders
 
 These transactions affect **equity**, not revenue or expense."}
 
@@ -1195,8 +1196,8 @@ These transactions affect **equity**, not revenue or expense."}
 
 Note: This isn't revenue! The company isn't earning money — it's receiving investment."}
 
-     {:heading "Dividends and Withdrawals"
-      :content "**Dividends** return profits to shareholders (two-step process):
+     {:heading "Dividends"
+      :content "**Dividends** return profits to stockholders (two-step process):
 
 **Declaration:** reports a distribution, requires a future cash payment to the stockholders
 → DR Dividends, CR Dividends Payable
@@ -1206,21 +1207,14 @@ Dividends is a temporary account, like an expense: it is closed to Retained Earn
 **Payment:** provides cash, has-counterparty (the stockholders), fulfills the declaration — the promise this payment keeps
 → DR Dividends Payable, CR Cash
 
-**Owner Withdrawals** (sole proprietorships):
-- provides: cash, receives: ownership units, has-counterparty: owner
-→ DR Owner's Drawing, CR Cash
-
-A withdrawal is an exchange too, the reverse of an investment: the business pays out cash and gets back part of the owner's ownership interest.
-
-Note: Neither dividends nor withdrawals are expenses — they're returns of capital."}
+Note: Dividends are not an expense. They are a distribution of the business's earnings to its stockholders."}
 
      {:heading "The Equity Pattern"
       :content "**Key insight:** Equity transactions change the balance sheet composition without affecting income.
 
 | Transaction | Effect on Assets | Effect on Equity |
 |-------------|-----------------|------------------|
-| Investment | + Cash | + Capital |
-| Withdrawal | - Cash | - Drawing |
+| Investment | + Cash | + Common Stock |
 | Dividend Declaration | No change | - Dividends (closed to Retained Earnings at year end), + Payable |
 | Dividend Payment | - Cash | - Payable |
 
@@ -1234,14 +1228,14 @@ Equity transactions use the same assertion framework — provides, receives, req
       :explanation "Owner investment is **not revenue**. Revenue is earned from business operations. An investment increases equity (Common Stock), not revenue. DR Cash, CR Common Stock."}
 
      {:id :l6-q2
-      :question "What assertions describe an owner withdrawing $1,000 from the business?"
-      :choices ["receives cash, has-counterparty" "provides cash, receives ownership units, has-counterparty" "reports expense, provides cash" "requires cash, has-counterparty"]
+      :question "SP's board declared a $500 dividend in March, and SP pays it in April. Which assertions record the payment?"
+      :choices ["reports $500 expense, provides cash" "provides $500 cash, has-counterparty the stockholders, fulfills the declaration" "provides cash, receives ownership units" "requires the stockholders to pay $500"]
       :correct 1
-      :explanation "The company **provides** cash to the owner (**has-counterparty**) and **receives** back ownership units — part of the owner's interest. This creates DR Owner's Drawing, CR Cash. It's not an expense."}
+      :explanation "The payment keeps the promise the declaration made: **provides** the cash to the stockholders and **fulfills** the declaration. That clears Dividends Payable: DR Dividends Payable, CR Cash. It is not an expense."}
 
      {:id :l6-q3
       :question "In the two-step dividend process, what happens at declaration?"
-      :choices ["Cash is paid to shareholders" "Dividends is debited and a payable is created — Retained Earnings falls only when Dividends is closed at year end" "Revenue is recorded" "Equipment is distributed to owners"]
+      :choices ["Cash is paid to stockholders" "Dividends is debited and a payable is created — Retained Earnings falls only when Dividends is closed at year end" "Revenue is recorded" "Equipment is distributed to owners"]
       :correct 1
       :explanation "At declaration, the board commits to paying dividends: **Retained Earnings decreases** (debit) and **Dividends Payable is created** (credit). Cash doesn't move until the payment step."}]}
 
@@ -1381,13 +1375,14 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
                    "provides: $500 (cash)"
                    "fulfills: the dividend declared on March 15"]
       :entry ["DR Dividends Payable $500" "CR Cash $500"]}
+     :pair-heading "The same dividend, two events"
      :pair
-     {:same "The business **provides** $500 to its owners."
-      :a {:when "…keeping the promise its board made — **fulfills** the declaration"
-          :becomes "Dividends Payable — a debt paid"}
-      :b {:when "…and **receives** back ownership units — part of the owner's interest"
-          :becomes "Owner's Drawing — equity taken out"}
-      :point "The same payment, to the same people. Whether it keeps an earlier promise or buys back part of the owner's interest decides whether the business paid what it owed or its owner took money out."}
+     {:same "The board decides to pay its stockholders $500, and the business later pays it."
+      :a {:when "…the declaration: **reports** a distribution and **requires** the payment"
+          :becomes "Dividends, and Dividends Payable"}
+      :b {:when "…the payment: **provides** the cash and **fulfills** the declaration"
+          :becomes "Dividends Payable cleared, and Cash"}
+      :point "One distribution, two events. The declaration is the promise and puts the debt on the books; the payment keeps the promise and clears it."}
      :effect
      {:holds "Before: $500 more cash, and $500 owed to the stockholders. After: both gone."
       :may-or-must "Before: the business must pay the stockholders by April 15. After: nothing is owed, and the record ties the payment to the declaration it kept."}

@@ -59,6 +59,30 @@
                 (let [{:keys [correct? messages]} (r/grade-difference :ending-inventory [:goods-sold-to-date :goods-received])]
                   (and (not correct?) (some #(re-find #"comes first" %) messages))))
          (check "ending inventory built right"
-                (:correct? (r/grade-difference :ending-inventory [:goods-received :goods-sold-to-date])))]]
+                (:correct? (r/grade-difference :ending-inventory [:goods-received :goods-sold-to-date])))
+         ;; The hidden record separates the fragile routes.
+         (check "hidden: the canonical reports collect what they should on Westbrook"
+                (let [h (r/record-context :westbrook)
+                      got (into {} (for [k [:accrual-revenue :cash-revenue :accrual-cogs :cash-cogs :goods-received :goods-sold-to-date]]
+                                     [k (:collected (r/collect h (get r/canonical k)))]))
+                      want {:accrual-revenue ["Sale-A" "Sale-B" "Sale-C"]
+                            :cash-revenue ["Collect-B" "Sale-A" "Sale-C"]
+                            :accrual-cogs ["Sale-A" "Sale-B" "Sale-C"]
+                            :cash-cogs ["Sale-A" "Sale-B"]
+                            :goods-received ["Shirts-A" "Shirts-B" "Shirts-C"]
+                            :goods-sold-to-date ["Sale-A" "Sale-B" "Sale-C"]}]
+                  (when (not= got want) (println "       got" got))
+                  (= got want)))
+         (check "hidden: cost of goods sold without the customer is caught, naming the return"
+                (let [{:keys [correct? messages]} (g :accrual-cogs {:includes (chips "flow" "goods-out" "when" "period") :calc {:total "goods-cost"}})]
+                  (println "      " (pr-str messages))
+                  (and (not correct?) (some #(re-find #"Return-001" %) messages))))
+         (check "hidden: cash revenue without the customer is caught, naming the loan"
+                (let [{:keys [correct? messages]} (g :cash-revenue {:includes (chips "flow" "money-in" "when" "period") :calc {:total "money-in"}})]
+                  (and (not correct?) (some #(re-find #"Loan-001|Return-001" %) messages))))
+         (check "hidden: the well-made report still passes"
+                (:correct? (g :accrual-cogs {:includes (chips "flow" "goods-out" "party" "customer" "when" "period") :calc {:total "goods-cost"}})))
+         (check "hidden records cannot be previewed"
+                (nil? (r/preview :westbrook (get r/canonical :accrual-cogs))))]]
     (println (if (and figures (every? identity cases)) "ALL AGREE" "DISAGREEMENTS -- see above"))
     :done))

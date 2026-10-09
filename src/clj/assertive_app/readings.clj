@@ -62,13 +62,26 @@
     :declared              :owner
     nil))
 
+(defn- return-to-supplier?
+  "Goods going back to the party that supplied the batch they came out
+   of: a purchase return, not a sale."
+  [e by-id]
+  (let [cp (get-in e [:has-counterparty :name])]
+    (boolean
+      (and cp
+           (some (fn [f]
+                   (when-let [b (some-> (:from-event f) name by-id)]
+                     (= cp (get-in b [:has-counterparty :name]))))
+                 (flows (:provides e)))))))
+
 (defn- counterparty-role
-  [e makes keeps]
+  [e makes keeps by-id]
   (when (:has-counterparty e)
     (or (role-by-promise keeps)
         (role-by-promise makes)
         (cond
           (ownership? e) :owner
+          (and (goods-out? e) (return-to-supplier? e by-id)) :supplier
           (goods-out? e) :customer
           (goods-in? e)  :supplier
           ;; Money one way and nothing else: the owner's investment or
@@ -142,8 +155,8 @@
                       r (cond-> {}
                           makes (assoc :makes makes)
                           keeps (assoc :keeps keeps)
-                          (counterparty-role e makes keeps)
-                          (assoc :counterparty-role (counterparty-role e makes keeps))
+                          (counterparty-role e makes keeps by-id)
+                          (assoc :counterparty-role (counterparty-role e makes keeps by-id))
                           (consideration e) (assoc :consideration (consideration e))
                           (goods-cost e events basis) (assoc :goods-cost (goods-cost e events basis))
                           (goods-received-cost e) (assoc :goods-received-cost (goods-received-cost e))

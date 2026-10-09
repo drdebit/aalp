@@ -290,6 +290,14 @@ reach the same figures, not that the behavior is the same.
    against the batch-by-batch valuation (770 on Harbor Line's year).
 3. Extension-based grading with diff feedback, over Reporting's four
    reports first, where the canonical answers are known and tested.
+   /Done 2026-10-09/, with the hidden record: =records= has
+   =:westbrook= (=:hidden true=), built with a purchase return (goods
+   out to the supplier of their own batch, a new reading) and a loan in
+   the year; =grade= tries a report that is right on the shown record on
+   every hidden one and, when it collects differently there, says so
+   and describes the event in words. Hidden records are never served or
+   previewed. The oracle asserts the canonical extensions on Westbrook
+   and the two fragile routes it catches.
 4. The exclude clause, the single-event pick, the share calculations,
    and the derivation reading the selection; the five adjustments over
    first-year records.
@@ -317,4 +325,8 @@ reach the same figures, not that the behavior is the same.
       only what the record does not hold, and move salvage and useful
       life onto the acquisition event so that it holds them.
 - [X] When to build the hidden records: with step 3, or only once a
-      near-miss is actually seen in the pilot's attempts.
+      near-miss is actually seen in the pilot's attempts. Built with
+      step 3 (one record; more as near-misses appear). Not separated
+      yet: "the other party is a supplier" on goods received -- a sales
+      return would separate it, but returned goods are inventory too,
+      so the canonical chip is itself open.

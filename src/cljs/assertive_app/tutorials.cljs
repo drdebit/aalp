@@ -1150,7 +1150,7 @@ Like gross profit, it is arithmetic over two reports: goods received to date, le
 6. **Change** it into the goods sold, at cost, up to the same date.
 7. **Build** ending inventory from the two.
 
-Each report is checked by **what it collects** — the events it lets in, and the ones it leaves out — and by what it totals, not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault. When a report is right, it goes into the record beside the company's own, dated the last day of the year: a report is itself something asserted."}]
+Each report is checked by **what it collects** — the events it lets in, and the ones it leaves out — and by what it totals, not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault. A report that is right here is then tried on another company's record, one you do not see: a report has to be right for any record, and one that fits Harbor Line's year only by luck will be told what it would collect elsewhere. When a report is right, it goes into the record beside the company's own, dated the last day of the year: a report is itself something asserted."}]
 
     :quiz
     [{:id :l9-q1

@@ -113,7 +113,81 @@
      {:has-identifier "DivPay-001" :has-date {:date "2026-12-15"}
       :provides {:unit "monetary-unit" :quantity 1000}
       :has-counterparty {:name "Stockholders"}
-      :fulfills {:action "requires" :event "Dividend-001/requires"}}]}})
+      :fulfills {:action "requires" :event "Dividend-001/requires"}}]}
+
+   ;; A record the student never sees, built to separate selections that
+   ;; collect the right events of Harbor Line's year only by luck
+   ;; (SELECTION-AND-CALCULATION.org, "Well-made, not only right"):
+   ;;   - a purchase return: goods going out, to a supplier -- so "the
+   ;;     business provides goods" without "the other party is a
+   ;;     customer" collects a thing that is not a sale
+   ;;   - a loan in the year: money coming in, from a lender -- so "the
+   ;;     business receives money" without the customer collects it too
+   ;; and otherwise the same shapes as Harbor Line: a 2025 tail, a credit
+   ;; sale collected, a batch bought on credit and not yet paid for.
+   :westbrook
+   {:company "Westbrook Tees"
+    :hidden true
+    :blurb "Westbrook Tees resells blank shirts to schools."
+    :period {:from "2026-01-01" :to "2026-12-31"}
+    :reports []
+    :events
+    [{:has-identifier "Funding-001" :has-date {:date "2025-12-01"}
+      :receives {:unit "monetary-unit" :quantity 5000}
+      :provides {:unit "ownership-units" :quantity 100}
+      :has-counterparty {:name "the owner"}}
+     {:has-identifier "Shirts-A" :has-date {:date "2025-12-10"}
+      :provides {:unit "monetary-unit" :quantity 400}
+      :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 100}
+      :expects merchandise
+      :has-counterparty {:name "TextileDirect"}}
+     {:has-identifier "Loan-001" :has-date {:date "2026-01-10"}
+      :receives {:unit "monetary-unit" :quantity 2000}
+      :requires {:action "provides" :unit "monetary-unit" :quantity 2000 :due-date "2028-01-10"}
+      :has-counterparty {:name "the Grange Bank"}}
+     {:has-identifier "Sale-A" :has-date {:date "2026-02-01"}
+      :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 30 :from-event "Shirts-A"}
+      :receives {:unit "monetary-unit" :quantity 270}
+      :has-counterparty {:name "the drama club"}}
+     ;; Twenty shirts go back to the supplier for a refund: goods out,
+     ;; money in, and not a sale.
+     {:has-identifier "Return-001" :has-date {:date "2026-02-15"}
+      :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 20 :from-event "Shirts-A"}
+      :receives {:unit "monetary-unit" :quantity 80}
+      :has-counterparty {:name "TextileDirect"}}
+     {:has-identifier "Shirts-B" :has-date {:date "2026-03-01"}
+      :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 80}
+      :requires {:action "provides" :unit "monetary-unit" :quantity 400 :due-date "2026-04-01"}
+      :expects merchandise
+      :has-counterparty {:name "PrintSupplyCo"}}
+     {:has-identifier "Pay-B" :has-date {:date "2026-04-01"}
+      :provides {:unit "monetary-unit" :quantity 400}
+      :fulfills {:action "requires" :event "Shirts-B/requires"}
+      :has-counterparty {:name "PrintSupplyCo"}}
+     {:has-identifier "Sale-B" :has-date {:date "2026-05-01"}
+      :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 40 :from-event "Shirts-B"}
+      :requires {:action "receives" :unit "monetary-unit" :quantity 360 :due-date "2026-06-01"}
+      :expects {:action "receives" :unit "monetary-unit" :confidence 90}
+      :has-counterparty {:name "Eastside Middle School"}}
+     {:has-identifier "Collect-B" :has-date {:date "2026-06-01"}
+      :receives {:unit "monetary-unit" :quantity 360}
+      :fulfills {:action "requires" :event "Sale-B/requires"}
+      :has-counterparty {:name "Eastside Middle School"}}
+     {:has-identifier "Shirts-C" :has-date {:date "2026-10-01"}
+      :receives {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 50}
+      :requires {:action "provides" :unit "monetary-unit" :quantity 300 :due-date "2027-02-01"}
+      :expects merchandise
+      :has-counterparty {:name "TextileDirect"}}
+     {:has-identifier "Sale-C" :has-date {:date "2026-11-01"}
+      :provides {:unit "physical-unit" :physical-item "blank-tshirts" :quantity 20 :from-event "Shirts-C"}
+      :receives {:unit "monetary-unit" :quantity 180}
+      :has-counterparty {:name "the robotics team"}}]}})
+
+(defn visible-record
+  "A record the student may see: not one of the hidden ones."
+  [record-key]
+  (let [r (get records record-key)]
+    (when (and r (not (:hidden r))) r)))
 
 (defn events-for-engine
   "A record's events as engine-ready maps, each carrying its readings.
@@ -386,9 +460,15 @@
 
 (defn preview
   "Run a composition over a fixed record, free: refining a report against
-   what it collects is the lesson."
+   what it collects is the lesson. Hidden records are not previewed."
   [record-key composition]
-  (some-> (record-context record-key) (collect composition)))
+  (when (visible-record record-key)
+    (some-> (record-context record-key) (collect composition))))
+
+(defn hidden-contexts
+  "The records a right-looking report is also tried on."
+  []
+  (vec (for [[k r] records :when (:hidden r)] (record-context k))))
 
 (defn report-figure
   "What one of the lesson's reports comes to, composed the right way."
@@ -433,7 +513,8 @@
   (let [failed (concat (remove #(holds? % ewa period) (:includes want))
                        (filter #(holds? % ewa period) (:excludes want)))
         c      (first failed)]
-    (str id " is in your report, and " name " leaves it out"
+    (str id (when (:describe? summary) (str " (" (:says summary) ")"))
+         " is in your report, and " name " leaves it out"
          (if c (str ": " (fact c summary) ".") "."))))
 
 (defn- missing-message
@@ -442,7 +523,8 @@
   (let [failed (concat (remove #(holds? % ewa period) (:includes have))
                        (filter #(holds? % ewa period) (:excludes have)))
         c      (first failed)]
-    (str id " belongs in " name ", and your report leaves it out"
+    (str id (when (:describe? summary) (str " (" (:says summary) ")"))
+         " belongs in " name ", and your report leaves it out"
          (if c
            (str ": “" (:phrase (chip-def c)) "” does not hold for it — " (fact c summary) ".")
            "."))))
@@ -465,9 +547,32 @@
           sums    (summaries-of ctx)
           period  (:period ctx)
           same-calc? (= (get-in have [:calc :total]) (get-in want [:calc :total]))
-          correct? (and (seq S) (= S C) same-calc?)
+          right-here? (and (seq S) (= S C) same-calc?)
+          ;; Right on this record: is it right on the hidden ones? A
+          ;; selection that fits this year by luck is told which record
+          ;; it fails on, and why, in words -- the record itself stays
+          ;; unseen.
+          elsewhere (when right-here?
+                      (some (fn [h]
+                              (let [hs (set (:collected (collect h have)))
+                                    hc (set (:collected (collect h want)))]
+                                (when (not= hs hc)
+                                  (let [hsums  (summaries-of h)
+                                        hstore (store-of-context h)
+                                        hewa   (fn [id] (first (collects/collect-events hstore {:includes {:custom (fn [e] (= id (get-in e [:event :event/id])))}})))
+                                        hp     (:period h)
+                                        extras (sort (set/difference hs hc))
+                                        missing (sort (set/difference hc hs))]
+                                    (vec (concat
+                                           [(str "Right for this record — but a report has to be right for any record. Tried on another company's, " (:company h) ":")]
+                                           (for [id (take 2 extras)] (extra-message name id (assoc (get hsums id) :describe? true) (hewa id) want hp))
+                                           (for [id (take 2 missing)] (missing-message name id (assoc (get hsums id) :describe? true) (hewa id) have hp))))))))
+                            (hidden-contexts)))
+          correct? (and right-here? (nil? elsewhere))
           msgs
           (cond
+            elsewhere elsewhere
+
             (empty? (:includes have))
             ["Nothing to collect by yet: add what the events must say to be collected."]
 
@@ -528,7 +633,7 @@
 (defn company-reports
   "The reports a fixed record already holds, run over it."
   [record-key]
-  (when-let [{:keys [company period reports]} (get records record-key)]
+  (when-let [{:keys [company period reports]} (visible-record record-key)]
     (vec (for [k reports
                :let [c (get canonical k)
                      r (preview record-key c)]]
@@ -566,7 +671,7 @@
    theirs, and the words a report is composed from."
   ([record-key] (record-view record-key []))
   ([record-key recorded]
-   (when-let [{:keys [company blurb period events]} (get records record-key)]
+   (when-let [{:keys [company blurb period events]} (visible-record record-key)]
      (merge {:company company :blurb blurb :period period
              :events (mapv event-summary events)
              :reports (into (company-reports record-key) (student-reports record-key recorded))}

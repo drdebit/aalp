@@ -22,10 +22,25 @@ excluding, then a calculation; grading by extension with feedback
 computed from what was collected -- is designed in
 **`SELECTION-AND-CALCULATION.org`**, whose "Order of work" is the
 plan. Step 1 of the list below is done, and so are steps 1 and 2 of
-that note's order of work (next paragraphs). **Next: its step 3,
-grading with hidden records** -- the one gap step 1 left is that
-"the other party is a customer" can be dropped from cost of goods sold
-on Harbor Line's year and still pass.
+that note's order of work (next paragraphs), and step 3 (hidden
+records) after them. **Next: its step 4** -- the exclude clause is
+built, so what remains of it is the single-event pick, the share
+calculations, and the derivation reading the selection; then the five
+adjustments over first-year records.
+
+**Step 3, hidden records, is built (2026-10-09, night).** `records`
+holds `:westbrook` (`:hidden true`): Westbrook Tees' 2026 with a
+purchase return (`Return-001`, goods out to the supplier of their own
+batch, which `readings.clj` now reads as `:supplier`) and a loan in the
+year, beside the same shapes as Harbor Line. A report right on Harbor
+Line is tried on every hidden record; if it collects differently there
+the grade is "Not yet" with the hidden event described in words
+("Return-001 (provides 20 blank tshirts; receives $80) is in your
+report, and Cost of goods sold (accrual) leaves it out: the other
+party, TextileDirect, is a supplier."). Hidden records are never served
+or previewed (`visible-record`). The reading's "What You Will Do" says
+a right report is tried on another company's record the student does
+not see.
 
 **Step 2, ending inventory, is built (2026-10-09, later still).** A
 "on or before the report date" chip (`when`/`to-date`), a

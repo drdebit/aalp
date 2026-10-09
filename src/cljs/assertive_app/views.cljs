@@ -15,7 +15,7 @@
 
 
 ;; Defined with the lessons, used earlier by the drill.
-(declare lesson-title)
+(declare lesson-title process-inline)
 
 (defn je-amount-str
   [amount]
@@ -2535,7 +2535,7 @@
                       (when open?
                         [:tr.dj-rule
                          [:td {:colSpan 4}
-                          [:div.dj-rule-text (:rule-text line)]
+                          [:div.dj-rule-text [process-inline (str (:rule-text line))]]
                           ;; Drill-down: underneath a journal-entry line
                           ;; there are assertions and nothing else. This
                           ;; is the record; the line above is a reading
@@ -2634,7 +2634,7 @@
                   ^{:key (:code nr)}
                   [:div.dj-nr-item
                    [:span.dj-nr-chip (:code nr)]
-                   [:span.dj-nr-text (:text nr)]]))])])))))
+                   [:span.dj-nr-text [process-inline (str (:text nr))]]]))])])))))
 
 (defn costing-step
   "The second act of a sale: cost the goods that went out.
@@ -3080,7 +3080,7 @@
              ;; is the correct one, and the student's nearest match's note
              ;; (depreciation, say, under a service purchase) misled.
              (when-let [note (:note (if missed? (:correct-classification feedback) classification))]
-               [:p.note note])]))
+               [:p.note [process-inline note]])]))
 
         ;; For reverse problems, show the transaction narrative after submission
         (when (and is-reverse? (:narrative problem))
@@ -3096,7 +3096,7 @@
              [:ul
               (for [hint hints]
                 ^{:key hint}
-                [:li hint])]]))
+                [:li [process-inline (str hint)]])]]))
 
         ;; Dual fluency: the entry derived from the student's own
         ;; assertions, rule by rule. A correct sale's cost lines stay
@@ -3435,19 +3435,22 @@
 ;; ==================== Tutorial Components ====================
 
 (defn- process-inline
-  "Process **bold** and *italic* inline markup, returning hiccup elements.
-   Uses re-seq with alternation: bold is matched first (greedy **),
-   then italic (*), then plain text (everything else)."
+  "Process **bold**, *italic* and `code` inline markup, returning hiccup
+   elements. Uses re-seq with alternation: bold is matched first (greedy
+   **), then italic (*), then code (`), then plain text. Backticks used to
+   show as themselves (Matt, 2026-10-09)."
   [text]
-  (if-not (re-find #"\*" text)
+  (if-not (re-find #"[*`]" text)
     text
-    (let [tokens (re-seq #"\*\*([^*]+)\*\*|\*([^*]+)\*|([^*]+)" text)]
+    (let [tokens (re-seq #"\*\*([^*]+)\*\*|\*([^*`]+)\*|`([^`]+)`|([^*`]+|[*`])" text)]
       (into [:span]
             (map-indexed
-             (fn [i [_ bold italic plain]]
+             (fn [i [_ bold italic code plain]]
                (cond
-                 bold [:strong {:key i} bold]
-                 italic [:em {:key i} italic]
+                 ;; A bold or italic phrase may hold `code` of its own.
+                 bold [:strong {:key i} (process-inline bold)]
+                 italic [:em {:key i} (process-inline italic)]
+                 code [:code.inline-code {:key i} code]
                  plain [:span {:key i} plain]))
              tokens)))))
 
@@ -3553,6 +3556,27 @@
             (for [[lidx item] (map-indexed vector (str/split-lines para))]
               ^{:key lidx}
               [:li [process-inline (str/replace item #"^[\-\*]\s+" "")]])]
+
+           ;; A paragraph of several kinds of line -- a heading line,
+           ;; bullets, an arrow conclusion -- rendered line by line. As one
+           ;; arrow box it ran its lines together and was hard to read
+           ;; (Matt, 2026-10-09).
+           (and (str/includes? (str/trim para) "\n")
+                (some #(re-find #"^\s*([\-\*]\s|→)" %) (str/split-lines para)))
+           (let [lines  (remove str/blank? (str/split-lines para))
+                 kind   #(cond (re-find #"^\s*[\-\*]\s" %) :bullet
+                               (re-find #"^\s*→" %) :arrow
+                               :else :text)
+                 groups (partition-by kind lines)]
+             [:div.md-block {:key idx}
+              (for [[gidx g] (map-indexed vector groups)]
+                ^{:key gidx}
+                (case (kind (first g))
+                  :bullet [:ul (for [[lidx item] (map-indexed vector g)]
+                                 ^{:key lidx}
+                                 [:li [process-inline (str/replace item #"^\s*[\-\*]\s+" "")]])]
+                  :arrow  [:p.conclusion [process-inline (str/join " " g)]]
+                  [:p [process-inline (str/join " " g)]]))])
 
            ;; Arrow notation (→)
            (str/includes? para "→")
@@ -3713,7 +3737,7 @@
              [:div.correct-answer
               [:span.answer-label "Correct answer: "]
               [:span.answer-text.correct (:correct-answer result)]]
-             [:p.explanation (:explanation result)]]])]
+             [:p.explanation [process-inline (str (:explanation result))]]]])]
         [:button.quiz-retry-btn
          {:on-click on-retry}
          "Try Again"]])]))

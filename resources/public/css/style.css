@@ -1413,6 +1413,17 @@ header {
     line-height: 1.7;
 }
 
+/* `code` in lesson text: the assertion's own name, set apart. */
+.markdown-content code.inline-code, code.inline-code {
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: .92em;
+    background: #f1efe8;
+    padding: 0 .25em;
+    border-radius: 3px;
+}
+.md-block > p { margin: 0 0 6px; }
+.md-block > ul { margin: 0 0 8px; }
+
 .markdown-content p.conclusion {
     background: #e8f4f8;
     padding: 12px 16px;
@@ -4554,7 +4565,9 @@ header {
    this slot has no other job. */
 .orientation .or-pair-rows {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto max-content;
+    /* The right column wraps too: "Accumulated Depreciation — the printer
+       is carried at less" ran the pane wide (2026-10-08). */
+    grid-template-columns: minmax(0, 3fr) auto minmax(0, 2fr);
     row-gap: 5px;
     margin: 0 0 10px;
 }
@@ -4574,7 +4587,6 @@ header {
     font-weight: 700;
     color: #2f3b44;
     padding-right: 12px;
-    white-space: nowrap;
 }
 .orientation .or-pair-point { margin: 0; font-size: .95em; color: #4a4a44; }
 

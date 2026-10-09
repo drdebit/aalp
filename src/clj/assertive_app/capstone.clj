@@ -253,7 +253,9 @@
    and, for each, whether it says what the transaction says."
   [user-id]
   (let [es (entries user-id)]
-    {:company company :blurb blurb :period period
+    (merge
+     (reporting/vocabulary)
+     {:company company :blurb blurb :period period
      :opening (mapv reporting/event-summary opening)
      ;; The books as the student has kept them, as lines to read.
      :books (mapv reporting/event-summary (books es))
@@ -264,7 +266,7 @@
                      :prior-events (books es id)}
               e (assoc :entry (:assertions e)
                        :corrected? (:corrected? e)
-                       :matches? (:matches? (judge id (:assertions e)))))))}))
+                       :matches? (:matches? (judge id (:assertions e)))))))})))
 
 ;; ---------------------------------------------------------------------------
 ;; Reports over the student's books
@@ -280,13 +282,15 @@
               :counterparty (get-in e [:has-counterparty :name])
               :readings (get rs id)})))))
 
+(defn- context [events]
+  {:events events :company company :period period :store (store-of-books events)})
+
+(def correct-context
+  "The right books as something to report over."
+  (context correct-books))
+
 (defn- figure [events composition]
-  (let [{:keys [spec aggregate]} (reporting/composition->spec period composition)]
-    (when (and aggregate (seq (:includes spec)))
-      (let [r (collects/collect-and-aggregate (store-of-books events) spec aggregate :sum)]
-        {:figure (get-in r [:result :value])
-         :count (:count r)
-         :collected (vec (sort (map (comp :event/id :event) (:events r))))}))))
+  (reporting/collect (context events) composition))
 
 (defn preview
   "A composition over the student's own books."

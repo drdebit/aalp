@@ -21,7 +21,37 @@ is built through -- selection by assertive criteria, including and
 excluding, then a calculation; grading by extension with feedback
 computed from what was collected -- is designed in
 **`SELECTION-AND-CALCULATION.org`**, whose "Order of work" is the
-plan. Step 1 of the list below is done. In short (Matt, 2026-10-09): adjusting entries
+plan. Step 1 of the list below is done, and so is step 1 of that
+note's order of work (next paragraph). **Next: its step 2, ending
+inventory in Reporting.**
+
+**The selection interface's step 1 is built (2026-10-09, later).**
+`reporting.clj` holds the vocabulary (`criteria`, `totals`); a
+composition is `{:includes [chips] :excludes [chips] :calc {:total k}}`,
+a chip `{:kind "flow" :value "goods-out"}`. `collect` runs the include
+chips as one engine pattern and each exclude chip as its own predicate;
+`grade` runs the student's selection and the right one over the record
+and explains the difference event by event, naming the chip that
+decides each, so an equivalent composition is right and a wrong one is
+told which event it let in or left out and why. The composer
+(`report-composer`, views.cljs) is chips with an add menu per clause;
+the "but not" clause appears at the cash-basis step. A right report is
+saved as a `recorded-report` (`:opts {:lesson "reporting" ...}`; the
+Year-2 builder's replay skips those) and read back into the record
+panel as "you", and the margins select from the reports in the record.
+The capstone shares the composer and the grader, graded over its
+correct books. *Known gap:* on Harbor Line's record, leaving "the other
+party is a customer" off cost of goods sold still collects the right
+events, so it passes; hidden records (that note's step 3) are what
+catch it. *Testing:* the tunnel origin `localhost:8081` keeps its own
+session, so sign in there as a test account rather than touching Matt's
+session at `choochoo.dyn.gsu.edu:8081`. A Chrome tab the extension opens
+is hidden, and Reagent renders on animation frames, which a hidden tab
+never gets: set `reagent.impl.batching.next_tick = f => setTimeout(f, 16)`
+in the page and it renders; `assertive_app.api.start_reporting_round_BANG_(9)`
+opens the round for any signed-in account. Test accounts:
+`reporting-1009@test.com` (fresh; holds two recorded reports),
+`walk-0930@test.com` (course complete). In short (Matt, 2026-10-09): adjusting entries
 are double-entry's idea, taught as 2101 teaches them; `reports` stands
 alone — it selects events already in the record and calculates from
 them, never with a `requires`; every reported figure is a selection and

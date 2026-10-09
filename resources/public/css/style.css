@@ -4948,3 +4948,44 @@ header {
   color: #5a7391; font-size: 0.95em;
 }
 .quiz-back-btn:hover { text-decoration: underline; color: #2c3e50; }
+
+/* Reports composed from chips (SELECTION-AND-CALCULATION.org) */
+.rp-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 9px;
+    margin: 0 3px;
+    border-radius: 12px;
+    background: #eef3f8;
+    border: 1px solid #cfdceb;
+    font-size: 0.95em;
+    line-height: 1.7;
+    vertical-align: middle;
+}
+
+.rp-chip.empty {
+    background: #f4efe6;
+    border-color: #e8e2d6;
+    color: #777;
+    font-style: italic;
+}
+
+.rp-composer.read-only .rp-chip {
+    background: #f4efe6;
+    border-color: #e8e2d6;
+}
+
+.rp-add {
+    max-width: 15em;
+    margin: 0 3px;
+}
+
+.rp-events tr.report td {
+    background: #f7f4ec;
+    font-style: italic;
+}
+
+.rp-events tr.report td.rp-id {
+    box-shadow: inset 3px 0 0 #3b4a61;
+}

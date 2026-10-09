@@ -5070,61 +5070,99 @@
 
 ;; ==================== The reporting lesson's round ====================
 ;; One company's year on the left, the task and the composer on the right.
-;; Reports preview freely; each task is checked part by part (reporting.clj).
-
-(def ^:private report-parts
-  {:flow   [["goods-out" "provides goods"] ["money-in" "receives money"]
-            ["money-out" "provides money"] ["goods-in" "receives goods"]]
-   :party  [["" "anyone"] ["customer" "a customer"] ["supplier" "a supplier"]
-            ["owner" "an owner"] ["lender" "a lender"]]
-   :period [["year" "during 2026"] ["all" "on any date in the record"]]
-   :total  [["consideration" "what was received or promised for the goods"]
-            ["money-in" "the money received"] ["money-out" "the money paid"]
-            ["goods-cost" "what the goods cost"]]})
+;; A report is composed from chips -- conditions to collect by, conditions
+;; to leave out by, and a total -- previews freely, and is checked by what
+;; it collects (reporting.clj; SELECTION-AND-CALCULATION.org). The words
+;; come from the server with the record (:criteria, :totals).
 
 (def ^:private report-names
   {:accrual-revenue "Accrual revenue" :cash-revenue "Cash revenue"
    :accrual-cogs "Cost of goods sold (accrual)" :cash-cogs "Cost of goods sold (cash)"})
 
-(defn- part-select [comp k on-change placeholder]
-  [:select.inline-select
-   {:value (or (get comp k) "")
-    :class (when-not (get comp k) "unset")
-    :on-change #(let [v (.. % -target -value)] (on-change k (when (seq v) v)))}
-   (when placeholder [:option {:value ""} placeholder])
-   (for [[v label] (get report-parts k)]
-     ^{:key (str (name k) "-" v)} [:option {:value v} label])])
+(defn- chip-phrase [vocab {:keys [kind value]}]
+  (or (some #(when (and (= kind (:kind %)) (= value (:value %))) (:phrase %)) (:criteria vocab))
+      (str kind " " value)))
+
+(defn- total-phrase [vocab v]
+  (some #(when (= v (:value %)) (:phrase %)) (:totals vocab)))
+
+(defn- without-nth [v i]
+  (vec (concat (take i v) (drop (inc i) v))))
+
+(defn- chip-list
+  "The chips of one clause, removable when set-comp! is given."
+  [vocab comp clause set-comp!]
+  (let [chips (get comp clause)]
+    [:span.rp-chips
+     (if (seq chips)
+       (doall
+         (for [[i c] (map-indexed vector chips)]
+           ^{:key (str (name clause) "-" (:kind c) "-" (:value c))}
+           [:span.rp-chip (chip-phrase vocab c)
+            (when set-comp!
+              [:button.remove-assertion
+               {:title "Remove this condition"
+                :on-click #(set-comp! (update comp clause without-nth i))}
+               "×"])]))
+       (when-not set-comp! [:span.rp-chip.empty "anything"]))]))
+
+(defn- add-chip-menu
+  "The conditions not yet in this clause, grouped by the question they
+   ask. Choosing one adds it."
+  [vocab comp clause set-comp! placeholder]
+  (let [present (set (map (juxt :kind :value) (get comp clause)))]
+    [:select.inline-select.unset.rp-add
+     {:value ""
+      :on-change #(let [v (.. % -target -value)]
+                    (when (seq v)
+                      (let [[k val] (str/split v #"/" 2)]
+                        (set-comp! (update comp clause (fnil conj []) {:kind k :value val})))))}
+     [:option {:value ""} placeholder]
+     (doall
+       (for [g (partition-by :group (:criteria vocab))]
+         ^{:key (:group (first g))}
+         [:optgroup {:label (:group (first g))}
+          (doall
+            (for [c g :when (not (present [(:kind c) (:value c)]))]
+              ^{:key (str (:kind c) "/" (:value c))}
+              [:option {:value (str (:kind c) "/" (:value c))} (:phrase c)]))]))]))
 
 (defn report-composer
-  "A report as a sentence of choices. Read-only when on-change is nil."
-  [comp on-change]
-  (let [change (or on-change (fn [_ _]))
-        ro?    (nil? on-change)]
+  "A report as a sentence of chips. Read-only when set-comp! is nil. The
+   'but not' clause shows once the task allows it, or one is present."
+  [vocab comp set-comp! {:keys [excludes?]}]
+  (let [ro?      (nil? set-comp!)
+        show-ex? (or excludes? (seq (:excludes comp)))
+        total    (get-in comp [:calc :total])]
     [:div.rp-composer {:class (when ro? "read-only")}
-     [:span "Collect events where the business "]
-     [part-select comp :flow change (when-not ro? "does what?")]
-     [:span ", and the other party is "]
-     [part-select comp :party change nil]
-     [:label.rp-paid
-      [:input {:type "checkbox" :checked (true? (:paid comp)) :disabled ro?
-               :on-change #(change :paid (.. % -target -checked))}]
-      " only goods from batches that had been paid for"]
-     [:span ", "]
-     [part-select comp :period change (when-not ro? "when?")]
+     [:span "Collect events where "]
+     [chip-list vocab comp :includes set-comp!]
+     (when-not ro? [add-chip-menu vocab comp :includes set-comp! "add a condition…"])
+     (when show-ex?
+       [:span.rp-clause
+        [:span ", but not where "]
+        [chip-list vocab comp :excludes set-comp!]
+        (when-not ro? [add-chip-menu vocab comp :excludes set-comp! "leave out…"])])
      [:span "; then total "]
-     [part-select comp :total change (when-not ro? "what?")]
+     (if ro?
+       [:span.rp-chip (or (total-phrase vocab total) "?")]
+       [:select.inline-select
+        {:value (or total "") :class (when-not total "unset")
+         :on-change #(let [v (.. % -target -value)]
+                       (set-comp! (assoc-in comp [:calc :total] (when (seq v) v))))}
+        [:option {:value ""} "what?"]
+        (for [{:keys [value phrase]} (:totals vocab)]
+          ^{:key value} [:option {:value value} phrase])])
      [:span "."]]))
 
 (defn- report-mirror
   "The composition as the query it is, read before anyone writes one."
-  [comp]
+  [vocab comp]
   [:pre.rb-dsl
    (str "events\n"
-        (when (:flow comp) (str " |> where(business " (str/replace (:flow comp) "-" " ") ")\n"))
-        (when (seq (:party comp)) (str " |> where(counterparty is " (:party comp) ")\n"))
-        (when (:paid comp) " |> where(batch paid for)\n")
-        (when (= "year" (:period comp)) " |> between(2026-01-01, 2026-12-31)\n")
-        " |> sum(" (or (:total comp) "?") ")")])
+        (apply str (for [c (:includes comp)] (str " |> where(" (chip-phrase vocab c) ")\n")))
+        (apply str (for [c (:excludes comp)] (str " |> exclude(" (chip-phrase vocab c) ")\n")))
+        " |> sum(" (or (total-phrase vocab (get-in comp [:calc :total])) "?") ")")])
 
 (defn- report-figure-line [preview]
   (when preview
@@ -5135,10 +5173,11 @@
        "Collects nothing yet.")]))
 
 (defn- report-record-panel
-  "The company's year. The events the report in front of the student
-   collects are marked."
+  "The company's year, and the reports in it -- the company's own, and
+   the student's once composed right. The events the report in front of
+   the student collects are marked."
   [collected]
-  (let [{:keys [company blurb events]} (:record (state/reporting))
+  (let [{:keys [company blurb events reports]} (:record (state/reporting))
         in? (set collected)]
     [:div.rp-record
      [:h3 (str company " — the record")]
@@ -5149,45 +5188,51 @@
          ^{:key (:id e)}
          [:tr {:class (when (in? (:id e)) "collected")}
           [:td.rp-id (:id e)] [:td.rp-date (:date e)]
-          [:td (:counterparty e)] [:td.rp-says (:says e)]])]]]))
+          [:td (:counterparty e)] [:td.rp-says (:says e)]])
+       (for [r reports]
+         ^{:key (:id r)}
+         [:tr.report
+          [:td.rp-id (:id r)] [:td.rp-date (:date r)]
+          [:td (:by r)] [:td.rp-says (:says r)]])]]]))
 
 (defn- grade-panel [grade]
   (when grade
     [:div.rp-grade {:class (if (:correct? grade) "right" "wrong")}
      [:p [:strong (if (:correct? grade) "Composed right." "Not yet.")]
       (when (:figure grade) (str " It comes to " (format-currency (:figure grade)) "."))]
-     (when-not (:correct? grade)
-       [:ul (for [p (:parts grade) :when (not (:ok? p))]
-              ^{:key (str (:part p))} [:li (:message p)])])]))
+     (when (seq (:messages grade))
+       [:ul (for [[i m] (map-indexed vector (:messages grade))]
+              ^{:key i} [:li m])])]))
 
 (defn- compose-task
-  "A report to compose, checked part by part."
-  [task heading prompt]
-  (let [{:keys [composition previews grades]} (state/reporting)
+  "A report to compose, checked by what it collects."
+  [task heading prompt {:keys [excludes?]}]
+  (let [{:keys [composition previews grades record]} (state/reporting)
         grade (get grades task)
-        on-change (fn [k v]
-                    (state/update-reporting-composition! k v)
+        set-comp! (fn [c]
+                    (state/set-reporting-composition! c)
                     (state/set-reporting-grade! task nil)
-                    (api/preview-report! task (assoc (:composition (state/reporting)) k v)))]
+                    (api/preview-report! task c))]
     [:div.rp-task
      [:h3 heading]
      [:p prompt]
-     [report-composer composition on-change]
-     [report-mirror composition]
+     [report-composer record composition set-comp! {:excludes? excludes?}]
+     [report-mirror record composition]
      [report-figure-line (get previews task)]
      [grade-panel grade]
      [:div.checkin-actions
       (if (:correct? grade)
-        [:button.primary {:on-click #(let [done (:composition (state/reporting))]
-                                       (state/set-reporting-preview! [:done task] done)
-                                       (state/next-reporting-step!))}
-         "Next →"]
+        [:button.primary {:on-click #(state/next-reporting-step!)} "Next →"]
         [:button.primary {:on-click #(api/grade-report! task {:composition composition})
-                          :disabled (not (and (:flow composition) (:total composition)))}
+                          :disabled (not (and (seq (:includes composition))
+                                              (get-in composition [:calc :total])))}
          "Check this report"])]]))
 
-(defn- margin-row [margin label]
-  (let [{:keys [margins grades]} (state/reporting)
+(defn- margin-row
+  "A gross profit as the difference of two reports in the record."
+  [margin label]
+  (let [{:keys [margins grades record]} (state/reporting)
+        reports (:reports record)
         [a b] [(get-in margins [margin :first]) (get-in margins [margin :second])]
         sel (fn [slot v]
               [:select.inline-select
@@ -5195,7 +5240,9 @@
                 :on-change #(do (state/set-reporting-margin! margin slot (keyword (.. % -target -value)))
                                 (state/set-reporting-grade! margin nil))}
                [:option {:value ""} "which report?"]
-               (for [[k n] report-names] ^{:key (name k)} [:option {:value (name k)} n])])]
+               (for [r reports]
+                 ^{:key (:id r)}
+                 [:option {:value (:key r)} (str (:name r) (when (= "you" (:by r)) " (yours)"))])])]
     [:div.rp-margin
      [:p [:strong label] " = " [sel :first (some-> a name)] " − " [sel :second (some-> b name)]
       " " [:button.secondary {:on-click #(api/grade-report! margin {:inputs [a b]})
@@ -5205,15 +5252,18 @@
 (defn reporting-view
   "The reporting lesson's round."
   [level]
-  (let [{:keys [step previews]} (state/reporting)
+  (let [{:keys [step previews record reading]} (state/reporting)
+        reports   (:reports record)
+        exemplars (remove #(= "you" (:by %)) reports)
+        showing   (or reading "accrual-revenue")
         collected (case step
-                    :read (:collected (get previews (or (:reading (state/reporting)) :accrual-revenue)))
+                    :read (:collected (first (filter #(= (:key %) showing) reports)))
                     (:accrual-cogs :cash-cogs) (:collected (get previews step))
                     nil)]
     [:div.drill-container
      [:div.drill-header
       [:h2 "Reporting practice"]
-      [:p.drill-sandbox-note "One company's year, the same for everyone. Reports preview freely as you build them; each one is checked part by part — which events, whose, what condition, when, what is totaled — not just by its figure."]]
+      [:p.drill-sandbox-note "One company's year, the same for everyone. Reports preview freely as you build them; each one is checked by what it collects and what it totals, not by its figure alone."]]
      [:div.two-column-layout.rp-layout
       [report-record-panel collected]
       [:div.rp-side
@@ -5221,35 +5271,36 @@
          :read
          [:div.rp-task
           [:h3 "Read two reports"]
-          [:p "Both ask what Harbor Line earned from selling goods in 2026. Click one to see which events it collects."]
+          [:p "Both ask what Harbor Line earned from selling goods in 2026. They are in its record, dated the last day of the year. Click one to see which events it collects."]
           (doall
-            (for [[k comp] [[:accrual-revenue {:flow "goods-out" :party "customer" :period "year" :total "consideration"}]
-                            [:cash-revenue {:flow "money-in" :party "customer" :period "year" :total "money-in"}]]]
-              ^{:key (name k)}
-              [:div.rp-exemplar {:class (when (= k (or (:reading (state/reporting)) :accrual-revenue)) "showing")
-                                 :on-click #(swap! state/app-state assoc-in [:reporting :reading] k)}
-               [:h4 (report-names k)]
-               [report-composer comp nil]
-               [report-figure-line (get previews k)]]))
+            (for [r exemplars]
+              ^{:key (:id r)}
+              [:div.rp-exemplar {:class (when (= (:key r) showing) "showing")
+                                 :on-click #(swap! state/app-state assoc-in [:reporting :reading] (:key r))}
+               [:h4 (:name r)]
+               [report-composer record (:composition r) nil {}]
+               [:p.rp-figure (str "Comes to " (format-currency (:figure r)) ", from " (:count r) " events.")]]))
           [:p.checkin-point "The November credit sale to Harbor Youth League is in the first and not the second; January's collection from Ridgeway, for a sale made in 2025, is in the second and not the first."]
           [:div.checkin-actions
-           [:button.primary {:on-click #(do (state/set-reporting-composition! {})
+           [:button.primary {:on-click #(do (state/set-reporting-composition! {:includes [] :excludes [] :calc {}})
                                             (state/next-reporting-step!))}
             "Now compose one →"]]]
 
          :accrual-cogs
          [compose-task :accrual-cogs "Compose: cost of goods sold, accrual basis"
-          "From blank. What did the goods Harbor Line sold in 2026 cost it? On the accrual basis the cost counts when the goods go out, paid for or not."]
+          "From blank. What did the goods Harbor Line sold in 2026 cost it? On the accrual basis the cost counts when the goods go out, paid for or not. Add the conditions an event must meet to be collected, then say what to total."
+          {}]
 
          :cash-cogs
          [compose-task :cash-cogs "Change it: cost of goods sold, tax cash basis"
-          "Your accrual report is below. Under the tax cash method a cost counts in the year the goods are sold only if they have been paid for — the later of the two. Change one thing."]
+          "Your accrual report is below. Under the tax cash method a cost counts in the year the goods are sold only if they have been paid for — the later of the two. Change one thing: a report can also say what to leave out."
+          {:excludes? true}]
 
          :gross-margin
          (let [grades (:grades (state/reporting))]
            [:div.rp-task
             [:h3 "Build both gross profits"]
-            [:p "Gross margin is revenue less the cost of the goods sold, on the same basis. Build each from the reports."]
+            [:p "Gross margin is revenue less the cost of the goods sold, on the same basis. Build each from the reports now in the record — the company's two, and your two."]
             [margin-row :accrual-gross-margin "Gross margin (accrual)"]
             [margin-row :cash-gross-margin "Gross margin (cash)"]
             (when (and (:correct? (:accrual-gross-margin grades)) (:correct? (:cash-gross-margin grades)))
@@ -5259,7 +5310,7 @@
          :done
          [:div.rp-task
           [:h3 "The year, reported two ways"]
-          [:p "You composed the cost of goods sold from blank, changed its basis with one condition, and built both gross profits from your reports. Same events; two true answers to two different questions."]
+          [:p "You composed the cost of goods sold from blank, changed its basis by leaving one thing out, and built both gross profits from reports in the record — two of them yours. Same events; two true answers to two different questions."]
           [:div.checkin-actions
            [:button.primary.drill-pass-btn
             {:on-click #(do (api/complete-tutorial! level)
@@ -5334,16 +5385,17 @@
        [:p "They agree: every entry this report reads says what happened."])]))
 
 (defn- capstone-report-task [task label prompt]
-  (let [{:keys [composition previews grades]} (state/capstone)
+  (let [{:keys [composition previews grades data]} (state/capstone)
         grade (get grades task)
-        on-change (fn [k v]
-                    (state/update-capstone-composition! k v)
+        set-comp! (fn [c]
+                    (state/set-capstone-composition! c)
                     (state/set-capstone-grade! task nil)
-                    (api/capstone-preview! task (assoc (:composition (state/capstone)) k v)))]
+                    (api/capstone-preview! task c))]
     [:div.rp-task
      [:h3 label]
      [:p prompt]
-     [report-composer composition on-change]
+     [report-composer data composition set-comp! {:excludes? true}]
+     [report-mirror data composition]
      [report-figure-line (get previews task)]
      [grade-panel grade]
      (when (:correct? grade) [capstone-compare (:compare grade)])
@@ -5356,7 +5408,8 @@
                                          (state/set-capstone-task! :gross-margin)))}
          "Next →"]
         [:button.primary {:on-click #(api/capstone-grade! task {:composition composition})
-                          :disabled (not (and (:flow composition) (:total composition)))}
+                          :disabled (not (and (seq (:includes composition))
+                                              (get-in composition [:calc :total])))}
          "Check this report"])]]))
 
 (defn- capstone-margin-row [margin label]

@@ -1137,7 +1137,7 @@ Mixing the bases gives a number that means nothing."}
 3. **Change** it into the cash-basis cost of goods sold.
 4. **Build** both gross profits from your reports.
 
-Each report is checked **part by part** — which events, whose, what condition, when, what is totaled — not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault."}]
+Each report is checked by **what it collects** — the events it lets in, and the ones it leaves out — and by what it totals, not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault. When a report is right, it goes into the record beside the company's own, dated the last day of the year: a report is itself something asserted."}]
 
     :quiz
     [{:id :l9-q1

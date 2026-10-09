@@ -52,7 +52,9 @@
   [user]
   (let [uid (:db/id user)
         s (engine/store-of (simulation/record-events uid))]
-    (doseq [r (simulation/get-reports uid)]
+    ;; The reporting lesson's reports are over a fixed record, not this
+    ;; one, and are read back by that lesson (reporting/student-reports).
+    (doseq [r (remove #(get-in % [:opts :lesson]) (simulation/get-reports uid))]
       (engine/replay-report s r))
     s))
 
@@ -267,10 +269,12 @@
   ;; Compositions over a fixed company record: preview freely, graded by
   ;; how the report is composed (reporting.clj).
 
-  (GET "/api/lessons/reporting/record" [record]
-    (if-let [v (reporting/record-view (keyword (or record "harbor-line")))]
-      (response/response v)
-      {:status 404 :body {:error "No such record"}}))
+  (GET "/api/lessons/reporting/record" {params :params :as request}
+    (let [record (keyword (or (:record params) "harbor-line"))
+          mine   (if-let [user (:user request)] (simulation/get-reports (:db/id user)) [])]
+      (if-let [v (reporting/record-view record mine)]
+        (response/response v)
+        {:status 404 :body {:error "No such record"}})))
 
   (POST "/api/lessons/reporting/preview" {body :body}
     (response/response
@@ -282,16 +286,21 @@
           task   (keyword (:task body))
           result (if (contains? reporting/gross-margins task)
                    (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
-                   (reporting/grade-composition task (:composition body)))
+                   (reporting/grade-composition record task (:composition body)))
           figure (if (contains? reporting/gross-margins task)
                    (let [[a b] (map keyword (:inputs body))
                          fa (reporting/report-figure record a)
                          fb (reporting/report-figure record b)]
                      (when (and fa fb) (- fa fb)))
-                   (:figure (reporting/preview record (:composition body))))]
+                   (:figure result))]
       (if result
         (do
           (when-let [user (:user request)]
+            ;; A report composed right is an event the student asserted:
+            ;; it goes into the record beside the company's own.
+            (when (and (:correct? result) (not (contains? reporting/gross-margins task)))
+              (simulation/save-report! (:db/id user)
+                (reporting/recorded-report (:db/id user) record task (:composition body) result)))
             (progress/record-attempt!
               {:user-id (:db/id user)
                :problem-id (str "report-" (name task))
@@ -301,7 +310,13 @@
                :selected-assertions (:composition body)
                :correct (:correct? result)
                :feedback-status (if (:correct? result) "correct" "incorrect")}))
-          (response/response (assoc result :figure figure)))
+          ;; A gross profit built the wrong way round comes out negative,
+          ;; and the client's currency format drops the sign: say nothing
+          ;; about its figure until it is right.
+          (response/response (assoc result :figure (if (and (contains? reporting/gross-margins task)
+                                                            (not (:correct? result)))
+                                                     nil
+                                                     figure))))
         {:status 400 :body {:error "Unknown task"}})))
 
   ;; ==================== The capstone's own year ====================
@@ -349,7 +364,10 @@
             margin? (contains? reporting/gross-margins task)
             result (if margin?
                      (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
-                     (reporting/grade-composition task (:composition body)))
+                     ;; Composed right means: collects the right events of
+                     ;; the right books. What it comes to over the student's
+                     ;; own books is the comparison below.
+                     (reporting/grade task (:composition body) capstone/correct-context))
             compare (if margin?
                       (let [[a b] (map keyword (:inputs body))
                             ca (capstone/compare-report uid a)

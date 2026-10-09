@@ -385,17 +385,17 @@
      :headers (auth-headers)
      :response-format :json
      :keywords? true
-     :handler #(state/set-reporting-grade! task %)
+     ;; A report composed right has gone into the record: read it back.
+     :handler #(do (state/set-reporting-grade! task %)
+                   (when (:correct? %) (fetch-reporting-record!)))
      :error-handler (make-error-handler {:message "Could not check the report"})}))
 
 (defn start-reporting-round!
-  "Open the reporting lesson's round: the record, and the two revenue
-   reports to read, already built."
+  "Open the reporting lesson's round: the record, with the company's two
+   revenue reports in it to read."
   [level]
   (state/start-reporting! level)
-  (fetch-reporting-record!)
-  (preview-report! :accrual-revenue {:flow "goods-out" :party "customer" :period "year" :total "consideration"})
-  (preview-report! :cash-revenue {:flow "money-in" :party "customer" :period "year" :total "money-in"}))
+  (fetch-reporting-record!))
 
 ;; ==================== The capstone's own year ====================
 

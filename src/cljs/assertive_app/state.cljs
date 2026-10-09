@@ -522,8 +522,13 @@
 (defn reporting [] (:reporting @app-state))
 (defn reporting-active? [] (some? (:reporting @app-state)))
 
+(def empty-composition
+  "A report with nothing in it yet: conditions to collect by, conditions
+   to leave out by, a total."
+  {:includes [] :excludes [] :calc {}})
+
 (defn start-reporting! [level]
-  (swap! app-state assoc :reporting {:level level :step :read :composition {}
+  (swap! app-state assoc :reporting {:level level :step :read :composition empty-composition
                                      :previews {} :grades {} :margins {}}))
 
 (defn set-reporting-record! [record]
@@ -531,9 +536,6 @@
 
 (defn set-reporting-composition! [c]
   (swap! app-state assoc-in [:reporting :composition] c))
-
-(defn update-reporting-composition! [k v]
-  (swap! app-state update-in [:reporting :composition] assoc k v))
 
 (defn set-reporting-preview! [key preview]
   (swap! app-state assoc-in [:reporting :previews key] preview))
@@ -563,7 +565,7 @@
 
 (defn start-capstone! [level]
   (swap! app-state assoc :capstone {:level level :phase :record
-                                    :previews {} :grades {} :margins {} :composition {}}))
+                                    :previews {} :grades {} :margins {} :composition empty-composition}))
 
 (defn set-capstone-data! [data]
   (swap! app-state assoc-in [:capstone :data] data))
@@ -578,10 +580,10 @@
   (swap! app-state assoc-in [:capstone :verdict] verdict))
 
 (defn set-capstone-task! [task]
-  (swap! app-state update :capstone assoc :task task :composition {}))
+  (swap! app-state update :capstone assoc :task task :composition empty-composition))
 
-(defn update-capstone-composition! [k v]
-  (swap! app-state update-in [:capstone :composition] assoc k v))
+(defn set-capstone-composition! [c]
+  (swap! app-state assoc-in [:capstone :composition] c))
 
 (defn set-capstone-preview! [key preview]
   (swap! app-state assoc-in [:capstone :previews key] preview))

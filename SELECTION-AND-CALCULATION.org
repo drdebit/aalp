@@ -278,7 +278,11 @@ reach the same figures, not that the behavior is the same.
 1. The criteria vocabulary and the flat-map / full-form shape of a
    recorded report, with the Reporting composer rewritten over them as
    "What changes in Reporting" says; the walkthrough of 2026-09-29
-   reaches the same figures.
+   reaches the same figures. /Done 2026-10-09/ (HANDOFF.md, "The
+   selection interface's step 1 is built"). The full form is the flat
+   =:reports= map with =:collects= on it; the adapter does not yet turn
+   it into the research vocabulary's =collects= / =includes= /
+   =excludes=, which can come with step 7.
 2. Ending inventory in Reporting.
 3. Extension-based grading with diff feedback, over Reporting's four
    reports first, where the canonical answers are known and tested.

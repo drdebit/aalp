@@ -126,8 +126,11 @@
         then (trial-balance events :as-posted)
         r    (readings events)
         ;; The money positions, then the goods -- valued, not counted.
+        ;; Goods ready to sell post to Finished Goods or Merchandise
+        ;; Inventory by where they came from; the reading is one position.
         held (fn [pos] {:figure (chain/position-accounts pos)
-                        :entries (get bal (chain/position-accounts pos) 0M)
+                        :entries (+ (get bal (chain/position-accounts pos) 0M)
+                                    (if (= :finished-goods pos) (get bal "Merchandise Inventory" 0M) 0M))
                         :readings (get (:valued r) pos 0M)})
         rows (into [{:figure "Cash"                :entries (total bal cash-accounts)        :readings (:cash r)}
                     {:figure "Accounts Payable"    :entries (- (total bal payable-accounts)) :readings (:payable r)}

@@ -331,7 +331,7 @@
     ;; liability, cleared as it is earned. It debited "Unearned Revenue",
     ;; a second account, so the books carried the advance in one and its
     ;; earning in another.
-    :line {:side :debit :account "Deferred Revenue (Liability)"}
+    :line {:side :debit :account "Unearned Revenue"}
     :amount :reported
     :text "Part of an advance has been earned: the goods or service it paid for have now been provided. The business owes that much less."}
    {:id :advance-revenue
@@ -417,7 +417,7 @@
            :params {:unit "physical-unit"}}
     :position :finished-goods
     :context {:all-of [{:assertion :has-counterparty}]}
-    :line {:side :credit :account "Revenue"}
+    :line {:side :credit :account "Sales Revenue"}
     :amount :monetary
     :entry-label "Revenue Recognition"
     :text "the rulebook: providing finished goods to a counterparty is a sale. Revenue is credited for what the counterparty gives in return — or, on credit, for what they are bound to give: the `requires` is what fixes the amount, and what makes goods going out a sale rather than a gift. How likely they are to pay does not change it. Notice: 'Revenue' is a label applied to this PATTERN of assertions, not a fact the business observed."}
@@ -437,7 +437,8 @@
            :params {:unit "physical-unit"}}
     :position :finished-goods
     :context {:all-of [{:assertion :has-counterparty}]}
-    :line {:side :credit :account "Finished Goods Inventory"}
+    ;; Finished Goods or Merchandise Inventory, by where the goods came from.
+    :line {:side :credit :account :position}
     :amount :cost-basis
     :entry-label "Cost Recognition"
     :text "The finished goods asset decreases by the same cost."}
@@ -535,9 +536,9 @@
     :when {:assertion :requires
            :params {:action "provides" :unit "physical-unit"}}
     :context {:all-of [{:assertion :receives :params {:unit "monetary-unit"}}]}
-    :line {:side :credit :account "Deferred Revenue (Liability)"}
+    :line {:side :credit :account "Unearned Revenue"}
     :amount :monetary
-    :text "The business took the money first and still owes the goods. Until the goods are provided, the cash is a liability — Deferred Revenue — not earned revenue."}
+    :text "The business took the money first and still owes the goods. Until the goods are provided, the cash is a liability — Unearned Revenue — not earned revenue."}
 
    ;; -------- Production -----------------------------------------------
    {:id :production-out
@@ -977,13 +978,17 @@
   (if (= :prepaid-service account)
     (prepaid-expense-account context)
   (if (= :position account)
-    (or (some-> (resolve-position flow context)
-                (chain/position-account
-                  (chain/flow-item flow)
-                  (:item-kinds context)
-                  (chain/item-denomination
-                    (concat (:events context) [(:current context)])
-                    (chain/flow-item flow))))
+    (or (when-let [pos (resolve-position flow context)]
+          (if (= :finished-goods pos)
+            (chain/ready-goods-account (concat (:events context) [(:current context)])
+                                       (chain/flow-item flow))
+            (chain/position-account
+              pos
+              (chain/flow-item flow)
+              (:item-kinds context)
+              (chain/item-denomination
+                (concat (:events context) [(:current context)])
+                (chain/flow-item flow)))))
         ;; Not an account. The record has not said what this thing is,
         ;; and naming it something plausible would paper over exactly the
         ;; gap the student needs to see.

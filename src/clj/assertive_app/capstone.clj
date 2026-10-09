@@ -34,7 +34,7 @@
 ;; cost of goods.
 ;;
 ;; With every entry right -- accrual: revenue 2,870, cost of goods sold
-;; 1,420, gross margin 1,450. Cash: revenue 2,350, cost 940, margin 1,410.
+;; 1,420, gross profit 1,450. Cash: revenue 2,350, cost 940, margin 1,410.
 
 (def company "Campus Threads")
 

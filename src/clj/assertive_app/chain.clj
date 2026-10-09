@@ -298,7 +298,7 @@
   {:raw-materials   "Raw Materials Inventory"
    :work-in-process "Work in Process"
    :finished-goods  "Finished Goods Inventory"
-   :capital         "Equipment (Fixed Asset)"
+   :capital         "Equipment"
    :service         "Service Cost"})
 
 (defn item-denomination
@@ -336,13 +336,27 @@
      "Design (Intangible Asset)"
      (position-accounts position))))
 
+(defn ready-goods-account
+  "Goods ready to sell are named by where they came from. What the
+   business made -- or owns something to make -- is Finished Goods
+   Inventory; what it bought to sell as it stands is Merchandise
+   Inventory, as ACCT 2101 names it (Matt, 2026-10-08). Same position,
+   same costing: only the label differs."
+  [events item]
+  (let [r (get (item-roles events) (some-> item name))]
+    (if (or (:created r) (:producible r))
+      "Finished Goods Inventory"
+      "Merchandise Inventory")))
+
 (defn inventory-account
   "The account an item's movements hit, given the chain and the firm's
    catalog. nil when neither determines a position."
   ([events item] (inventory-account events item nil))
   ([events item item-kinds]
-   (some-> (inventory-position events item item-kinds)
-           (position-account item item-kinds))))
+   (when-let [pos (inventory-position events item item-kinds)]
+     (if (= :finished-goods pos)
+       (ready-goods-account events item)
+       (position-account pos item item-kinds)))))
 
 ;; ---------------------------------------------------------------------------
 ;; What SP actually has

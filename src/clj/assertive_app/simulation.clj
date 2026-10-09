@@ -213,7 +213,7 @@
 
    :declare-dividend
    {:label "Declare Dividend"
-    :description "Board declares a cash dividend to shareholders"
+    :description "Board declares a cash dividend to stockholders"
     :level 6
     :template-key :declare-dividend
     :prerequisites {:min-retained-earnings 100}
@@ -1115,10 +1115,10 @@
    "Notes Receivable" {:type :asset :statement :balance-sheet :normal :debit}
    "Interest Receivable" {:type :asset :statement :balance-sheet :normal :debit}
    "Raw Materials Inventory" {:type :asset :statement :balance-sheet :normal :debit}
+   "Merchandise Inventory" {:type :asset :statement :balance-sheet :normal :debit}
    "Finished Goods Inventory" {:type :asset :statement :balance-sheet :normal :debit}
    "Work in Process" {:type :asset :statement :balance-sheet :normal :debit}
    "Equipment" {:type :asset :statement :balance-sheet :normal :debit}
-   "Equipment (Fixed Asset)" {:type :asset :statement :balance-sheet :normal :debit}
    "Prepaid Expense" {:type :asset :statement :balance-sheet :normal :debit}
    "Prepaid Expense (Asset)" {:type :asset :statement :balance-sheet :normal :debit}
    "Prepaid Insurance" {:type :asset :statement :balance-sheet :normal :debit}
@@ -1133,13 +1133,13 @@
    "Wages Payable" {:type :liability :statement :balance-sheet :normal :credit}
    "Interest Payable" {:type :liability :statement :balance-sheet :normal :credit}
    "Dividends Payable" {:type :liability :statement :balance-sheet :normal :credit}
-   "Deferred Revenue (Liability)" {:type :liability :statement :balance-sheet :normal :credit}
    "Unearned Revenue" {:type :liability :statement :balance-sheet :normal :credit}
    ;; Equity (Balance Sheet)
    "Common Stock" {:type :equity :statement :balance-sheet :normal :credit}
    "Retained Earnings" {:type :equity :statement :balance-sheet :normal :credit}
    "Owner's Drawing" {:type :equity :statement :balance-sheet :normal :debit}
    ;; Revenue (Income Statement)
+   "Sales Revenue" {:type :revenue :statement :income-statement :normal :credit}
    "Revenue" {:type :revenue :statement :income-statement :normal :credit}
    "Service Revenue" {:type :revenue :statement :income-statement :normal :credit}
    "Interest Revenue" {:type :revenue :statement :income-statement :normal :credit}

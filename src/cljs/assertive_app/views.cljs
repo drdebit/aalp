@@ -151,12 +151,12 @@
   "Maps accounts to the assertions that typically link to them."
   {"Cash" {:debit "Receives (monetary-unit)" :credit "Provides (monetary-unit)"}
    "Inventory" {:debit "Receives (physical-unit, inventory)"}
-   "Equipment (Fixed Asset)" {:debit "Receives (physical-unit, equipment)"}
+   "Equipment" {:debit "Receives (physical-unit, equipment)"}
    "Accounts Payable" {:credit "Requires (provides monetary-unit)"}
    "Accounts Receivable" {:debit "Requires (receives monetary-unit)"}
    "Revenue" {:credit "Provides (physical-unit)"}
    "Service Revenue" {:credit "Provides (physical-unit)"}
-   "Deferred Revenue (Liability)" {:credit "Requires (provides physical-unit)"}
+   "Unearned Revenue" {:credit "Requires (provides physical-unit)"}
    "Prepaid Expense" {:debit "Requires (receives service-unit)"}
    "Prepaid Expense (Asset)" {:debit "Requires (receives service-unit)"}
    "Raw Materials" {:debit "Receives (physical-unit)"}
@@ -913,7 +913,7 @@
                            (map :assertions (state/ledger)))
         from-chain (map #(get-in % [:has-counterparty :name]) events)
         ;; A template may name the other party outright -- a dividend is
-        ;; paid to \"Shareholders\" -- with no variable behind it. The
+        ;; paid to \"Stockholders\" -- with no variable behind it. The
         ;; name is not what is assessed, so offering it costs nothing
         ;; and leaving it out made the problem unanswerable.
         from-key   [(get-in problem [:correct-assertions :has-counterparty :name])]]
@@ -5248,7 +5248,7 @@
          :gross-margin
          (let [grades (:grades (state/reporting))]
            [:div.rp-task
-            [:h3 "Build both gross margins"]
+            [:h3 "Build both gross profits"]
             [:p "Gross margin is revenue less the cost of the goods sold, on the same basis. Build each from the reports."]
             [margin-row :accrual-gross-margin "Gross margin (accrual)"]
             [margin-row :cash-gross-margin "Gross margin (cash)"]
@@ -5259,7 +5259,7 @@
          :done
          [:div.rp-task
           [:h3 "The year, reported two ways"]
-          [:p "You composed the cost of goods sold from blank, changed its basis with one condition, and built both gross margins from your reports. Same events; two true answers to two different questions."]
+          [:p "You composed the cost of goods sold from blank, changed its basis with one condition, and built both gross profits from your reports. Same events; two true answers to two different questions."]
           [:div.checkin-actions
            [:button.primary.drill-pass-btn
             {:on-click #(do (api/complete-tutorial! level)
@@ -5428,7 +5428,7 @@
         [:div.rp-side
          (if (= :gross-margin task)
            [:div.rp-task
-            [:h3 "Both gross margins, from your reports"]
+            [:h3 "Both gross profits, from your reports"]
             [capstone-margin-row :accrual-gross-margin "Gross margin (accrual)"]
             [capstone-margin-row :cash-gross-margin "Gross margin (cash)"]
             (when (and (:correct? (:accrual-gross-margin grades)) (:correct? (:cash-gross-margin grades)))

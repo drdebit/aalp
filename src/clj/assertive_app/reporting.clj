@@ -29,7 +29,7 @@
 ;; owner's draw are money out that is not the cost of goods.
 ;;
 ;; 2026 figures -- accrual: revenue 2,160, cost of goods sold 1,180, gross
-;; margin 980. Cash: revenue 2,110, cost of goods sold 640, gross margin
+;; margin 980. Cash: revenue 2,110, cost of goods sold 640, gross profit
 ;; 1,470. The tests check the compositions come to these.
 
 (def ^:private merchandise
@@ -171,7 +171,7 @@
    :cash-cogs       {:flow "goods-out" :party "customer" :paid true :period "year" :total "goods-cost"}})
 
 (def gross-margins
-  "Each gross margin, as the two reports it takes the difference of."
+  "Each gross profit, as the two reports it takes the difference of."
   {:accrual-gross-margin [:accrual-revenue :accrual-cogs]
    :cash-gross-margin    [:cash-revenue :cash-cogs]})
 
@@ -221,7 +221,7 @@
       {:correct? (every? :ok? parts) :parts parts})))
 
 (defn grade-gross-margin
-  "A gross margin is right when it takes the right revenue less the right
+  "A gross profit is right when it takes the right revenue less the right
    cost, in that order."
   [margin [first-report second-report]]
   (when-let [[rev cogs] (get gross-margins margin)]
@@ -230,7 +230,7 @@
       {:correct? (and ok-rev ok-cost)
        :parts [(cond-> {:part :revenue :ok? ok-rev}
                  (not ok-rev) (assoc :message (if (= first-report cogs)
-                                                "Revenue comes first: gross margin is revenue less the cost of what was sold."
+                                                "Revenue comes first: gross profit is revenue less the cost of what was sold."
                                                 "Use the revenue report on the same basis as the cost.")))
                (cond-> {:part :cost :ok? ok-cost}
                  (not ok-cost) (assoc :message "Take away the cost of goods sold on the same basis as the revenue."))]})))

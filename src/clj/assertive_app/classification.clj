@@ -75,7 +75,7 @@
    :t-shirt-printer
    {:label "T-shirt Printer"
     :description "equipment enabling production"
-    :account "Equipment (Fixed Asset)"
+    :account "Equipment"
     :account-type :asset
     :enables [:capability]
     :available-for #{:receives}
@@ -103,7 +103,7 @@
    {:label "Printed T-Shirts"
     :description "finished goods for sale"
     :account "Finished Goods Inventory"
-    :provides-account "Revenue"
+    :provides-account "Sales Revenue"
     :account-type :asset
     :enables [:sale]
     :available-for #{:provides :receives}
@@ -1289,52 +1289,52 @@
    Progressively unlocks more complex accounts as students advance."
   {0 {:asset ["Cash" "Raw Materials Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable"]
-      :revenue ["Revenue"]
+      :revenue ["Sales Revenue" "Revenue"]
       :expense ["Cost of Goods Sold" "Expense"]}
 
    1 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable"]
-      :revenue ["Revenue"]
+      :revenue ["Sales Revenue" "Revenue"]
       :expense ["Cost of Goods Sold" "Expense"]}
 
    2 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Finished Goods Inventory" "Equipment" "Prepaid Expense"]
+              "Finished Goods Inventory" "Merchandise Inventory" "Equipment" "Prepaid Expense"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable"]
-      :revenue ["Revenue" "Service Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
 
    3 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Finished Goods Inventory" "Equipment" "Prepaid Expense"]
-      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
-      :revenue ["Revenue" "Service Revenue"]
+              "Finished Goods Inventory" "Merchandise Inventory" "Equipment" "Prepaid Expense"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Unearned Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense"]}
 
    4 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
-      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Deferred Revenue (Liability)"]
-      :revenue ["Revenue" "Service Revenue"]
+              "Finished Goods Inventory" "Merchandise Inventory" "Equipment" "Prepaid Expense" "Design Asset" "Intangible Asset"]
+      :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Unearned Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Income Tax Expense" "Licenses Expense"
                 "Reporting Expense" "Organization Costs"]}
 
    5 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Finished Goods Inventory" "Merchandise Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
               "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
-                  "Deferred Revenue (Liability)" "Unearned Revenue"]
-      :revenue ["Revenue" "Service Revenue"]
+                  "Unearned Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
                 "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}
 
    6 {:asset ["Cash" "Accounts Receivable" "Raw Materials Inventory" "Finished Goods Inventory"
-              "Finished Goods Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
+              "Finished Goods Inventory" "Merchandise Inventory" "Equipment" "Prepaid Expense" "Prepaid Insurance"
               "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
-                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+                  "Dividends Payable" "Unearned Revenue"]
       :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
-      :revenue ["Revenue" "Service Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
                 "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}
@@ -1345,9 +1345,9 @@
               "Equipment" "Prepaid Expense" "Prepaid Insurance" "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
-                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+                  "Dividends Payable" "Unearned Revenue"]
       :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
-      :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
                 "Income Tax Expense" "Licenses Expense" "Reporting Expense" "Organization Costs"]}
@@ -1357,9 +1357,9 @@
               "Equipment" "Prepaid Expense" "Prepaid Insurance" "Design Asset" "Intangible Asset"]
       :contra-asset ["Accumulated Depreciation" "Allowance for Doubtful Accounts"]
       :liability ["Accounts Payable" "Notes Payable" "Wages Payable" "Interest Payable"
-                  "Dividends Payable" "Deferred Revenue (Liability)" "Unearned Revenue"]
+                  "Dividends Payable" "Unearned Revenue"]
       :equity ["Common Stock" "Retained Earnings" "Owner's Drawing"]
-      :revenue ["Revenue" "Service Revenue" "Interest Revenue"]
+      :revenue ["Sales Revenue" "Revenue" "Service Revenue" "Interest Revenue"]
       :expense ["Cost of Goods Sold" "Expense" "Wage Expense" "Wages Expense"
                 "Depreciation Expense" "Bad Debt Expense" "Interest Expense" "Insurance Expense"
                 "Income Tax Expense" "Licenses Expense" "Reporting Expense"]}})
@@ -1511,7 +1511,7 @@
     ;; ones for a shop that sells blanks on. The chain says which.
     :requires-position {:provides :finished-goods}
     :description "Cash sale with revenue and cost recognition"
-    :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
+    :journal-entry [{:debit "Cash" :credit "Sales Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "When the business provides goods and receives cash, revenue is recognized. Revenue emerges from the assertion pattern — providing physical goods in exchange for monetary units with a counterparty."
     :examples ["SP sells printed t-shirts for cash, recognizing revenue and COGS"]
@@ -1544,7 +1544,7 @@
    :cash-equipment-purchase
    (cash-exchange
      "Cash purchase of equipment (provide cash, receive productive asset)"
-     [{:debit "Equipment (Fixed Asset)" :credit "Cash"}]
+     [{:debit "Equipment" :credit "Cash"}]
      :note "The business provided cash and received a machine, and said what the machine allows: a transformation it makes possible without being used up by it. That capacity is what makes the purchase Equipment, an asset held for use. Without allows the record could not tell a printer bought to print on from a printer bought to sell."
      :provides-unit "monetary-unit"
      :receives-unit "physical-unit"
@@ -1597,8 +1597,8 @@
    :merchandise-purchase
    (cash-exchange
      "Cash purchase of goods to sell on (provide cash, receive merchandise for sale)"
-     [{:debit "Finished Goods Inventory" :credit "Cash"}]
-     :note "The business provided cash and received goods, and said what it expects to do with them: sell them on as they are. That purpose is what makes them Finished Goods Inventory, stock waiting for a buyer. The same goods bought to use up making something would be Raw Materials Inventory."
+     [{:debit "Merchandise Inventory" :credit "Cash"}]
+     :note "The business provided cash and received goods, and said what it expects to do with them: sell them on as they are. That purpose is what makes them Merchandise Inventory, stock waiting for a buyer. The same goods bought to use up making something would be Raw Materials Inventory."
      ;; And here the purpose is the whole difference. Same shirts, same
      ;; money, same vendor as the purchase above; what separates
      ;; merchandise from raw materials is what the buyer says they are
@@ -1646,7 +1646,7 @@
                           :expects {:action "provides" :confidence :any}}
     :requires-position {:receives :finished-goods}
     :description "Credit purchase of goods to sell on (receive merchandise now, obligation to pay later)"
-    :journal-entry [{:debit "Finished Goods Inventory" :credit "Accounts Payable"}]
+    :journal-entry [{:debit "Merchandise Inventory" :credit "Accounts Payable"}]
     :note "The same shirts a printer holds as materials; what makes them merchandise is that this business sells them as they are."
     :examples ["A shop that sells blank shirts on takes 200 of them on 30-day credit"]
     :level 1}
@@ -1664,7 +1664,7 @@
     :required-parameters {:receives {:unit "physical-unit" :physical-item "t-shirt-printer"}
                           :requires {:action "provides" :unit "monetary-unit"}}
     :description "Credit purchase of equipment (receive equipment now, obligation to pay later)"
-    :journal-entry [{:debit "Equipment (Fixed Asset)" :credit "Accounts Payable"}]
+    :journal-entry [{:debit "Equipment" :credit "Accounts Payable"}]
     :note "A credit purchase of equipment creates an obligation: the business receives the equipment immediately and is legally required to provide cash by a due date."
     :examples ["SP receives t-shirt printer, must pay $3,000 in 60 days"]
     :level 1}
@@ -1678,7 +1678,7 @@
                           :requires {:action "receives" :unit "monetary-unit"}
                           :expects {:confidence :any}}  ; Student must provide confidence
     :description "Credit sale: provide goods, customer obligated to pay, assess collection probability"
-    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
+    :journal-entry [{:debit "Accounts Receivable" :credit "Sales Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "A credit sale creates two things: (1) a legal obligation requiring the customer to pay, and (2) an expectation about whether they will actually pay, with a confidence level. Revenue emerges from the assertion pattern — providing goods in exchange for a payment obligation."
     :examples ["SP provides printed t-shirts on credit, customer must pay $250 in 30 days, 92% confident they will pay"]
@@ -1694,7 +1694,7 @@
     :required-parameters {:receives {:unit "monetary-unit"}
                           :requires {:action "provides" :unit "physical-unit"}}
     :description "Deferred revenue (receive payment now, obligation to provide goods later)"
-    :journal-entry [{:debit "Cash" :credit "Deferred Revenue (Liability)"}]
+    :journal-entry [{:debit "Cash" :credit "Unearned Revenue"}]
     :note "Deferred revenue creates an obligation: the business receives cash immediately and is legally required to provide goods/services by a due date. This is a liability because the business owes performance, not cash."
     :examples ["SP receives $10,000 advance payment, must deliver custom t-shirts in 60 days"
                "SP receives prepayment for 6-month service contract"]
@@ -1873,7 +1873,7 @@
     ;; The same event as a cash sale plus the legal assertion; its own
     ;; provides + has-counterparty produce the cost pair, so the template
     ;; names it too.
-    :journal-entry [{:debit "Cash" :credit "Revenue" :entry-label "Revenue Recognition"}
+    :journal-entry [{:debit "Cash" :credit "Sales Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "A cash sale, read as before: goods went out to a customer and money came in, so revenue is recognized and the goods are costed against it. is-allowed-by names the Uniform Commercial Code, the law under which a sale of goods is one the courts will enforce. It changes nothing on the entry; it records what the sale rests on."
     :examples ["SP sells t-shirts under standard commercial law"
@@ -1959,7 +1959,7 @@
                           :requires {:action "receives" :unit "monetary-unit"}}
     :prohibited #{:receives}
     :description "Agreement protected by contract law"
-    :journal-entry [{:debit "Accounts Receivable" :credit "Revenue" :entry-label "Revenue Recognition"}
+    :journal-entry [{:debit "Accounts Receivable" :credit "Sales Revenue" :entry-label "Revenue Recognition"}
                     {:debit "Cost of Goods Sold" :credit "Finished Goods Inventory" :entry-label "Cost Recognition"}]
     :note "A credit sale, read as before: goods went out, the customer must pay by a date, and the business said how sure it is of collecting. is-protected-by names contract law. It changes nothing on the entry, because double-entry has no room for what stands behind a claim, but it is why the confidence is as high as it is: a customer the business could sue is a safer debtor than one it could not, and the record now says so beside the number."
     :examples ["SP enters sales contract with legal protections"
@@ -2073,7 +2073,7 @@
     :prohibited #{:has-counterparty :provides :receives}
     :fulfills-kind #{:advance}
     :description "Earning previously deferred revenue"
-    :journal-entry [{:debit "Deferred Revenue (Liability)" :credit "Revenue"}]
+    :journal-entry [{:debit "Unearned Revenue" :credit "Revenue"}]
     :note "No exchange today; the business `reports` revenue, on the basis that the performance obligation is now satisfied, and `fulfills` names the advance it was owed for. The customer paid earlier, and the business recorded Unearned Revenue then, a liability, because it still owed the goods or the service. Now it has delivered: the debt is gone and the revenue is earned, in this period, which is the only one it can belong to."
     :examples ["SP earns portion of advance payment by delivering shirts"
                "SP recognizes revenue as service is performed"]
@@ -2115,13 +2115,13 @@
     ;; accepted, as on deferred revenue, rather than marked wrong.
     :optional #{:expects}
     :prohibited #{:has-counterparty :provides :receives}
-    :description "Board declares dividend to shareholders"
+    :description "Board declares dividend to stockholders"
     ;; 2101 debits a temporary Dividends account, closed to Retained
     ;; Earnings at year end (ACCT 2101 equity T-accounts, Topic 9).
     :journal-entry [{:debit "Dividends" :credit "Dividends Payable"}]
     :note "When declared, dividends become a liability. The Dividends account records the distribution and is closed to Retained Earnings at year end."
     :examples ["Board declares $0.50 per share dividend"
-               "SP declares quarterly dividend to shareholders"]
+               "SP declares quarterly dividend to stockholders"]
     :level 6}
 
    ;; Collecting what a customer owed, and paying what the business owed a
@@ -2158,8 +2158,8 @@
     :prohibited #{:receives :expects :requires}
     :description "Payment of previously declared dividend"
     :journal-entry [{:debit "Dividends Payable" :credit "Cash"}]
-    :note "The dividend payable liability is settled when cash is paid to shareholders."
-    :examples ["SP pays declared dividend to shareholders"
+    :note "The dividend payable liability is settled when cash is paid to stockholders."
+    :examples ["SP pays declared dividend to stockholders"
                "Quarterly dividend payment processed"]
     :level 6}
 
@@ -2275,7 +2275,7 @@
   "Maps assertion patterns to their corresponding accounts and JE effects."
   {:provides
    {:monetary-unit {:account "Cash" :effect :credit :description "Providing cash"}
-    :physical-unit {:account "Revenue" :effect :credit :description "Providing goods/services"}}
+    :physical-unit {:account "Sales Revenue" :effect :credit :description "Providing goods/services"}}
 
    :receives
    {:monetary-unit {:account "Cash" :effect :debit :description "Receiving cash"}
@@ -2292,7 +2292,7 @@
    :requires
    {:provides-monetary-unit {:account "Accounts Payable" :effect :credit
                              :description "Obligation to pay (liability)"}
-    :provides-physical-unit {:account "Deferred Revenue (Liability)" :effect :credit
+    :provides-physical-unit {:account "Unearned Revenue" :effect :credit
                              :description "Obligation to deliver (liability)"}
     :receives-monetary-unit {:account "Accounts Receivable" :effect :debit
                              :description "A promise of payment (asset)"}
@@ -3750,10 +3750,10 @@ The printed t-shirts are now finished goods ready for sale."
                 :due-date :calculated}}
 
    :pay-dividend
-   {:narrative-template "On {date}, {company} pays the previously declared dividend of ${amount} to shareholders. This settles the dividend declared on {declaration-date}."
+   {:narrative-template "On {date}, {company} pays the previously declared dividend of ${amount} to stockholders. This settles the dividend declared on {declaration-date}."
     :required-assertions {:has-date {:date :date}
                           :provides {:unit "monetary-unit" :quantity :amount}
-                          :has-counterparty {:name "Shareholders"}
+                          :has-counterparty {:name "Stockholders"}
                           :fulfills {:action "requires" :event "Dividend-001/requires"}}
     :correct-classification :dividend-payment
     ;; The dividend paid is the one in the record, and fulfills names it.

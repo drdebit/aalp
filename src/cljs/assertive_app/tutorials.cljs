@@ -81,7 +81,7 @@ Simple events take a few assertions. Complicated ones take more. Assertions are 
       :b {:when "Receives 50 blank t-shirts, expects to print on them"
           :becomes "Raw Materials Inventory"}
       :c {:when "Receives 50 blank t-shirts, expects to sell them on as they are"
-          :becomes "Finished Goods Inventory"}
+          :becomes "Merchandise Inventory"}
       :point "Same shirts, same money, same vendor: a different account classification. Asset accounts are chosen according to their anticipated future use."}
      :effect
      {:holds "Before: $10,000 cash. After: $9,850 cash and 50 shirts. The business is no poorer — it swapped one asset for another."
@@ -211,7 +211,7 @@ receives: 50 blank t-shirts (physical units)
 expects: to use them up making printed t-shirts — 95% sure
 ::
 
-Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Finished Goods. Every purchase in this lesson is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
+Four of those say what moved. The fifth says what it was for, and it is the one that decides whether the shirts land in Raw Materials or in Merchandise Inventory. Every purchase in this lesson is this same pattern with different details — and where nothing came in, there is nothing to say a purpose for, so **expects** sits out."}
 
      {:heading "Where the Journal Entry Comes From"
       :content "Double-entry accountants record a transaction in a **journal entry** consisting of **debits** (DR) and **credits** (CR). For the purposes of this platform, you do NOT need to build these journal entries yourself: the platform builds them *from your assertions* and shows you the result. 
@@ -231,7 +231,7 @@ That is where your assertions come in. The system can only choose the accounts f
 
 | What you assert | What it lands in |
 |-----------------|------------------|
-| provides money, receives shirts | the shirts, in Raw Materials or Finished Goods — your **expects** picks which |
+| provides money, receives shirts | the shirts, in Raw Materials or Merchandise Inventory — your **expects** picks which |
 | provides shirts, receives money | Revenue, and the cost of those shirts in Cost of Goods Sold |
 
 Same four assertions. Swap which side the shirts are on and every account changes, because a business that hands over shirts and takes money has done something different from one that hands over money and takes shirts.
@@ -258,7 +258,7 @@ No **expects** here: what came in is money, and money does not need a purpose to
 
 ::journal
 DR Cash $250
-CR Revenue $250
+CR Sales Revenue $250
 ::
 
 The second records what it cost. The shirts that went out cost the business something to make, and that cost belongs against this sale, as **Cost of Goods Sold**:
@@ -268,7 +268,7 @@ DR Cost of Goods Sold $100
 CR Finished Goods Inventory $100
 ::
 
-**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. Once your sale is recorded, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. **Any batch that holds those goods, with enough of them, is a fair answer.** The business decides which shirts it sold, and the cost of goods sold follows from that decision: name a batch that cost $5.00 a shirt and the sale costs $125; name one that cost $5.60 and the same sale costs $140 and shows $15 less profit. Same sale, same revenue, different cost — which is why the record keeps *which* batch and not just how many. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
+**Which shirts went out?** The cost depends on which goods left, and only the record can say. A business may hold several batches of the same shirt, made or bought at different costs. Once your sale is recorded, the platform asks you to **name the batch** the goods came out of: it lists the batches the business holds, how many each has left, and what each one cost. **Any batch that holds those goods, with enough of them, is a fair answer.** The business decides which shirts it sold, and the cost of goods sold follows from that decision: name a batch that cost $5.00 a shirt and the sale costs $125; name one that cost $5.60 and the same sale costs $140 and shows $15 less profit. Same sale, same revenue, different cost — which is why the record keeps *which* batch and not just how many. Naming the batch the goods came out of is called **specific identification**: the cost of goods sold is the cost of the very units that were sold. Pick a batch that holds something else, or not enough, and it tells you — try again, nothing is lost."}
 
      {:heading "Practice First — Mistakes Are Free"
       :content "Next you'll take a short quiz on this reading, and then do a **practice round**.
@@ -322,9 +322,9 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
 
      {:id :l0-q6
       :question "SP sells t-shirts that cost $100 to make for $250 cash. What is the FULL journal entry?"
-      :choices ["DR Cash $250, CR Revenue $250 only" "DR Cash $250, CR Revenue $250; DR COGS $100, CR Finished Goods $100" "DR Revenue $250, CR Cash $250" "DR Cash $150, CR Revenue $150 (net profit only)"]
+      :choices ["DR Cash $250, CR Sales Revenue $250 only" "DR Cash $250, CR Sales Revenue $250; DR COGS $100, CR Finished Goods $100" "DR Revenue $250, CR Cash $250" "DR Cash $150, CR Sales Revenue $150 (net profit only)"]
       :correct 1
-      :explanation "A sale is two entries: what it earned (DR Cash, CR Revenue) and what it cost (DR Cost of Goods Sold, CR Finished Goods Inventory). Which shirts went out decides the cost — that is why you name the batch."}]}
+      :explanation "A sale is two entries: what it earned (DR Cash, CR Sales Revenue) and what it cost (DR Cost of Goods Sold, CR Finished Goods Inventory). Which shirts went out decides the cost — that is why you name the batch."}]}
 
    1
    {:title "Level 1: Credit Transactions"
@@ -343,7 +343,7 @@ Practice problems are a sandbox: nothing carries over from one to the next, and 
                    "provides: 25 printed t-shirts (physical units)"
                    "requires: SP is to receive $625 by March 5 — the customer's promise"
                    "expects: 92% confident of receiving it"]
-      :entry ["DR Accounts Receivable $625" "CR Revenue $625"]}
+      :entry ["DR Accounts Receivable $625" "CR Sales Revenue $625"]}
      :pair
      {:same "The business makes one assertion, **requires**, about money that has not yet changed hands."
       :a {:when "Goods came IN, and money is to go out"
@@ -442,7 +442,7 @@ The confidence number isn't busywork: at year-end it feeds directly into estimat
 
 ::journal
 DR Accounts Receivable $250
-CR Revenue $250
+CR Sales Revenue $250
 ::
 
 Notice *when* the revenue appears: today, the day the shirts went out — not next month when the money arrives. SP has done its part, and what is left is a claim on the customer. Recording revenue when it is earned rather than when it is collected is at the heart of accrual accounting, and a credit sale is a simple place where you can see the difference."}
@@ -458,10 +458,10 @@ Notice *when* the revenue appears: today, the day the shirts went out — not ne
 
 ::journal
 DR Cash $500
-CR Deferred Revenue $500
+CR Unearned Revenue $500
 ::
 
-That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP owes the customer shirts. An unearned advance is a **liability** (accountants call it *Deferred Revenue*). It flips to real revenue when SP delivers.
+That credit line might surprise you: SP got cash but hasn't EARNED it yet — SP owes the customer shirts. An unearned advance is a **liability** (accountants call it *Unearned Revenue*). It flips to real revenue when SP delivers.
 
 **SP pays a vendor in advance** (say, $600 for a year of insurance):
 
@@ -491,7 +491,7 @@ Every row records the promise with **requires**. What the third column decides i
 **The promise determines the account classification.**  The same assertion, **requires**, under different conditions:
 
 - In a credit purchase or a credit sale it stands **in place of** money that did not move. So the line that would have been Cash is something else instead: **Accounts Payable** when SP owes, **Accounts Receivable** when SP is owed.
-- In a prepayment it sits **beside** money that really did move. Cash is still credited and the promise is what SP got in exchange. This is a **prepaid Expense** when SP paid ahead. It is **Deferred Revenue** when SP was paid before delivering.
+- In a prepayment it sits **beside** money that really did move. Cash is still credited and the promise is what SP got in exchange. This is a **prepaid Expense** when SP paid ahead. It is **Unearned Revenue** when SP was paid before delivering.
 
 The account is determined by who makes the promise and for what. You can experiment with this during practice: place **requires** on different sides of the exchange and see what happens to the entry."}
 
@@ -566,7 +566,7 @@ If you get stuck during practice, the **Review Tutorial** button brings you back
       :a {:when "Consumed, and printed shirts created — nobody else involved"
           :becomes "Finished Goods Inventory"}
       :b {:when "Provided to a counterparty, who pays for them"
-          :becomes "Revenue and Cost of Goods Sold"}
+          :becomes "Sales Revenue and Cost of Goods Sold"}
       :point "The shirts leave the shelf either way. Whether anything crossed the business's boundary is what decides between moving value inside the business and making a profit."}
      :effect
      {:holds "Before: 10 blank shirts. After: 10 printed ones. Nothing was gained or lost — value changed form."
@@ -888,7 +888,9 @@ And if the assertions name no rule at all? Then money went out, nothing came in,
      :reminder "An adjusting entry is not a new kind of accounting. It is the same sentence with no counterparty and an explicit amount."}
     :sections
     [{:heading "End-of-Period Adjustments"
-      :content "At the end of each accounting period, we need to make sure revenues and expenses are recorded in the **correct period**. This is the matching principle.
+      :content "At the end of each accounting period, adjusting entries make sure revenues and expenses are recorded in the **correct period**. That is the **accrual basis** of accounting: under the **revenue recognition principle**, revenue is recorded when it is earned, and under the **expense recognition (matching) principle**, expenses are recorded when they are incurred to earn it — whenever the cash moves.
+
+You have already done this once. In the credit lesson, a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply the same rule where no exchange marks the moment, only the passing of time.
 
 You have already done this once. In the credit lesson, a credit sale recorded revenue the day the goods went out, not the day the money arrived, because providing the goods is what earned it. Adjusting entries apply that same rule to everything else.
 
@@ -963,7 +965,7 @@ fulfills: the advance LocalSportsTeam paid on February 1
 ::
 
 ::journal
-DR Deferred Revenue (Liability) $300
+DR Unearned Revenue $300
 CR Revenue $300
 ::
 
@@ -1038,7 +1040,7 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
       :question "A customer paid $600 in advance for 24 shirts. Today the business delivers 12. Which assertions record what happened today?"
       :choices ["provides 12 shirts, receives $300, has-counterparty" "reports $300 revenue earned, fulfills the advance" "requires the customer to pay $300" "reports $600 revenue earned"]
       :correct 1
-      :explanation "No money moves today — it came in with the advance. What happens is that half the promise is kept: **reports** the $300 earned, and **fulfills** names the advance it came out of. Deferred Revenue goes down by $300 and Revenue goes up by the same."}]}
+      :explanation "No money moves today — it came in with the advance. What happens is that half the promise is kept: **reports** the $300 earned, and **fulfills** names the advance it came out of. Unearned Revenue goes down by $300 and Revenue goes up by the same."}]}
 
    9
    {:title "Level 9: Reporting"
@@ -1098,13 +1100,13 @@ So a report asks for, say, *money received from customers*, and the owner's inve
 
 Neither is wrong. They answer different questions, and a business may have to answer both."}
 
-     {:heading "Gross Margin"
+     {:heading "Gross Profit"
       :content "**Gross margin** is revenue less the cost of the goods sold: what selling the goods earned before any other cost of running the business.
 
 It is not a new walk over the events. It is arithmetic over two reports you already have — so it is built from them, on the same basis:
 
-- accrual gross margin = accrual revenue − accrual cost of goods sold
-- cash gross margin = cash revenue − cash cost of goods sold
+- accrual gross profit = accrual revenue − accrual cost of goods sold
+- cash gross profit = cash revenue − cash cost of goods sold
 
 Mixing the bases gives a number that means nothing."}
 
@@ -1114,7 +1116,7 @@ Mixing the bases gives a number that means nothing."}
 1. **Read** two revenue reports that are already built, and see which events each one collects.
 2. **Compose** the accrual cost of goods sold, from blank.
 3. **Change** it into the cash-basis cost of goods sold.
-4. **Build** both gross margins from your reports.
+4. **Build** both gross profits from your reports.
 
 Each report is checked **part by part** — which events, whose, what condition, when, what is totaled — not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault."}]
 
@@ -1138,7 +1140,7 @@ Each report is checked **part by part** — which events, whose, what condition,
       :explanation "Inventory treated as non-incidental materials and supplies is deductible in the year it is used or sold, **or** the year it is paid for, **whichever is later** (Treas. Reg. 1.471-1(b)(4)). Sold in October, paid in January: January."}
 
      {:id :l9-q4
-      :question "What is gross margin on the cash basis?"
+      :question "What is gross profit on the cash basis?"
       :choices ["Cash revenue less accrual cost of goods sold" "Cash revenue less cash cost of goods sold" "All money in less all money out" "Accrual revenue less cash cost of goods sold"]
       :correct 1
       :explanation "Both reports on the **same basis**. Mixing bases gives a number that answers no question."}]}
@@ -1162,7 +1164,7 @@ Each report is checked **part by part** — which events, whose, what condition,
      :pair
      {:same "SP **receives** $20,000 from a counterparty."
       :a {:when "…having provided printed t-shirts"
-          :becomes "Revenue"}
+          :becomes "Sales Revenue"}
       :b {:when "…having provided a share of the business itself"
           :becomes "Common Stock"}
       :point "Identical money, identical assertion. What SP gave back is the whole difference between earning and being funded — and only one of them makes the business better off by its own effort."}
@@ -1196,12 +1198,12 @@ Note: This isn't revenue! The company isn't earning money — it's receiving inv
      {:heading "Dividends and Withdrawals"
       :content "**Dividends** return profits to shareholders (two-step process):
 
-**Declaration:** reports a distribution, requires a future cash payment to the shareholders
+**Declaration:** reports a distribution, requires a future cash payment to the stockholders
 → DR Dividends, CR Dividends Payable
 
 Dividends is a temporary account, like an expense: it is closed to Retained Earnings at year end. Nothing has been paid yet — the declaration is a promise, and the payable is what the promise puts on the books.
 
-**Payment:** provides cash, has-counterparty (the shareholders), fulfills the declaration — the promise this payment keeps
+**Payment:** provides cash, has-counterparty (the stockholders), fulfills the declaration — the promise this payment keeps
 → DR Dividends Payable, CR Cash
 
 **Owner Withdrawals** (sole proprietorships):
@@ -1375,7 +1377,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
      :example
      {:narrative "On April 15, Northside Tees pays the $500 dividend its board declared on March 15."
       :assertions ["has-date: April 15"
-                   "has-counterparty: Shareholders"
+                   "has-counterparty: Stockholders"
                    "provides: $500 (cash)"
                    "fulfills: the dividend declared on March 15"]
       :entry ["DR Dividends Payable $500" "CR Cash $500"]}
@@ -1387,8 +1389,8 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
           :becomes "Owner's Drawing — equity taken out"}
       :point "The same payment, to the same people. Whether it keeps an earlier promise or buys back part of the owner's interest decides whether the business paid what it owed or its owner took money out."}
      :effect
-     {:holds "Before: $500 more cash, and $500 owed to the shareholders. After: both gone."
-      :may-or-must "Before: the business must pay the shareholders by April 15. After: nothing is owed, and the record ties the payment to the declaration it kept."}
+     {:holds "Before: $500 more cash, and $500 owed to the stockholders. After: both gone."
+      :may-or-must "Before: the business must pay the stockholders by April 15. After: nothing is owed, and the record ties the payment to the declaration it kept."}
      :reminder "Every account in this course fell out of a sentence made from the same small vocabulary. That is the whole claim."}
     :sections
     [{:heading "The Complete Framework"
@@ -1402,14 +1404,14 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 | **has-counterparty** | Exchanges with others | Identifies the other party — and without one, goods going out are not a sale |
 | **provides** | Giving something now | Credit what goes out; goods provided to a customer also earn Revenue |
 | **receives** | Getting something now | Debit what comes in — an asset, or an expense if it is used up as it arrives |
-| **requires** | A promise someone must keep | Owed *to* the business: a claim, debited (Accounts Receivable, Notes Receivable, Prepaid Expense). Owed *by* it: a debt, credited (Accounts Payable, Deferred Revenue, Notes Payable) |
+| **requires** | A promise someone must keep | Owed *to* the business: a claim, debited (Accounts Receivable, Notes Receivable, Prepaid Expense). Owed *by* it: a debt, credited (Accounts Payable, Unearned Revenue, Notes Payable) |
 | **fulfills** | Keeping an earlier promise | Settles the claim or debt that promise created |
 
 **What It Is For:**
 
 | Assertion | Used For | Journal Entry Effect |
 |-----------|----------|---------------------|
-| **expects** (on goods bought) | What the business means to do with them | Picks the account: Raw Materials if they will be used up making something, Finished Goods if they will be sold as they are |
+| **expects** (on goods bought) | What the business means to do with them | Picks the account: Raw Materials if they will be used up making something, Merchandise Inventory if they will be sold as they are |
 | **allows** (on a machine bought) | What it makes possible | Places it as Equipment: it produces, and is still there afterward |
 | **expects** (on a promise owed to the business) | How likely it is to be kept | No line now — at period end it becomes the allowance for doubtful accounts, and Bad Debt Expense |
 
@@ -1472,7 +1474,7 @@ Lending is the mirror of borrowing — the same assertions apply in reverse."}]
 **Credit rules:**
 - provides → Credit what goes out
 - consumes → Credit what's used up
-- requires → Credit the obligation (Accounts Payable, Deferred Revenue) when the business is the one who owes
+- requires → Credit the obligation (Accounts Payable, Unearned Revenue) when the business is the one who owes
 
 **requires** appears in both lists on purpose. One assertion, two
 accounts, and the direction of the promise is the whole difference —

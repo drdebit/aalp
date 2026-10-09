@@ -373,7 +373,7 @@
      :error-handler (silent-error-handler "Report preview error:")}))
 
 (defn grade-report!
-  "Check a report task: a composition, or for a gross margin the two
+  "Check a report task: a composition, or for a gross profit the two
    reports it combines."
   [task {:keys [composition inputs]}]
   (POST (str api-base "/lessons/reporting/grade")

@@ -87,12 +87,21 @@ the lessons need a small step for it.
 * What it takes
 
 ** Lesson order
-- [ ] =tutorials/lesson-sequence=: Reporting (9) moves before Adjusting
-      Entries (5). Check that Reporting's own reading and record need
-      nothing from Adjusting Entries (its year has credit sales,
-      collections, a dividend -- no adjustments).
-- [ ] The check-ins, retention look-backs and capstone gating follow the
-      new order (they read =lesson-sequence=).
+- [X] =tutorials/lesson-sequence=: Reporting (9) moves before Adjusting
+      Entries (5). Done 2026-10-09, =[0 1 2 3 4 9 5 6 7 8]=. Reporting's
+      reading now glosses the two things in its record the student has
+      not yet been taught to write: a collection keeping a promise, and
+      the dividend.
+- [X] The check-ins, retention look-backs and capstone gating follow the
+      new order: all of it reads =lesson-sequence= on the client
+      (=all-levels=, =earlier-lessons=, =lesson-after=); the server takes
+      =:levels= as given, and the numeric unlock in =progress.clj= is the
+      hidden Guided Year's.
+- [ ] =fulfills= and its three patterns -- collecting a receivable, paying
+      a supplier, delivering on an advance -- move to Credit Transactions
+      (1): the templates' =:level=, Level 1's reading and quiz, Level 5's
+      last section and quiz questions 5 and 6, =drill-configs=. Then trim
+      Reporting's gloss to the dividend.
 
 ** Reporting
 - [ ] Add ending inventory (a balance-sheet figure): a new reading, the
@@ -121,8 +130,10 @@ the lessons need a small step for it.
 ** Records
 - [ ] Practice companies carry the events reports select: prepayments,
       equipment, hires, notes, and (for later years) earlier reports.
-- [ ] Hire events (rate, start date); work events that consume labor hours
-      and create a payment promise; paydays that fulfill them.
+- [ ] Hire events (rate, start date) that =allows= work; one work event per
+      pay period (=consumes= the period's hours, =is-allowed-by= the hire,
+      =requires= pay by payday); paydays that =fulfills= them. Notes carry
+      their interest promises as a finite set of =requires=.
 
 ** Grading and derivation
 - [ ] Accrual patterns (=:accrued-wages=, =:accrued-interest-expense=,
@@ -147,7 +158,8 @@ the lessons need a small step for it.
       record confidence with =expects= and were told it feeds bad debt
       expense; the report computes the probability-weighted net balance of
       Accounts Receivable from those confidences.
-- [X] *The capstone* gains period-end reports.
+- [X] *The capstone* gains period-end reports. /Reversed later the same
+      day: see "Decided, consequences of the order"./
 - [X] *Quarterly reporting* stays out of the platform while it pilots
       with 2101. When it serves other courses, quarterly and arbitrary
       periods come in -- to show that a report can cover any span.
@@ -161,9 +173,71 @@ the lessons need a small step for it.
       section today records it as =reports= revenue + =fulfills=; the
       rebuild changes it to the delivery.
 
+* Decided, the four questions (Matt, 2026-10-09, second session)
+
+Raised when the implementing session read this note against the code.
+
+- [X] *What a work event derives.* Labor is consumed over time -- so
+      many hours a day, some per printing run, some for maintenance --
+      and each consumption creates a =requires= for payment, which paydays
+      =fulfill=. At each pay period's end the books take Wage Expense and
+      Wages Payable for the period's hours, and payroll clears the
+      payable. What is left in Wages Payable at the report date is labor
+      consumed and not yet paid, and the adjusting entry brings the books
+      up to that. Not far from double-entry: the top-up is the unfulfilled
+      promises at the period's end.
+- [X] *Pay periods are the work events.* The company pays in two-week
+      chunks and books =requires= and =fulfills= on that basis: one work
+      event per pay period, one payday keeping one promise. At year end
+      exactly one partial period is open, so =fulfills= never has to name
+      more than one promise.
+- [X] *A note carries its interest promises*: a finite set of =requires=,
+      one per future interest payment. Interest expense for the period is
+      the promises that fall in it, paid or not; Interest Payable is the
+      ones fallen due and unpaid; promises beyond the period are selected
+      out. The payment =fulfills= the promise it keeps, so Level 7 keeps
+      its shape without the =:accrued= promise kind.
+- [X] *=consumes=, drawn from the hire.* The SP example (=example.clj=)
+      settles it: =SPHire= =allows= events that =consumes= hours
+      denominated in the employee commitment, and the design creation,
+      each printing, the maintenance and the environmental report all
+      =consumes= hours tied back to it, while the salary sits on the hire
+      as an expected payment. Labor is a pool the hire opens and
+      =consumes= draws from. In AALP's idiom a work event =consumes=
+      hours, =is-allowed-by= the hire (as a printing run is allowed by the
+      press), and carries its own =requires= for pay. =consumes= stays
+      internal: the exchange is at the contract, the promise is on the
+      work. (A =receives= of hours at a set rate is also true and was
+      considered; the example's reading is kept.)
+
+* Decided, consequences of the order (Matt, 2026-10-09, second session)
+
+- [X] *=fulfills= moves up to Credit Transactions (1).* Reporting's record
+      shows collections keeping promises before Level 5 would have taught
+      the word, and the promises are made in the credit lesson, so keeping
+      them belongs there: collecting a receivable, paying a supplier, and
+      delivering on an advance (=provides= + =fulfills=, which names a
+      batch and so gains the cost-of-goods line the old =reports= version
+      never had). Level 5 is then nothing but reports. Supersedes the
+      2026-09-29 placement of collections at Level 5.
+- [X] *The capstone adds no period-end reports.* Campus Threads' year has
+      no press, prepayment or hire to report on; its reports stay as they
+      are. Ending inventory and a bad-debt allowance over its existing
+      events remain possible later.
+
+* The selection interface
+
+Matt (2026-10-09): what the rebuild needs is /a robust interface for
+selecting events according to assertive criteria, both including and
+excluding, and then being able to build calculations off of them/ --
+intuitive to students but powerful, since the platform will need
+advanced querying and analytics later -- with grading that is /nuanced
+and targeted to the specific choices students make and how well they
+have made them, with excellent feedback/. Designed in
+[[file:SELECTION-AND-CALCULATION.org][SELECTION-AND-CALCULATION.org]]; the checklists above are
+implemented through it.
+
 * Open
 
-- [ ] None outstanding from the 2026-10-09 discussion. Implementation
-      choices (how reports select source events in the sentence builder;
-      how earlier reports are stored in practice records) are for the
-      implementing session, guided by the checklists above.
+- [ ] The selection interface's open choices are listed at the end of
+      =SELECTION-AND-CALCULATION.org=. Nothing else outstanding.

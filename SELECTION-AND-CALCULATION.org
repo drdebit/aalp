@@ -1,0 +1,278 @@
+#+TITLE: Selecting events and calculating from them
+#+AUTHOR: Matt DeAngelis (with Claude)
+#+DATE: 2026-10-09
+
+The interface every report on the platform is built with: the Reporting
+lesson's sales, cost of goods sold and ending inventory; each adjusting
+entry; the capstone's reports; and, later, analytics over many records.
+Asked for by [[file:REPORTS-AND-ADJUSTING.org][REPORTS-AND-ADJUSTING.org]] ("The selection interface").
+
+Matt's requirement (2026-10-09): a robust interface for selecting events
+according to assertive criteria, both including and excluding, and then
+building calculations off them. Intuitive to students but powerful,
+because the platform will need advanced querying and analytics later.
+Grading nuanced and targeted to the specific choices students make and
+how well they have made them, with excellent feedback.
+
+* What exists, and what it already gets right
+
+- *The Reporting composer* (=reporting.clj=, =report-composer= in
+  =views.cljs=): a report as a sentence of five choices -- what the
+  business did, whose, a paid-for condition, when, what is totalled --
+  whitelisted into an engine collects-spec; a read-only DSL mirror
+  beneath it; free preview, with the events collected marked in the
+  record panel; grading part by part with feedback per part.
+- *The Report Builder* (=REPORT-BUILDER-DESIGN.md=, Year 2): the fuller
+  form -- include chips, exclude chips, an aggregate -- in the same
+  sentence idiom, recorded as an event with provenance. The Reporting
+  composer is a narrower reading of it. This design is the two of them
+  joined, and it keeps the Builder's three decisions: sentence plus
+  mirror, free preview, deliberate record.
+- *The engine*: a collects-spec with includes and excludes, patterns
+  over readings (counterparty role, batch paid), totals over readings
+  (consideration, goods cost), a report over reports (difference, sum),
+  and replaying a recorded report as recorded.
+- *The sentence builder's pickers*: a batch for goods going out, a
+  promise for =fulfills=. Each is the selection of one event from the
+  record, and the model for "the prepayment of January 5".
+
+What is missing is one vocabulary of criteria that all of these read
+from, excludes in the lesson path, calculations that are shares rather
+than totals, and grading that explains a selection by what it collected.
+
+* The sentence
+
+Three clauses. The first two select, the third calculates.
+
+#+begin_example
+Collect events where [criteria] , but not [criteria] ;
+then [calculation] .
+#+end_example
+
+Each criterion is a chip chosen from a menu; a chip is a question the
+record can answer about an event. The mirror beneath renders the same
+thing as a query, read before anyone writes one. A report with no
+excludes reads as the Reporting composer does today.
+
+How each report reads in it:
+
+| Report              | Collect                                                                | But not                            | Then                                                         |
+|---------------------+------------------------------------------------------------------------+------------------------------------+--------------------------------------------------------------|
+| Sales revenue       | the business provides goods; the other party is a customer; in the period |                                    | total what was received or promised for them                 |
+| Cash revenue        | the business receives money; from a customer; in the period            |                                    | total the money received                                     |
+| Cost of goods sold  | the business provides goods; to a customer; in the period              | (cash basis: from unpaid batches)  | total what the goods cost                                    |
+| Ending inventory    | the business receives goods; to the report date                        |                                    | total what they cost, less the same over goods provided      |
+| Prepaid used        | money out for a service still to come: this prepayment                 |                                    | the share of its term that falls in the period, at its cost  |
+| Depreciation        | goods received to use, not sell: this press                            |                                    | the share of its useful life in the period, of cost less salvage |
+| Wage expense        | the business consumes labor hours; in the period                       |                                    | total hours at the hire's rate                               |
+| Wages payable       | promises to pay employees; open at the report date                     |                                    | total what is promised                                       |
+| Interest expense    | the note's interest promises; falling in the period                    |                                    | total what is promised                                       |
+| Interest payable    | the note's interest promises; fallen due; open at the report date      |                                    | total what is promised                                       |
+| Bad debts           | promises by customers to pay; open at the report date                  |                                    | total amount x (1 - confidence), less earlier reports         |
+
+Two of these are differences of reports, like gross margin: ending
+inventory (received less provided, both at cost, both to date) and the
+allowance top-up (needed less reported before). The margin row already
+built does this, and it is the right UI for them: a balance is "to
+date", an income figure is "for the period", and a student who builds
+ending inventory as two to-date reports has seen why.
+
+The adjusting entry's journal entry is derived from the report: the
+debit from what is reported (expense), the credit from what the selected
+events are -- a prepayment gives Prepaid Expense, capital gives
+Accumulated Depreciation, pay promises give Wages Payable, interest
+promises give Interest Payable, customer promises give the Allowance.
+The derivation reads the selection, not a =requires= in the same event.
+
+* Criteria: the chips
+
+Grouped by the question they ask. The vocabulary grows by lesson, the
+way =unit-kind-level= gates kinds today; the groups are the menu's
+headings.
+
+1. *What the business did*: provides, receives, consumes, creates;
+   promised something (=requires=); kept a promise (=fulfills=);
+   reported.
+2. *What moved*: money; goods (any, or a named item); a service; hours
+   of labor; ownership units.
+3. *Who*: the other party's role, read from the event -- customer,
+   supplier, owner, lender, borrower, employees. Never a name.
+4. *Which promise*: open at the report date; kept; falling due in the
+   period; of a kind (to receive money, to provide goods, to pay
+   employees, interest on a note).
+5. *Where from*: drawn from a batch; allowed by an event (the press, the
+   hire, the note); this event (one pick from the record, as the batch
+   and promise pickers do now).
+6. *When*: in the period; to the report date; before the period.
+7. *Condition*: from batches that had been paid for (the tax cash basis).
+8. *Reported before*: by an earlier report over the same events (later
+   years).
+
+Exclude chips are the same vocabulary after "but not". The Reporting
+lesson's five parts are chips from groups 1, 2, 3, 6 and 7 with no
+excludes; Adjusting Entries adds groups 4, 5 and 8 and the exclude
+clause; later courses open the whole menu.
+
+Readings are what make the chips possible: a chip asks about a reading
+the record computes as it loads (=readings.clj=), so "a customer" is
+read from what the event does, and "open at the report date" from
+whether any later event =fulfills= the promise. New readings needed:
+hours and the rate they draw on (from the hire the work event is allowed
+by); whether a promise has fallen due by a date; which event a report
+reported over.
+
+* Calculations
+
+The third clause. Four forms, and the calculation builder's four bases
+fold into them.
+
+- *A total* over a reading of the collected events: money received;
+  money promised; what the goods cost; hours at the rate; amount x
+  (1 - confidence). The Reporting composer's "total what" today.
+- *A share*: of time -- from the event's date (or the period's start, if
+  later) to the report date (or the term's end, if earlier), over the
+  term; of life -- the same over the useful life, of cost less salvage.
+  The dates and the term are read from the selected event; the student
+  supplies only what the record does not hold, and the aim is for the
+  record to hold it (salvage and useful life as terms of the acquisition,
+  the way a note states its rate).
+- *A difference* of two reports: gross margin, ending inventory, the
+  allowance top-up. Built from recorded reports, never re-run
+  (=combine-and-record!=).
+- *Later*: count, average, group by, arbitrary periods -- the analytics
+  forms; the engine has count and average already.
+
+A later year is a full year's share, which equals the elapsed total less
+what earlier reports took; the last year is the remainder. The builder
+shows both and lets the student see they agree
+(REPORTS-AND-ADJUSTING.org, "Earlier reports").
+
+* The record panel
+
+Always beside the sentence, every event on one line, the collected ones
+marked, exactly as the Reporting round has it. A click on an event opens
+it in the sentence builder's full reading. Later: a click could propose
+criteria ("events like this one"), which is how analytics users explore;
+not needed for the lessons.
+
+* Recording a report
+
+A report is an event in the record: a date, what it collected (the
+include and exclude criteria), the calculation, the figure, and who
+asserted it. In the flat map the sentence builder, grader and derivation
+read:
+
+#+begin_example
+{:has-date {:date "2026-12-31"}
+ :reports  {:category "expense" :basis "time-based" :amount 900
+            :collects {:includes [...criteria...] :excludes [...]}
+            :period {:from "2026-01-01" :to "2026-12-31"}}}
+#+end_example
+
+and in the full form (=canonical-edn=) as the research vocabulary has
+it: =collects= / =includes= / =excludes= under the event, =reports= with
+its calculation. Recorded reports are then events later reports can
+select ("reported before"), which is what later years need; the
+=recorded-report= entity already exists for the figure and its
+provenance.
+
+* Grading: by extension, then by part, then the figure
+
+The composition is what is graded, and the feedback is computed from
+what it collected rather than authored per task, so it scales from a
+lesson to analytics.
+
+1. *Extension first.* Run the student's selection and the canonical one
+   over the record shown and over hidden records built to separate
+   near-misses. Same events collected, same calculation: right, however
+   it was composed. An equivalent form is never marked wrong.
+2. *A different extension is explained by its difference.* For an event
+   collected that should not be: name it, say what it is, and name the
+   criterion that would leave it out -- "Shirts-002 is goods coming in,
+   a purchase from a supplier; cost of goods sold collects goods going
+   out, to customers." For an event missed: name it and the criterion
+   that excludes it -- "Sale-004 is a sale on credit, and no money has
+   come in; revenue on the accrual basis totals what was received /or
+   promised/." Each message is built from the event's readings and the
+   chip at fault, so it names the student's own choice.
+3. *Same extension, wrong calculation*: feedback on the total or the
+   share -- "you totalled what the customers paid; cost of goods sold
+   totals what the goods cost"; "the share runs from January 5, when
+   the cover began, not from the start of the year."
+4. *The figure last*, and exactly: the record determines it, so a right
+   selection and calculation with a wrong figure is arithmetic, and said
+   so.
+5. *Well-made, not only right.* A selection that collects the right
+   events by a fragile route (a name where a role was meant; a date
+   range that happens to fit) passes on the record shown and fails a
+   hidden record, and the feedback says which record broke it and why.
+   That is the nuance Matt asked for: the choice is graded, not the
+   number.
+
+The per-part feedback the Reporting grader has now
+(=part-feedback=) becomes the fallback when the diff has nothing to
+say, which is rare.
+
+* Mapping to the engine
+
+| Needed                                   | Have                                     | Add                                                     |
+|------------------------------------------+------------------------------------------+---------------------------------------------------------|
+| includes / excludes over assertion kinds | collects-spec                            |                                                         |
+| role, batch paid                         | readings, patterns over readings         |                                                         |
+| drawn from a batch; allowed by an event  | =:draws-from= edge; =is-allowed-by= edge | patterns on the edges                                   |
+| a promise open / due at a date           | =fulfills= edge to the promise           | a reading: open-at, due-by                              |
+| falling in the period (a promise's date) |                                          | pattern on the predicted event's date                   |
+| totals over readings                     | consideration, goods cost                | hours at rate; expected shortfall; goods received cost  |
+| share of time / of life                  | calc.clj bases                           | an aggregate that reads dates and terms off the event   |
+| difference of reports                    | =combine-and-record!=                    |                                                         |
+| reported before                          | =recorded-report=, =replay-report=       | a pattern: reports over these events, before this date  |
+
+* By lesson
+
+- *Reporting*: the five parts as now, plus ending inventory (a "to the
+  report date" chip and a difference row). No excludes on screen; the
+  mirror shows the same query it does today.
+- *Adjusting Entries*: the exclude clause, groups 4, 5 and 8, the share
+  calculations, and the entry derived from the selection. First-year
+  problems first; later years once the first-year path is whole.
+- *Level 7*: the note's interest promises, falling in the period and
+  open at the date.
+- *Capstone*: its reports as they are.
+- *Later courses*: the full menu, arbitrary periods, group and count,
+  several records at once.
+
+* Order of work
+
+1. The criteria vocabulary and the flat-map / full-form shape of a
+   recorded report, with the Reporting composer rewritten over them and
+   behaving exactly as it does now (the walkthrough of 2026-09-29 as the
+   check).
+2. Ending inventory in Reporting.
+3. Extension-based grading with diff feedback, over Reporting's four
+   reports first, where the canonical answers are known and tested.
+4. The exclude clause, the single-event pick, the share calculations,
+   and the derivation reading the selection; the five adjustments over
+   first-year records.
+5. The records: hire, pay-period work events, paydays; notes with
+   interest promises.
+6. Lesson and quiz text; =fulfills= to Level 1; Level 7.
+7. Later years, hidden records, the full menu.
+
+* Open
+
+- [ ] The student-facing words for each chip. The Reporting composer's
+      phrasings ("the business provides goods", "the other party is a
+      customer") are the register; group 4 and 5 need theirs.
+- [ ] Whether Reporting stays include-only, with "but not" arriving at
+      Adjusting Entries (recommended: yes -- five parts were enough
+      there and the exclude clause is a new idea worth its own moment).
+- [ ] For an adjustment, a pick of the one event ("the prepayment of
+      January 5") or criteria ("money out for a service still to come,
+      open at the report date")? Recommended: both, graded alike by
+      extension -- the pick for first-year problems, criteria once
+      records hold more than one such event.
+- [ ] How much of a calculation's inputs the student types. Recommended:
+      only what the record does not hold, and move salvage and useful
+      life onto the acquisition event so that it holds them.
+- [ ] When to build the hidden records: with step 3, or only once a
+      near-miss is actually seen in the pilot's attempts.

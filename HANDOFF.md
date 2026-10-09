@@ -11,7 +11,17 @@ sections follow, newest first.
 
 **Next work: rebuild Adjusting Entries as reports.** The design is
 settled and written up in **`REPORTS-AND-ADJUSTING.org`**: read it
-before touching Level 5. In short (Matt, 2026-10-09): adjusting entries
+before touching Level 5. Later on 2026-10-09 Matt settled four
+questions the code raised (what a work event derives; pay periods as
+the work events; notes carrying their interest promises; `consumes`
+drawn from the hire, as the SP example has it), moved `fulfills` up to
+Credit Transactions, and dropped period-end reports from the capstone:
+its "Decided ... second session" sections. The interface the rebuild
+is built through -- selection by assertive criteria, including and
+excluding, then a calculation; grading by extension with feedback
+computed from what was collected -- is designed in
+**`SELECTION-AND-CALCULATION.org`**, whose "Order of work" is the
+plan. Step 1 of the list below is done. In short (Matt, 2026-10-09): adjusting entries
 are double-entry's idea, taught as 2101 teaches them; `reports` stands
 alone — it selects events already in the record and calculates from
 them, never with a `requires`; every reported figure is a selection and
@@ -19,8 +29,10 @@ a calculation, and the journal entry is double-entry's form of it;
 adjusting entries "top up" what the period's events cannot give
 directly. Order of work, from that note's checklists:
 
-1. Move Reporting (9) before Adjusting Entries (5) in
-   `tutorials/lesson-sequence` (now `[0 1 2 3 4 5 9 6 7 8]`).
+1. ~~Move Reporting (9) before Adjusting Entries (5) in
+   `tutorials/lesson-sequence`~~ Done 2026-10-09: `[0 1 2 3 4 9 5 6 7 8]`,
+   and Reporting's reading glosses the collection and the dividend in
+   its record.
 2. Reporting gains **ending inventory** (a balance-sheet figure; a new
    reading, cost of goods received; checked against the batch valuation
    in `test/assertive_app/balance_conformance.clj`).
@@ -36,8 +48,10 @@ directly. Order of work, from that note's checklists:
    report. Start from Level 5's text as Matt last edited it; it still
    contains the 2026-10-09 interim wording (`reports` with no `requires`,
    "A note on the journal entries") that the rebuild replaces.
-4. The capstone gains period-end reports. Quarterly reporting stays out
-   while piloting 2101.
+4. ~~The capstone gains period-end reports.~~ Dropped later that day:
+   its year has nothing to adjust. Quarterly reporting stays out while
+   piloting 2101. `fulfills` (collections, supplier payments, delivering
+   on an advance) moves to Credit Transactions.
 
 **Matt's walkthrough account is `resume-test@test.com`** (not walker2).
 Lessons 0–4 complete; he was reading Level 5 (Adjusting Entries) when the

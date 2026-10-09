@@ -1060,8 +1060,8 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
    9
    {:title "Level 9: Reporting"
     :subtitle "Ask the record a question, and say how you asked it"
-    ;; Keyed 9 because the numbers are keys; it sits after Adjusting
-    ;; Entries in lesson-sequence. Its round is not a drill but a short run
+    ;; Keyed 9 because the numbers are keys; it sits before Adjusting
+    ;; Entries in lesson-sequence (2026-10-09). Its round is not a drill but a short run
     ;; of report tasks over a fixed company year (reporting.clj), graded by
     ;; how each report is composed. LESSON-REPORTING-DESIGN.org.
     :kind :reporting
@@ -1095,6 +1095,8 @@ It does two things, and only two:
 2. **Total** something about them — what the customers paid, or what the goods cost.
 
 Nothing in the record changes when you report on it. What changes is what you know about the year.
+
+Two things in Harbor Line's record are ahead of you. When a customer pays what it owed, the record says the payment **fulfills** the promise made at the sale; and in December the company declares and pays a **dividend** to its stockholders. You will record both in later lessons. Here you only read them, and the question about each is the one you ask about every event: does it belong in this report, or not?
 
 This is where an assertive record and double-entry part ways most clearly. Double-entry keeps running totals — accounts — so the year's sales revenue is already sitting in an account when the year ends. An assertive record keeps the events themselves, and every total is a report built from them: the sales, the cost of the goods sold, the wages still owed. The journal entries you have seen throughout are double-entry's equivalents of those events, shown because they are what 2101 teaches."}
 
@@ -1622,9 +1624,11 @@ Once you pass, you'll have demonstrated mastery of the complete assertive accoun
 
 (def lesson-sequence
   "The order students meet the lessons in. The numbers are keys, not
-   positions: Reporting (9) comes after Adjusting Entries, where every
-   kind of event its reports read has been taught."
-  [0 1 2 3 4 5 9 6 7 8])
+   positions: Reporting (9) comes before Adjusting Entries (5), so that
+   'select the events, then calculate' is met over sales and cost of
+   goods sold before each adjustment is taught as the same move over a
+   prior event (REPORTS-AND-ADJUSTING.org, 2026-10-09)."
+  [0 1 2 3 4 9 5 6 7 8])
 
 (defn all-levels
   "Every lesson, in the order students meet them."

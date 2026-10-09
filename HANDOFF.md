@@ -21,9 +21,26 @@ is built through -- selection by assertive criteria, including and
 excluding, then a calculation; grading by extension with feedback
 computed from what was collected -- is designed in
 **`SELECTION-AND-CALCULATION.org`**, whose "Order of work" is the
-plan. Step 1 of the list below is done, and so is step 1 of that
-note's order of work (next paragraph). **Next: its step 2, ending
-inventory in Reporting.**
+plan. Step 1 of the list below is done, and so are steps 1 and 2 of
+that note's order of work (next paragraphs). **Next: its step 3,
+grading with hidden records** -- the one gap step 1 left is that
+"the other party is a customer" can be dropped from cost of goods sold
+on Harbor Line's year and still pass.
+
+**Step 2, ending inventory, is built (2026-10-09, later still).** A
+"on or before the report date" chip (`when`/`to-date`), a
+`:goods-received-cost` reading (money provided or promised for goods
+received), two more canonical reports (`:goods-received`,
+`:goods-sold-to-date`) and `:ending-inventory` as their difference;
+`gross-margins` became `differences`, each with its own messages. The
+round has three more steps after the margins, and the Reporting reading
+a section "A Balance: Ending Inventory" and a fifth quiz question. The
+oracle checks 2,150 - 1,380 = 770 against `valued-on-hand`. Also that
+evening: the lesson gate's "from previous lessons" follows the sequence
+(`earlier-lessons`), not the level numbers -- Reporting had listed
+`reports` and `fulfills` as already known, which Matt caught -- and a
+lesson may add a `:words-note` to its orientation; Reporting's says
+`reports` appears in its record for the first time.
 
 **The selection interface's step 1 is built (2026-10-09, later).**
 `reporting.clj` holds the vocabulary (`criteria`, `totals`); a

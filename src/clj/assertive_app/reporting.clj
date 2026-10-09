@@ -205,6 +205,11 @@
    {:kind "when" :value "period" :group "When"
     :phrase "in the reporting year"
     :pattern (fn [{:keys [from to]}] {:date-from from :date-to to})}
+   ;; A balance is as of a date: everything up to it, last year's
+   ;; events included.
+   {:kind "when" :value "to-date" :group "When"
+    :phrase "on or before the report date"
+    :pattern (fn [{:keys [to]}] {:date-to to})}
    {:kind "batch" :value "paid" :group "Condition"
     :phrase "the goods came from a batch that had been paid for"
     :pattern {:readings {:batch-paid true}}}
@@ -219,7 +224,8 @@
   [{:value "consideration" :phrase "what was received or promised for the goods" :reading :consideration}
    {:value "money-in"      :phrase "the money received" :quantity :receives}
    {:value "money-out"     :phrase "the money paid" :quantity :provides}
-   {:value "goods-cost"    :phrase "what the goods cost" :reading :goods-cost}])
+   {:value "goods-cost"    :phrase "what the goods cost" :reading :goods-cost}
+   {:value "goods-received-cost" :phrase "what the goods received cost" :reading :goods-received-cost}])
 
 (defn vocabulary
   "What the client offers: every chip and every total, with its words."
@@ -283,20 +289,43 @@
    :accrual-cogs    {:includes (chips "flow" "goods-out" "party" "customer" "when" "period")
                      :excludes [] :calc {:total "goods-cost"}}
    :cash-cogs       {:includes (chips "flow" "goods-out" "party" "customer" "when" "period")
-                     :excludes (chips "batch" "unpaid") :calc {:total "goods-cost"}}})
+                     :excludes (chips "batch" "unpaid") :calc {:total "goods-cost"}}
+   ;; The two halves of a balance: everything in and everything out, at
+   ;; cost, up to the report date. Their difference is ending inventory.
+   :goods-received  {:includes (chips "flow" "goods-in" "party" "supplier" "when" "to-date")
+                     :excludes [] :calc {:total "goods-received-cost"}}
+   :goods-sold-to-date {:includes (chips "flow" "goods-out" "party" "customer" "when" "to-date")
+                     :excludes [] :calc {:total "goods-cost"}}})
 
 (def report-names
   {:accrual-revenue "Accrual revenue" :cash-revenue "Cash revenue"
-   :accrual-cogs "Cost of goods sold (accrual)" :cash-cogs "Cost of goods sold (cash)"})
+   :accrual-cogs "Cost of goods sold (accrual)" :cash-cogs "Cost of goods sold (cash)"
+   :goods-received "Goods received, at cost, to date"
+   :goods-sold-to-date "Goods sold, at cost, to date"})
 
 (def report-categories
   "What kind of figure each report is, for the recorded report."
-  {:accrual-revenue "revenue" :cash-revenue "revenue" :accrual-cogs "expense" :cash-cogs "expense"})
+  {:accrual-revenue "revenue" :cash-revenue "revenue" :accrual-cogs "expense" :cash-cogs "expense"
+   :goods-received "asset" :goods-sold-to-date "expense"})
 
-(def gross-margins
-  "Each gross profit, as the two reports it takes the difference of."
-  {:accrual-gross-margin [:accrual-revenue :accrual-cogs]
-   :cash-gross-margin    [:cash-revenue :cash-cogs]})
+(def differences
+  "Reports that are the difference of two recorded reports: what each
+   takes away from what, and what to say when the student has it wrong."
+  {:accrual-gross-margin
+   {:of [:accrual-revenue :accrual-cogs]
+    :first "Use the revenue report on the same basis as the cost."
+    :swapped "Revenue comes first: gross profit is revenue less the cost of what was sold."
+    :second "Take away the cost of goods sold on the same basis as the revenue."}
+   :cash-gross-margin
+   {:of [:cash-revenue :cash-cogs]
+    :first "Use the revenue report on the same basis as the cost."
+    :swapped "Revenue comes first: gross profit is revenue less the cost of what was sold."
+    :second "Take away the cost of goods sold on the same basis as the revenue."}
+   :ending-inventory
+   {:of [:goods-received :goods-sold-to-date]
+    :first "Start from what came in: ending inventory is the goods received, at cost, less the goods sold, at cost."
+    :swapped "What came in comes first: ending inventory is the goods received, at cost, less the goods sold."
+    :second "Take away the goods sold, at cost, to the same date: what came in and has not gone out is what is on hand."}})
 
 ;; ---------------------------------------------------------------------------
 ;; Collecting
@@ -383,7 +412,7 @@
 
 (defn- fact
   "How a chip's question comes out for one event, in words."
-  [{:keys [kind]} {:keys [says counterparty date readings]}]
+  [{:keys [kind value]} {:keys [says counterparty date readings]}]
   (case kind
     "flow"  (str "it says: " says)
     "party" (cond
@@ -391,7 +420,7 @@
               (role-phrase (:counterparty-role readings))
               (str "the other party, " counterparty ", is " (role-phrase (:counterparty-role readings)))
               :else (str "the other party, " counterparty ", is none of these to the business"))
-    "when"  (str "it is dated " date ", outside the reporting year")
+    "when"  (str "it is dated " date (if (= value "to-date") ", after the report date" ", outside the reporting year"))
     "batch" (cond
               (nil? (:batch-paid readings)) "no goods went out in it, so there is no batch to ask about"
               (:batch-paid readings) "the batch those goods came out of had been paid for by the end of the record"
@@ -465,21 +494,18 @@
   [record-key report composition]
   (some->> (record-context record-key) (grade report composition)))
 
-(defn grade-gross-margin
-  "A gross profit is right when it takes the right revenue less the right
-   cost, in that order."
-  [margin [first-report second-report]]
-  (when-let [[rev cogs] (get gross-margins margin)]
-    (let [ok-rev  (= first-report rev)
-          ok-cost (= second-report cogs)]
-      {:correct? (and ok-rev ok-cost)
+(defn grade-difference
+  "A difference is right when it takes the right second report from the
+   right first one, in that order."
+  [diff [first-report second-report]]
+  (when-let [{:keys [of] :as d} (get differences diff)]
+    (let [[a b] of
+          ok-a (= first-report a)
+          ok-b (= second-report b)]
+      {:correct? (and ok-a ok-b)
        :messages (vec (remove nil?
-                        [(when-not ok-rev
-                           (if (= first-report cogs)
-                             "Revenue comes first: gross profit is revenue less the cost of what was sold."
-                             "Use the revenue report on the same basis as the cost."))
-                         (when-not ok-cost
-                           "Take away the cost of goods sold on the same basis as the revenue.")]))})))
+                        [(when-not ok-a (if (= first-report b) (:swapped d) (:first d)))
+                         (when-not ok-b (:second d))]))})))
 
 ;; ---------------------------------------------------------------------------
 ;; Reports in the record

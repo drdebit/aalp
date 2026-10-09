@@ -104,11 +104,15 @@ the lessons need a small step for it.
       Reporting's gloss to the dividend.
 
 ** Reporting
-- [ ] Add ending inventory (a balance-sheet figure): a new reading, the
+- [X] Add ending inventory (a balance-sheet figure): a new reading, the
       cost of goods received; the task; checked against the batch-by-batch
-      valuation the balance check already computes.
-- [ ] The reading says, at the start, that every figure on a statement is
-      a report: select, then calculate.
+      valuation the balance check already computes. Done 2026-10-09:
+      three more steps in the round (goods received to date, goods sold
+      to date, their difference) and a reading section, "A Balance:
+      Ending Inventory"; =reporting-check= compares the difference with
+      =valued-on-hand=.
+- [X] The reading says, at the start, that every figure on a statement is
+      a report: select, then calculate. (2026-10-09)
 
 ** Adjusting Entries, rebuilt
 - [ ] Start from the lesson as Matt last edited it (2026-10-09) and

@@ -284,10 +284,10 @@
   (POST "/api/lessons/reporting/grade" {body :body :as request}
     (let [record (keyword (or (:record body) "harbor-line"))
           task   (keyword (:task body))
-          result (if (contains? reporting/gross-margins task)
-                   (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
+          result (if (contains? reporting/differences task)
+                   (reporting/grade-difference task (mapv keyword (:inputs body)))
                    (reporting/grade-composition record task (:composition body)))
-          figure (if (contains? reporting/gross-margins task)
+          figure (if (contains? reporting/differences task)
                    (let [[a b] (map keyword (:inputs body))
                          fa (reporting/report-figure record a)
                          fb (reporting/report-figure record b)]
@@ -298,7 +298,7 @@
           (when-let [user (:user request)]
             ;; A report composed right is an event the student asserted:
             ;; it goes into the record beside the company's own.
-            (when (and (:correct? result) (not (contains? reporting/gross-margins task)))
+            (when (and (:correct? result) (not (contains? reporting/differences task)))
               (simulation/save-report! (:db/id user)
                 (reporting/recorded-report (:db/id user) record task (:composition body) result)))
             (progress/record-attempt!
@@ -313,7 +313,7 @@
           ;; A gross profit built the wrong way round comes out negative,
           ;; and the client's currency format drops the sign: say nothing
           ;; about its figure until it is right.
-          (response/response (assoc result :figure (if (and (contains? reporting/gross-margins task)
+          (response/response (assoc result :figure (if (and (contains? reporting/differences task)
                                                             (not (:correct? result)))
                                                      nil
                                                      figure))))
@@ -361,9 +361,9 @@
     (if-let [user (:user request)]
       (let [uid (:db/id user)
             task (keyword (:task body))
-            margin? (contains? reporting/gross-margins task)
+            margin? (contains? reporting/differences task)
             result (if margin?
-                     (reporting/grade-gross-margin task (mapv keyword (:inputs body)))
+                     (reporting/grade-difference task (mapv keyword (:inputs body)))
                      ;; Composed right means: collects the right events of
                      ;; the right books. What it comes to over the student's
                      ;; own books is the comparison below.

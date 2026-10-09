@@ -15,6 +15,8 @@
      :consideration      money received or promised for goods provided
      :goods-cost         what the goods provided cost, priced from the
                          batch named, as the derivation prices a sale
+     :goods-received-cost what the goods received cost: the money
+                         provided for them, or promised
      :batch-paid         whether the batch those goods came out of had
                          been paid for by the end of the record: bought
                          for cash, or bought on credit with the payable
@@ -84,6 +86,18 @@
           total (+ (money-in e) (or promised 0))]
       (when (pos? total) total))))
 
+(defn- physical-in? [e] (some #(= "physical-unit" (unit-of %)) (flows (:receives e))))
+
+(defn- goods-received-cost
+  "What the goods received cost: the money provided for them, or
+   promised for them. The mirror of consideration."
+  [e]
+  (when (physical-in? e)
+    (let [promised (when (= "provides" (some-> (get-in e [:requires :action]) name))
+                     (money (:requires e)))
+          total (+ (money-out e) (or promised 0))]
+      (when (pos? total) total))))
+
 (defn- goods-cost
   "The cost of the goods provided, as the derivation prices it: from the
    batch named, against the record as it stood."
@@ -132,6 +146,7 @@
                           (assoc :counterparty-role (counterparty-role e makes keeps))
                           (consideration e) (assoc :consideration (consideration e))
                           (goods-cost e events basis) (assoc :goods-cost (goods-cost e events basis))
+                          (goods-received-cost e) (assoc :goods-received-cost (goods-received-cost e))
                           batch (assoc :batch-paid (boolean (batch-paid? batch by-id kept-ids))))]
                 :when id]
             [id r]))))

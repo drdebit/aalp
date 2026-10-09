@@ -515,9 +515,13 @@
 ;;   :accrual-cogs  cost of goods sold, composed from blank
 ;;   :cash-cogs     the same, changed to the tax cash basis
 ;;   :gross-margin  both gross margins, built from the reports
+;;   :goods-received      goods received at cost to the report date, from blank
+;;   :goods-sold-to-date  the same date, goods sold at cost
+;;   :ending-inventory    their difference: a balance
 ;;   :done
 
-(def reporting-steps [:read :accrual-cogs :cash-cogs :gross-margin :done])
+(def reporting-steps [:read :accrual-cogs :cash-cogs :gross-margin
+                      :goods-received :goods-sold-to-date :ending-inventory :done])
 
 (defn reporting [] (:reporting @app-state))
 (defn reporting-active? [] (some? (:reporting @app-state)))

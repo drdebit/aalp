@@ -3830,7 +3830,13 @@
    authored, so it cannot drift from the sentence builder. Each
    assertion carries its own :level, so the ones new here are the ones
    whose level IS this level -- and \"no new words today\" is a
-   legitimate and important thing for this panel to say."
+   legitimate and important thing for this panel to say.
+
+   \"From previous lessons\" follows the sequence, not the numbers: the
+   numbers are keys, and Reporting (9) comes before Adjusting Entries
+   (5), whose words are not yet the student's (Matt, 2026-10-09). A
+   lesson that shows a word without teaching it says so in its
+   orientation's :words-note."
   [level]
   (let [all (->> (or (seq (state/vocabulary))
                      ;; Pre-vocabulary fallback: the unlocked subset. It
@@ -3841,8 +3847,10 @@
                  (remove #(held-codes (keyword (:code %)))))
         new? (fn [a] (= level (:level a 0)))
         fresh (filter new? all)
-        ;; Words from later levels are not "already yours".
-        known (filter #(< (:level % 0) level) all)]
+        ;; Words from lessons still ahead are not "already yours".
+        earlier (set (tutorials/earlier-lessons level))
+        known (filter #(contains? earlier (:level % 0)) all)
+        note  (get-in (tutorials/get-level-tutorial level) [:orientation :words-note])]
     [:div.or-slot
      [:h5 "The words you can use"]
      (if (seq fresh)
@@ -3850,7 +3858,9 @@
         [:span.or-label "New here: "]
         (str/join ", " (map :label fresh))]
        [:p.or-new.or-none
-        "No new words in this lesson. Everything below, rearranged — which is where the interesting accounts come from."])
+        (if note
+          (process-inline note)
+          "No new words in this lesson. Everything below, rearranged — which is where the interesting accounts come from.")])
      (when (seq known)
        [:p.or-known
         [:span.or-label "From previous lessons: "]
@@ -5258,7 +5268,7 @@
         showing   (or reading "accrual-revenue")
         collected (case step
                     :read (:collected (first (filter #(= (:key %) showing) reports)))
-                    (:accrual-cogs :cash-cogs) (:collected (get previews step))
+                    (:accrual-cogs :cash-cogs :goods-received :goods-sold-to-date) (:collected (get previews step))
                     nil)]
     [:div.drill-container
      [:div.drill-header
@@ -5305,12 +5315,34 @@
             [margin-row :cash-gross-margin "Gross margin (cash)"]
             (when (and (:correct? (:accrual-gross-margin grades)) (:correct? (:cash-gross-margin grades)))
               [:div.checkin-actions
+               [:button.primary {:on-click #(do (state/set-reporting-composition! state/empty-composition)
+                                                (state/next-reporting-step!))}
+                "Now a balance →"]])])
+
+         :goods-received
+         [compose-task :goods-received "Compose: goods received, at cost, to the report date"
+          "A balance-sheet figure is as of a date, not for a period. Start with everything that came in: the goods Harbor Line received from its suppliers on or before December 31 — this year's and last year's alike — and what they cost it."
+          {:excludes? true}]
+
+         :goods-sold-to-date
+         [compose-task :goods-sold-to-date "Change it: goods sold, at cost, to the report date"
+          "The same date, the other direction: the goods that went out to customers on or before December 31, at what they cost. Your previous report is below; change what it collects and what it totals."
+          {:excludes? true}]
+
+         :ending-inventory
+         (let [grades (:grades (state/reporting))]
+           [:div.rp-task
+            [:h3 "Build ending inventory"]
+            [:p "What came in and has not gone out is what is on hand. Ending inventory is the goods received, at cost, less the goods sold, at cost — both to the same date. It is the Merchandise Inventory the balance sheet carries at December 31."]
+            [margin-row :ending-inventory "Ending inventory"]
+            (when (:correct? (:ending-inventory grades))
+              [:div.checkin-actions
                [:button.primary {:on-click #(state/next-reporting-step!)} "Finish →"]])])
 
          :done
          [:div.rp-task
-          [:h3 "The year, reported two ways"]
-          [:p "You composed the cost of goods sold from blank, changed its basis by leaving one thing out, and built both gross profits from reports in the record — two of them yours. Same events; two true answers to two different questions."]
+          [:h3 "The year, reported two ways — and a balance"]
+          [:p "You composed the cost of goods sold from blank, changed its basis by leaving one thing out, built both gross profits from reports in the record, and then asked a different kind of question — not what happened this year, but what is on hand at its end — with the same words and one change of date. Same events; different questions; every answer true."]
           [:div.checkin-actions
            [:button.primary.drill-pass-btn
             {:on-click #(do (api/complete-tutorial! level)

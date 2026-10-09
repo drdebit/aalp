@@ -283,7 +283,11 @@ reach the same figures, not that the behavior is the same.
    =:reports= map with =:collects= on it; the adapter does not yet turn
    it into the research vocabulary's =collects= / =includes= /
    =excludes=, which can come with step 7.
-2. Ending inventory in Reporting.
+2. Ending inventory in Reporting. /Done 2026-10-09/: a "on or before
+   the report date" chip, a =goods-received-cost= reading, two more
+   reports (goods received at cost to date, goods sold at cost to
+   date) and ending inventory as their difference; the oracle checks it
+   against the batch-by-batch valuation (770 on Harbor Line's year).
 3. Extension-based grading with diff feedback, over Reporting's four
    reports first, where the canonical answers are known and tested.
 4. The exclude clause, the single-event pick, the share calculations,

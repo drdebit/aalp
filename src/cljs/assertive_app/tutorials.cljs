@@ -1066,12 +1066,13 @@ You will meet **fulfills** again whenever a promise is kept: a declared dividend
     ;; how each report is composed. LESSON-REPORTING-DESIGN.org.
     :kind :reporting
     :orientation
-    {:framing "Everything so far recorded one event at a time. A report reads many: it collects the events that answer a question, and totals something about them. This lesson asks two questions of one company's year — what did it earn from selling goods, and what did those goods cost — on two different bases."
+    {:words-note "No new words to write in this lesson. One appears in the record for the first time: **reports**, what a company says when it states a figure it has worked out from its events. Here you read it and compose what it says; you will write it yourself in the next lesson."
+     :framing "Everything so far recorded one event at a time. A report reads many: it collects the events that answer a question, and totals something about them. This lesson asks two questions of one company's year — what did it earn from selling goods, and what did those goods cost — on two different bases."
      :protocol-heading "How to read a report"
      :protocol ["**Which events?** Goods going out, money coming in, money going out, goods coming in."
                 "**Whose?** Who the other party is to the business: a customer, a supplier, an owner, a lender. The record reads it from what each event does."
                 "**Any condition?** For the tax cash basis, only goods from batches that had been paid for."
-                "**When?** The reporting year, or every date in the record."
+                "**When?** The reporting year — or everything up to the report date, for a balance."
                 "**Total what?** What was received or promised for the goods, the money received, or what the goods cost."]
      :pair-heading "The same events, a different report"
      :pair
@@ -1093,6 +1094,8 @@ It does two things, and only two:
 
 1. **Collect** the events that answer the question — the sales, say, and not the purchases.
 2. **Total** something about them — what the customers paid, or what the goods cost.
+
+Every figure on a financial statement is made this way: select the events, then calculate.
 
 Nothing in the record changes when you report on it. What changes is what you know about the year.
 
@@ -1129,6 +1132,13 @@ It is not a new walk over the events. It is arithmetic over two reports you alre
 
 Mixing the bases gives a number that means nothing."}
 
+     {:heading "A Balance: Ending Inventory"
+      :content "Revenue and the cost of goods sold are figures **for a period**: the year's sales, the year's cost. The balance sheet carries figures **as of a date**: what the business holds on December 31. Those are reports too, and the only thing that changes is the question's *when* — not the events in the year, but every event up to the report date.
+
+**Ending inventory** is what came in and has not gone out: the goods received, at what they cost, less the goods sold, at what they cost — both to the same date, this year's events and last year's alike. The shirts bought in December 2025 and still on the shelf are in it; the cost of the shirts sold in 2025 is out of it. It is the Merchandise Inventory the balance sheet shows, and it is the same batches, priced the same way, that each sale drew on.
+
+Like gross profit, it is arithmetic over two reports: goods received to date, less goods sold to date."}
+
      {:heading "What You Will Do"
       :content "You will work with one company's year: Harbor Line Shirts, a wholesaler of blank shirts. Its record is on screen the whole time.
 
@@ -1136,6 +1146,9 @@ Mixing the bases gives a number that means nothing."}
 2. **Compose** the accrual cost of goods sold, from blank.
 3. **Change** it into the cash-basis cost of goods sold.
 4. **Build** both gross profits from your reports.
+5. **Compose** the goods received, at cost, up to the report date.
+6. **Change** it into the goods sold, at cost, up to the same date.
+7. **Build** ending inventory from the two.
 
 Each report is checked by **what it collects** — the events it lets in, and the ones it leaves out — and by what it totals, not just by its figure. A figure can come out right by accident, and wrong for reasons that are not your composition's fault. When a report is right, it goes into the record beside the company's own, dated the last day of the year: a report is itself something asserted."}]
 
@@ -1162,7 +1175,13 @@ Each report is checked by **what it collects** — the events it lets in, and th
       :question "What is gross profit on the cash basis?"
       :choices ["Cash revenue less accrual cost of goods sold" "Cash revenue less cash cost of goods sold" "All money in less all money out" "Accrual revenue less cash cost of goods sold"]
       :correct 1
-      :explanation "Both reports on the **same basis**. Mixing bases gives a number that answers no question."}]}
+      :explanation "Both reports on the **same basis**. Mixing bases gives a number that answers no question."}
+
+     {:id :l9-q5
+      :question "Ending inventory is reported as of December 31. Which events does the report read?"
+      :choices ["Only this year's purchases of goods" "Only this year's sales" "Every receipt and every sale of goods up to December 31, last year's included" "Only goods bought for cash"]
+      :correct 2
+      :explanation "A balance is **as of a date**. The shirts bought in December 2025 and still on hand are in it, and the cost of shirts sold in 2025 is out of it: every event up to the report date, whichever year it fell in."}]}
 
    6
    {:title "Level 6: Equity Transactions"

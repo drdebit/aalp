@@ -1,0 +1,169 @@
+#+TITLE: Reports first, then adjusting entries
+#+AUTHOR: Matt DeAngelis (with Claude)
+#+DATE: 2026-10-09
+
+Supersedes =ACCRUALS-AS-REPORTS.org= (same day), which tried to fix
+accruals inside Adjusting Entries.
+
+* The decision (Matt, 2026-10-09)
+
+- *Adjusting entries are a double-entry idea*, and the platform teaches
+  double-entry as ACCT 2101 does. The assertive record underneath is for
+  downstream uses -- analytics above all -- and to help students tell
+  journal-entry classifications apart. The deep differences between
+  assertive recording and double-entry reporting are not taught at this
+  level. (So the lessons do not, for example, tell students there is "no
+  counterparty" when Wages Payable is booked: plainly there is one.)
+- *=reports= stands alone.* It selects events already in the record and
+  calculates from them. It never carries a =requires=.
+- *Every reported figure is a selection and a calculation*, and the
+  journal entry is double-entry's form of that calculation.
+- *Adjusting entries "top up"* the totals that cannot be read directly
+  off the period's events.
+- *Reporting comes before Adjusting Entries.* Reporting teaches "select
+  the events, total them" over revenue and cost of goods sold; Adjusting
+  Entries extends the same move to "select a prior event, calculate this
+  period's share".
+
+* Every report: select, then calculate
+
+| Report                          | Select from the record                            | Calculate                                                                   | Double-entry form                                   |
+|---------------------------------+---------------------------------------------------+-----------------------------------------------------------------------------+-----------------------------------------------------|
+| Sales Revenue                   | the sales                                         | add up their amounts                                                        | (the sales' own entries)                            |
+| Cost of goods sold              | the sales, and the batches they named             | add up those batches' cost                                                  | (the sales' own entries)                            |
+| Ending inventory                | the goods received, and the goods sold            | received at cost, less sold at cost, to the report date                     | (a balance: the inventory accounts)                 |
+| Prepaid expense used            | the prepayment                                    | this period's share of its time, at its cost per period                     | DR Expense / CR Prepaid Expense                     |
+| Depreciation                    | the equipment's acquisition                       | this period's share of its useful life                                      | DR Depreciation Expense / CR Accumulated Depreciation |
+| Wages                           | the labor consumed, and its payment promises      | expense = labor consumed in the period; payable = promises not yet fulfilled | DR Wage Expense / CR Wages Payable (the unpaid top-up) |
+| Interest expense                | the note payable                                  | principal x rate x time in this period; payable = the unpaid part           | DR Interest Expense / CR Interest Payable           |
+| Interest revenue                | the note receivable                               | the same, the other way                                                     | DR Interest Receivable / CR Interest Revenue        |
+| Bad debts                       | the receivables, and their confidences            | the probability-weighted net balance of Accounts Receivable                 | DR Bad Debt Expense / CR Allowance                  |
+
+A wage, an interest charge or a prepaid's use is a number specific to the
+report: it is computed as of the report's date, for the report.
+
+* Earlier reports: this period's share
+
+- *The first year* has no earlier reports. The period's share is the
+  usage (or time, or wages) from the originating event -- the purchase,
+  the hire, the note -- to the report date.
+- *Later years* are where earlier reports matter, and there a full
+  year's calculation is enough: a full year's share is the same as the
+  total elapsed since the originating event, less what earlier reports
+  already took (Matt, 2026-10-09).
+
+- *The last year* may be a partial year: the asset's useful life (or the
+  prepayment's term) ends partway through. Its share can be calculated
+  either as the proportion of the year, or as the remainder: the asset's
+  depreciable base less everything reported before. The two agree, and
+  the second guarantees the total never exceeds the cost (Matt,
+  2026-10-09).
+
+That sameness is the point to teach: these measures spread a cost across
+the periods it serves. Practice in later years can show both and let the
+student see they agree. Yearly reporting only in 2101 (see Open).
+
+Earlier reports are in the record for later years: the schema already has
+a =recorded-report= entity (=:recorded-report/id=,
+=:recorded-report/payload=); practice records would carry last year's
+reports as events.
+
+* The hire is an event
+
+Hiring an employee becomes an event in the record: a commitment to pay
+wages at a rate, until it is ended. Reports reference it.
+
+*Hourly, as an assertive system would record it* (Matt, 2026-10-09):
+work events =consumes= hours of labor, and each creates a =requires=
+for payment, periodically =fulfilled= by paydays. Then:
+- *Wage expense* for the period: total labor consumed in it.
+- *Wages payable* at the report date: the =requires= not yet fulfilled.
+
+(A salary would look more like depreciation: time-based, from the hire.)
+The hourly model is preferred. Students have not yet been shown how to
+consume labor hours -- labor in production was set aside for 2102 -- so
+the lessons need a small step for it.
+
+* What it takes
+
+** Lesson order
+- [ ] =tutorials/lesson-sequence=: Reporting (9) moves before Adjusting
+      Entries (5). Check that Reporting's own reading and record need
+      nothing from Adjusting Entries (its year has credit sales,
+      collections, a dividend -- no adjustments).
+- [ ] The check-ins, retention look-backs and capstone gating follow the
+      new order (they read =lesson-sequence=).
+
+** Reporting
+- [ ] Add ending inventory (a balance-sheet figure): a new reading, the
+      cost of goods received; the task; checked against the batch-by-batch
+      valuation the balance check already computes.
+- [ ] The reading says, at the start, that every figure on a statement is
+      a report: select, then calculate.
+
+** Adjusting Entries, rebuilt
+- [ ] Start from the lesson as Matt last edited it (2026-10-09) and
+      replace the accrual, prepaid and "reports" sections: each adjustment
+      is a report that selects its source event (the prepayment, the
+      equipment, the hire, the note) and calculates this period's share.
+- [ ] Remove what this decision rules out: =reports= paired with
+      =requires=; "no has-counterparty"; "the promise is already in the
+      record ... the report gathers it". Quiz question 4 likewise.
+- [ ] Problems give the record (source events, and last year's reports
+      where needed) and ask for the report: which events, what basis, the
+      amount. Graded like Reporting: part by part (selection, basis,
+      period), then the figure.
+- [ ] The double-entry entry is derived from the report: the debit from
+      what is reported, the credit from what the selected event is (a
+      prepaid, equipment, the hire's unpaid wages, the note's unpaid
+      interest).
+
+** Records
+- [ ] Practice companies carry the events reports select: prepayments,
+      equipment, hires, notes, and (for later years) earlier reports.
+- [ ] Hire events (rate, start date); work events that consume labor hours
+      and create a payment promise; paydays that fulfill them.
+
+** Grading and derivation
+- [ ] Accrual patterns (=:accrued-wages=, =:accrued-interest-expense=,
+      =:interest-revenue-accrual=) and the prepaid and depreciation
+      patterns: =reports= alone, with a selection of source events. No
+      =requires=.
+- [ ] The derivation's accrual rules take the payable/receivable from the
+      selected source event, not from a =requires= in the same event.
+- [ ] Wages Expense (derivation) vs Wage Expense (patterns, lessons): one
+      name.
+- [ ] The calculation builder's bases (time-based, systematic allocation,
+      accrual, estimation) are the calculation half; the selection half
+      is new for these reports (the batch and promise pickers, and
+      Reporting's compositions, are the models).
+
+* Decided (Matt, 2026-10-09)
+
+- [X] *Wages*: hourly -- labor consumed creates a payment promise,
+      fulfilled on payday; expense is labor consumed, payable is the
+      unfulfilled promises. Needs a lesson step on consuming labor hours.
+- [X] *Bad debts*: an aggregate over earlier events. Students already
+      record confidence with =expects= and were told it feeds bad debt
+      expense; the report computes the probability-weighted net balance of
+      Accounts Receivable from those confidences.
+- [X] *The capstone* gains period-end reports.
+- [X] *Quarterly reporting* stays out of the platform while it pilots
+      with 2101. When it serves other courses, quarterly and arbitrary
+      periods come in -- to show that a report can cover any span.
+
+* Decided, earning an advance (Matt, 2026-10-09)
+
+- [X] *Earning an advance* (Unearned Revenue) is a *delivery*, not a
+      report: the delivery is its own event, =provides= the goods and
+      =fulfills= the advance's =requires=. "It's not reporting that
+      converts unearned revenue; it's delivery." Adjusting Entries' last
+      section today records it as =reports= revenue + =fulfills=; the
+      rebuild changes it to the delivery.
+
+* Open
+
+- [ ] None outstanding from the 2026-10-09 discussion. Implementation
+      choices (how reports select source events in the sentence builder;
+      how earlier reports are stored in practice records) are for the
+      implementing session, guided by the checklists above.

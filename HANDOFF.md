@@ -1,4 +1,4 @@
-# AALP — where things stand (2026-10-06)
+# AALP — where things stand (2026-10-09)
 
 Written to pick up cold in a new session. Read **Start here** below,
 then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
@@ -6,6 +6,86 @@ then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
 sections follow, newest first.
 
 ## Start here (next session)
+
+### Where things stand (2026-10-09) — read this first
+
+**Next work: rebuild Adjusting Entries as reports.** The design is
+settled and written up in **`REPORTS-AND-ADJUSTING.org`**: read it
+before touching Level 5. In short (Matt, 2026-10-09): adjusting entries
+are double-entry's idea, taught as 2101 teaches them; `reports` stands
+alone — it selects events already in the record and calculates from
+them, never with a `requires`; every reported figure is a selection and
+a calculation, and the journal entry is double-entry's form of it;
+adjusting entries "top up" what the period's events cannot give
+directly. Order of work, from that note's checklists:
+
+1. Move Reporting (9) before Adjusting Entries (5) in
+   `tutorials/lesson-sequence` (now `[0 1 2 3 4 5 9 6 7 8]`).
+2. Reporting gains **ending inventory** (a balance-sheet figure; a new
+   reading, cost of goods received; checked against the batch valuation
+   in `test/assertive_app/balance_conformance.clj`).
+3. Rebuild Adjusting Entries: each adjustment is a report selecting its
+   source event (prepayment, equipment, hire, note) and calculating this
+   period's share; first year from the originating event, later years a
+   full year (= to date less earlier reports), the last year possibly
+   partial. Wages hourly: work events `consumes` labor hours and create a
+   payment `requires`, fulfilled on payday — expense is labor consumed,
+   payable the unfulfilled promises (needs a lesson step on consuming
+   labor). Bad debts: probability-weighted net A/R from `expects`.
+   Earning an advance is a **delivery** (`provides` + `fulfills`), not a
+   report. Start from Level 5's text as Matt last edited it; it still
+   contains the 2026-10-09 interim wording (`reports` with no `requires`,
+   "A note on the journal entries") that the rebuild replaces.
+4. The capstone gains period-end reports. Quarterly reporting stays out
+   while piloting 2101.
+
+**Matt's walkthrough account is `resume-test@test.com`** (not walker2).
+Lessons 0–4 complete; he was reading Level 5 (Adjusting Entries) when the
+redesign began. To put him back at the start of a lesson, clear his
+saved round — completed lessons stay. From `~/clojure/aalp` after
+`. ~/.config/aalp/env`, run with `clojure -M`:
+
+    (require '[assertive-app.schema :as schema] '[datomic.api :as d]
+             '[assertive-app.progress :as p])
+    (let [u (d/q '[:find ?u . :where [?u :user/email "resume-test@test.com"]]
+                 (schema/db))]
+      (p/save-drill-state! u nil))
+
+**What changed 2026-10-07 → 09** (all committed; `git log` from
+`bab32e3`): Production and Transformation split into Production (2,
+plain printing) and **Intellectual Property** (3, new: bought designs,
+design *varieties* as their own stock — `chain/item-id`,
+`printed-tshirts/night-owl` — and production `is-allowed-by` printer and
+design; `DESIGNS-AND-VARIETIES.org`); the made design held for
+Intermediate (`:held-for`); rounds weighted per lesson (`drill-configs`
+`:levels`/`:weights`); Legal and Regulatory reduced to `is-required-by`
+(taxes, licenses; the rest held for Intermediate); a 2101 consistency
+pass against the iCollege course (Alison Hollingsworth's Spring 2026
+section): Income Tax Expense, Licenses Expense, Unearned Revenue,
+**Merchandise Inventory** for goods bought to sell (chain/
+`ready-goods-account`), **Sales Revenue** for goods sold, Equipment,
+stockholders, gross profit, accruals/deferrals and the matching
+principle in Level 5, specific identification named; Owner's Drawing
+held (2101 is corporate) and the capstone's draw replaced by a declared
+and paid dividend (T11, T12); `fulfills` names the promise
+(`<event>/requires`); answers saved in full form (`:attempt/canonical`);
+lesson markdown renders `` `code` `` and mixed bullet/arrow paragraphs.
+
+**Hard-won rules:**
+- **Edit `tutorials.cljs` through Matt's Emacs buffer state**: check
+  `(buffer-modified-p (find-buffer-visiting
+  "/sshx:choochoo:/home/mdeangelis/clojure/aalp/src/cljs/assertive_app/tutorials.cljs"))`
+  is nil, edit on disk, then `(revert-buffer t t t)` via emacsclient.
+  He edits that file as he walks through.
+- **Renaming an account can duplicate a key** in `simulation.clj`'s chart
+  of accounts (it happened twice: Unearned Revenue, Equipment) and the
+  backend then fails to start ("Duplicate key"). Check `restart.log`
+  ends "Server started" after every rename.
+- **After a `.clj` change, run the three oracles** (`je-conformance`,
+  `balance-conformance`, `served-check`) and, for anything touching
+  costs or reports, compare the report figures before and after
+  (reporting's `preview` and the capstone's figure over `correct-books`).
+
 
 **Development now happens on choochoo directly (from 2026-10-06).**
 Matt edits over TRAMP in `~/clojure/aalp` on choochoo, where the

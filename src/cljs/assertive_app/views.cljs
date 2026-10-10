@@ -1809,14 +1809,19 @@
         basis-options [{:value "earned" :label "Performance obligation satisfied"}
                        {:value "cash-received" :label "Equal to cash received"}
                        {:value "cash-paid" :label "Equal to cash paid"}
-                       {:value "systematic-allocation" :label "Systematic allocation (depreciation)"}
+                       {:value "systematic-allocation" :label "This period's share of an asset's useful life (depreciation)"}
                        {:value "estimation" :label "Estimation from recorded confidences (bad debt)"}
                        {:value "aging" :label "Aging of receivables (bad debt)"}
                        {:value "percent-of-sales" :label "Percent of credit sales (bad debt)"}
-                       {:value "time-based" :label "Passage of time (prepaid)"}
+                       {:value "time-based" :label "This period's share of a prepayment's term"}
                        {:value "accrual" :label "Accrual over time (wages, interest)"}
                        {:value "declared" :label "Declared by the board (dividend)"}]
-        selected-basis (:basis params)]
+        selected-basis (:basis params)
+        ;; A report selects what it is about: the events in the record an
+        ;; adjustment can read (SELECTION-AND-CALCULATION.org, step 4).
+        sources   (:sources (state/derived-je))
+        working   (:working (state/derived-je))
+        source-bases #{"time-based" "systematic-allocation"}]
     [:div.reports-section
      [sentence-section :recognition "Recognition:"
       [:div.reports-content
@@ -1827,12 +1832,31 @@
        ;; has nothing to calculate, and the student types it.
        [:span " of $"]
        [inline-number-input :reports :amount (:amount params) "amount"]
-       [:span " calculated by "]
+       (when (seq sources)
+         [:span
+          [:span " from "]
+          [inline-dropdown :reports :source
+           (for [s sources] {:value (:id s) :label (:label s)})
+           (:source params) "which event?"]])
+       [:span " worked out as "]
        [inline-dropdown :reports :basis basis-options selected-basis "method"]
        [remove-assertion-button :reports]]]
 
-     ;; Show calculation builder when a non-simple basis is selected
-     (when selected-basis
+     ;; The facts the share is worked out from, read off the selected
+     ;; event -- not the figure. The student does the arithmetic, and the
+     ;; entry says whether it came out right.
+     (cond
+       (and (source-bases selected-basis) (seq working))
+       [:div.calculation-builder
+        [:h4 "What the record says"]
+        (for [[i line] (map-indexed vector working)]
+          ^{:key i} [:p.rp-working line])]
+
+       (and (source-bases selected-basis) (seq sources))
+       [:div.calculation-builder
+        [:p.rp-working "Say which event this report is about, and the record will show what it says."]]
+
+       selected-basis
        [calculation-builder selected-basis])]))
 
 (defn- focus-new-assertion-input!
@@ -2526,6 +2550,8 @@
                           [:span.dj-needs-text
                            (str "This is not what that calculation comes to. "
                                 (case (get-in line [:check :basis])
+                                  "time-based" "This period's share of that prepayment comes to "
+                                  "systematic-allocation" "This period's share of that asset's life comes to "
                                   "estimation" "The confidences on the record give "
                                   "aging" "The rates you set against the age classes give "
                                   "percent-of-sales" "Those sales at that rate give "

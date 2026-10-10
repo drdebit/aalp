@@ -92,6 +92,49 @@
      :buckets priced
      :total-receivables (reduce + 0.0 (map (comp #(or (n %) 0.0) :total) priced))}))
 
+(defn months-through
+  "Whole months from a start date through a report date, counting the
+   start's month and the report's month: a prepayment made on January 5
+   and reported on December 31 has run for 12 months. The report date is
+   a month end in every lesson, so this is the nearest whole month, which
+   is the convention 2101 uses."
+  [from to]
+  (let [f (java.time.LocalDate/parse from)
+        t (java.time.LocalDate/parse to)]
+    (max 0 (+ 1 (* 12 (- (.getYear t) (.getYear f))) (- (.getMonthValue t) (.getMonthValue f))))))
+
+(defn time-share
+  "This period's share of a prepayment: the months it has run, from the
+   prepayment (or the period's start, if later) through the report date,
+   capped at its term, at its cost per month. The first year runs from
+   the event; a later year from the period's first day."
+  [{:keys [amount months from period-from to]}]
+  (when-let [amt (n amount)]
+    (when-let [term (n months)]
+      (when (and (pos? term) from to)
+        (let [start (if (and period-from (pos? (compare period-from from))) period-from from)
+              ran   (min (long term) (months-through start to))
+              ;; Months before the period's start, already used up.
+              before (if (and period-from (pos? (compare period-from from)))
+                       (min (long term) (max 0 (dec (months-through from period-from))))
+                       0)
+              ran   (max 0 (min ran (- (long term) before)))
+              each  (/ amt term)]
+          {:value (* each ran) :months ran :term (long term) :per-month each})))))
+
+(defn life-share
+  "This period's share of a long-lived asset's cost: (cost - salvage)
+   over its life in years, for the months it has been held in the
+   period."
+  [{:keys [cost salvage years from period-from to]}]
+  (when-let [c (n cost)]
+    (when-let [life (n years)]
+      (when (and (pos? life) from to)
+        (let [start  (if (and period-from (pos? (compare period-from from))) period-from from)
+              ran    (min 12 (months-through start to))
+              annual (/ (- c (or (n salvage) 0.0)) life)]
+          {:value (* annual (/ ran 12.0)) :months ran :annual annual :years (long life)})))))
+
 (defn result
   "The figure a basis and a set of inputs come to, for the bases whose
    inputs are all typed in. The two that read the record -- estimation

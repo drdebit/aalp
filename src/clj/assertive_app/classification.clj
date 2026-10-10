@@ -1404,6 +1404,34 @@
         (boolean (and id (some #(and (= id (:id %)) (contains? kinds (:kind %)))
                                (chain/promises (:events context))))))))
 
+(defn source-requirement-met?
+  "Does this report's :source name an event of a kind this classification
+   is about -- a prepayment to use up, a long-lived asset to depreciate?
+   A standalone problem has no record and is not assessed on it."
+  [assertions-map kinds context]
+  (or (:standalone? context)
+      (let [id (some-> (get-in assertions-map [:reports :source]) name not-empty)
+            events (:events context)]
+        (boolean
+          (and id
+               (or (and (contains? kinds :prepaid)
+                        (some #(= id (chain/promise-event-id (:id %))) (chain/promises-of events :prepaid)))
+                   (and (contains? kinds :capital)
+                        (some #(= id (:id %)) (chain/capital-assets events)))))))))
+
+(defn figure-requirement-met?
+  "Is the figure on a report this period's share of the event it
+   selects? The record determines it, so it is checked exactly. A
+   standalone problem has no record and is not assessed on it."
+  [assertions-map context]
+  (or (:standalone? context)
+      (let [amount   (let [a (get-in assertions-map [:reports :amount])]
+                       (cond (number? a) (double a)
+                             (string? a) (try (Double/parseDouble a) (catch Exception _ nil))))
+            expected (:value (je-derive/share-of-source (:reports assertions-map)
+                                                        {:events (:events context) :current assertions-map}))]
+        (boolean (and amount expected (< (Math/abs (- amount (double expected))) 0.005))))))
+
 ;; ==================== Designs and their varieties ====================
 ;; A design allows printing ITS variety; each variety is its own good
 ;; (chain/item-id). Problems name the design and students select it, as
@@ -1996,10 +2024,13 @@
    :depreciation-expense
    {:required #{:has-date :reports}
     :required-parameters {:reports {:category "expense" :basis "systematic-allocation"}}
+    ;; A report: it selects the asset's acquisition and calculates this
+    ;; period's share of its life (REPORTS-AND-ADJUSTING.org).
+    :selects-kind #{:capital}
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Depreciation of productive asset"
     :journal-entry [{:debit "Depreciation Expense" :credit "Accumulated Depreciation"}]
-    :note "Nothing moved today, so no exchange can place this; the business `reports` it instead: an expense, worked out by systematic allocation. The press was paid for when it was bought, and its cost is being spread over the periods it will produce in. This period's share is Depreciation Expense, and the credit is not to Equipment but to Accumulated Depreciation, so the books show both what the press cost and how much of that has been used up."
+    :note "Nothing moved today; this is a report. It selects the event that brought the press in and calculates this period's share of its useful life: the press was paid for when it was bought, and its cost is spread over the periods it will produce in. This period's share is Depreciation Expense, and the credit is not to Equipment but to Accumulated Depreciation, so the books show both what the press cost and how much of that has been used up."
     :examples ["SP records monthly depreciation on t-shirt printer"
                "SP allocates equipment cost over 5-year useful life"]
     :level 5}
@@ -2058,10 +2089,13 @@
    :prepaid-expense-adjustment
    {:required #{:has-date :reports}
     :required-parameters {:reports {:category "expense" :basis "time-based"}}
+    ;; A report: it selects the prepayment and calculates this period's
+    ;; share of its term.
+    :selects-kind #{:prepaid}
     :prohibited #{:has-counterparty :provides :receives :consumes :creates :expects :requires}
     :description "Recognizing expense from prepaid asset"
     :journal-entry [{:debit "Insurance Expense" :credit "Prepaid Insurance"}]
-    :note "No exchange today; the business `reports` an expense worked out from the passage of time. The money went out earlier and bought cover for a term, recorded then as Prepaid Expense, an asset, because the term was still ahead. Part of it is now behind, and that part is used up: the asset falls by this period's share and the expense takes it. The amount is the prepayment divided over its term."
+    :note "No exchange today; this is a report. It selects the prepayment and calculates the share of its term that falls in this period. The money went out earlier and bought cover for a term, recorded then as Prepaid Expense, an asset, because the term was still ahead. Part of it is now behind, and that part is used up: the asset falls by this period's share and the expense takes it. The amount is the prepayment divided over its term, times the months of it this period used."
     :examples ["SP recognizes one month of prepaid insurance as expense"
                "SP adjusts prepaid rent for expired portion"]
     :level 5}
@@ -2497,6 +2531,14 @@
                        (when (and kinds context (contains? assertion-keys :fulfills)
                                   (not (fulfills-requirement-met? assertions-map kinds context)))
                          kinds))
+     :source-unmet (let [kinds (:selects-kind classification)]
+                     (when (and kinds context (contains? assertion-keys :reports)
+                                (not (source-requirement-met? assertions-map kinds context)))
+                       kinds))
+     :figure-unmet (let [kinds (:selects-kind classification)]
+                     (boolean (and kinds context (contains? assertion-keys :reports)
+                                   (source-requirement-met? assertions-map kinds context)
+                                   (not (figure-requirement-met? assertions-map context)))))
      :variety-unmet (and (:checks-variety? classification) context
                          (contains? assertion-keys :creates)
                          (not (variety-allowed? assertions-map context)))}))
@@ -2604,6 +2646,17 @@
       ;; design cited for shirts it does not print.
       (:variety-unmet hint-data)
       (conj "What was printed and what allowed it have to agree. Shirts of a design's variety are allowed by the printer AND that design (is-allowed-by both); plain printed shirts need only the printer.")
+
+      ;; The report does not say which event it is about.
+      (seq (:source-unmet hint-data))
+      (conj (str "A report is about an event in the record. Say which one this one selects: "
+                 (clojure.string/join " or " (map {:prepaid "the prepayment" :capital "the equipment's purchase"} (:source-unmet hint-data)))
+                 "."))
+
+      ;; The right event, the right method, and a figure that is not
+      ;; what they come to.
+      (:figure-unmet hint-data)
+      (conj "The amount is not this period's share of that event. What the record says is under the sentence: the cost, the term or life, and the months of it that fell in this period. Work it out again.")
 
       ;; Fulfills is present but keeps the wrong promise, or none.
       (seq fulfills-unmet)
@@ -2739,7 +2792,7 @@
 
         exact-matches (for [[class-key {:keys [required prohibited optional required-parameters
                                               requires-missing-parameters requires-position
-                                              fulfills-kind checks-variety?]}] classifications
+                                              fulfills-kind checks-variety? selects-kind]}] classifications
                             :when (and
                                    ;; All required assertions present
                                    (clojure.set/subset? required assertion-keys)
@@ -2763,6 +2816,11 @@
                                    ;; A design's variety needs that design.
                                    (or (not checks-variety?)
                                        (variety-allowed? assertions-map context))
+                                   ;; A report is about the event it selects,
+                                   ;; and its figure is that event's share.
+                                   (or (nil? selects-kind)
+                                       (and (source-requirement-met? assertions-map selects-kind context)
+                                            (figure-requirement-met? assertions-map context)))
                                    ;; Check parameters match if required-parameters specified
                                    (or (nil? required-parameters)
                                        (every? (fn [[assertion-code required-params]]
@@ -2774,13 +2832,17 @@
 
         all-distances (when (empty? exact-matches)
                         (for [[class-key {:keys [required prohibited optional required-parameters
-                                                 fulfills-kind]}] classifications]
+                                                 fulfills-kind selects-kind]}] classifications]
                           (let [optional-set (or optional #{})
                                 ;; Naming the wrong promise, or none, is a
                                 ;; parameter wrong, not a near miss of nothing.
-                                fulfills-unmet? (and fulfills-kind
-                                                     (contains? assertion-keys :fulfills)
-                                                     (not (fulfills-requirement-met? assertions-map fulfills-kind context)))
+                                fulfills-unmet? (or (and fulfills-kind
+                                                         (contains? assertion-keys :fulfills)
+                                                         (not (fulfills-requirement-met? assertions-map fulfills-kind context)))
+                                                    (and selects-kind
+                                                         (contains? assertion-keys :reports)
+                                                         (not (and (source-requirement-met? assertions-map selects-kind context)
+                                                                   (figure-requirement-met? assertions-map context)))))
                                 allowed-set (clojure.set/union required optional-set
                                                                universal-context)
                                 missing (clojure.set/difference required assertion-keys)
@@ -3598,16 +3660,15 @@ The printed t-shirts are now finished goods ready for sale."
    ;; End-of-period adjustments to properly match revenues and expenses
 
    :record-depreciation
-   ;; The asset, its date and its cost are read off the record: what
-   ;; depreciates is what the chain calls capital, and there is exactly
-   ;; one such thing in a practice company's books.
-   {:narrative-template "On {date}, {company} records a month of depreciation on the {asset} it bought on {asset-date} for ${cost}. The {asset} has a {years}-year useful life and no salvage value, so a month of it is ${depreciation}."
+   ;; A year-end report over the record: the asset, its date, its cost
+   ;; and its useful life are read off the event that brought it in, and
+   ;; the report selects that event (REPORTS-AND-ADJUSTING.org).
+   {:narrative-template "On December 31, {company} closes its books for 2026. The {asset} it bought on {asset-date} for ${cost} has a {years}-year useful life and no salvage value. Report the year's depreciation on it."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "expense" :basis "systematic-allocation"}}
+                          :reports {:category "expense" :basis "systematic-allocation" :source :asset-id}}
     :correct-classification :depreciation-expense
     :level 5
-    :variables {:date ["2026-01-31" "2026-02-28" "2026-03-31" "2026-04-30" "2026-05-31" "2026-06-30" "2026-07-31" "2026-08-31" "2026-09-30" "2026-10-31" "2026-11-30" "2026-12-31"]
-                :years [3 5 10]}}
+    :variables {:date ["2026-12-31"]}}
 
    :record-bad-debt
    ;; Who owes what, and how sure the company said it was, are read off
@@ -3652,18 +3713,17 @@ The printed t-shirts are now finished goods ready for sale."
                 :rate [6 8 12]}}
 
    :adjust-prepaid-expense
-   ;; The prepayment being adjusted is the one in the record, and the
-   ;; term is read from the dates on it rather than asserted. The date of
-   ;; the adjustment follows from how many months have gone by, so the
-   ;; three numbers the calculation builder asks for -- what was paid,
-   ;; over how many periods, how many have run -- are all on the page.
-   {:narrative-template "On {date}, {company} brings its prepaid {service} up to date. It paid {vendor} ${total} on {prepaid-date} for {months} months of {service}, and has adjusted nothing since, so the expense to recognize now covers {elapsed} of those {months} months, at ${monthly} a month."
+   ;; A year-end report over the record: the prepayment is the one in
+   ;; the record, its term is read from the dates on it, and the report
+   ;; selects it. The share is the months of the term that fell in the
+   ;; year, which the working on the page states.
+   {:narrative-template "On December 31, {company} closes its books for 2026. On {prepaid-date} it paid {vendor} ${total} for {months} months of {service}, and has recorded nothing about it since. Report the {service} expense for the year."
     :required-assertions {:has-date {:date :date}
-                          :reports {:category "expense" :basis "time-based"}}
+                          :reports {:category "expense" :basis "time-based" :source :prepaid-id}}
     :correct-classification :prepaid-expense-adjustment
     :reads-record [:prepaid]
     :level 5
-    :variables {:elapsed [1 2 3 4 5 6]}}
+    :variables {:date ["2026-12-31"]}}
 
    ;; Keeping a trade promise: a customer pays what it owed, the business
    ;; pays what it owed a supplier. Taught with fulfills, at Level 5. The
@@ -4111,6 +4171,9 @@ The printed t-shirts are now finished goods ready for sale."
         ;; depreciation a student computes is then exactly the figure the
         ;; narrative quotes, with no rounding to argue about.
         press      (rand-nth [2160 2880 3600 4320])
+        ;; A term of the purchase, as a note states its rate: the record
+        ;; holds it, so a depreciation report can read it there.
+        press-life (rand-nth [3 5 10])
         ;; A shirt leaves at twenty-five dollars, the price the sale
         ;; narratives already use.
         price      25
@@ -4120,6 +4183,10 @@ The printed t-shirts are now finished goods ready for sale."
                                     ["rent" "the landlord"]
                                     ["maintenance" "PrinterWorld"]])
         monthly    (rand-nth [75 100 125])
+        ;; A twelve-month term that starts partway through the year, so
+        ;; the year's share of it is a real question (and the rest of it
+        ;; is next year's).
+        prepaid-from (rand-nth ["2026-01-05" "2026-03-01" "2026-04-01" "2026-07-01" "2026-10-01"])
         ;; Two cartridges print the batch and together cost as much as
         ;; one dollar a shirt, so a printed shirt costs a whole dollar
         ;; more than a blank one and the narrative can say so exactly.
@@ -4155,10 +4222,11 @@ The printed t-shirts are now finished goods ready for sale."
         (cond-> []
           (contains? needs :prepaid)
           (conj {:has-identifier "Prepaid-001"
-                 :has-date {:date "2026-01-05"}
+                 :has-date {:date prepaid-from}
                  :provides {:unit "monetary-unit" :quantity (* 12 monthly)}
                  :requires {:action "receives" :unit "service-unit"
-                            :service-item service :due-date "2027-01-04"}
+                            :service-item service
+                            :due-date (str (.minusDays (.plusMonths (java.time.LocalDate/parse prepaid-from) 12) 1))}
                  :expects {:action "receives" :unit "service-unit" :confidence 99}
                  :has-counterparty {:name vendor}})
           (contains? needs :receivable)
@@ -4271,6 +4339,9 @@ The printed t-shirts are now finished goods ready for sale."
        :provides {:unit "monetary-unit" :quantity press}
        :receives {:unit "physical-unit" :physical-item "t-shirt-printer" :quantity 1}
        :allows {:consumes-items ["blank-tshirts" "ink-cartridges"] :creates-item "printed-tshirts"}
+       ;; How long it is expected to serve, and what it will be worth
+       ;; then: terms of the purchase, which a depreciation report reads.
+       :useful-life {:years press-life :salvage 0}
        :has-counterparty {:name "PrinterWorld"}}
       {:has-identifier "Shirts-001"
        :has-date {:date "2026-01-04"}
@@ -4342,9 +4413,11 @@ The printed t-shirts are now finished goods ready for sale."
       ;; reading `inventory-position` makes, so the asset here cannot
       ;; disagree with the asset on the balance sheet.
       :record-depreciation
-      (if-let [{:keys [item date cost]} (first (chain/capital-assets events))]
-        (let [years (or (:years vars) 5)]
+      (if-let [{:keys [id item date cost]} (first (chain/capital-assets events))]
+        (let [ev    (first (filter #(= id (some-> (:has-identifier %) name)) events))
+              years (or (get-in ev [:useful-life :years]) (:years vars) 5)]
           (assoc vars :asset (item-label item)
+                      :asset-id id
                       :asset-date date
                       :cost cost
                       :years years
@@ -4378,17 +4451,14 @@ The printed t-shirts are now finished goods ready for sale."
       (if-let [p (first (chain/promises-of events :prepaid))]
         (let [months  (or (:months p) 12)
               total   (or (:amount p) 0)
-              monthly (long (Math/round (/ (double total) months)))
-              elapsed (max 1 (min (dec months) (or (:elapsed vars) 1)))]
+              monthly (long (Math/round (/ (double total) months)))]
           (assoc vars :service (:item p)
+                      :prepaid-id (chain/promise-event-id (:id p))
                       :vendor (:counterparty p)
                       :prepaid-date (:date p)
                       :total total
                       :months months
-                      :monthly monthly
-                      :elapsed elapsed
-                      :date (str (.plusMonths (java.time.LocalDate/parse (:date p)) elapsed))
-                      :amount (* monthly elapsed)))
+                      :monthly monthly))
         vars)
 
       ;; The note is the one the company borrowed on. The rate is not an

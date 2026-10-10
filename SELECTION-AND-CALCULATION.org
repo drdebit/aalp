@@ -300,7 +300,20 @@ reach the same figures, not that the behavior is the same.
    and the two fragile routes it catches.
 4. The exclude clause, the single-event pick, the share calculations,
    and the derivation reading the selection; the five adjustments over
-   first-year records.
+   first-year records. /Begun 2026-10-10: prepaid expense and
+   depreciation./ The pick is =:source= on the =reports= assertion
+   (the event's id), offered from the record's prepayments and capital
+   assets (=:sources= on the derivation); the two shares are
+   =calc/time-share= and =calc/life-share= from the selected event's
+   own dates, term, cost and =:useful-life=; the classification's
+   =:selects-kind= checks the source and =figure-requirement-met?= the
+   figure, each with its own hint; the pane shows what the record says
+   (the facts, not the figure) and the entry's check says what the
+   share comes to. Practice problems are year-end reports over the
+   record, the prepayment starting in a varying month so the year's
+   share is partial. Still to do: wages, interest, bad debts (steps 5
+   and 6), and the exclude clause and criteria in the sentence builder
+   for later years.
 5. The records: hire, pay-period work events, paydays; notes with
    interest promises.
 6. Lesson and quiz text; =fulfills= to Level 1; Level 7.

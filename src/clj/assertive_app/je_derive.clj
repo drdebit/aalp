@@ -856,10 +856,93 @@
            (take 2)
            vec))))
 
-(defn- open-prepaid
-  "The prepayment an adjustment is adjusting: the open one in the record."
+(defn- event-by-id [context id]
+  (when id
+    (first (filter #(= (name id) (some-> (:has-identifier %) name)) (:events context)))))
+
+(defn source-id
+  "The event a report selects: `reports` carries it as :source (the
+   single pick of SELECTION-AND-CALCULATION.org, step 4)."
   [context]
-  (first (chain/promises-of (:events context) :prepaid)))
+  (some-> (get-in context [:current :reports :source]) name not-empty))
+
+(defn- open-prepaid
+  "The prepayment an adjustment is adjusting: the one made in the event
+   the report selects, else the open one in the record."
+  [context]
+  (let [ps (chain/promises-of (:events context) :prepaid)]
+    (or (when-let [id (source-id context)]
+          (first (filter #(= id (chain/promise-event-id (:id %))) ps)))
+        (first ps))))
+
+(defn- item-name
+  "An item as prose: the printer keeps its hyphen."
+  [item]
+  (get {"t-shirt-printer" "t-shirt printer" "logo-design" "logo design"}
+       (str item) (str/replace (str item) "-" " ")))
+
+(defn- source-asset
+  "The capital asset a depreciation report selects, else the record's."
+  [context]
+  (let [as (chain/capital-assets (:events context))]
+    (or (when-let [id (source-id context)] (first (filter #(= id (:id %)) as)))
+        (first as))))
+
+(defn- period-of
+  "The reporting year the report date falls in."
+  [as-of]
+  (when as-of
+    (let [y (subs as-of 0 4)] {:from (str y "-01-01") :to as-of})))
+
+(defn share-of-source
+  "What this period's share of the selected event comes to, for the two
+   bases that read a source: the prepayment's months at its cost per
+   month, or the asset's life. -> calc result map, or nil."
+  [params context]
+  (let [basis (some-> (:basis params) name)
+        as-of (get-in context [:current :has-date :date])
+        {:keys [from]} (period-of as-of)]
+    (case basis
+      "time-based"
+      (when-let [p (open-prepaid context)]
+        (calc/time-share {:amount (:amount p) :months (:months p) :from (:date p)
+                          :period-from from :to as-of}))
+      "systematic-allocation"
+      (when-let [a (source-asset context)]
+        (let [ev (event-by-id context (:id a))
+              life (or (:useful-life ev) {})]
+          (calc/life-share {:cost (:cost a) :salvage (:salvage life) :years (or (:years life) (:useful-life params))
+                            :from (:date a) :period-from from :to as-of})))
+      nil)))
+
+(defn source-working
+  "The facts the share is worked out from, in words, without the figure:
+   the student does the arithmetic, and the check says whether it came
+   out right."
+  [params context]
+  (let [basis (some-> (:basis params) name)
+        as-of (get-in context [:current :has-date :date])
+        money (fn [x] (format "$%,.0f" (double x)))]
+    (case basis
+      "time-based"
+      (when-let [p (open-prepaid context)]
+        (let [s (share-of-source params context)]
+          [(str (chain/promise-event-id (:id p)) ": paid " (money (:amount p)) " on " (:date p)
+                (when (:counterparty p) (str " to " (:counterparty p)))
+                " for " (:months p) " months of " (:item p) ".")
+           (str "From " (:date p) " through the report date, " as-of ": " (:months s) " of those months.")]))
+      "systematic-allocation"
+      (when-let [a (source-asset context)]
+        (let [ev (event-by-id context (:id a))
+              life (:useful-life ev)
+              s (share-of-source params context)]
+          [(str (:id a) ": bought the " (item-name (:item a)) " on " (:date a) " for " (money (:cost a))
+                (if life
+                  (str "; useful life " (:years life) " years, "
+                       (if (and (:salvage life) (pos? (:salvage life))) (str "salvage value " (money (:salvage life))) "no salvage value") ".")
+                  "."))
+           (str "From " (:date a) " through the report date, " as-of ": " (:months s) " months.")]))
+      nil)))
 
 (defn- settled-promise
   "The open promise this event's `fulfills` names, read from the record.
@@ -958,6 +1041,10 @@
             (let [total (:total (chain/credit-sales events as-of))]
               (when (and total (pos? total))
                 (:value (calc/percent-of-sales {:credit-sales total :bad-debt-percent pct})))))
+
+          ("time-based" "systematic-allocation")
+          (or (:value (share-of-source params context))
+              (when (seq inputs) (:value (calc/result basis inputs))))
 
           (when (seq inputs) (:value (calc/result basis inputs))))]
     (when (and amount expected)
@@ -1322,7 +1409,25 @@
                        (and has-credit? (not has-debit?))
                        (conj {:side :debit
                               :prompt "Something must balance this. What did the business get, or settle — and who from? The assertions do not say yet."}))]
-    {;; What the record still owes or is owed, for `fulfills` to name --
+    {;; What a report can be about: the events an adjustment selects.
+     ;; Prepayments and long-lived assets now; hires, notes and
+     ;; receivables as their lessons are rebuilt.
+     :sources (vec (concat
+                     (for [p (chain/promises-of (:events chain-ctx) :prepaid)
+                           :let [id (chain/promise-event-id (:id p))]]
+                       {:id id :kind "prepaid"
+                        :label (str id " — " (:months p) " months of " (:item p) " paid " (:date p)
+                                    (when (:amount p) (str ", " (format "$%,.0f" (double (:amount p))))))})
+                     (for [a (chain/capital-assets (:events chain-ctx))]
+                       {:id (:id a) :kind "capital"
+                        :label (str (:id a) " — the " (item-name (:item a)) " bought " (:date a)
+                                    (when (:cost a) (str ", " (format "$%,.0f" (double (:cost a))))))})))
+     ;; The facts a report's share is worked out from, once it names
+     ;; what it is about and how.
+     :working (when-let [r (:reports selections)]
+                (when (and (:source r) (:basis r))
+                  (source-working r {:events (:events chain-ctx) :current (assoc selections :has-date (:has-date selections))})))
+     ;; What the record still owes or is owed, for `fulfills` to name --
      ;; every open promise. An advance or a prepayment is kept by
      ;; delivering rather than paying, so it has no account a payment
      ;; clears, but it is kept all the same, and named the same way.

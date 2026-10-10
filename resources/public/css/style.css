@@ -4989,3 +4989,10 @@ header {
 .rp-events tr.report td.rp-id {
     box-shadow: inset 3px 0 0 #3b4a61;
 }
+
+/* What the record says, under a report that selects an event */
+.rp-working {
+    margin: 4px 0;
+    color: #3b4a61;
+    font-size: 0.95em;
+}

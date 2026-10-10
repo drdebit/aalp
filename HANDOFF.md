@@ -22,11 +22,30 @@ excluding, then a calculation; grading by extension with feedback
 computed from what was collected -- is designed in
 **`SELECTION-AND-CALCULATION.org`**, whose "Order of work" is the
 plan. Step 1 of the list below is done, and so are steps 1 and 2 of
-that note's order of work (next paragraphs), and step 3 (hidden
-records) after them. **Next: its step 4** -- the exclude clause is
-built, so what remains of it is the single-event pick, the share
-calculations, and the derivation reading the selection; then the five
-adjustments over first-year records.
+that note's order of work (next paragraphs), step 3 (hidden records)
+after them, and step 4 for prepaid expense and depreciation. **Next:
+the records for wages and interest (that note's step 5: hire, pay
+periods, paydays; notes with interest promises) and the three
+remaining adjustments through the same pick**, then `fulfills` to
+Credit Transactions and the Level 5 text as a whole (step 6).
+
+**Step 4, prepaid and depreciation as reports (2026-10-10).** The
+`reports` assertion carries `:source`, the id of the event the report
+selects; the pane offers the record's prepayments and capital assets
+(`:sources` on the derivation) and, once a source and a basis are
+chosen, shows what the record says (`:working`: the cost, the term or
+life, the months in the period) without the figure -- the student does
+the arithmetic. `calc/time-share` and `calc/life-share` compute the
+share from the event (`months-through` counts whole months, the
+report date being a month end); the press carries `:useful-life
+{:years :salvage}` in the practice record and the prepayment starts in
+a varying month. The classification's `:selects-kind` and
+`figure-requirement-met?` make the source and the figure part of the
+verdict, each with its own hint, and the derivation's check names the
+share. Templates are year-end ("closes its books for 2026"). Level 5's
+orientation example, protocol and the two sections are rewritten; the
+accrual sections still carry the interim `requires` wording until the
+records exist.
 
 **Step 3, hidden records, is built (2026-10-09, night).** `records`
 holds `:westbrook` (`:hidden true`): Westbrook Tees' 2026 with a

@@ -115,21 +115,26 @@ the lessons need a small step for it.
       a report: select, then calculate. (2026-10-09)
 
 ** Adjusting Entries, rebuilt
-- [ ] Start from the lesson as Matt last edited it (2026-10-09) and
+- [-] Start from the lesson as Matt last edited it (2026-10-09) and
       replace the accrual, prepaid and "reports" sections: each adjustment
       is a report that selects its source event (the prepayment, the
       equipment, the hire, the note) and calculates this period's share.
+      Depreciation and prepaid done 2026-10-10 (sections, orientation
+      example and protocol); the accrual sections wait on the records.
 - [ ] Remove what this decision rules out: =reports= paired with
       =requires=; "no has-counterparty"; "the promise is already in the
       record ... the report gathers it". Quiz question 4 likewise.
-- [ ] Problems give the record (source events, and last year's reports
+- [-] Problems give the record (source events, and last year's reports
       where needed) and ask for the report: which events, what basis, the
       amount. Graded like Reporting: part by part (selection, basis,
-      period), then the figure.
-- [ ] The double-entry entry is derived from the report: the debit from
+      period), then the figure. Prepaid and depreciation done
+      2026-10-10: year-end narratives, =:source= in the answer, the
+      source and the figure graded with their own hints.
+- [-] The double-entry entry is derived from the report: the debit from
       what is reported, the credit from what the selected event is (a
       prepaid, equipment, the hire's unpaid wages, the note's unpaid
-      interest).
+      interest). Prepaid and equipment read the selected event
+      (2026-10-10); the accruals wait on the records.
 
 ** Records
 - [ ] Practice companies carry the events reports select: prepayments,
@@ -148,10 +153,13 @@ the lessons need a small step for it.
       selected source event, not from a =requires= in the same event.
 - [ ] Wages Expense (derivation) vs Wage Expense (patterns, lessons): one
       name.
-- [ ] The calculation builder's bases (time-based, systematic allocation,
+- [-] The calculation builder's bases (time-based, systematic allocation,
       accrual, estimation) are the calculation half; the selection half
       is new for these reports (the batch and promise pickers, and
-      Reporting's compositions, are the models).
+      Reporting's compositions, are the models). Time-based and
+      systematic allocation now read the selected event
+      (=calc/time-share=, =calc/life-share=) and show the facts rather
+      than ask for inputs (2026-10-10); accrual and estimation next.
 
 * Decided (Matt, 2026-10-09)
 

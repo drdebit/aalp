@@ -867,14 +867,14 @@ And if the assertions name no rule at all? Then money went out, nothing came in,
     {:framing "Two new words. **reports**, because every entry so far followed from something that happened, and these follow from time passing: with no exchange to fix the amount, the business has to state it and say how it was worked out. And **fulfills**, for when what happened is an earlier promise being kept."
      :protocol ["There is no event to read. Ask instead: **what did the passing of the period do?**"
                 "Something was used up quietly, or something was earned or incurred before any money changed hands."
-                "Then: how much, and on what basis? — **reports**, carrying the calculation, because the need for a report is the only event that occurs."
+                "Then: which event in the record is this about, and how much of it falls in this period? — **reports**: the event it selects, the basis, and the amount worked out from what that event says."
                 "Then, as always: does this leave somebody owing something? — **requires**"
                 "Or does it keep a promise already on the books — an advance now earned? — **fulfills**, naming it"]
      :example
-     {:narrative "On December 31, SP records one month of depreciation on the $3,000 printer, which it expects to use for five years."
+     {:narrative "On December 31, SP reports the year's depreciation on the $3,000 printer it bought on January 3, which it expects to use for five years."
       :assertions ["has-date: December 31"
-                   "reports: $50 expense, on a systematic-allocation basis ($3,000 ÷ 60 months)"]
-      :entry ["DR Depreciation Expense $50" "CR Accumulated Depreciation $50"]}
+                   "reports: $600 expense, from the printer purchase, as this year's share of its useful life ($3,000 ÷ 5 years, 12 of 12 months)"]
+      :entry ["DR Depreciation Expense $600" "CR Accumulated Depreciation $600"]}
      ;; An accrual adds requires, so not "the same words" (Matt, 2026-10-08).
      :pair-heading "The same expense, a different credit"
      :pair
@@ -885,7 +885,7 @@ And if the assertions name no rule at all? Then money went out, nothing came in,
           :becomes "Wages Payable — owed to the employees"}
       :point "Both reduce this period's income. What differs is the credit: depreciation uses up part of something the business already holds; an accrual records a debt to someone who has done the work."}
      :effect
-     {:holds "Before: the printer carried at $3,000. After: carried at $2,950 — $50 of its usefulness used up this month. No cash moved."
+     {:holds "Before: the printer carried at $3,000. After: carried at $2,400 — $600 of its usefulness used up this year. No cash moved."
       :may-or-must "Nothing is owed to anyone, before or after. An accrual would add a promise — **requires** — and that is the difference you can see in the assertions."}
      :reminder "An adjusting entry records what the passing of time did. There is no exchange to read, so **reports** states the amount and how it was worked out."}
     :sections
@@ -922,18 +922,25 @@ Common bases:
 Nothing is exchanged when a report is issued, so there is no **has-counterparty**. Where somebody is owed — employees for wages, a lender for interest — **requires** names them."}
 
      {:heading "Depreciation"
-      :content "Equipment loses value over time. We allocate its cost over its useful life:
+      :content "Equipment is used up over the years it serves. Its cost is spread over those years, and each year reports its share.
 
-**Example: Monthly depreciation on $3,000 printer with 5-year life**
-- reports: expense (systematic-allocation basis), with the calculation: cost, salvage value, useful life
+A depreciation report is a report like the ones in the Reporting lesson, over one event instead of many. It **selects** the event that brought the equipment in, and **calculates** this period's share of its useful life from what that event says: what the equipment cost, what it will be worth at the end, how long it is to serve, and how much of this year it has been held.
 
-**The Pattern:**
-- The asset's recorded value is written down (credited via a contra-account, Accumulated Depreciation) — nothing else has to be asserted; the basis says so
-- Expense is recognized (debited)
+*On December 31, SP reports the year's depreciation on the $3,000 printer it bought on January 3, with a five-year life and no salvage value.*
 
-→ **Journal Entry:** DR Depreciation Expense, CR Accumulated Depreciation
+::assertions
+has-date: December 31
+reports: $600 expense, from the printer purchase, as this year's share of its useful life
+::
 
-Note: Accumulated Depreciation is a **contra-asset** that reduces equipment value on the balance sheet."}
+$3,000 over 5 years is $600 a year, and the printer served all twelve months of this year. Bought on April 1, it would have served nine, and the share would be $450.
+
+::journal
+DR Depreciation Expense $600
+CR Accumulated Depreciation $600
+::
+
+The credit is not to Equipment. What has been used up so far accumulates beside the asset in **Accumulated Depreciation**, a **contra-asset**, so the balance sheet shows both what the printer cost and how much of that is gone."}
 
      {:heading "Accrued Expenses and Prepaid Expenses"
       :content "**Accrued expenses** (incurred, but not yet paid): employees have worked but payday hasn't arrived, or interest has built up on a loan. The promise to pay is already in the record — it was made when the employees did the work, or when the loan was signed. At the end of the period, the business reports the expense that has built up:
@@ -946,17 +953,23 @@ The report does not create the debt. It gathers what the record already says is 
 
 → DR Wage Expense, CR Wages Payable
 
-**Prepaid expenses** (cash paid, expense not yet incurred): insurance or rent paid in advance is used up as time passes. At the end of the period the business reports the part that has been used up:
+**Prepaid expenses** (cash paid, expense not yet incurred): insurance or rent paid in advance is used up as time passes. At the end of the period the business reports the part that was used up this period — a report that **selects** the prepayment and **calculates** the share of its term that fell in the period.
+
+*On December 31, SP reports the year's insurance expense. On April 1 it paid Cardinal Mutual $1,200 for twelve months of cover.*
 
 ::assertions
-reports: insurance expense, on a time basis
+has-date: December 31
+reports: $900 expense, from the April 1 prepayment, as this year's share of its term
 ::
 
-What was used up is part of the prepaid asset, so the prepaid asset goes down.
+$1,200 over twelve months is $100 a month, and nine of those months — April through December — fell in this year. The other three are next year's.
 
-→ DR Insurance Expense, CR Prepaid Expense
+::journal
+DR Insurance Expense $900
+CR Prepaid Expense $900
+::
 
-As in production, nothing is exchanged today, so there is no **has-counterparty**.
+What was used up was part of the prepaid asset, so the prepaid asset goes down by the same share.
 
 **Why adjusting entries need `reports` but sales don't:**
 

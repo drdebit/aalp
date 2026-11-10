@@ -55,3 +55,7 @@ missfont.log
 # headless-student study output (transcripts, grades)
 study/runs/
 study/__pycache__/
+
+# browser pass: npm scaffolding and screenshots
+study/browser/package.json
+study/browser/shots/

@@ -300,8 +300,8 @@ reach the same figures, not that the behavior is the same.
    and the two fragile routes it catches.
 4. The exclude clause, the single-event pick, the share calculations,
    and the derivation reading the selection; the five adjustments over
-   first-year records. /Begun 2026-10-10: prepaid expense and
-   depreciation./ The pick is =:source= on the =reports= assertion
+   first-year records. /Prepaid expense and depreciation done 2026-10-10 (commit
+   b98b6c5); wages, interest and bad debts wait on step 5./ The pick is =:source= on the =reports= assertion
    (the event's id), offered from the record's prepayments and capital
    assets (=:sources= on the derivation); the two shares are
    =calc/time-share= and =calc/life-share= from the selected event's

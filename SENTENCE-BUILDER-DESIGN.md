@@ -1,5 +1,16 @@
 # Sentence-Builder UI Design
 
+> **2026-10-24: the rendering half now exists as a library.**
+> [`rephrase`](https://github.com/drdebit/rephrase) (`~/Dropbox/clojure/rephrase`)
+> renders the engine's canonical events as English from one lexicon:
+> `(rephrase.core/sentence event)` and `(rephrase.core/title event)`,
+> `.cljc`, no dependencies. It was written for daybook (Matt's own
+> record) and is meant to replace `render-sentence` and the `:sentence`
+> templates in `classification.clj` here when there is a quiet moment;
+> the other direction (slots to canonical, which this document is mostly
+> about) is still only here. Nothing in AALP was changed.
+
+
 ## Overview
 
 This document outlines the design for refactoring AALP's assertion system to:

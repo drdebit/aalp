@@ -1,4 +1,4 @@
-# AALP — where things stand (2026-10-09)
+# AALP — where things stand (2026-11-10)
 
 Written to pick up cold in a new session. Read **Start here** below,
 then `PILOT-LESSONS-PLAN.org` (the pilot, its decisions and status) and
@@ -7,7 +7,69 @@ sections follow, newest first.
 
 ## Start here (next session)
 
-### Where things stand (2026-10-09) — read this first
+### Where things stand (2026-11-10) — read this first
+
+**Resuming (written 2026-11-10, the session closing cleanly).** The
+tree is at `b98b6c5` plus the doc commit that carries this paragraph.
+Nothing is half-built: step 4 (prepaid expense and depreciation as
+reports) is finished, verified in the browser and by all four oracles,
+and committed. The last commit was made from the Dropbox mirror because
+the VPN was down, so **on choochoo run `git pull --ff-only` first**
+(check `git status` there is clean before pulling; never `git checkout
+-- src`). Then `./restart-backend.sh` if `.clj` files changed, and
+confirm the watcher is still up (`http://choochoo.dyn.gsu.edu:8081/`).
+
+The next block of work is step 5 of `SELECTION-AND-CALCULATION.org`,
+and it lands the four decisions in `REPORTS-AND-ADJUSTING.org`
+("Decided ... second session") in code:
+
+1. **Records.** In `classification.clj`'s practice backstory
+   (`backstory`, `record-variables`): a hire event that `allows` work
+   at a rate; one work event per two-week pay period that `consumes`
+   hours, `is-allowed-by` the hire and `requires` pay by its payday;
+   paydays that `fulfills` the earlier promises, leaving the last
+   period's promise open at 2026-12-31. A note (`Loan-001` or a new
+   one) carrying its interest as a finite set of dated `requires`, some
+   fulfilled, the last open at year end. The Harbor Line / Westbrook
+   records in `reporting.clj` get the same shapes if Reporting is to
+   show them; otherwise they stay with Level 5.
+2. **Sources.** `je_derive.clj` builds `:sources` (prepaids +
+   capital assets, from `open-prepaid` and `source-asset`) and
+   `:working` for the pane. Add open pay promises and open interest
+   promises (and, for bad debts, the open receivables with their
+   `expects` probabilities) as pickable sources, each with its working:
+   wages = the open period's hours x rate; interest = principal x rate
+   x months/12 (`calc/time-share` already does the month count); bad
+   debts = probability-weighted net of the open `expects`.
+3. **Classifications.** `:accrue-wages`, `:accrue-interest`,
+   `:bad-debt-expense` (templates at `classification.clj` ~3681-3715,
+   patterns ~4415-4500): `reports` with `:source` and `:selects-kind`
+   (`#{:pay-promise}`, `#{:interest-promise}`, `#{:receivable}`), drop
+   the `requires` the accrual patterns still carry (`reports` stands
+   alone), and give each a year-end template like `:record-depreciation`.
+   `figure-requirement-met?` and the `:source-unmet` / `:figure-unmet`
+   hints already generalize.
+4. **Oracles and text.** Extend `test/assertive_app/reporting_check.clj`
+   or the je-conformance check with the three new figures; rewrite the
+   Level 5 accrual sections (wages, interest, bad debts) in
+   `tutorials.cljs` as select-then-calculate, mirroring the depreciation
+   section. Edit `tutorials.cljs` only when Matt's Emacs buffer is
+   unmodified, then revert it.
+
+Step 6 follows: `fulfills` patterns to Credit Transactions (Level 1),
+the rest of the Level 5 text and quiz, Level 7, `:accrued`/`:earned`
+promise kinds and `:pay-interest-on-note` re-homed. Open, not blocking:
+no hidden-record separator yet for "the other party is a supplier" on
+goods received; Wage Expense vs Wages Expense naming; the full-form
+`collects/includes/excludes` adapter (step 7).
+
+Testing notes for the browser are under "The selection interface's step
+1 is built" below (tunnel origin `localhost:8081`, patch
+`reagent.impl.batching.next_tick`, keep JS scripts under 45 s). Oracles
+run locally with
+`DATOMIC_DB_PASSWORD=dummy clojure -M:test -e "(require 'assertive-app.X) (assertive-app.X/report)"`
+for `je-conformance`, `balance-conformance`, `served-check`,
+`reporting-check`.
 
 **Next work: rebuild Adjusting Entries as reports.** The design is
 settled and written up in **`REPORTS-AND-ADJUSTING.org`**: read it
@@ -1435,6 +1497,14 @@ against choochoo by `study/smoke_walk.py` (fresh user, empty ledger) on
    is named — which is now always, for student sales. FIFO would collect
    the same events and report a different figure. Worth deciding whether
    students should ever meet more than one policy.
+
+## Related, outside this repo
+
+- `~/Dropbox/clojure/rephrase` (github.com/drdebit/rephrase), 2026-10-24:
+  canonical events rendered as English from a lexicon, `.cljc`, no
+  dependencies. Candidate replacement for `classification/render-sentence`
+  and the `:sentence` templates. See the note at the top of
+  SENTENCE-BUILDER-DESIGN.md.
 
 ## Things that look like bugs and are not
 
